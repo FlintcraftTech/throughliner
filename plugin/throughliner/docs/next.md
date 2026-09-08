@@ -108,8 +108,7 @@ whichever bound comes first ends the run. What the marker means and where it is
 written are in plan.md's decision step, which is the authoring site.
 
 The run includes any `[user]` items among the cleared work; Step 3 walks the user
-through each *without ending the run*. A `[user]` item is not a bound: the run's
-two bounds are the cleared-to-run line and a `Runs alone` marker.
+through each *without ending the run*.
 
 ## Step 1: Pre-flight
 
@@ -144,10 +143,17 @@ habit, not a rule with machinery behind it.
 
 ### 2. Find the run, and read SPEC  [SILENT]
 
-**Read SPEC.md once here, at run start** — not per item. It is the product truth
-each item is built against, and a build that never reads it cannot be checked
-against it. Reading it once per run is what makes the per-item check below cost
-almost nothing.
+**Read the root SPEC.md once here, at run start** — not per item. It is the
+product truth each item is built against, and a build that never reads it cannot
+be checked against it. Reading it once per run is what makes the per-item check
+below cost almost nothing.
+
+**Per item, read the specs of the parts the item's files sit in.** Where the
+project CLAUDE.md carries a `## Parts` block, the run derives each part from the
+folders on the item's Files line and reads that part's own `SPEC.md`, in the
+part's folder — two parts, two specs; files in no part, the root alone. The
+contradiction halt and the filed-gap rule in next-build.md apply to whichever
+spec was read.
 
 Then read QUEUE.md's cleared region top-down, each item whole. That is the run.
 
@@ -216,8 +222,7 @@ the run can still change rather than after scope is locked.
       region                        RUN ONLY. Leave the queue untouched.
 ```
 
-Deciding an item's fate stays /plan's; a reply, where one is owed, is drafted
-at the close.
+A reply, where one is owed, is drafted at the close.
 
 ### 3b. Cycles due-ness check  [SILENT] when no cycles doc exists; [BRIEF] whenever one does
 

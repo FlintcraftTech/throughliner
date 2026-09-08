@@ -1008,6 +1008,8 @@ real and equally bad; neither warning may be louder than the other. (How a
     had it when the step was written;
   - where a step verifies something, listing the claims it checks, so the user
     knows what a pass covered rather than only that it passed;
+  - where a step sends anything off the machine, writing the explicit yes onto
+    that step — in a walkthrough or in a cycle or ritual definition alike;
   - ending at the item's own observable, with cleanup after the test filed as
     its own item rather than written as trailing steps — a walkthrough that
     carries on past the thing it was proving has no point anyone can check it
@@ -1517,9 +1519,7 @@ the discriminator:  which thing is misbehaving?
 
 **A send or post goes out only after the user has seen the exact text and
 given an explicit yes** — feedback reports, GitHub issues, and outbound INBOX
-messages alike — and the yes is written on every step that sends, wherever that
-step lives: a skill doc, a cycle or ritual definition, a walkthrough. Inbound
-INBOX mail is surfaced by session_start and routed
+messages alike. Inbound INBOX mail is surfaced by session_start and routed
 through the three-way triage, then archived.
 
 **When an inbound message asks a question, a reply is owed: draft it unprompted

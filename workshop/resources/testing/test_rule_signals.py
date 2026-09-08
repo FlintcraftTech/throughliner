@@ -259,8 +259,10 @@ def test_parent_lookup_ranks_a_paraphrase_first():
                 "machine.**\n")
     hits = signals.parent_lookup(
         root, "Stage a commit by naming each path, and never force-push")
+    # Read off the raw line rather than the normalised form: the stop-word
+    # step drops "each", so the normalised text reads "name path".
     check("the paraphrased rule ranks first",
-          hits and "name each path" in hits[0]["norm"], repr(hits[:2]))
+          hits and "name each path" in hits[0]["raw"].lower(), repr(hits[:2]))
     check("the top hit names its own section",
           hits and hits[0]["section"] == "File safety", repr(hits[:1]))
     shutil.rmtree(root, ignore_errors=True)
@@ -289,6 +291,50 @@ def test_duplicate_check_flags_a_cross_group_pair():
           "[always-loaded]" in result["message"]
           and "[skill doc]" in result["message"], result["message"])
     shutil.rmtree(root, ignore_errors=True)
+
+
+def test_accepted_pair_is_skipped_and_unlisted_pair_still_fires():
+    """A flagged pair whose two sites match an ACCEPTED_DUPLICATE_PAIRS entry
+    is skipped and counted; an unlisted near-copy in the same corpus still
+    fires ([near-duplicate-rule-statements])."""
+    root = tempfile.mkdtemp(prefix="rule-signals-accepted-")
+    docs = os.path.join(root, "plugin", "throughliner", "docs")
+    os.makedirs(docs)
+    accepted = ("**Completion is read as the always-loaded `[user]` lifecycle "
+                "states in the rules doc.**\n")
+    unlisted = ("- **A send or post goes out only after the user has seen the "
+                "exact text and given an explicit yes.**\n")
+    with open(os.path.join(docs, "next.md"), "w", encoding="utf-8") as f:
+        f.write("# Next\n\n## Walk\n\n" + accepted + "\n" + unlisted)
+    with open(os.path.join(docs, "done-plan.md"), "w", encoding="utf-8") as f:
+        f.write("# Done\n\n## Close\n\n" + accepted + "\n" + unlisted)
+    with open(os.path.join(docs, "skill-nonspecific-rules.md"), "w",
+              encoding="utf-8") as f:
+        f.write("# Rules\n")
+    with open(os.path.join(root, "CLAUDE.md"), "w", encoding="utf-8") as f:
+        f.write("# Project\n")
+    result = signals.signal_maintained(root)
+    check("the accepted next.md/done-plan.md pair is skipped",
+          result["accepted"] == 1, result["message"])
+    check("the unlisted near-copy still fires",
+          result["firing"] and result["value"] == 1, result["message"])
+    check("the message says how many pairs were skipped as accepted",
+          "1 pair(s) skipped as accepted" in result["message"],
+          result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_function_words_alone_do_not_match():
+    """Two statements sharing only function words score no match, and the
+    stop words are dropped by the normalising step ([parent-lookup-stop-words])."""
+    a = signals._normalise_statement(
+        "**The user is to be asked before the file is written to the disk.**")
+    b = signals._normalise_statement(
+        "**The run is to be stopped before the queue is read from the tool.**")
+    check("function words are dropped from the normalised statement",
+          "the" not in a.split() and "is" not in a.split(), repr(a))
+    check("statements sharing only function words score no match",
+          signals._overlap(a, b) == 0.0, repr((a, b, signals._overlap(a, b))))
 
 
 def test_size_report_deltas_against_the_last_sweep_turn():
@@ -437,6 +483,8 @@ if __name__ == "__main__":
     test_flat_project_has_no_inner()
     test_parent_lookup_ranks_a_paraphrase_first()
     test_duplicate_check_flags_a_cross_group_pair()
+    test_accepted_pair_is_skipped_and_unlisted_pair_still_fires()
+    test_function_words_alone_do_not_match()
     test_size_report_deltas_against_the_last_sweep_turn()
     test_inner_commit_is_attributed_to_the_outer_close()
     test_inner_commit_without_a_gate_line_is_flagged_with_both_hashes()

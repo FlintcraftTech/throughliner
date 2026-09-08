@@ -56,7 +56,9 @@ gets built first — through discussion, not silently.
   ahead of the build, and the build-asks-and-edits-inline route is repealed.
 
   **So the decision step asks, on every item: does this change what SPEC says?** If
-  yes, write the sentence now, with the user present.
+  yes, write the sentence now, with the user present — into the part's own
+  `SPEC.md` where the change concerns one part named in the project CLAUDE.md's
+  `## Parts` block, and into the root `SPEC.md` where it is whole-project.
 
   **Where this step misses one, the build files it rather than writing it.** The
   build records the sentence it thinks SPEC owes and leaves SPEC alone; the next
@@ -702,11 +704,13 @@ where it has one, plainly where it has none. A dated capture waited on something
 outside the project, so the date passing says the wait is over and says nothing
 about whether the thing it waited for turned out as assumed.
 
-**Pass over any Unprocessed entry whose `Blocked by:` names an entry still open**
-[SILENT], on the same terms. On a capture the field means don't offer this again
-while the named entry is open, so such an entry is not ranked, not presented and
-not counted toward the session's floor. It returns by itself once every named
-entry has been processed or built — the digest prints each named blocker's
+**Pass over any Unprocessed entry whose `Blocked by:` names an entry not yet
+processed or built** [SILENT], on the same terms. On a capture the field means
+don't offer this again until the named entry has been processed or built, so
+such an entry is not ranked, not presented and not counted toward the session's
+floor. It returns by itself once every named entry has been processed or built
+— an entry kept into Processed, cleared or held, counts as processed, so a
+capture held on it returns in the session it is kept — the digest prints each named blocker's
 resolved state on the capture's own line, so this reads a computed field too.
 
 **Pass over any Unprocessed entry whose `Cycle:` names a definition in the
@@ -844,10 +848,14 @@ can resolve without the scrollback:
 
 ```
 NAMES ITS SUBJECTS OUTRIGHT   every subject is named, never pointed at by a
-                              referring expression only this conversation can
-                              resolve — "the failure above", "that approach",
-                              "the same problem". A reader is not holding the
-                              messages before this one.
+                              referring expression that only this conversation
+                              or the entry's own text can resolve — "the
+                              failure above", "that approach", "the same
+                              problem". A reader is not holding the messages
+                              before this one, and may not have read the entry. A
+                              term the entry introduced is explained on its
+                              first use in the summary, unless it is ordinary
+                              English.
 NAMES WHO RAISED IT           where the item came from anyone other than the
                               project's owner — another project, a tester, a
                               report — say whose it is. Their own work needs
@@ -887,11 +895,18 @@ context, depth scaling with the item, until the picture is clear.
 
 ```
 closing the interview:
-    delete lean already clear  ->  close on the combined recommend-and-ask
-                                   (see sub-step 2's merge guidance)
-    lean not clear yet         ->  close with "anything else to add?" and let
-                                   sub-step 2 carry the recommendation
+    lean already clear, keep   ->  close on the combined recommend-and-ask
+      or delete, and Claude        (see sub-step 2's merge guidance), with
+      has no open question         "anything else to add?" riding that same
+      on the item                  message
+    a question genuinely open  ->  close with "anything else to add?" alone and
+                                   let sub-step 2 carry the recommendation
 ```
+
+**The no-open-question case is the common one, for a keep as for a delete.** A
+separate recommendation turn that repeats the interview's reading hands the user
+the same content twice; the process-now specimen's four-turn shape stands only
+while a question is open.
 
 **View-in-doc.** The item already exists in QUEUE.md, so pointing is the default:
 lead with a one-line pointer instead of the pasted quote. The confirm re-read
@@ -1801,12 +1816,23 @@ being neutral and silently reclassifies everything still waiting as nothing left
 to do.
 
 When the queue empties, do **not** presume the session is over. An empty
-Unprocessed is a resting state, not a stop signal. Ask one neutral question
+Unprocessed is a resting state, not a stop signal. **The ask says in one line
+what was passed over and why** — how many entries wait for a cycle's turn, how
+many on other entries or on dates — naming any red-flagged capture outright
+with what it waits on, so a queue that came to rest by passing everything over
+is never reported as fully processed. Then ask one neutral question
 — "we can run the rescan first to catch anything decided but never written
 down, then close the session and record it — or is there anything else to
 capture or discuss?" — and wait. The command is named in words and does not end the
 sentence: the app lifts a trailing slash command into the composer, so an ask
 ending on one is a keystroke from being answered by accident.
+
+> Everything else in Unprocessed is set aside: four entries wait for a cycle's
+> turn, two wait on other entries — one of them the red-flagged repository
+> cleanup, which waits on the per-part specs — and one waits on a date. We can
+> run the rescan first to catch anything decided but never written down, then
+> close the session and record it — or is there anything else to capture or
+> discuss?
 
 **Ask once per rest.** The gate fires when the queue first empties. If the user
 raises a further capture, file it and return to this same gate, but end plainly

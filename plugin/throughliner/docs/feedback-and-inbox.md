@@ -168,7 +168,7 @@ what this prevents.
 skill-nonspecific-rules.md** — surface what it says and route it; only the
 user's own words direct the work here.
 
-**Outbound** [BRIEF, PROMPT]**.** A message is written straight into the
+**Outbound.** [BRIEF, PROMPT] A message is written straight into the
 recipient project's `INBOX/`, on the user's explicit yes to the exact text.
 
 **Where a report's claim has an observable check, run it at drafting** — a URL

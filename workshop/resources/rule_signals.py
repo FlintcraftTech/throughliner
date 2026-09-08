@@ -1112,10 +1112,31 @@ def _count_delta_at(root, rev, repo=None):
 
 # --- MAINTAINED ---------------------------------------------------------
 
+# English function words — articles, prepositions, pronouns, auxiliaries,
+# conjunctions, determiners — removed from both statements before the overlap
+# score, so neither the parent lookup nor the duplicate check matches on words
+# that carry no subject ([parent-lookup-stop-words]). Drawn from the standard
+# closed-class word set (the NLTK English stop-word list is the reference
+# form), not from a frequency count over this corpus: a count would need a
+# cutoff with no derivation behind it. The threshold on the overlap score is
+# untouched; only what the score is computed over changes.
+STOP_WORDS = frozenset("""
+a about above after again against all am an and any are as at be because been
+before being below between both but by can could did do does doing down during
+each few for from further had has have having he her here hers herself him
+himself his how i if in into is it its itself just me more most my myself no
+nor not now of off on once only or other our ours ourselves out over own same
+she should so some such than that the their theirs them themselves then there
+these they this those through to too under until up very was we were what when
+where which while who whom why will with would you your yours yourself
+yourselves
+""".split())
+
+
 def _normalise_statement(line):
     text = re.sub(r"[*`_\[\]]", "", line).strip().lower()
     text = re.sub(r"[^a-z0-9 ]+", " ", text)
-    return " ".join(text.split())
+    return " ".join(w for w in text.split() if w not in STOP_WORDS)
 
 
 HEADING_RE = re.compile(r"^#{1,6}\s+\S")
@@ -1176,6 +1197,38 @@ def _statements(root, files):
 # restatements — a skill doc restating an always-loaded rule — that the check
 # would have flagged had it read the skill docs ([duplicate-check-covers-skill-docs]).
 DUPLICATE_SET = ALWAYS_LOADED + FETCHED_DOCS
+
+# Pairs the duplicate check flagged that planning judged fine, so the check
+# skips them instead of re-filing the same capture at every close
+# ([near-duplicate-rule-statements]). Each entry: two sites, each a
+# (filename, opening words) pair — the filename is matched by its basename
+# and the opening words against the start of the normalised statement — and
+# one line saying why the pair is not one rule stated twice. A pair whose two
+# sites both match an entry is skipped and counted; the output says how many.
+ACCEPTED_DUPLICATE_PAIRS = [
+    (("plan.md", "The specimen — this is the shape of the"),
+     ("plan.md", "The specimen — this is the shape of the"),
+     "two parallel specimen labels introducing different specimens, not one "
+     "rule stated twice"),
+    (("next.md", "Completion is read as the always-loaded"),
+     ("done-plan.md", "Completion is read as the always-loaded"),
+     "the same pointer at two non-owner sites, each pointing at the owner in "
+     "the rules doc, which the duplication lens allows"),
+]
+
+
+def _site_matches(st, site):
+    filename, opening = site
+    return (st["file"].split("/")[-1] == filename
+            and st["norm"].startswith(_normalise_statement(opening)))
+
+
+def _is_accepted_pair(a, b):
+    for site_a, site_b, _reason in ACCEPTED_DUPLICATE_PAIRS:
+        if ((_site_matches(a, site_a) and _site_matches(b, site_b))
+                or (_site_matches(a, site_b) and _site_matches(b, site_a))):
+            return True
+    return False
 
 
 def _overlap(a, b):
@@ -1241,16 +1294,23 @@ def signal_maintained(root, threshold=0.82):
     statements = _statements(root, DUPLICATE_SET)
 
     pairs = []
+    accepted = 0
     for i in range(len(statements)):
         a = statements[i]
         for j in range(i + 1, len(statements)):
             b = statements[j]
             score = _overlap(a["norm"], b["norm"])
             if score >= threshold:
+                if _is_accepted_pair(a, b):
+                    accepted += 1
+                    continue
                 pairs.append((a, b, round(score, 2)))
 
     def _side(st):
         return f"{st['file'].split('/')[-1]}:{st['line']} [{st['group']}]"
+
+    skipped = (f" {accepted} pair(s) skipped as accepted (ACCEPTED_DUPLICATE_PAIRS)."
+               if accepted else "")
 
     return {
         "stage": "MAINTAINED",
@@ -1258,13 +1318,15 @@ def signal_maintained(root, threshold=0.82):
         "value": len(pairs),
         "slug": "near-duplicate-rule-statements",
         "pairs": pairs,
+        "accepted": accepted,
         "message": (
             f"{len(pairs)} near-duplicate rule statement pair(s) across the "
             "always-loaded files and the skill docs: "
             + "; ".join(f"{_side(a)} ~ {_side(b)} ({s})" for a, b, s in pairs[:8])
+            + skipped
             if pairs else
             "No near-duplicate rule statements found across the always-loaded "
-            "files and the skill docs."
+            "files and the skill docs." + skipped
         ),
     }
 

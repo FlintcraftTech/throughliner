@@ -302,7 +302,9 @@ offered and a rough one accepted, an ambiguous part put to the user. On an
 answer, plan the reorganisation with the user file by file — one folder per
 part, product parts in the inner repository and process parts in the outer,
 the looser split stated where the inner will never be public — and write the
-parts block. On anything else, drop it: the project keeps the workshop rule
+parts block, with a stub `SPEC.md` in each part's folder and a `## Parts`
+section in the root spec, as the scaffold's parts step writes them. On
+anything else, drop it: the project keeps the workshop rule
 as its default, and nothing runs at a later session opening for this. The
 top-up does not carry it — reorganising a repository is this run's work, done
 by hand with the user, not a setting added silently.
@@ -614,6 +616,13 @@ line and let the split be looser: more may sit alongside the product there.
 The block is what a later session reads when it creates a file, so a
 scaffold that leaves it blank leaves "where does this go" to the workshop
 rule alone.
+
+**Each part gets its own spec.** Write a stub `SPEC.md` into each part's folder
+— a heading and one line saying what the part is — and a `## Parts` section
+into the root `SPEC.md`: one line per part, what it is, and a link to that
+part's spec. The root spec stays the whole-project layer; a build reads a
+part's spec only for the items whose files sit in that part, and planning
+writes a decision's sentence into the part's spec where it concerns that part.
 
 **A folder that is already a flat repository is never restructured here.** The
 conversion is an offer — at the migration path, and again as the

@@ -37,16 +37,20 @@ so an audit close has neither.
 commands:**
 
 ```
-git diff HEAD -- SPEC.md     # every SPEC sentence written or changed this session
-git diff HEAD -- QUEUE.md    # every item kept or reshaped this session
+git diff HEAD -- SPEC.md '**/SPEC.md'   # every SPEC sentence written or changed
+                                        # this session, in the root spec and in
+                                        # every part's spec
+git diff HEAD -- QUEUE.md               # every item kept or reshaped this session
 ```
 
-For every SPEC sentence the first diff shows written or changed, read the queue
+In a nested project run the first read in the inner repository too, since a
+product part's spec sits there. For every SPEC sentence the first diff shows
+written or changed, read the queue
 item it was written for **as that item now stands**, and where the two have come
 apart, correct the sentence. For every kept item the second diff shows, read its
 final text for a product-truth change that has no sentence, applying the
 spec-entry trigger test **in plan.md's own wording** — quote it from there rather
-than keeping a copy here, so the two can't drift apart — and write the sentence
+than keeping a copy here — and write the sentence
 under the drift branch below. Where SPEC.md or QUEUE.md is gitignored, the diff
 falls to the copy the safety check keeps in the project's snapshot folder, read
 against the file as it stands.
@@ -62,8 +66,7 @@ RECORDING, not re-planning. That covers all three shapes alike.
 
 **The gate checks that every decision this session made had its SPEC sentence
 written at the decision step, and that the sentence still matches the item at
-the close.** That is where product truth is written — with the user in the room,
-ahead of the build — so by the time the close runs, the sentence either exists
+the close.** By the time the close runs, the sentence either exists
 or was missed, or was written correctly and made wrong when the same session
 later reshaped its item; the two diffs are what catch both.
 

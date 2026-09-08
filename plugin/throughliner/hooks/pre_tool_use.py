@@ -26,7 +26,8 @@ PreToolUse hook — enforces three rules:
    when it's explicitly listed in Files: — a batch that needs to change
    SPEC lists it; a feature build that doesn't name SPEC can't touch it,
    so scope-lock alone keeps SPEC read-only for any build that doesn't
-   name it.
+   name it. A part's own SPEC.md, at any depth, is governed the same way:
+   listed in Files: by path, or read-only to the build.
 2. Git safety: block git reset --hard, git push --force, blanket
    staging (git add -A / --all / .), and git commit -a / -am.
 3. Subagent cost ask-gate: the Task tool (spawning a subagent) returns
@@ -997,8 +998,8 @@ def write_editing_marker(cwd: str, session_id: str, filepath: str, active: bool)
 def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     """True for the files a session with no build working file may write.
 
-    This is the planning session's STANDING list — QUEUE.md, SPEC.md,
-    CYCLES.md, LOG/ and
+    This is the planning session's STANDING list — QUEUE.md, SPEC.md (the
+    root's, and a part's SPEC.md at any depth), CYCLES.md, LOG/ and
     FAQ/, plus the memory directory, `workshop/resources/research/`, the scratchpad and
     any INBOX (checked by their own helpers at the call site). Everything else
     is DENIED.
@@ -1060,6 +1061,13 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     # that can never run where it fires.
     quiet_files = ("QUEUE.md", "SPEC.md", "CYCLES.md")
     if rel in tuple(os.path.normcase(name) for name in quiet_files):
+        return True
+    # A part's own SPEC.md, at any depth inside the project — a nested
+    # project's inner repository included. Planning writes a decision's
+    # sentence into the spec of the part it concerns, so the file is matched
+    # by name wherever it sits; the folder is the part's, the filename is
+    # fixed by convention, and nothing else named SPEC.md exists to collide.
+    if rel.split("/")[-1] == os.path.normcase("SPEC.md"):
         return True
     # A build working file, whichever session owns it. Matched by shape rather
     # than by this session's id: writing to another session's working file
@@ -2181,8 +2189,8 @@ def main() -> int:
                 "[Throughliner] BLOCKED: planning sessions can only change a "
                 "fixed set of files, and this isn't one of them.\n\n"
                 f"About to edit: {filepath}\n\n"
-                "A planning session may write QUEUE.md, SPEC.md, CYCLES.md, "
-                "TOOLS.md, anything in "
+                "A planning session may write QUEUE.md, any SPEC.md (the "
+                "root's or a part's), CYCLES.md, TOOLS.md, anything in "
                 "LOG/, research notes and its own scratch files — plus any "
                 "path a ritual definition in CYCLES.md declares its steps "
                 "write. Everything "
