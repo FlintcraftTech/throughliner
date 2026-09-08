@@ -789,14 +789,17 @@ def _refused(problems):
 
 def _crossing_problem(mover, before, before_anchor, after, after_anchor,
                       named, marker_after):
-    """A door check the script itself does not make: where a move would put
-    ANY entry across the readiness line and the caller named no marker
-    placement, refuse and say which entries would cross, so the placement is
-    named on purpose rather than falling out of where the marker sat."""
+    """Two door checks. Where the caller named a marker placement that would
+    carry any entry it did not name across the readiness line — in either
+    direction — refuse before the script runs, in the script's own words
+    ([queue-move-downward-sweep-unguarded]). Where the caller named no
+    placement and a move would put ANY entry across the line, refuse and say
+    which entries would cross, so the placement is named on purpose rather
+    than falling out of where the marker sat."""
+    unnamed, note = mover.crossing_note(before, before_anchor, after,
+                                        after_anchor, named=named)
     if marker_after is not None:
-        return None
-    _unnamed, note = mover.crossing_note(before, before_anchor, after,
-                                         after_anchor, named=named)
+        return mover.unnamed_crossing_message(unnamed, after_anchor)
     crossed = [line.split("[", 1)[1].split("]", 1)[0]
                for line in note.splitlines()
                if "crossed the readiness line" in line]

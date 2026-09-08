@@ -294,6 +294,19 @@ before the move.
 Both arms then write the Visibility line the nested scaffold writes, naming
 the opened folder as the outer.
 
+**1d. Offer the parts question to an existing project**  [BRIEF, PROMPT] — an
+offer, never a halt, and never forced. Where the project CLAUDE.md carries no
+parts block, ask the interview's parts question (Step 3): roughly what the
+project's moving parts are and which are the product, with a guessed answer
+offered and a rough one accepted, an ambiguous part put to the user. On an
+answer, plan the reorganisation with the user file by file — one folder per
+part, product parts in the inner repository and process parts in the outer,
+the looser split stated where the inner will never be public — and write the
+parts block. On anything else, drop it: the project keeps the workshop rule
+as its default, and nothing runs at a later session opening for this. The
+top-up does not carry it — reorganising a repository is this run's work, done
+by hand with the user, not a setting added silently.
+
 **2. Retire REGISTRY.md if present**  [SILENT] when it holds only what the old
 setup put there; [BRIEF, PROMPT] when the user has written into it. No longer
 one of the method's docs, but
@@ -590,6 +603,18 @@ Visibility slot carries the pattern. This is the standing line every later
 session reads when weighing a git operation, so a nested scaffold that leaves
 it blank leaves "which repository am I in" unanswered.
 
+**One folder per part, in the right repository.** The interview's parts
+answer (Step 3) names the project's moving parts and which are the product.
+Create one folder per part: a product part inside the inner repository, a
+process part in the outer. Write the parts block into the project CLAUDE.md —
+the template's `## Parts` slot carries the pattern — one line per part naming its
+folder and its repository, and one line saying where a file belonging to no
+part goes. Where the inner repository will never be public, say so in one
+line and let the split be looser: more may sit alongside the product there.
+The block is what a later session reads when it creates a file, so a
+scaffold that leaves it blank leaves "where does this go" to the workshop
+rule alone.
+
 **A folder that is already a flat repository is never restructured here.** The
 conversion is an offer — at the migration path, and again as the
 public-repository offer's first provision — and declining leaves the flat shape
@@ -829,9 +854,18 @@ the core — the main thing it produces,  ->  How it works
     organises, or does
 principles or constraints               ->  Principles
     ("must work offline", "no accounts", "everything in plain text")
+the project's moving parts, and which   ->  the parts block in CLAUDE.md, and
+    of them are the product                 one folder per part (Step 2)
 the first thing to build today          ->  becomes the first capture
 anything else worth knowing
 ```
+
+  **The parts question is asked roughly, and a rough answer is accepted.** Offer
+  a guess like every other question — "I'd say this has two parts: the app,
+  which is the product, and the recipes you're collecting for it, which are
+  process — is that right?" — and take what comes back. Where a part is
+  neither clearly product nor clearly process, ask which it is rather than
+  deciding.
 
   Skip what an earlier answer or the existing content already settled; probe deeper
   wherever the picture is thin.

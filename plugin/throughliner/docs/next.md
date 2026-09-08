@@ -640,8 +640,10 @@ anything else what actually happened, in one plain sentence, with the detail in
               "driven to the end of Claude's part; the final step is the user's"
 ```
 
-**Write `deferred` only from the user's own word.** An item nobody put in front
-of them was not deferred by anyone; recording it that way tells the next session
+**Write `deferred` only from the user's own word — given about that item, or
+about the set it belongs to, with each item recorded separately and the word
+quoted.** An item nobody put in front of them, and about which no word was
+given, was not deferred by anyone; recording it that way tells the next session
 a decision was made when none was, and the item then sits unpresented with a
 record that explains why nobody need present it.
 

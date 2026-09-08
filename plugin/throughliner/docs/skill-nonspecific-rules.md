@@ -643,6 +643,11 @@ re-read-later testing evidence under `workshop/resources/testing/`. The default
 answer to "should this be a durable file?" is **no** unless the
 verbatim-re-read test is met.
 
+**A session creating a new file reads the Parts block in the project's
+CLAUDE.md, chooses the folder the block names for that part, and names the
+folder in the line reporting the write**; a project with no Parts block keeps
+the workshop rule above as its default.
+
 **File research findings as part of using them**, not only when asked. Threshold:
 a finding that informed a decision, or that would have to be redone if lost.
 Name the file in chat when it lands, so the filing is visible and checkable, and

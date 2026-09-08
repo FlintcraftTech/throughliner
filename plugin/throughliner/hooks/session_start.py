@@ -133,7 +133,13 @@ def _placeholder_in_slot(line, is_index_file, is_legacy_log=False):
 # backticked occurrence is prose by definition and is excluded before these
 # patterns are tried. Getting this wrong in the other direction would build the
 # cry-wolf failure this check was written to replace.
-_PLACEHOLDER_TOKEN = r"(?:\[[A-Za-z_ -]+\]|[A-Z][A-Z_]{2,})"
+#
+# The bracketed form is UPPER-CASE only. A bracketed kebab-case slug —
+# `**Routed to Captures:** [some-slug]` — is the shape a record uses to name
+# a queue item, and the earlier mixed-case pattern read twenty-eight of those
+# as misplaced placeholders at every opening
+# ([log-placeholders-outside-hash-position]).
+_PLACEHOLDER_TOKEN = r"(?:\[[A-Z_ -]+\]|[A-Z][A-Z_]{2,})"
 _HASH_AS_FIELD_VALUE = re.compile(
     r"^\*{0,2}[A-Za-z][A-Za-z ]{0,29}:\*{0,2}\s*" + _PLACEHOLDER_TOKEN + r"\s*$")
 _HASH_ALONE = re.compile(r"^\s*" + _PLACEHOLDER_TOKEN + r"\s*$")

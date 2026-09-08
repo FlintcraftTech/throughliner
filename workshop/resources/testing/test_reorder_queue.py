@@ -391,11 +391,46 @@ def test_unnamed_crossing_refusal_names_one_move_per_item():
                        "--marker-after", "gamma")
     check("crossing-refusal: refuses", rc != 0, err)
     check("crossing-refusal: names the one-move-per-item route",
-          "one --move per item" in err and "clears only what it names" in err,
+          "one --move per item" in err and "crosses only what it names" in err,
           err)
     check("crossing-refusal: nothing written",
           order_of(new) == ["alpha", MARKER, "beta", "gamma", "delta"],
           repr(order_of(new)))
+
+
+def test_unnamed_downward_sweep_refuses():
+    """A move naming a build as the last cleared item while `[user]` items
+    sit after it would drop those items below the line; it is refused, each
+    crossing item is named, and the file is byte-identical afterwards
+    ([queue-move-downward-sweep-unguarded])."""
+    body = (
+        "#### First build [alpha]\nRationale.\n\n"
+        "#### Second build [beta]\nRationale.\n\n"
+        "#### [user] Walk one [gamma]\nWalkthrough.\n\n"
+        "#### [user] Walk two [delta]\nWalkthrough.\n\n"
+        + MARKER + "\n\n"
+        "#### Held [epsilon]\nHeld.\n"
+    )
+    text = build_queue(body)
+    rc, err, new = run(text, "Processed",
+                       "--move", "alpha", "AFTER", "beta",
+                       "--marker-after", "alpha")
+    check("downward-sweep: refuses", rc != 0, err)
+    check("downward-sweep: names each item that would drop",
+          "[gamma]" in err and "[delta]" in err and "DROP" in err, err)
+    check("downward-sweep: names the one-move-per-item route",
+          "one --move per item" in err, err)
+    check("downward-sweep: file byte-identical", new == text)
+    # The same sweep through --move-section: keeping a capture at the bottom
+    # with the marker after it drops nothing, but placing the marker after a
+    # build ahead of the walk-throughs does.
+    rc2, err2, new2 = run(text, "--move-section", "later", "Unprocessed",
+                          "Processed", "--position", "AFTER", "beta",
+                          "--marker-after", "later")
+    check("downward-sweep via --move-section: refuses", rc2 != 0, err2)
+    check("downward-sweep via --move-section: names the walk-throughs",
+          "[gamma]" in err2 and "[delta]" in err2, err2)
+    check("downward-sweep via --move-section: file byte-identical", new2 == text)
 
 
 def test_move_explicit_marker_after_still_wins():
@@ -539,9 +574,112 @@ def test_delete_reports_nothing_when_uncited():
     check("no citation note when nothing cites it", "cite" not in err, err)
 
 
+# --- atomic write with one retry ([mcp-write-invalid-argument-transient]) ---
+
+def _load_mover():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("reorder_queue_under_test", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _refusing_replace(mod, refusals):
+    """Patch the module's os.replace to refuse `refusals` times with the
+    EINVAL shape the sync client produced, then behave normally. Returns
+    the restore function."""
+    real = mod.os.replace
+    state = {"left": refusals}
+
+    def fake(src, dst):
+        if state["left"] > 0:
+            state["left"] -= 1
+            raise OSError(22, "Invalid argument", dst)
+        return real(src, dst)
+    mod.os.replace = fake
+    return lambda: setattr(mod.os, "replace", real)
+
+
+def test_write_retries_once_on_a_refused_handle():
+    """One refusal: the script says it is waiting and trying again, then the
+    write lands whole."""
+    import io, contextlib
+    mod = _load_mover()
+    mod.RETRY_PAUSE_SECONDS = 0
+    d = tempfile.mkdtemp(prefix="reorder-retry-")
+    path = os.path.join(d, "QUEUE.md")
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write("old\n")
+    restore = _refusing_replace(mod, 1)
+    err = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(err):
+            mod._write_with_one_retry(path, "new — résumé\n")
+    finally:
+        restore()
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        got = f.read()
+    check("retry: says it is trying again", "trying again" in err.getvalue(),
+          err.getvalue())
+    check("retry: the write landed whole and byte-identical",
+          got == "new — résumé\n", repr(got))
+    check("retry: no temp file left behind",
+          not os.path.exists(path + ".tmp-reorder"))
+
+
+def test_write_names_what_to_check_on_a_second_refusal():
+    """Two refusals: the script stops, names a sync client or an editor as
+    what to check, and the queue is as it was."""
+    import io, contextlib
+    mod = _load_mover()
+    mod.RETRY_PAUSE_SECONDS = 0
+    d = tempfile.mkdtemp(prefix="reorder-retry-")
+    path = os.path.join(d, "QUEUE.md")
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write("old\n")
+    restore = _refusing_replace(mod, 2)
+    err = io.StringIO()
+    exited = False
+    try:
+        with contextlib.redirect_stderr(err):
+            mod._write_with_one_retry(path, "new\n")
+    except SystemExit:
+        exited = True
+    finally:
+        restore()
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        got = f.read()
+    check("second refusal: the script stops", exited, err.getvalue())
+    check("second refusal: names a sync client or an editor",
+          "sync client" in err.getvalue() and "editor" in err.getvalue(),
+          err.getvalue())
+    check("second refusal: the queue is as it was", got == "old\n", repr(got))
+
+
+def test_write_through_temp_path_is_byte_identical_over_non_ascii():
+    """An ordinary move through the temp-and-replace path leaves every
+    non-ASCII byte of the untouched blocks as it was."""
+    body = (
+        "#### First — with an em-dash [alpha]\nRationale — résumé, “curly”.\n\n"
+        "#### Second [beta]\n¡Con acentos!\n\n"
+        + MARKER + "\n"
+    )
+    text = build_queue(body)
+    rc, err, new = run(text, "Processed", "--move", "beta", "TOP")
+    check("temp-path write: exits 0", rc == 0, err)
+    check("temp-path write: the alpha block is byte-identical",
+          "#### First — with an em-dash [alpha]\nRationale — résumé, “curly”.\n"
+          in new, repr(new))
+    check("temp-path write: the intro prose is byte-identical",
+          "Intro prose that must survive untouched." in new, repr(new))
+
+
 def main():
     print("reorder_queue.py regression tests")
     for fn in (
+        test_write_retries_once_on_a_refused_handle,
+        test_write_names_what_to_check_on_a_second_refusal,
+        test_write_through_temp_path_is_byte_identical_over_non_ascii,
         test_marker_above_all_items,
         test_marker_above_all_explicit_placement,
         test_marker_above_all_move_mode,
@@ -558,6 +696,7 @@ def main():
         test_move_non_anchor_leaves_marker_alone,
         test_move_explicit_marker_after_still_wins,
         test_unnamed_crossing_refusal_names_one_move_per_item,
+        test_unnamed_downward_sweep_refuses,
         test_delete_first_item_when_marker_anchored_to_it,
         test_delete_block_containing_heading_like_lines,
         test_delete_from_unprocessed,

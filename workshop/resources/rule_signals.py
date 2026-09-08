@@ -462,6 +462,156 @@ def signal_measured(root):
     }
 
 
+# --- SIZE ---------------------------------------------------------------
+#
+# A second measurement, and like the first it can never fire: bytes and words
+# per file, now and at the most recent completed maintenance-sweep turn. The
+# statement count above says how many rules there are; this says how much
+# text a session actually loads, which is what the one-read cap is felt in.
+# Both units because words are what the user asked for and bytes are what the
+# cap measures ([doc-size-per-file-in-sweep]).
+
+SWEEP_ENTRY_RE = re.compile(r"maintenance-sweep", re.IGNORECASE)
+COMPLETED_TURN_MARKER = "records a completed turn"
+SIZE_FILES = ALWAYS_LOADED + FETCHED_DOCS
+
+
+def _heading_hash(path):
+    """The first hash in an entry's heading line, or None."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return None
+    heading = next((ln for ln in text.splitlines() if ln.strip()), "")
+    m = re.search(r"\b([0-9a-f]{7,40})\b", heading)
+    return m.group(1) if m else None
+
+
+def _last_sweep_anchor(root):
+    """(entry filename, commit hash) of the most recent completed
+    maintenance-sweep turn, found the way the audit-lag check finds its
+    boundary: the filename is the candidate set, and the body must say it
+    records a completed turn. (None, None) where no such record exists."""
+    log_dir = os.path.join(root, "LOG")
+    if not os.path.isdir(log_dir):
+        return None, None
+    for name in sorted(os.listdir(log_dir), reverse=True):
+        if not (name.endswith(".md") and SWEEP_ENTRY_RE.search(name)):
+            continue
+        path = os.path.join(log_dir, name)
+        try:
+            with open(path, encoding="utf-8", errors="replace") as f:
+                body = f.read()
+        except OSError:
+            continue
+        if COMPLETED_TURN_MARKER in body:
+            return name, _heading_hash(path)
+    return None, None
+
+
+def _commit_time(repo, sha):
+    """The committer timestamp of `sha` in `repo`, ISO 8601, or None."""
+    try:
+        out = subprocess.run(["git", "show", "-s", "--format=%cI", sha],
+                             cwd=repo, capture_output=True, text=True,
+                             encoding="utf-8", timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip() if out.returncode == 0 else None
+
+
+def _commit_at_or_before(repo, iso_time):
+    """The newest commit in `repo` made at or before `iso_time`, or None.
+
+    How a commit in one repository of a nested project is paired with the
+    other repository's state at the same close: the close commits the inner
+    first, then the outer, in one turn, so the inner commit at or before the
+    outer's timestamp is the one that close made.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%H", "--before=" + iso_time],
+            cwd=repo, capture_output=True, text=True, encoding="utf-8",
+            timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    sha = out.stdout.strip()
+    return sha if out.returncode == 0 and sha else None
+
+
+def _resolve_in_repo(root, anchor, repo):
+    """The commit in `repo` that stands for `anchor` — the hash itself where
+    that repository holds it, else the commit at or before the anchor's time
+    in whichever repository does hold it."""
+    if _has_commit(repo, anchor):
+        return anchor
+    for _label, other in repos(root):
+        if os.path.normcase(other) != os.path.normcase(repo) and _has_commit(other, anchor):
+            when = _commit_time(other, anchor)
+            return _commit_at_or_before(repo, when) if when else None
+    return None
+
+
+def _size_of(text):
+    return len(text.encode("utf-8")), len(text.split())
+
+
+def size_report(root):
+    """Per-file bytes and words for every rule document, on disk now and at
+    the last completed sweep turn's commit. Returns (anchor entry, rows);
+    each row is (rel, bytes now, words now, bytes then, words then) with the
+    then-values None where the anchor cannot be read."""
+    entry, anchor = _last_sweep_anchor(root)
+    rows = []
+    for rel in SIZE_FILES:
+        repo, rel_in = locate(root, rel)
+        try:
+            with open(os.path.join(repo, rel_in), "r", encoding="utf-8") as f:
+                b_now, w_now = _size_of(f.read())
+        except OSError:
+            continue
+        b_then = w_then = None
+        if anchor:
+            sha = _resolve_in_repo(root, anchor, repo)
+            if sha:
+                try:
+                    out = subprocess.run(["git", "show", "%s:%s" % (sha, rel_in)],
+                                         cwd=repo, capture_output=True,
+                                         text=True, encoding="utf-8",
+                                         timeout=20)
+                except (OSError, subprocess.SubprocessError):
+                    out = None
+                if out is not None and out.returncode == 0:
+                    b_then, w_then = _size_of(out.stdout)
+        rows.append((rel, b_now, w_now, b_then, w_then))
+    return entry, rows
+
+
+def signal_size(root):
+    entry, rows = size_report(root)
+    lines = []
+    for rel, b_now, w_now, b_then, w_then in rows:
+        name = rel.split("/")[-1]
+        if b_then is None:
+            lines.append("%s: %d bytes, %d words (no sweep-turn figure)" % (
+                name, b_now, w_now))
+        else:
+            lines.append("%s: %d bytes (%+d), %d words (%+d)" % (
+                name, b_now, b_now - b_then, w_now, w_now - w_then))
+    since = ("since the last completed maintenance-sweep turn (%s)" % entry
+             if entry else "no completed maintenance-sweep record found, so "
+             "no change figure")
+    return {
+        "stage": "SIZE",
+        "kind": "report",
+        "value": sum(r[1] for r in rows),
+        "slug": "rule-doc-size",
+        "message": ("Size per file, on disk now, with the change %s. No "
+                    "threshold. " % since + " | ".join(lines)),
+    }
+
+
 # --- AUDIT-LAG ----------------------------------------------------------
 
 COMPLIANCE_AUDIT_ENTRY_RE = re.compile(r"compliance-audit", re.IGNORECASE)
@@ -654,14 +804,15 @@ def _rule_bearing_commits(root):
 
     pending = _backfill_pending(root)
     commits = []
-    for _label, repo in all_repos:
+    for label, repo in all_repos:
         # The repository carrying the baseline is read from it; a repository
         # without it — the outer of a nested project, created after the
         # obligation — is read whole, since every commit in it postdates it.
         rng = [DISPOSITION_BASELINE + "..HEAD"] if repo in with_baseline else []
         try:
             out = subprocess.run(
-                ["git", "log", "-30", "--format=%H%x00%P%x00%s", "--name-only"] + rng,
+                ["git", "log", "-30", "--format=%H%x00%P%x00%ct%x00%s",
+                 "--name-only"] + rng,
                 cwd=repo, capture_output=True, text=True, timeout=20,
             )
         except (OSError, subprocess.SubprocessError):
@@ -672,7 +823,7 @@ def _rule_bearing_commits(root):
         found, current = [], None
         for line in out.stdout.splitlines():
             if "\x00" in line:
-                sha, parents, subject = line.split("\x00", 2)
+                sha, parents, when, subject = line.split("\x00", 3)
                 # A root commit creates the repository and imports files that
                 # already existed — the outer of a wrap — so it authors no
                 # rule and owes no disposition. Its file list is skipped too.
@@ -680,7 +831,9 @@ def _rule_bearing_commits(root):
                     current = None
                     continue
                 current = {"sha": sha[:7], "full": sha, "subject": subject,
-                           "hits": False, "repo": repo}
+                           "hits": False, "repo": repo, "label": label,
+                           "when": int(when) if when.isdigit() else None,
+                           "close_sha": sha[:7], "awaiting_close": False}
                 found.append(current)
             elif line.strip() and current is not None:
                 if any(line.startswith(p) for p in RULE_BEARING):
@@ -694,7 +847,62 @@ def _rule_bearing_commits(root):
             found = found[1:]
         commits.extend(found)
 
+    _attribute_inner_commits(root, commits)
     return [c for c in commits if c["hits"]], None
+
+
+def _outer_close_commits(root):
+    """(unix time, short sha) for every outer commit touching LOG/, oldest
+    first — the closes. A close is the one commit that writes a record."""
+    try:
+        out = subprocess.run(
+            ["git", "log", "--format=%h%x00%ct", "--reverse", "--", "LOG"],
+            cwd=root, capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if out.returncode != 0:
+        return []
+    rows = []
+    for line in out.stdout.splitlines():
+        if "\x00" not in line:
+            continue
+        sha, when = line.split("\x00", 1)
+        if when.strip().isdigit():
+            rows.append((int(when), sha))
+    return rows
+
+
+def _attribute_inner_commits(root, commits):
+    """In a nested project, a rule-bearing commit in the inner repository is
+    attributed to the outer commit of the same close: the nearest outer
+    commit at or after the inner commit's timestamp whose files include
+    LOG/. Every record's heading carries the outer's hash, because the close
+    commits both repositories and names the outer, so a disposition for an
+    inner commit can only ever be found under that outer hash
+    ([rule-gate-dispositions-missing]). An inner commit with no such outer
+    commit yet is awaiting its close, not ungated.
+
+    Rests on the close committing the inner before the outer in the same
+    turn, which is the order the close doc and the cycles doc state.
+    """
+    inner = [c for c in commits if c.get("label") == "inner"]
+    if not inner:
+        return
+    closes = _outer_close_commits(root)
+    dispositions = _log_dispositions(root)
+    for c in inner:
+        # A commit made before the wrap was a flat project's commit, and its
+        # record's heading carries its own hash. A disposition found under
+        # the commit's own hash settles it; the close attribution is for the
+        # commits made after the wrap, whose records name the outer.
+        if c["sha"] in dispositions:
+            continue
+        when = c.get("when")
+        after = [sha for t, sha in closes if when is not None and t >= when]
+        if after:
+            c["close_sha"] = after[0]
+        else:
+            c["awaiting_close"] = True
 
 
 def _log_dispositions(root):
@@ -752,7 +960,21 @@ def signal_born(root):
                 "message": err + "; BORN not computed."}
 
     dispositions = _log_dispositions(root)
-    missing = [c for c in rule_commits if c["sha"] not in dispositions]
+    awaiting = [c for c in rule_commits if c.get("awaiting_close")]
+    missing = [c for c in rule_commits
+               if not c.get("awaiting_close")
+               and c["close_sha"] not in dispositions]
+
+    def _name(c):
+        if c["close_sha"] != c["sha"]:
+            return "%s (inner; its close is %s)" % (c["sha"], c["close_sha"])
+        return c["sha"]
+
+    awaiting_note = (
+        " %d inner commit(s) have no close behind them yet and are awaiting "
+        "it rather than ungated: %s." % (
+            len(awaiting), ", ".join(c["sha"] for c in awaiting[:8]))
+        if awaiting else "")
     return {
         "stage": "BORN",
         "firing": bool(missing),
@@ -762,10 +984,11 @@ def signal_born(root):
             f"{len(missing)} of the {len(rule_commits)} commits since "
             f"{DISPOSITION_BASELINE} touching rule-bearing files have no "
             "'Rule gate:' disposition line in any LOG entry: "
-            + ", ".join(f"{c['sha']}" for c in missing[:8])
+            + ", ".join(_name(c) for c in missing[:8]) + "." + awaiting_note
             if missing else
-            f"All {len(rule_commits)} rule-bearing commits since "
-            f"{DISPOSITION_BASELINE} carry a gate disposition."
+            f"All {len(rule_commits) - len(awaiting)} rule-bearing commits "
+            f"since {DISPOSITION_BASELINE} with a close behind them carry a "
+            "gate disposition." + awaiting_note
         ),
     }
 
@@ -827,7 +1050,9 @@ def signal_contradicted(root):
     dispositions = _log_dispositions(root)
     flagged = []
     for commit in rule_commits:
-        kinds = dispositions.get(commit["sha"], set())
+        if commit.get("awaiting_close"):
+            continue
+        kinds = dispositions.get(commit["close_sha"], set())
         # EVERY disposition naming this commit must say "not needed". A commit
         # is the wrong unit once a run ships sixteen items under one hash: one
         # item legitimately recording "not needed" — a script fix, a test
@@ -893,54 +1118,153 @@ def _normalise_statement(line):
     return " ".join(text.split())
 
 
-def signal_maintained(root, threshold=0.82):
-    """Near-duplicate rule statements across the always-loaded corpus.
+HEADING_RE = re.compile(r"^#{1,6}\s+\S")
 
-    This IS codification — one subject, one rule, stated once — which is the
-    eviction technique the authoring gate never absorbed. It catches drift
-    that is not growth, which is precisely the hole AUDITED's ceiling trigger
-    leaves open.
+# How many hits the parent lookup prints. A tunable constant with no
+# derivation behind it — enough to see a parent's neighbours without reading
+# the whole ranking. Revisable once the lookup has been used a few times.
+PARENT_TOP = 8
 
-    Flags for a human to judge, never a gate: two rules may legitimately say
-    similar things in different contexts.
+
+def _group_of(rel):
+    """Which group a corpus file belongs to, for the reports that name it."""
+    return "always-loaded" if rel in ALWAYS_LOADED else "skill doc"
+
+
+def _statements(root, files):
+    """Every structural rule-statement in `files`, one dict each.
+
+    The one extraction both the duplicate check and the parent lookup run on,
+    so the two cannot disagree about what a statement is. Each carries the
+    file, its line, the normalised text, the raw line, its group, and the
+    nearest heading above it — the section a reader would open to see the
+    rule in place.
     """
-    statements = []
-    for rel in ALWAYS_LOADED:
+    out = []
+    for rel in files:
         path = os.path.join(*locate(root, rel))
         try:
             with open(path, "r", encoding="utf-8") as f:
                 lines = f.read().splitlines()
         except OSError:
             continue
+        section = "(top of file)"
+        in_fence = False
         for n, raw in enumerate(lines, 1):
+            # A `#### ` line inside a typed block is a specimen, not a
+            # heading — the capture format block shows one.
+            if FENCE_RE.match(raw):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
+            if HEADING_RE.match(raw):
+                section = raw.lstrip("#").strip()
+                continue
             if BULLET_RE.match(raw) or BOLD_LEAD_RE.match(raw.strip()):
                 norm = _normalise_statement(raw)
                 if len(norm.split()) >= 6:
-                    statements.append((rel, n, norm))
+                    out.append({"file": rel, "line": n, "norm": norm,
+                                "raw": raw.strip(), "section": section,
+                                "group": _group_of(rel)})
+    return out
+
+
+# The set the duplicate check and the parent lookup read: both groups. The
+# check was written for the old always-loaded ceiling and read the two
+# always-loaded files only; the 2026-09-06 sweep found by hand the cross-doc
+# restatements — a skill doc restating an always-loaded rule — that the check
+# would have flagged had it read the skill docs ([duplicate-check-covers-skill-docs]).
+DUPLICATE_SET = ALWAYS_LOADED + FETCHED_DOCS
+
+
+def _overlap(a, b):
+    """Word overlap between two normalised statements, 0 to 1."""
+    words_a, words_b = set(a.split()), set(b.split())
+    union = words_a | words_b
+    if not union:
+        return 0.0
+    return len(words_a & words_b) / len(union)
+
+
+def parent_lookup(root, proposed, files=None, top=PARENT_TOP):
+    """The corpus statements nearest a proposed rule, best first.
+
+    The admission step's first question is which existing rule a proposal
+    amends. A grep finds a parent only where it shares distinctive words;
+    this ranks every statement by the same overlap the duplicate check uses,
+    so a parent phrased in other words still surfaces. Each hit names its
+    section so the reader opens that section whole rather than the line.
+    Ranks; it does not judge — a top hit is a candidate parent, not a verdict.
+    """
+    norm = _normalise_statement(proposed)
+    scored = []
+    for st in _statements(root, DUPLICATE_SET if files is None else files):
+        scored.append((_overlap(norm, st["norm"]), st))
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [dict(st, score=round(score, 2)) for score, st in scored[:top]]
+
+
+def print_parent(root, proposed):
+    hits = parent_lookup(root, proposed)
+    print("## Parent lookup — the rule corpus ranked by nearness to:")
+    print("   " + proposed.strip())
+    print("   Search set: the always-loaded files and the skill docs ("
+          + ", ".join(rel.split("/")[-1] for rel in DUPLICATE_SET)
+          + "). Scored by word overlap, the duplicate check's measure.")
+    print()
+    for h in hits:
+        print(f"- {h['score']:.2f}  {h['file']}:{h['line']}  [{h['group']}]  "
+              f"§{h['section']}")
+        print(f"      {h['raw'][:160]}")
+    print()
+    print("Read the top hits' sections whole before naming the parent. The "
+          "ranking is a candidate list, not a judgment: a high score means "
+          "shared words, and a parent phrased in other words can still sit "
+          "below a line that merely shares vocabulary.")
+    return 0
+
+
+def signal_maintained(root, threshold=0.82):
+    """Near-duplicate rule statements across both groups — the always-loaded
+    files and the skill docs.
+
+    This IS codification — one subject, one rule, stated once — which is the
+    eviction technique the authoring gate never absorbed. It catches drift
+    that is not growth, which is precisely the hole AUDITED's ceiling trigger
+    leaves open. A flagged pair names the group of each side, so a skill doc
+    restating an always-loaded rule reads as the cross-doc case it is.
+
+    Flags for a human to judge, never a gate: two rules may legitimately say
+    similar things in different contexts.
+    """
+    statements = _statements(root, DUPLICATE_SET)
 
     pairs = []
     for i in range(len(statements)):
-        _, ln_i, a = statements[i]
-        words_a = set(a.split())
+        a = statements[i]
         for j in range(i + 1, len(statements)):
-            _, ln_j, b = statements[j]
-            words_b = set(b.split())
-            union = words_a | words_b
-            if not union:
-                continue
-            score = len(words_a & words_b) / len(union)
+            b = statements[j]
+            score = _overlap(a["norm"], b["norm"])
             if score >= threshold:
-                pairs.append((ln_i, ln_j, round(score, 2)))
+                pairs.append((a, b, round(score, 2)))
+
+    def _side(st):
+        return f"{st['file'].split('/')[-1]}:{st['line']} [{st['group']}]"
 
     return {
         "stage": "MAINTAINED",
         "firing": bool(pairs),
         "value": len(pairs),
         "slug": "near-duplicate-rule-statements",
+        "pairs": pairs,
         "message": (
-            f"{len(pairs)} near-duplicate rule statement pair(s): "
-            + "; ".join(f"lines {a}~{b} ({s})" for a, b, s in pairs[:8])
-            if pairs else "No near-duplicate rule statements found."
+            f"{len(pairs)} near-duplicate rule statement pair(s) across the "
+            "always-loaded files and the skill docs: "
+            + "; ".join(f"{_side(a)} ~ {_side(b)} ({s})" for a, b, s in pairs[:8])
+            if pairs else
+            "No near-duplicate rule statements found across the always-loaded "
+            "files and the skill docs."
         ),
     }
 
@@ -1156,6 +1480,7 @@ def board(root):
     measured = signal_measured(root)
     return [
         measured,
+        signal_size(root),
         signal_audit_lag(root),
         signal_born(root),
         signal_contradicted(root),
@@ -1172,6 +1497,7 @@ def board(root):
 # the user was never the intended audience of this output.
 CHECK_LABELS = {
     "MEASURED": "How much rule text there is",
+    "SIZE": "How big each rule document is",
     "AUDIT_LAG": "Rule changes are covered by a compliance audit",
     "BORN": "Rule-bearing commits carry a gate line",
     "CONTRADICTED": "No commit says 'gate not needed' while rules grew",
@@ -1391,9 +1717,19 @@ def print_dispositions(root, window=True):
     print()
     if not found:
         print("- none recorded in this window.")
+    # In a nested project a record's heading carries the outer hash; the
+    # inner commit(s) of the same close are printed beside it so both hashes
+    # are on the line.
+    inner_by_close = {}
+    rule_commits, _err = _rule_bearing_commits(root)
+    for c in rule_commits or []:
+        if c.get("label") == "inner" and not c.get("awaiting_close"):
+            inner_by_close.setdefault(c["close_sha"], []).append(c["sha"])
     for d in found:
         mark = " — REFUSAL" if d.get("refusal") else ""
-        print(f"- {d['entry']} [{d['sha']}] — {d['outcome']}{mark}")
+        inner = inner_by_close.get(d["sha"])
+        both = f" [{d['sha']}; inner {', '.join(inner)}]" if inner else f" [{d['sha']}]"
+        print(f"- {d['entry']}{both} — {d['outcome']}{mark}")
         print(f"    {d['text']}")
     refusals = sum(1 for d in found if d.get("refusal"))
     print()
@@ -1406,9 +1742,22 @@ def print_dispositions(root, window=True):
 
 
 def main(argv):
-    args = [a for a in argv[1:] if not a.startswith("-")]
-    flags = {a for a in argv[1:] if a.startswith("-")}
+    argv = list(argv[1:])
+    proposed = None
+    if "--parent" in argv:
+        # The statement follows the flag as one argument, so it is lifted out
+        # before the positional scan, which would otherwise read it as root.
+        i = argv.index("--parent")
+        if i + 1 >= len(argv):
+            print('usage: rule_signals.py <root> --parent "<proposed statement>"')
+            return 2
+        proposed = argv[i + 1]
+        del argv[i:i + 2]
+    args = [a for a in argv if not a.startswith("-")]
+    flags = {a for a in argv if a.startswith("-")}
     root = args[0] if args else "."
+    if proposed is not None:
+        return print_parent(root, proposed)
     if "--dispositions" in flags or "--dispositions-all" in flags:
         return print_dispositions(root, window="--dispositions-all" not in flags)
     entries = board(root)

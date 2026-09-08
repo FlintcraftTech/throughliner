@@ -123,6 +123,8 @@ check("a **Commit:** field holding [COMMIT_HASH] is misplaced",
       hook._hash_is_misplaced("**Commit:** [COMMIT_HASH]"))
 check("PENDING alone on a line is misplaced",
       hook._hash_is_misplaced("PENDING"))
+check("a bracketed slug in a Routed to Captures line is NOT misplaced",
+      not hook._hash_is_misplaced("**Routed to Captures:** [some-slug]"))
 check("a **Commit:** field holding a real hash is not",
       not hook._hash_is_misplaced("**Commit:** abc1234"))
 check("prose discussing the token is not",

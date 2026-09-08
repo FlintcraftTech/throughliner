@@ -287,19 +287,13 @@ def crossing_note(before_order, before_anchor, after_order, after_anchor,
     BOTTOM --marker-after` swept four held items into the cleared region and
     reported only that the moved item was now cleared.
 
-    **The refusal is asymmetric, and the asymmetry is the whole of it.** Only
-    an unnamed crossing INTO the cleared region refuses. That is the direction
-    that causes harm: an unattended /next run may build anything above the
-    line, so widening it by accident hands unvetted work to a run with nobody
-    watching. An unnamed crossing OUT of the cleared region is reported and
-    allowed — it narrows what a run may build, the work stays in the queue, and
-    the next /plan sees it.
-
-    A symmetric refusal was written first and the mover's own suite refused it,
-    correctly: placing the marker after a newly-kept item necessarily shelves
-    whatever sat below it, and that is the commonest planning operation there
-    is. Blocking it would have made the sanctioned route refuse the ordinary
-    case, which is the cry-wolf shape this project keeps repealing.
+    **The refusal is two-directional.** An unnamed crossing INTO the cleared
+    region hands unvetted work to a run with nobody watching; an unnamed
+    crossing OUT of it drops vetted work below the line with nothing saying
+    why, so the next run quietly does less. Both refuse, and the refusal names
+    each item that would cross and the route that moves them one at a time
+    ([queue-move-downward-sweep-unguarded]). The route is the same in either
+    direction: one --move per item, each naming itself as --marker-after.
 
     Factored out of the within-section reorder path, which was the only path
     that ever ran it — the crossing report was absent from --move-section,
@@ -320,9 +314,10 @@ def crossing_note(before_order, before_anchor, after_order, after_anchor,
                                            "" if len(now) == 1 else "s")
     crossed = [s for s in after_order if (s in was) != (s in now)]
     named = list(named or [])
-    # Only crossings INTO the cleared region are refusable — see the asymmetry
-    # above. `s in now` means it is now above the line.
-    unnamed = [s for s in crossed if s not in named and s in now]
+    # Any crossing the caller did not name refuses, in either direction.
+    # Each unnamed crosser is paired with where it would land, so the refusal
+    # can say which way it was going.
+    unnamed = [(s, s in now) for s in crossed if s not in named]
     for s in crossed:
         direction = ("now CLEARED to run" if s in now
                      else "now BELOW the line, no longer cleared")
@@ -333,26 +328,107 @@ def crossing_note(before_order, before_anchor, after_order, after_anchor,
     return unnamed, note
 
 
-def refuse_unnamed_crossings(unnamed, marker_pref):
-    """Refuse a write that would CLEAR items the caller never named.
+def unnamed_crossing_message(unnamed, marker_pref):
+    """The refusal text for crossings the caller never named, or None.
 
-    Only the into-the-cleared-region direction reaches here; crossing_note()
-    filters the other way out.
+    `unnamed` is crossing_note()'s list of (slug, now_cleared) pairs. Kept
+    separate from the die() so the state server can print the same words at
+    its door before the script runs.
     """
     if not unnamed:
-        return
-    die("this would CLEAR %d item%s you did not name: %s\n"
-        "  Placing the marker after '%s' puts %s above the readiness line, so "
-        "an unattended /next run could build %s.\n"
-        "  Nothing was written. Name --marker-after as the LAST item that "
-        "should stay cleared, rather than the item you just placed.\n"
-        "  To clear several items, run one --move per item with "
-        "--marker-after naming that item, so each command clears only "
-        "what it names."
-        % (len(unnamed), "" if len(unnamed) == 1 else "s",
-           ", ".join("[%s]" % s for s in unnamed), marker_pref,
-           "it" if len(unnamed) == 1 else "them",
-           "it" if len(unnamed) == 1 else "them"))
+        return None
+    up = [s for s, cleared in unnamed if cleared]
+    down = [s for s, cleared in unnamed if not cleared]
+    parts = []
+    if up:
+        parts.append("CLEAR %d item%s you did not name: %s — placing the "
+                     "marker after '%s' puts %s above the readiness line, so "
+                     "an unattended /next run could build %s"
+                     % (len(up), "" if len(up) == 1 else "s",
+                        ", ".join("[%s]" % s for s in up), marker_pref,
+                        "it" if len(up) == 1 else "them",
+                        "it" if len(up) == 1 else "them"))
+    if down:
+        parts.append("DROP %d cleared item%s you did not name below the "
+                     "line: %s — placing the marker after '%s' shelves %s "
+                     "with nothing saying why, so the next run quietly does "
+                     "less"
+                     % (len(down), "" if len(down) == 1 else "s",
+                        ", ".join("[%s]" % s for s in down), marker_pref,
+                        "it" if len(down) == 1 else "them"))
+    return ("this would %s.\n"
+            "  Nothing was written. Name --marker-after as the LAST item that "
+            "should stay cleared, rather than the item you just placed.\n"
+            "  To move several items across the line, run one --move per item "
+            "with --marker-after naming that item, so each command crosses "
+            "only what it names." % "; and ".join(parts))
+
+
+def refuse_unnamed_crossings(unnamed, marker_pref):
+    """Refuse a write that would move items across the line that the caller
+    never named — in either direction."""
+    msg = unnamed_crossing_message(unnamed, marker_pref)
+    if msg:
+        die(msg)
+
+
+# How long the write waits before its one retry, in seconds. A tunable
+# constant stated with no derivation — long enough for a sync client's
+# momentary hold on the file to pass, short enough not to feel like a hang.
+# Revisable once seen in use.
+RETRY_PAUSE_SECONDS = 1.5
+
+# The errno values a held file produces on the platforms this runs on:
+# EINVAL is what a cloud-sync client's momentary hold looked like here
+# ([mcp-write-invalid-argument-transient]); EACCES and PermissionError are an
+# editor or antivirus holding the handle.
+_HELD_FILE_ERRNOS = (22, 13)  # EINVAL, EACCES
+
+
+def _is_held_file_error(exc):
+    return isinstance(exc, PermissionError) or \
+        getattr(exc, "errno", None) in _HELD_FILE_ERRNOS
+
+
+def _write_with_one_retry(queue_path, text):
+    """Write `text` over `queue_path` atomically, retrying once if the OS
+    refuses the handle.
+
+    The bytes go to a temporary file in the same folder, forced to disk, and
+    swapped in with os.replace — so the queue on disk is always either the
+    old whole file or the new whole file, never a truncated one.
+    """
+    import time
+    tmp_path = queue_path + ".tmp-reorder"
+    attempts = 0
+    while True:
+        attempts += 1
+        try:
+            with open(tmp_path, 'w', encoding='utf-8', newline='') as f:
+                f.write(text)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, queue_path)
+            return
+        except OSError as exc:
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except OSError:
+                pass
+            if not _is_held_file_error(exc) or attempts >= 2:
+                if _is_held_file_error(exc):
+                    die("could not write %s: the operating system refused the "
+                        "file twice (%s). Something is holding it open — check "
+                        "for a sync client (Google Drive, OneDrive, Dropbox) "
+                        "mid-sync, or an editor with the file open — then "
+                        "re-run the command. Nothing was written; the queue "
+                        "is as it was." % (queue_path, exc))
+                raise
+            sys.stderr.write("reorder_queue: the operating system refused the "
+                             "write once (%s); waiting %.1fs and trying "
+                             "again.\n" % (exc, RETRY_PAUSE_SECONDS))
+            time.sleep(RETRY_PAUSE_SECONDS)
 
 
 def write_verified(queue_path, new_lines, absent=(), present=()):
@@ -378,11 +454,16 @@ def write_verified(queue_path, new_lines, absent=(), present=()):
     The honest limit: this catches a write that never reached the file. It
     cannot catch a sync layer that reverts the file some time after the
     process has exited, because nothing is still running to look.
+
+    The write lands on a temporary file beside the queue and is swapped in
+    with os.replace, so the queue is never half-written: a refusal at the
+    open leaves it intact, and so does a refusal partway through the write.
+    Where the operating system refuses the handle — EINVAL, EACCES, a
+    PermissionError, the shapes a sync client or an editor holding the file
+    produce — the script waits and tries once more, saying so; a second
+    refusal names what to check.
     """
-    with open(queue_path, 'w', encoding='utf-8', newline='') as f:
-        f.write(''.join(new_lines))
-        f.flush()
-        os.fsync(f.fileno())
+    _write_with_one_retry(queue_path, ''.join(new_lines))
 
     with open(queue_path, 'r', encoding='utf-8', newline='') as f:
         after = f.read().splitlines(keepends=True)

@@ -184,13 +184,42 @@ before = queue_text(d)
 text = call(d, "queue_move", {"section": "Processed", "slug": "delta",
                               "position": "AFTER", "anchor": "alpha",
                               "marker_after": "gamma"})
-check("queue_move: an unnamed clearing is refused by the queue tool",
-      text.startswith("Refused by the queue tool") and "[gamma]" in text,
+check("queue_move: an unnamed clearing is refused at the door, in the "
+      "script's words",
+      text.startswith("Refused") and "[gamma]" in text and "CLEAR" in text,
       repr(text))
 check("queue_move: the refusal names the one-move-per-item route",
       "one --move per item" in text, repr(text))
 check("queue_move: the unnamed-crossing refusal wrote nothing",
       queue_text(d) == before)
+shutil.rmtree(d, ignore_errors=True)
+
+# --- the downward sweep is refused at the door too ---------------------------
+# ([queue-move-downward-sweep-unguarded]) Naming alpha as the last cleared
+# item while beta sits after it would drop beta below the line unnamed.
+d = project()
+before = queue_text(d)
+text = call(d, "queue_move", {"section": "Processed", "slug": "alpha",
+                              "position": "TOP", "marker_after": "alpha"})
+check("queue_move: an unnamed downward sweep is refused at the door",
+      text.startswith("Refused") and "[beta]" in text and "DROP" in text,
+      repr(text))
+check("queue_move: the downward refusal wrote nothing (byte-identical)",
+      queue_text(d) == before)
+shutil.rmtree(d, ignore_errors=True)
+
+d = project()
+before = queue_text(d)
+text = call(d, "queue_move_section", {"slug": "epsilon",
+                                      "from_section": "Unprocessed",
+                                      "to_section": "Processed",
+                                      "position": "AFTER", "anchor": "alpha",
+                                      "marker_after": "epsilon"})
+check("queue_move_section: an unnamed downward sweep is refused at the door",
+      text.startswith("Refused") and "[beta]" in text and "DROP" in text,
+      repr(text))
+check("queue_move_section: the downward refusal wrote nothing "
+      "(byte-identical)", queue_text(d) == before)
 shutil.rmtree(d, ignore_errors=True)
 
 # --- queue_move: a named clearing lands, bytes intact -----------------------
@@ -249,9 +278,9 @@ text = call(d, "queue_move_section",
              "to_section": "Processed", "position": "BOTTOM",
              "marker_after": "epsilon"})
 check("queue_move_section: sweeping the held region into the cleared region "
-      "is refused by the queue tool",
-      text.startswith("Refused by the queue tool") and "[gamma]" in text
-      and "[delta]" in text, repr(text))
+      "is refused at the door, in the script's words",
+      text.startswith("Refused") and "[gamma]" in text
+      and "[delta]" in text and "CLEAR" in text, repr(text))
 check("queue_move_section: that refusal wrote nothing", queue_text(d) == before)
 shutil.rmtree(d, ignore_errors=True)
 
