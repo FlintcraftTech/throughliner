@@ -321,8 +321,12 @@ turn is due and puts that turn into your queue. A ritual is a step list with
 no rhythm: you save a procedure you repeat, give it a firing word, and it runs
 when you say the word and never otherwise. Your session opening names each
 ritual you have with its word. Ask in planning to save a repeated procedure as
-a ritual and it is written down with you there; if it later turns out to have
-a rhythm, it becomes a cycle by gaining a cadence.
+a ritual and it is written down with you there — or Claude offers it, once,
+where it has noticed you asking for the same sequence more than once; if it
+later turns out to have a rhythm, it becomes a cycle by gaining a cadence. A
+ritual whose steps write somewhere outside the usual project documents lists
+those paths in its definition, and they stay writable whenever the project is
+open, not only while the ritual runs — so the list is kept narrow.
 
 ## What does planning tell me when held work comes back?
 
