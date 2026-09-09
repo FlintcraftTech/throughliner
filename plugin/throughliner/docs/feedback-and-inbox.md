@@ -221,8 +221,9 @@ actually says come apart, and the line is what a later repeal is checked against
 — so a claim composed from the decision describes a message that was never sent.
 
 **The intent field is what lets a send close work.** Handing an item to another
-project **for completion** can clear that item; handing it over **for
-continuation** leaves it in the queue for a later capture to wake.
+project **for completion** closes that item — its walkthrough ended at the send,
+and anything depending on the outcome was filed as its own item first; handing
+it over **for continuation** leaves it in the queue for a later capture to wake.
 
 **It lives inside `INBOX/` because that folder is gitignored on every path and
 these lines name correspondent projects** — the same reason the address book is

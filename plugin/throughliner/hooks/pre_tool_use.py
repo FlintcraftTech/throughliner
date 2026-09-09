@@ -1497,6 +1497,53 @@ def _is_time_word_guarded_path(filepath: str, cwd: str) -> bool:
     return norm.startswith(log_dir + os.sep)
 
 
+# --- A clock time later than the clock ([counted-up-clock-times-uncaught]) ---
+#
+# A bare clock time passes the phrase scan above and reads exactly like a true
+# one. Five wrong stamps in one build run were counted up from an earlier clock
+# read instead of read by a command, and two of the five had overshot into the
+# future. That overshoot is the one shape a hook can see: an `HH:MM` written
+# into a record, the queue or SPEC that is later than the clock reads at the
+# moment the hook runs. Refused once per distinct time per session, sharing the
+# guarded-path set, the quoted-text stripper and the once-per-phrase gate above.
+#
+# The limit, stated: a time BEHIND the real clock is not reached — three of the
+# five were — so this narrows the counted-up failure rather than closing it.
+# A time that follows a date earlier than today is a past event and passes.
+_CLOCK_TIME_PATTERN = re.compile(
+    r"(?:(?P<date>\d{4}-\d{2}-\d{2})[ T]?)?\b(?P<h>[01]?\d|2[0-3]):(?P<m>[0-5]\d)\b"
+)
+
+
+def _clock_now() -> "tuple[str, str]":
+    """(today's date as YYYY-MM-DD, the clock as HH:MM). The test suites set
+    THROUGHLINER_TEST_CLOCK to `YYYY-MM-DD HH:MM` to pin both."""
+    import datetime as _dt
+    pinned = os.environ.get("THROUGHLINER_TEST_CLOCK", "")
+    if pinned:
+        day, _, hhmm = pinned.partition(" ")
+        return day, hhmm
+    now = _dt.datetime.now()
+    return now.strftime("%Y-%m-%d"), now.strftime("%H:%M")
+
+
+def _future_clock_times(text: str) -> list[str]:
+    """Distinct `HH:MM` times in `text`, outside quoted spans, that claim a
+    moment later than the clock reads now. A time carrying a date before today
+    is left alone; one carrying a date after today is reported."""
+    today, now_hhmm = _clock_now()
+    found = []
+    for match in _CLOCK_TIME_PATTERN.finditer(_strip_quoted_text(text)):
+        hhmm = "%02d:%s" % (int(match.group("h")), match.group("m"))
+        date = match.group("date")
+        if date and date < today:
+            continue
+        if (date and date > today) or hhmm > now_hhmm:
+            if hhmm not in found:
+                found.append(hhmm)
+    return found
+
+
 def _written_text(tool_name: str, tool_input: dict) -> str:
     """The text a Write, Edit or MultiEdit is about to put into the file."""
     if tool_name == "Write":
@@ -2004,6 +2051,27 @@ def main() -> int:
                 "into a record reads exactly like a right one for as long as "
                 "it stands. The same phrase passes on the next attempt.",
                 branch="time word",
+            )
+
+        # A clock time later than the clock reads now — the shape a time
+        # counted up from an earlier reading takes. Refused once per distinct
+        # time per session, then allowed.
+        _, now_hhmm = _clock_now()
+        future = [
+            t for t in _future_clock_times(_written_text(tool_name, tool_input))
+            if _fire_once(cwd, sid, "future-time-" + t.replace(":", ""))
+        ]
+        if future:
+            listed = ", ".join(future)
+            return _deny(
+                "[Throughliner] BLOCKED once: this text carries a clock time "
+                f"later than the clock reads now — {listed}, against {now_hhmm}.\n\n"
+                "A time counted up from an earlier reading overshoots. Read "
+                "the clock by a command at the moment of writing and write "
+                "what it says; where the time is a real past one, put its "
+                "date in front of it. The same time passes on the next "
+                "attempt.",
+                branch="future clock time",
             )
 
     # Rule 1: the working file's Files: section governs editability. Tri-state:

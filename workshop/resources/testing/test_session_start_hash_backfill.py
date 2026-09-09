@@ -173,6 +173,36 @@ check("the index file's own placeholder keeps the git route and is filled",
       "- PENDING —" not in read(d, "LOG/index.md"), repr(read(d, "LOG/index.md")))
 shutil.rmtree(d, ignore_errors=True)
 
+# --- 7. [housekeeping-note-misreads-uncommitted-placeholders]: a session's own
+#        pending index line is not a failing backfill; a committed unfilled
+#        placeholder still is (case 2 is that arm, unchanged) -------------------
+d = repo()
+write(d, "LOG/index.md", "# LOG index\n\n- abc1234 — an earlier entry → a.md\n")
+git(d, "add", "LOG")
+git(d, "commit", "-q", "-m", "fixture")
+# The current session's close-to-be: a new placeholder line in a file that is
+# itself committed, plus its entry file, neither committed yet.
+write(d, "LOG/index.md", "# LOG index\n\n- [HASH] — this session's new entry → "
+      "2026-01-05-new.md\n- abc1234 — an earlier entry → a.md\n")
+write(d, "LOG/2026-01-05-new.md", "# [HASH] — this session's new entry\n\nBody.\n")
+report = hook.backfill_log_hashes(d)
+check("a pending index line in the committed index file is not reported",
+      "should have resolved" not in report, repr(report))
+check("the pending line keeps its placeholder",
+      "- [HASH] — this session's new entry" in read(d, "LOG/index.md"),
+      repr(read(d, "LOG/index.md")))
+# Now commit the placeholder itself, with a title no commit message or diff
+# search can resolve any better — it should be reported once committed.
+git(d, "add", "LOG")
+git(d, "commit", "-q", "-m", "close")
+write(d, "LOG/index.md", "# LOG index\n\n- [HASH] — reworded after its commit → "
+      "2026-01-05-new.md\n- abc1234 — an earlier entry → a.md\n")
+report = hook.backfill_log_hashes(d)
+check("the same placeholder, once committed, is reported when it cannot resolve",
+      "index.md ([HASH])" in report and "should have resolved" in report,
+      repr(report))
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

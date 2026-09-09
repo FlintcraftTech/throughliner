@@ -48,7 +48,8 @@ Visibility:
      e.g.:
      - the app — `<product subfolder>/` — inner repository (product)
      - recipes and reference material — `research/` — outer repository (process)
-     - a file belonging to no part — `workshop/` in the outer repository -->
+     - a file belonging to no part — `workshop/` in the outer repository,
+       or `temp/` where it is disposable -->
 
 Parts:
 

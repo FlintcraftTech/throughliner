@@ -324,6 +324,66 @@ def test_accepted_pair_is_skipped_and_unlisted_pair_still_fires():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_blocked_by_and_not_before_lead_ins_are_an_accepted_pair():
+    """The two typed-block lead-ins in the always-loaded rules file that differ
+    only by the field they introduce are skipped as accepted, keyed by
+    filename and opening words ([near-duplicate-rule-statements])."""
+    root = tempfile.mkdtemp(prefix="rule-signals-leadins-")
+    docs = os.path.join(root, "plugin", "throughliner", "docs")
+    os.makedirs(docs)
+    lead_a = ("**`Blocked by:` means one thing on a work item and another on a "
+              "capture:**\n")
+    lead_b = ("**`Not before:` means one thing on a work item and another on a "
+              "capture:**\n")
+    with open(os.path.join(docs, "skill-nonspecific-rules.md"), "w",
+              encoding="utf-8") as f:
+        f.write("# Rules\n\n## Captures\n\n" + lead_a + "\n" + lead_b)
+    with open(os.path.join(root, "CLAUDE.md"), "w", encoding="utf-8") as f:
+        f.write("# Project\n")
+    result = signals.signal_maintained(root)
+    check("the Blocked by / Not before lead-ins are skipped as accepted",
+          result["accepted"] == 1 and not result["firing"], result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_interaction_turns_without_a_contract_are_named():
+    """A tagged [PROMPT] or [DISCUSS] turn whose block carries no
+    `**What the … turn carries.**` line is reported; one that does is not;
+    a tag inside a fence or backticks is a specimen, not a turn
+    ([interaction-turn-contracts])."""
+    root = tempfile.mkdtemp(prefix="rule-signals-contracts-")
+    docs = os.path.join(root, "plugin", "throughliner", "docs")
+    os.makedirs(docs)
+    body = (
+        "# Plan\n\n"
+        "## Step 1: Summary  [BRIEF, PROMPT]\n\n"
+        "Open with the summary.\n\n"
+        "**What the summary turn carries.** The plain-English summary.\n\n"
+        "## Step 2: Checkpoint  [PROMPT]\n\n"
+        "Ask whether to take this one next.\n\n"
+        "**3. The offer**  [DISCUSS, PROMPT] — put the choice.\n\n"
+        "Some prose.\n\n"
+        "```\n[PROMPT]    stop and wait — a specimen inside a fence\n```\n\n"
+        "A rule tagged `[PROMPT]` in backticks is a mention, not a turn.\n"
+    )
+    with open(os.path.join(docs, "plan.md"), "w", encoding="utf-8") as f:
+        f.write(body)
+    with open(os.path.join(root, "CLAUDE.md"), "w", encoding="utf-8") as f:
+        f.write("# Project\n")
+    result = signals.signal_contracted(root)
+    check("the two turns without a contract are named, the contracted one is not",
+          result["firing"] and result["value"] == 2
+          and "plan.md:9" in result["message"] and "plan.md:13" in result["message"]
+          and "plan.md:3" not in result["message"],
+          result["message"])
+    check("the fenced and backticked tags are not counted as turns",
+          "of 3 tagged" in result["message"], result["message"])
+    check("the message states the limit",
+          "still present but wrong is not seen" in result["message"],
+          result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_function_words_alone_do_not_match():
     """Two statements sharing only function words score no match, and the
     stop words are dropped by the normalising step ([parent-lookup-stop-words])."""
@@ -484,6 +544,8 @@ if __name__ == "__main__":
     test_parent_lookup_ranks_a_paraphrase_first()
     test_duplicate_check_flags_a_cross_group_pair()
     test_accepted_pair_is_skipped_and_unlisted_pair_still_fires()
+    test_blocked_by_and_not_before_lead_ins_are_an_accepted_pair()
+    test_interaction_turns_without_a_contract_are_named()
     test_function_words_alone_do_not_match()
     test_size_report_deltas_against_the_last_sweep_turn()
     test_inner_commit_is_attributed_to_the_outer_close()

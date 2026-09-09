@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The rule-lifecycle status board — five independent signals, computed.
+"""The rule-lifecycle status board — six independent signals, computed.
 
 Host-only. This lives in resources/ rather than the plugin's scripts/ folder
 because consumers never author method rules, so the whole lifecycle would
@@ -20,13 +20,14 @@ because a state file must be maintained and the first session that forgets to
 update it makes the board lie. The one exception is the retired-terms list,
 which is source data — a recorded event, authored once — not derived state.
 
-## Six entries, in two classes
+## Eight entries, in two classes
 
-One REPORT (MEASURED) measures and can never fire. Five SIGNALS (BORN,
-CONTRADICTED, MAINTAINED, REPEALED, AUDIT-LAG) have a trigger and do fire. Only
-signals are counted in the header: a denominator including the report invites
-the reading that six things are watched when five are, and a check that
-over-claims makes the corpus look guarded when it is only partly guarded.
+Two REPORTS (MEASURED, SIZE) measure and can never fire. Six SIGNALS (BORN,
+CONTRADICTED, MAINTAINED, REPEALED, AUDIT-LAG, CONTRACTED) have a trigger and
+do fire. Only signals are counted in the header: a denominator including the
+reports invites the reading that eight things are watched when six are, and a
+check that over-claims makes the corpus look guarded when it is only partly
+guarded.
 
 The AUDITED entry — "whether a corpus sweep is due" — is deleted, not renamed.
 Its trigger was the ceiling, the ceiling was repealed, and a measurement that
@@ -1214,6 +1215,10 @@ ACCEPTED_DUPLICATE_PAIRS = [
      ("done-plan.md", "Completion is read as the always-loaded"),
      "the same pointer at two non-owner sites, each pointing at the owner in "
      "the rules doc, which the duplication lens allows"),
+    (("skill-nonspecific-rules.md", "**`Blocked by:` means one thing on a work item"),
+     ("skill-nonspecific-rules.md", "**`Not before:` means one thing on a work item"),
+     "two parallel lead-ins over typed blocks defining different fields, not "
+     "one rule stated twice"),
 ]
 
 
@@ -1536,6 +1541,90 @@ def signal_repealed(root):
     }
 
 
+# --- CONTRACTED: interaction turns carrying no content line ---------------
+#
+# The always-loaded rules say that at the method's own decision turns the
+# governing specification is that turn's own content line in the skill's doc,
+# written in the detectable form `**What the <name> turn carries.**`. This
+# reads every shipped doc for a turn tagged [PROMPT] or [DISCUSS] and reports
+# the ones with no such line in their block — the block running from the
+# tagged line to the next tagged line or heading ([interaction-turn-contracts]).
+#
+# The limit, stated wherever this check is described: it sees a turn that
+# carries no contract. It cannot see a contract that is still there and has
+# quietly gone wrong — that stays a reading job for the compliance audit. A
+# recorded list of turns, which would also catch a deletion or a rename, was
+# refused: stored state somebody must maintain, and the first session that
+# forgets makes the output lie. It reports and mandates nothing — contracts
+# are written as the turns are touched.
+INTERACTION_TAG_RE = re.compile(r"\[[A-Z, ]*\b(?:PROMPT|DISCUSS)\b[A-Z, ]*\]")
+CONTRACT_LINE_RE = re.compile(r"^\*\*What the .+? turn carries")
+_INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+_HEADING_RE = re.compile(r"^#{1,6}\s")
+
+
+def _interaction_turns(lines):
+    """(line number, block end) for each tagged turn in `lines`, tags inside
+    fenced blocks or backticks ignored — those are specimens, not turns."""
+    turns = []
+    in_fence = False
+    tagged = []
+    for n, raw in enumerate(lines, 1):
+        if raw.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if INTERACTION_TAG_RE.search(_INLINE_CODE_RE.sub("", raw)):
+            tagged.append(n)
+    for i, n in enumerate(tagged):
+        end = len(lines)
+        for m in range(n, len(lines)):
+            line = lines[m]
+            if _HEADING_RE.match(line) or (i + 1 < len(tagged) and m + 1 == tagged[i + 1]):
+                end = m
+                break
+        turns.append((n, end))
+    return turns
+
+
+def signal_contracted(root):
+    """Tagged interaction turns in the shipped docs with no content line."""
+    base_repo, rel = locate(root, "plugin/throughliner/docs")
+    docs = os.path.join(base_repo, rel)
+    missing = []
+    total = 0
+    if os.path.isdir(docs):
+        for name in sorted(os.listdir(docs)):
+            if not name.endswith(".md"):
+                continue
+            try:
+                with open(os.path.join(docs, name), "r", encoding="utf-8") as f:
+                    lines = f.read().splitlines()
+            except OSError:
+                continue
+            for n, end in _interaction_turns(lines):
+                total += 1
+                block = lines[n - 1:end]
+                if not any(CONTRACT_LINE_RE.match(l) for l in block):
+                    missing.append(f"{name}:{n}")
+    return {
+        "stage": "CONTRACTED",
+        "firing": bool(missing),
+        "value": len(missing),
+        "slug": "interaction-turns-without-contracts",
+        "message": (
+            f"{len(missing)} of {total} tagged interaction turn(s) carry no "
+            f"content line: " + ", ".join(missing[:12])
+            + (" …" if len(missing) > 12 else "")
+            + ". A contract still present but wrong is not seen here."
+            if missing else
+            f"Every tagged interaction turn ({total}) carries a content line. "
+            "A contract still present but wrong is not seen here."
+        ),
+    }
+
+
 # --- Board --------------------------------------------------------------
 
 def board(root):
@@ -1548,6 +1637,7 @@ def board(root):
         signal_contradicted(root),
         signal_maintained(root),
         signal_repealed(root),
+        signal_contracted(root),
     ]
 
 
@@ -1565,6 +1655,7 @@ CHECK_LABELS = {
     "CONTRADICTED": "No commit says 'gate not needed' while rules grew",
     "MAINTAINED": "No two rules say nearly the same thing",
     "REPEALED": "No live rule names a retired mechanism",
+    "CONTRACTED": "Every interaction turn carries a content line",
 }
 
 # The framing this whole script had wrong until 2026-08-14. On 2026-08-13 it
@@ -1572,15 +1663,15 @@ CHECK_LABELS = {
 # session — a bare number shipped into the output style, the turn-by-turn asks
 # removed from every session, the rule gate having no site in the build, this
 # board having no trigger, and a shipped component missing from the project
-# map. Not one of the five checks asks whether a rule is CORRECT, whether it
+# map. Not one of the six checks asks whether a rule is CORRECT, whether it
 # FIRES, or whether it improved anything: they ask whether a required line
 # exists, whether two artifacts contradict, whether two rules read alike,
-# whether a rule names a retired word, and whether rule changes have been
-# audited. So a clean run is evidence the paperwork was completed, and
-# reporting that as health is the over-claiming this project's own standard
-# forbids.
+# whether a rule names a retired word, whether rule changes have been
+# audited, and whether an interaction turn carries a content line. So a clean
+# run is evidence the paperwork was completed, and reporting that as health is
+# the over-claiming this project's own standard forbids.
 CLEAN_RUN_NOTE = (
-    "What a clean result means: these five things were checked and nothing was "
+    "What a clean result means: these six things were checked and nothing was "
     "found.\nIt is not evidence the rules are correct, that they fire, or that "
     "they made anything better —\nno check here asks any of those questions."
 )

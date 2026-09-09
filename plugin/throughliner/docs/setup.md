@@ -244,6 +244,7 @@ Check each, and make it so if it isn't:
 
 ```
 INBOX/ present          ->  `.gitignore` carries an `INBOX/` line
+temp/ present           ->  `.gitignore` carries a `temp/` line
 .gitignore present      ->  it carries a `.throughliner/` line
 no outputStyle set in the project's .claude/settings.local.json
                         ->  make the brevity-style offer from Step 2, exactly
@@ -538,6 +539,13 @@ created when there is something to put in it. Creating the research folder at se
 means research notes have a place from day one rather than the folder being
 conjured on first use.
 
+**temp/ folder** — create it empty, and add `temp/` to `.gitignore` beside the
+`INBOX/` line. It is where a session puts what the project does not keep: a
+fetched transcript, a file downloaded to read once, a draft that never became a
+deliverable. Everything in it is disposable by definition, so nothing records
+when it should be deleted — the counterpart to `workshop/`, which holds what the
+project works with and keeps.
+
 **INBOX/ folder** — create it empty, with an `INBOX/archive/` inside it. It's this
 project's mailbox: another project you run can drop a message file in here, and
 session_start surfaces anything waiting in one line. A project only ever reads its
@@ -761,15 +769,20 @@ project.
 **The brevity-style offer**  [BRIEF, PROMPT]. The plugin ships an output style
 called Throughliner Brevity — a setting that keeps Claude's replies short and
 decision-led in this project. Offer it once, as part of scaffolding, opt-out
-with acceptance as the default:
+with acceptance as the default.
+
+**What the brevity-offer turn carries.** The offer itself, the reason it is
+preferable, its scope, and the invitation to discuss — where the reason argues
+from what the method will generate as the user works, never from a property of
+a project that does not exist yet.
 
 1. Check whether the project (or the user's own settings) already sets an
    output style. Where one is set, name it and say plainly where it and the
    brevity style would pull in different directions.
-2. Give the reason acceptance is strongly preferable: on projects with this
-   much documentation, models that run verbose bury the one thing the user
-   must see under narrative, and a style is the strongest lever there is
-   against that.
+2. Give the reason acceptance is strongly preferable: the method's documents
+   accumulate as the user works, and a model that runs verbose buries the one
+   thing the user must see under narrative — a style is the strongest lever
+   there is against that.
 3. State the scope: this applies to this project only — nothing outside it
    changes, and the user's own style file is never edited.
 4. Invite discussion, then act on the answer:

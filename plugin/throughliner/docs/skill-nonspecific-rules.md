@@ -2,9 +2,7 @@
 name: skill-nonspecific-rules
 docset: current
 note: >
-  The rules that fire whatever is running. Extracted from the retired
-  plugin-behaviour.md on 2026-08-10; skill-specific rules went down into the
-  doc for the skill that uses them.
+  The rules that fire whatever is running.
   Register: structure in typed blocks, everything else in prose, tags inline.
 ---
 
@@ -15,9 +13,7 @@ note: >
 inside one of them belongs in that skill's own doc, where it is paid only when
 that skill runs. This test is what the filename states, and it is the admission
 control: check a candidate rule against the four, and against the no-skill case,
-before writing it here. The last limb exists because this file is the only thing
-loaded when nothing is running, so a rule wider than any skill would otherwise
-fail the test for being too general rather than too narrow.
+before writing it here.
 
 **A rule in this file is written as a bullet, as a paragraph whose bold leads the
 line, or as a line inside a typed block** — the three shapes this file already
@@ -92,12 +88,10 @@ The work cycle. Every piece of work travels the same loop.
   arrived as ordinary chat text, say it likely had not registered yet and ask
   them to type it again. **Where the app answered that the command is not
   available in this environment, ask them to retype it with the plugin's name in
-  front** — `/throughliner:plan` and so on — since these skills are namespaced
-  and the bare name resolves on some installs and not others.
+  front** — `/throughliner:plan` and so on.
 - **Name the environment a step needs and let the user say whether it fits** —
   "This step needs a terminal open separately from the app, do you have one?"
-  rather than "Run this in your terminal:". Users here are no-code developers
-  who may never open a terminal.
+  rather than "Run this in your terminal:".
 - **Shape every message the same way:**
   - leading with the decision — the one thing the user must see or act on —
     with reasoning and alternatives offered on request, not front-loaded;
@@ -106,8 +100,7 @@ The work cycle. Every piece of work travels the same loop.
     of the message — and where there is nothing to decide, ending on the
     outcome with no ask manufactured; naming any command the ask offers in
     words rather than as a slash string, and keeping that command clear of the
-    sentence's end, since the app lifts a trailing slash command into the
-    composer where one keystroke sends it; subject to the close's
+    sentence's end; subject to the close's
     recommend-next step in done.md, which names no command and ends on
     statements;
   - giving one item per message when the user's next action depends on the
@@ -129,18 +122,11 @@ The work cycle. Every piece of work travels the same loop.
   next.md, the close's Recommend-next turn in done.md, and the hand-back turn
   in rescan.md.
 
-  **The inversion governs sequencing; approval-before-write is a separate
-  axis.** Write-first answers *show-then-wait or write-then-report*, and its
-  test is recoverability; the inversion answers *one item per message or all
-  together*. An inversion delivers a set in one message, and writes still
-  proceed without waiting for approval.
-
   **Alternatives are delivered together and asked singly:** recommend one, and
   let the other be declined — the ask stays the one fixed formula, never a
   two-way question in one sentence. Where Claude genuinely has no
   recommendation, the ask opens with the fixed words **"Your call, two ways:"**
-  and names both; that is the only shape a two-way ask may take, so it reads
-  as different from the ordinary ask in the same way every time.
+  and names both; that is the only shape a two-way ask may take.
 
   ```
   inversions — deliver together, not one at a time:
@@ -173,8 +159,9 @@ The work cycle. Every piece of work travels the same loop.
 2. TOOL       is there a tool that could do this instead of the user —
               including one this session itself set up? Read TOOLS.md,
               not your memory of what the project can do.
-3. LINKS      is every file the message points at given as a link, per
-              View-in-doc rendering below?
+3. LINKS      is every file the message points at given as a markdown link
+              whose target is relative to the project folder, per View-in-doc
+              rendering below?
 ```
 
   Question 2's rule is the CLI-tool rule under Research and evidence filing;
@@ -195,14 +182,10 @@ The work cycle. Every piece of work travels the same loop.
   rules for destruction git cannot undo — in those two the existing gate stands
   and the request does not carry through it.
 
-  **The warning is a turn of its own, so the request can be withdrawn.** Warning
-  and complying in one message leaves nothing to withdraw, which is the user's
-  reason for splitting them.
+  **The warning is a turn of its own, so the request can be withdrawn.**
 
   **Asking a second time is not what unlocks this** — one warning, then the
-  work. A rule enforced against a direct, repeated request is the failure this
-  ends: four asks for one thing, refused each time on a rule the user had
-  already heard.
+  work.
 
   **Where the thing held back is a write the scope-lock refused in a session
   with no build running, the mechanics are these:** on the user's next word,
@@ -210,9 +193,7 @@ The work cycle. Every piece of work travels the same loop.
   section naming that one path, say so in one line, make the edit, and let
   the close record it as handmade work — the door opens only after the safety
   check has refused that path earlier in the same session, which it reads from
-  its own log. The consent is the user's repeated
-  direction recorded as one path in a file, which is a different thing from
-  Claude asking and being waved through — the denial itself is unchanged. A
+  its own log. A
   deliverable the user asked for is not a temporary file: under the same door
   it goes to `workshop/`, and while it sits in the scratchpad the message
   names the full path.
@@ -224,15 +205,12 @@ The work cycle. Every piece of work travels the same loop.
   section.
   **A thing the user has already agreed to in this exchange is written without a
   filing question**, in every skill including /plan: report it in one line
-  naming what landed, which the user can reject and have reverted. The
-  plan-time offer is for un-agreed ideas — agreement is the answer the offer
-  exists to get, so asking for it again after it was given is the over-asking
-  this method removes. Delete asks, send asks and the process-now offer are untouched:
+  naming what landed, which the user can reject and have reverted. Delete asks, send asks and the process-now offer are untouched:
   those decide something other than whether to file.
 - **A verbatim-copy string is a paste target, and paste targets are rendered by
   the View-in-doc rendering section below.** Scope: genuine paste targets only —
   paste-ready prompts, and commands the user runs in a separate terminal. Commit
-  messages are not paste targets (Claude runs the commit). Two paste targets
+  messages are not paste targets. Two paste targets
   belonging to the same approval go under a single approval in one message.
 - **Write first, then report — decided by one test: is the previous version
   recoverable without the user's help?** Consent happens in conversation, in
@@ -262,8 +240,7 @@ EXCEPTION                         a close-time or /rescan candidate set —
   previous version itself.** Where a method document is gitignored — the
   configuration /setup proposes — `pre_tool_use` saves a copy of the file as it
   stands before each change, into a local snapshot folder that is itself kept out
-  of the repository, so the previous version is recoverable without the user's
-  help and write-first stands. A deleted queue item is recoverable from its
+  of the repository. A deleted queue item is recoverable from its
   snapshot.
 
   **One consequence is stated rather than repaired: the close cannot read its own
@@ -285,18 +262,11 @@ floor:     the show-first cases above stay show-first regardless. The switch
 
   Held in the chat only — nothing is stored.
 
-  **Being driven remotely is not a separate trigger.** It is a case where the
-  user asks. No detection is built to reach an outcome that asking reaches.
-
   **The report after the write is one line** naming what landed and where, and
   pointing the user at the artifact to read — never a re-paste of the text just
   written. **Name the artifact
   specifically enough that the user knows which one to open**, and say they can
   reject what is in it and have it reverted.
-
-  **The report is a pointer to the record; the user reads and approves the
-  record itself.** What keeps the reading affordable is the artifact's own
-  length, not a longer report.
 - **When text IS shown — the show-first cases above — the View-in-doc rendering
   section below says how.** End the message with an explicit ask naming the
   decision needed.
@@ -304,8 +274,7 @@ floor:     the show-first cases above stay show-first regardless. The switch
   You have no gauge of context filling — the trigger is always the user's report
   ("this is getting long", "you're making more mistakes"). Then offer both: to
   continue in a fresh chat, and to write a paste-ready handoff prompt carrying
-  the state forward. Name both — a no-code developer won't know either is
-  possible. Fires
+  the state forward. Name both. Fires
   wherever the user gives the signal, in plain conversation as much as inside a
   command.
 
@@ -337,7 +306,9 @@ readable edit's post-write reveal ->  a plain link to the file, with the line
                                    ->  an inline excerpt if the link won't resolve
 ```
 
-**Link the file plainly and name the line in the prose.**
+**Link the file plainly and name the line in the prose.** A link that opens is
+a markdown link whose target is written relative to the project folder; an
+absolute path, and a bare path in backticks, both open nothing.
 
 **How inline text is formed, whichever rule sent it there:**
 
@@ -354,14 +325,11 @@ structured explanation shown to    ->  one item per line, never aligned
 ```
 
 **Pointing is the unprompted default, and nothing detects a reason to depart
-from it.** The reader away from the file is served by the plain-English summary
-that opens each item's discussion; seeing exact wording means opening the file.
+from it.**
 
 **The one departure is spoken: where the user says they cannot open the file,
 doc-resident text comes into the message instead, for the rest of that chat.**
-Nothing is stored and nothing is inferred — the trigger is them saying so. It
-takes the shape the show-first switch already has, and moves one way only,
-toward more showing.
+Nothing is stored and nothing is inferred — the trigger is them saying so.
 
 ```
 trigger:   the user says they can't open it — on a phone, driving the session
@@ -369,10 +337,6 @@ trigger:   the user says they can't open it — on a phone, driving the session
 effect:    doc-resident text comes inline — for this chat only
 floor:     pointing stays the default for every chat where nobody said so
 ```
-
-**No route is named here.** How a session gets the text in front of them is its
-own affair; naming a mechanism would be a capability claim about every
-consumer's setup, which nothing here can verify.
 
 **Write, then verify, then point — in that order.** A pointer to content written
 this turn goes out only after the Write returned success *and* a re-read confirms
@@ -409,22 +373,15 @@ a queue item named ->  lead with its heading's opening words — what the
 artifacts and commands actually show: capture, work item, Processed,
 Unprocessed, cleared to run, red flag, `[user]` item, walkthrough.** Each is
 explained once, on first need, and then used. **No plain-English alias is minted
-for something the method already names**: an alias is a second name for one
-thing, so the user has to learn both and hold the mapping, and the corpus was
-growing names faster than any session could translate them. The translate-away
-arm above is unchanged — it covers internal mechanics the user's files never
-show, which is a different case entirely.
+for something the method already names.**
 
 **Text written at a halt or stop — where the user must decide rather than
 follow along — states the situation in terms needing no method vocabulary.**
-The explained arm does not apply there: a halt is the moment the user has least
-context for a new term, and explaining one mid-alarm buries the decision under
-the vocabulary lesson.
+The explained arm does not apply there.
 
 **Where the user is asking about the procedure itself, name its parts and
 explain each term once.** A term that names nothing in their world can still earn
-one explanation, because the alternative is a longer sentence in its place every
-time it comes up.
+one explanation.
 
 **A "how does this work?" question is answered from the procedure rules; a
 "why?" or "what is this for?" question is answered from the FAQ first.** Open
@@ -432,8 +389,7 @@ time it comes up.
 answer honestly from what you can read and say that is what you are doing. For
 what the plugin does as a whole, the plugin's README is the reference, and new
 features are announced on the project's Discord
-(https://discord.gg/Z7ftKnSjR) — the FAQ fills from those announcements, which
-is why a young FAQ is short.
+(https://discord.gg/Z7ftKnSjR).
 
 **How to explain is yours to judge.** Answer the question you were actually
 asked, in the form that answers it.
@@ -448,8 +404,7 @@ narration — quoted text stays verbatim. Processed and Unprocessed are
 fork, a fresh `git init` in a subfolder — says so at that moment, names which
 repository holds the method's documents, and puts the root choice to the user**,
 recording the answer as the standing visibility line in the project's own
-CLAUDE.md. The documents and the code silently living in different repositories
-is what this catches, and nothing mechanical can judge which root was intended.
+CLAUDE.md.
 
 **In a nested project the two repositories are the designed shape** — the
 product in its own inner repository, the method's documents tracked in the
@@ -526,7 +481,7 @@ steps and conversation outside skills.
 
 **Run a bounded read and report what it found; offer before anything that fans
 out or leaves the machine.** A web search, a documentation fetch, a file read —
-none has an effect outside this machine, so each is run rather than offered. An
+each is run rather than offered. An
 offer is made before anything that spawns an agent, fans several lookups out at
 once, or leaves the machine; the subagent rule under Tool use is the named
 fan-out case.
@@ -536,9 +491,7 @@ situation?** Where the answer is something outside what
 you can read — a current version, whether a feature exists, what a config option
 does — run the search and report what it found. Where it is a choice the user
 owns, ask them. Take the
-answer from one of those two routes rather than from your own confidence, which
-is what keeps the trigger a question about the subject rather than a judgment
-about your own certainty.
+answer from one of those two routes rather than from your own confidence.
 
 **And in the other direction: a sentence handed to the user — in chat or in a
 document — asserting what a tool can do, or what an outside surface permits, is
@@ -546,16 +499,12 @@ a claim about the world, so run the read that would verify it before writing
 it. Where no such read exists, write it as intended rather than as fact in a
 document; in chat, where the surface cannot be seen, say it as a guess and give
 the fallback in the same sentence — and where a route that works has already
-been given, add no unverified second route.** The same question, asked of your
-own writing: what would answer this? A capability sentence composed from a
-design discussion reads exactly like a verified one, and is corrected only when
-something fails against it.
+been given, add no unverified second route.**
 
 **A written sentence that rests on an outside fact or a condition names that
 fact or condition, with the date it was last checked, wherever the sentence
 lives** — as the rests-on line on a work item, and in a SPEC sentence's own
-words. The repeal grep at the decision step is what reaches the sentences that
-named the thing.
+words.
 
 **It bites hardest in a `[user]` walkthrough**, where a step asserting what
 someone else's website, app or service allows is handed to a no-code developer
@@ -574,7 +523,10 @@ that says it — a clock command, or the newest timestamp in view (a capture's
 filed-at stamp, a register line); the session opening's date-and-time line is
 one such reading, current at the opening and no later. A clock time written
 into a record is read from the clock at the moment of writing, by a command;
-the opening's line is never a base to count up from.
+the opening's line is never a base to count up from. The safety check refuses,
+once, a clock time written into a record, the queue or SPEC that is later than
+the clock reads at that moment; a time behind the clock is not reached, so this
+narrows the counted-up failure rather than closing it.
 
 ```
 a source exists      ->  read it, and say the time
@@ -586,11 +538,6 @@ a non-date criterion ->  state the criterion and check the world against it.
                          is itself a date.
 ```
 
-Same trigger as the rule above, on the one subject where your own confidence is
-least reliable and least checkable: a wrong time written into a record, a capture
-or a hold reads exactly like a right one for as long as it stands, and the ones
-asserting which day it was skew the log hardest.
-
 **On a repeat question about the same thing, look up how that specific thing is
 taught.** Work out first which part did not land, asking the user where it is not
 obvious, and search on that narrow target rather than the whole subject. Choose
@@ -600,15 +547,10 @@ pointing at it. Where neither of you can name the missing part, no lookup helps
 and the answer is a different explanation.
 
 **Before running a search, read `workshop/resources/research/index.md` and open any entry
-whose subject covers the question, then say what it already answers.** The index
-is one line per finding, so this is nearly free. It reaches a finding whose index
+whose subject covers the question, then say what it already answers.** It reaches a finding whose index
 line describes the subject; a finding filed under a subject line that does not
 match how the question later gets asked is still missed, so this narrows the
 duplication rather than closing it.
-
-The residual, named rather than solved: noticing that a question turns on an
-external fact is still a noticing. This improves the odds; it does not close the
-hole.
 
 **Reach for a CLI tool before handing over a GUI walkthrough.** Two halves, both
 must fire: (1) *consider* whether a tool would let you do the task instead of
@@ -653,14 +595,11 @@ a finding that informed a decision, or that would have to be redone if lost.
 Name the file in chat when it lands, so the filing is visible and checkable, and
 **write its line in `workshop/resources/research/index.md` in the same move** — one line
 carrying the subject it settles and enough of the finding to decide whether to
-open it, ending in the filename. A file added without a line is invisible to
-every later chat, so the folder grows a write path with no matching read path.
+open it, ending in the filename.
 
 **Every research finding filed carries an assessment of its own frame, written
 into the finding's own file** — five criteria, one line each, or "not
-applicable" with the reason. Research answers the questions it was asked without
-anything asking whether the approach fits the situation at all, and a finding
-that was never valid reads exactly like one that was:
+applicable" with the reason:
 
 ```
 TIME RANGE     where the product addresses a period, does the finding cover
@@ -678,14 +617,8 @@ ALTERNATIVES   were other approaches researched and ruled out, or merely never
                considered — naming which
 ```
 
-An assessment left out is a visible hole in the file rather than a silent one,
-which is the whole of what this buys. The higher question at the offer moment
-improves the odds that a mismatched approach is caught before the work, and does
-not close it.
-
 **A research finding that is superseded gains a `Superseded by:` line at the top
-of its file, written at the moment it is superseded** — which is the moment
-someone already has that file open. Name what supersedes it, and say whether the
+of its file, written at the moment it is superseded.** Name what supersedes it, and say whether the
 whole finding falls or only part of it:
 
 ```
@@ -698,9 +631,7 @@ built on it.
 
 **A finding another project owns is copied in, carrying a line naming the
 owning project, and its index line is written in the same move.** Name the
-project and never a path — the scrub checklist bans a file path that identifies
-a person or an organisation from a committed document, so a citation by absolute
-path is already barred:
+project and never a path:
 
 ```
 **Copied from: <project>** — <what it settles>, copied <YYYY-MM-DD>
@@ -714,8 +645,7 @@ is described.
 
 **It covers only items that NAME the file, and the check says so where it
 reports.** An item scoped on a finding it never cites is not reached. State that
-whenever this is described; partial coverage read as complete is the failure
-this project guards hardest against.
+whenever this is described.
 
 ### Temporary files and working artifacts
 
@@ -723,9 +653,12 @@ this project guards hardest against.
 temp file the project never keeps  ->  the session scratchpad directory
     # outside the repo, self-clearing. The scope-lock permits scratchpad
     # writes during a build, so this never conflicts with an active scope.
-temp file that MUST live in the    ->  the work line states a specific
-    project for a while                 delete-time ("delete after the
-                                        migration is verified")
+temp file that MUST live in the    ->  the project's `temp/` folder, gitignored
+    project for a while                 # a fetched transcript, a file read
+                                        # once, a draft that never became a
+                                        # deliverable — disposable by
+                                        # definition, so nothing records when
+                                        # it should be deleted
 ```
 
 A file the project genuinely needs to keep isn't a temp file — route it per the
@@ -747,9 +680,7 @@ be is substantial. So a plan run holding work back and finding nothing in the
 queue to name as its blocker writes one.
 
 **Line format — write an entry in this exact shape**, which is what the hooks
-parse. The `#### ` heading is load-bearing: the queue lint, the red-flag scan and
-the section keying all key on it, and each fails silently against any other
-shape.
+parse.
 
 ```
 #### <one-line description> [slug]
@@ -776,8 +707,7 @@ Cycle: [slug]                                  # the entry is that named cycle's
 ```
 
 **A date holds an item on its own, with no blocker item standing in for it.**
-Every other blocker needs a human or a build to resolve, which is why blockers
-are queue items — a date resolves itself and is read off the calendar by the
+A date resolves itself and is read off the calendar by the
 hooks, so nobody confirms anything and no wake-up capture is filed.
 
 **`Blocked by:` means one thing on a work item and another on a capture:**
@@ -789,10 +719,8 @@ on a capture (Unprocessed)  ->  do not OFFER this again while any named item
                                 is still open
 ```
 
-**On a capture it needs no approval, unlike a date**, because the queue can
-check it: the blocker is an entry anyone can look up, so a capture held this way
-returns by itself the moment the thing it waits on is processed or built. The
-date form is the one that guesses, which is why that one is the user's call.
+**On a capture it needs no approval, unlike a date**: a capture held this way
+returns by itself the moment the thing it waits on is processed or built.
 
 **`Not before:` means one thing on a work item and another on a capture:**
 
@@ -803,22 +731,11 @@ on a capture (Unprocessed)  ->  do not OFFER this again before the date
 
 **A capture carries one only with the user's approval, and only where it waits on
 something outside the project entirely** — another project's reply, a feature
-shipping in a tool nobody here controls. Such a capture can name no blocker,
-because nothing in the queue can do what it waits for, and it cannot be held below
-the cleared-to-run line either, since being held there requires work specific
-enough to build. Without the date it returns to the top of the queue every session
-and is set aside again.
+shipping in a tool nobody here controls.
 
-**It stays a capture throughout and gains no state of its own.** Two sections and
-one readiness line, unchanged — this is one existing field appearing in one more
-place.
+**Write `Blocked by:` plain, not bolded.**
 
-**Write `Blocked by:` plain, not bolded.** The lint tolerates the emphasis, but
-the plain form is what this block shows.
-
-**Put a heading's distinguishing words first**, because the queue is read through
-an outline of headings that truncates each one mid-phrase, so the end of the line
-may never be seen. This governs word order alone.
+**Put a heading's distinguishing words first.** This governs word order alone.
 
 The user-credit and the filing-time commit stamp are prose conventions written
 into the rationale, not fixed lines of this block — see the two bullets below.
@@ -844,10 +761,7 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 ```
 
   **Write an origin claim wherever the user raised the item, whether or not
-  their wording survives.** Everything in these documents is written and
-  recorded by Claude, so requiring a quote for an origin claim would move every
-  un-transcribed idea of theirs into Claude's column — and the cheapest way to
-  satisfy such a rule is to ask the user to prove their own work is theirs.
+  their wording survives.**
 
   **Reserve a quote claim for verbatim text**, so a point rendered in Claude's
   own words is framed as Claude's rendering of it. Quotation marks around a
@@ -859,16 +773,11 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 
   **The containment test tells agreement from authorship: a reply wholly
   contained in Claude's preceding message cannot evidence an origin claim.**
-  Without it the rule above has no way to judge a one-word answer — and a
-  one-word answer is often a tap on a suggested reply, which is Claude's own
-  wording returned. Where the reply adds nothing Claude did not just write, the
+  Where the reply adds nothing Claude did not just write, the
   decision is Claude's and the item stays unmarked.
 
   **Existing credits are not audited in bulk, and not disclaimed in bulk
-  either.** The test needs the message that preceded each credit, which is not
-  recoverable item by item. Declaring past credits unreliable wholesale would be
-  an unverifiable claim about the record that degrades every honest credit
-  alongside the doubtful ones. Check a specific credit when it is challenged.
+  either.** Check a specific credit when it is challenged.
 
   **Mixed authorship is written as mixed**, naming who did which part — *"Bundling
   by hand was rejected on Claude's recommendation and the user's agreement."*
@@ -880,8 +789,7 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 
   **In a session holding more than one person, credit attaches to the named
   person whose message raised the item** — an origin claim names them ("raised
-  by <name>") exactly as "captured by you" does with one person in the room,
-  which is the case the general wording contains. **The containment test runs
+  by <name>") exactly as "captured by you" does with one person in the room. **The containment test runs
   per person**: a reply wholly contained in Claude's preceding message
   evidences no origin claim, whoever sent it, and agreement is not authorship
   for any participant. **Identity is the authenticated identity the channel
@@ -909,11 +817,9 @@ The tag **leads** the description. One leading tag at most. Flavor is settled
 when the item moves into Processed.
 
 **A flavor names how a work item is executed, and `[freeform]` is a flavor like
-the rest, not a mode a session is in.** Hand-work in a chat with no queue item
-behind it has no name and needs none.
+the rest, not a mode a session is in.**
 
-The `[user]` tag is governed by a **matched pair** of rules. Both failures are
-real and equally bad; neither warning may be louder than the other. (How a
+The `[user]` tag is governed by a **matched pair** of rules. (How a
 `[user]` item is then *run* is the walk-through lifecycle in next.md.)
 
 - **Reserve `[user]` for work Claude genuinely cannot perform or witness** — a
@@ -945,18 +851,12 @@ real and equally bad; neither warning may be louder than the other. (How a
   An item without a recorded hand-over never qualifies, and neither does one
   naming something checkable. One ask, then take the answer.
 
-  This is an exception to the completion-ask bar below, and it exists because
-  the bar cannot be restated to cover the case: all three routes it leaves open
-  — walked to its end this session, the user volunteers it, an observable check
-  passes — are shut by construction here. The work happened in a chat that
-  closed, so nobody can walk it; there is nothing in the world to check; and the
-  one remaining route asks the user to remember an item they were handed days
-  ago. Without the ask the item is re-presented as unstarted, which is the
-  failure this admits it for.
-
 - **Walk a `[user]` item through whenever it is reached, and learn completion
   from what the user volunteers.** That is its whole lifecycle in every skill —
-  /plan, /next and /done alike. A filed `[user]` item may be walked the moment
+  /plan, /next and /done alike. Presenting one states how many other items are
+  blocked on it, read off the queue's `Blocked by:` lines, and names them only
+  where the user genuinely needs it — [SILENT] where nothing is blocked on it;
+  [BRIEF] where something is. A filed `[user]` item may be walked the moment
   it is filed, with the user present, where walking it now clears a red flag or
   unblocks work this session is doing; the item is written into the queue before
   its first step is driven, so an interrupted walk survives there. Before walking,
@@ -968,18 +868,14 @@ real and equally bad; neither warning may be louder than the other. (How a
 - **A `[user]` item carries a walkthrough** — which steps, in what order, what to
   check. **Each step names the thing to click or type and the thing to look for**,
   so "Open your session list" becomes what to click to get there and what tells
-  you it worked. Every consumer of this method is a no-code developer, and most will not
-  have used the surface a walkthrough names, so a step assuming familiarity is
-  under-specified for the whole audience rather than for one person. **A step
+  you it worked. **A step
   carries at most three instructions, and anything more splits into further
   steps each carrying its own look-for** — where a check or a verification
   counts as an instruction exactly as an action does, and a do-not statement
   does not, since it asks the reader to do nothing. The figure's derivation:
   working-memory research puts instruction-following at three to five steps
   before people forget details or make mistakes, and this takes the low end of
-  that range. The recorded instance is a step bundling six — open a new terminal
-  window, run a quoted command, type a login command, drive a keyboard-only
-  menu, authorise in a browser, close the window — before any look-for at all.
+  that range.
   Existing walkthroughs are re-cut to this as they are driven, never in a bulk
   pass. This fires
   at authoring time, where the cost is wording, and stays there — the decision step
@@ -992,12 +888,9 @@ real and equally bad; neither warning may be louder than the other. (How a
   - where a step has the user run a terminal command, supplying as typed
     commands whatever must be true for it to work — the `cd` with its actual
     path first among them — or stating plainly that the command works from
-    anywhere. A fresh terminal opens somewhere the user did not choose, so its
-    location is never assumed, and a precondition written as a description
-    ("with the terminal in your project folder") reads as already done;
+    anywhere;
   - where it involves more than one stored text — a pinned message, a forum
-    post, a register line — naming where each one lives, since a step saying
-    "update the text" is unfollowable once there are two of them;
+    post, a register line — naming where each one lives;
   - where a step drives a GUI app, naming something visible to click or a
     menu path where one exists; a keyboard shortcut is the instruction only
     where no visible route exists, and the step then says what appears on
@@ -1006,26 +899,24 @@ real and equally bad; neither warning may be louder than the other. (How a
   - where a step needs a fixture — something with a stated property to act
     on — stating the property it must have, with any file named as one that
     had it when the step was written;
-  - where a step verifies something, listing the claims it checks, so the user
-    knows what a pass covered rather than only that it passed;
+  - where a step verifies something, listing the claims it checks;
   - where a step sends anything off the machine, writing the explicit yes onto
     that step — in a walkthrough or in a cycle or ritual definition alike;
   - ending at the item's own observable, with cleanup after the test filed as
-    its own item rather than written as trailing steps — a walkthrough that
-    carries on past the thing it was proving has no point anyone can check it
-    against;
+    its own item rather than written as trailing steps;
+  - where the item's send hands the work to another project for completion,
+    ending at that send and carrying no steps after it;
+  - filing anything that depends on the outcome of that send as its own item
+    before the hand-over closes this one;
   - where a step has the user edit text Claude drafted, writing that draft to a
     `.txt` file in the session scratchpad — unless the item's Files line names
-    a project path for it — with the step handing it over as a link under the
-    folder's full path — the short-name form the harness may report (`~1` in a
-    folder name) does not open — naming which, then reading it back
-    only when they say to, asking whether there is anything else, and
-    repeating until they say they are finished. `.txt` is what the desktop
-    side panel opens for editing, with a save button, so the user decides when
-    their edits land — and editing the text directly is what stops co-authored
-    work collapsing into Claude work the user describes changes to. The
-    scratchpad is the default because every run may write it and it sits
-    outside the repository. Where the user says they cannot open or edit the
+    a project path for it — with the step handing it over as a link that
+    opens it, in the shape View-in-doc rendering gives — the short-name form
+    the harness may report (`~1` in a folder name) does not open — and
+    offering in the same breath to display it inline or send the file
+    instead, for a reader on a phone or driving the session remotely; then
+    reading it back only when they say to, asking whether there is anything else, and
+    repeating until they say they are finished. Where the user says they cannot open or edit the
     file — said once, for the rest of the chat, with nothing detecting it —
     the draft is still written to the file for the record and shown to them
     in full, and their changes come back as chat text that Claude applies to
@@ -1033,8 +924,7 @@ real and equally bad; neither warning may be louder than the other. (How a
     deferring the step stays their option.
 
 The `[freeform]` tag names **work done by hand rather than by /next** — because it
-is large, or because it characteristically cannot run inside a run. Its main job
-is telling the close what kind of work it is looking at. **Before its first
+is large, or because it characteristically cannot run inside a run. **Before its first
 edit, a freeform session working a queued item writes a scope file —
 `_freeform-<session-id>.md` in the project root, with a `Files:` section
 listing paths — and reports it in one line.** The list comes from the item's
@@ -1046,8 +936,7 @@ surface are refused.
 **Most freeform work never passes through /plan at all.** The user and Claude do
 it by hand in a chat of its own, and /done reads the resulting edits as their
 expected work. Where one *is* filed as a queue item, it is ready work with nothing
-blocking it, so it sits **above** the cleared-to-run line and /next halts on it;
-the tag carries that exception rather than a third region of the queue.
+blocking it, so it sits **above** the cleared-to-run line and /next halts on it.
 
 A repair to the machinery /next itself uses — the queue mover, the scope-lock, the
 lint — is **one example** of work that cannot run inside a run, since running the
@@ -1113,10 +1002,6 @@ measure_written_shape_length.py` prints each shape's current median. A median is
 a proportion of what is already written rather than an invented figure, and it
 ratchets — writing to it pulls it down.
 
-Both failures are real: a record too thin to rebuild intent from fails as surely
-as one too long to get through, and the second is what this method has produced
-at scale.
-
 **A plan entry splits per item processed, exactly as a build entry splits per
 item built.** A planning decision is a disposition on a queue item, and that item
 carries a slug, a filename and an index line. What is genuinely chat-level — a
@@ -1131,8 +1016,7 @@ carried inside it.
 **Run `<plugin-root>/scripts/measure_written_shape_length.py .` to report this
 project's own distributions.** It prints how long your captures, work items,
 session records and index lines actually run, and it prints no threshold of any
-kind — the same posture the queue digest and the growth reports take: state the
-fact alone.
+kind.
 
 **Placement: append to the bottom of Unprocessed, always.** No judgment call, no
 narration line. **A capture filed mid-run follows the same rule and gets no
@@ -1156,10 +1040,7 @@ releases the write.
 the shelving mechanics unsaid. Put timing in the capture-now, design-later frame
 ("filed for a later /plan").
 
-**Reference other queue items by slug**, leaving status out of the sentence:
-status is re-derived from LOG, and an asserted one goes stale silently. A slug
-written into prose is also the only thing that makes a cross-reference exist at
-all, and it stays grep-able through any reorder.
+**Reference other queue items by slug**, leaving status out of the sentence.
 
 ## Queue states — the canonical four
 
@@ -1211,26 +1092,19 @@ a durable finding                          ->  workshop/resources/research, or L
 a forward recommendation                   ->  the advisory (transient)
 ```
 
-The cleared-to-run line **replaces** parking. Order within a section carries
+Order within a section carries
 build order and processing order; a *blocking* relationship is carried by the
 `Blocked by:` field — on a work item, work that cannot be built until other work
 ships; on a capture, an idea not worth offering again while the named entry is
 open — and carrying an ordering preference instead by placement plus one
 sentence in the item's prose naming what it should follow. **The field takes
 several slugs where the work waits on a group, and the item lifts only when
-every one of them resolves** — a single proxy blocker would report it liftable
-the moment that one item shipped, with the rest outstanding, and the revisit
-trusts the field. `Blocks:` and
-`Depends on:` headers stay retired: one field, in one direction, on the item that
-is held.
+every one of them resolves.**
 
 **Carry an ordering preference in prose, because the field would hide the entry.**
 On a work item `Blocked by:` sends it below the cleared-to-run line, and on a
 capture it makes the ranking pass over it silently — either way out of what the
-user sees during an ordinary run — which has
-already cost a consumer project two fully designed items and its user's
-confidence that a feature was queued at all. A prose sentence survives a reorder,
-since the sentence is the relationship and the position is only where it runs.
+user sees during an ordinary run.
 
 ## Red flags
 
@@ -1244,9 +1118,7 @@ uncleared flag lives in Unprocessed.
 
 **The flag rides the work** — the item is the work (what will be done about the
 risk) and the marker tags it as carrying the concern, so the flags live on items
-rather than in a section of their own. A standing "Red flags" section would claim
-the tool tracks every risk that exists, when all it holds is the risks Claude
-happened to spot: risk-*addressing*, never risk *management*.
+rather than in a section of their own: risk-*addressing*, never risk *management*.
 
 Scope: security, privacy and breach risk — data exposure, unauthorized access,
 credential handling, injection vectors, information leakage, unprotected storage,
@@ -1295,9 +1167,7 @@ file.** Intent lives in SPEC, rationale rides every QUEUE item, history lives in
 LOG. SPEC and QUEUE are read during planning and building, so the throughline
 shapes work silently rather than only on a "why?" question; LOG is the deep
 archive, pulled on demand. **LOG is where the throughline is recorded, and is
-not itself the throughline** — the tell that they are distinct is that a
-complete LOG can carry no throughline at all, every event recorded with the
-reasoning stripped out, which is exactly the failure this fights.
+not itself the throughline.**
 
 **The provenance rule in Captures governs rationale too, in full** — including
 the credit-requires-their-words bar and mixed authorship. Where the user's
@@ -1307,8 +1177,7 @@ reason for this: …").
 What counts as rationale is broader than the decision's reasoning: it includes a
 concern raised and resolved, and an alternative seriously weighed, each carried
 with **why it lost**. The intuitive-but-rejected alternative most needs
-preserving — without the why-it-lost recorded, a later chat re-proposes it and
-relitigates a settled decision.
+preserving.
 
 ```
 qualifies:      a concern raised and addressed; an alternative seriously weighed
@@ -1357,8 +1226,7 @@ each completed month's in `LOG/index-YYYY-MM.md` — and a targeted retrieve
 searches the index files rather than reading them whole**, so the archive can
 grow without any single read growing with it. The limit is stated rather than
 hidden: a search reaches lines that carry the words searched for, and an entry
-indexed under phrasing the search never tries is missed — which whole-reading
-did not risk. A planning session's opening still reads, unprompted, the
+indexed under phrasing the search never tries is missed. A planning session's opening still reads, unprompted, the
 `LOG/index.md` lines newer than the most recent planning session's record.
 
 **Subject to the Authoring standard's length provision above, the bound here is
@@ -1390,8 +1258,7 @@ Those are held by the approval rules and by nothing mechanical.
   preferences, working style, cross-project facts.
   - **Feedback about a behaviour the METHOD produced routes by the three-way
     discriminator**, not to memory — a skill's narration, a step that misfired,
-    a rule with a bad outcome. Absorbing it as a preference fixes this one
-    session and leaves the defect shipping to everyone else.
+    a rule with a bad outcome.
   - **A preference no method rule governs stays memory's** — a name, a
     timezone, a tool the user likes.
 - **Doc routing — four destinations, two confused lines:**
@@ -1413,8 +1280,7 @@ CLAUDE.md vs memory =  "this project" vs "all projects"
   really product truth ("the app does X"), name it as SPEC content and route it
   there.
 - **Executable work lives in the queue as work items.** /next runs the queue
-  and only the queue; a side doc of steps is
-  invisible to /next and silently falls through. A task mixing Claude-work and
+  and only the queue. A task mixing Claude-work and
   user moments **decomposes into queue items**: build items for Claude's parts,
   `[user]` items for the user's.
 
@@ -1444,8 +1310,7 @@ premise is broken       ->  halt and course-correct
 
   "Capture and continue" means: write it to Unprocessed, report what was filed,
   then close it by who raised it (Communication) — a discovery is Claude-raised.
-  The write happens at the moment of noticing, since an unrouted discovery
-  survives only in memory.
+  The write happens at the moment of noticing.
 
   **User-only discoveries file as a `[user]` capture, tagged at filing rather
   than left untagged.**
@@ -1458,13 +1323,7 @@ premise is broken       ->  halt and course-correct
     winning alternative, a rejection repealed, a resolution ending in "may be
     re-proposed later". The capture may carry `Not before:` or `Blocked by:`
     under their existing provisions; what it may not do is exist only as prose
-    in a record or a rules file, which is read on demand while the queue returns
-    things by itself. The recorded instance: a want raised across many sessions
-    lost a design round, the rejection was later repealed in writing, no capture
-    was ever filed, and the intention's only storage was the user's own memory —
-    surfacing again only because she asked. The failure named plainly: not
-    recording a named intended thing because it is blocked, on the basis that
-    the person can name it again.
+    in a record or a rules file.
 - **One build at a time.** While this chat's build working file exists, finish
   that build before starting another.
 - **One chat runs /plan and /next as many times as the work needs, one after
@@ -1476,13 +1335,10 @@ premise is broken       ->  halt and course-correct
   **/done closes the CHAT**, once, when the chat is finished — it records
   everything the chat did, across every plan run and next run in it.
 
-  **Work on a project from one chat at a time**, because a capture filed in one
-  chat is invisible to the other and the two disagree about the queue from the
-  moment either writes to it. Where a second chat is open on the same project,
+  **Work on a project from one chat at a time.** Where a second chat is open on the same project,
   say so and let the user close it or come back to it.
 
-  **What happens to an isolated chat's work at close, which is the case that
-  loses work.** The harness makes the worktree and its branch and **never merges
+  **What happens to an isolated chat's work at close.** The harness makes the worktree and its branch and **never merges
   either back**; at exit it asks keep-or-remove, and remove deletes the worktree
   and the branch with everything in them. So an isolated close commits, then says
   which branch the work is on, that it is not merged, and that "remove" would
@@ -1524,8 +1380,7 @@ through the three-way triage, then archived.
 
 **When an inbound message asks a question, a reply is owed: draft it unprompted
 once the question has an answer** and put it in front of the user. A defect
-report is owed nothing by default. The send stays under the rule above; what
-this adds is the offer.
+report is owed nothing by default.
 
 ## Dependency ownership
 
@@ -1536,10 +1391,7 @@ this adds is the offer.
   Unprocessed's order is re-derived by the ladder at /plan's opening.
 
   **Most of the queue's order carries no weight, so spend no turns on it.**
-  Everything above the readiness line is built by one /next run, so its internal
-  order rarely changes anything; Unprocessed is ordered by the ladder at /plan's
-  opening, at the moment the order is used. Which of two cleared items goes first
-  changes nothing, so it is settled silently. Reorder where something is
+  Reorder where something is
   genuinely wrong, and otherwise leave the file recording when things landed.
 - **Stable slugs.** Kebab-case, assigned at filing, written at the end of the
   description line, and kept through every reorder and rename. **Write every
@@ -1549,13 +1401,10 @@ this adds is the offer.
   of them.** Opening either one then surfaces it. A capture may also carry
   `Blocked by:`, which stops it being offered while the named entry is open —
   but that is a bow-out, not an ordering, so a known ordering is still written
-  into both entries' prose. A relationship written on one side only survives by
-  luck: two known orderings in
-  one chat were each written once, and one was honoured only because the user
-  happened to ask for the other item first.
+  into both entries' prose.
 - **Narrate the ordering work.** Any time you exercise ordering judgment within
   Processed — a non-default placement, a reorder — say why in one short
-  sentence, since silent ownership reads as no ownership. An append to
+  sentence. An append to
   Unprocessed is unnarrated.
 - **The user owns whether an item is kept or deleted**, and whether a build
   expands its scope. With more than one person in the session, those decisions
@@ -1571,13 +1420,10 @@ procedure docs among them, which can exceed what one read returns, so a read
 of one is finished only when the tool reports no further page — paged to its
 end silently, with no narration of the turning. A read that
 stopped short is named plainly rather than reasoned from quietly. **Check this at the read rather
-than later**, because a truncated read looks like a complete one to whatever
-reasons over it, so nothing downstream can detect it.
+than later.**
 
 **A mechanically generated digest satisfies this rule for the fields it computes,
-and for nothing else** — code that reads the file end to end cannot be silently
-truncated, which makes it stronger than paging *for those fields*, and it says
-nothing at all about the prose it omits. So where a skill provides one, run it
+and for nothing else.** So where a skill provides one, run it
 **and** read the file: the script gives computed facts, the read gives the
 reasoning. A digest is generated from the whole file, by a script; one
 assembled by whoever is reading is the partial read this rule exists to stop.
@@ -1602,10 +1448,7 @@ first.** Trigger: the user asks to roll the project back to an earlier state, or
 a chat opens into the aftermath of one. Reference, fetched on demand.
 
 **A clean `git status` means no UNCOMMITTED change**, so check recent commits
-before reporting that an edit doesn't exist. A landed change and an absent one
-look identical from a clean tree, and the difference matters most exactly when
-the user is asking "did my change land?" — answered wrongly, they redo work that
-already exists.
+before reporting that an edit doesn't exist.
 
 **Uncommitted changes you didn't make are the user's own work.** Read them as
 expected handmade work, confirm with the user, and fold them into the close.
@@ -1624,15 +1467,11 @@ the record, in cheapest-first order:
     LOG/index.md, then the one matched entry
 ```
 
-  **The source is the record, not LOG alone** — most decisions sit in QUEUE
-  prose until a close. A question whose answer already follows from a decision
+  **The source is the record, not LOG alone.** A question whose answer already follows from a decision
   made in this chat is not a new question, however differently it is framed;
   the test is against the decision's *reason*, not its wording.
 - **Where an instruction points at a recorded plan by phrase — "as planned",
-  "the way we agreed", "like last time" — read the record before acting.** The
-  phrase names something written down; resolving it from memory or from what
-  seems likely substitutes a guess for the thing the user was pointing at, and
-  the guess is indistinguishable from the real plan until the work is done.
+  "the way we agreed", "like last time" — read the record before acting.**
 - **When the user proposes a change that would alter or reverse something the
   record already holds** — an existing rule, a shipped feature, a queued or
   logged decision — run the retrieve *before agreeing*, down the ladder above,

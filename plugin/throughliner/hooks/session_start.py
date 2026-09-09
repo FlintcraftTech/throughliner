@@ -247,6 +247,52 @@ def _file_is_committed(cwd, relpath):
     return result.returncode == 0 and bool(result.stdout.strip())
 
 
+def _placeholder_line_is_committed(cwd, relpath, line, is_index_file, is_legacy_log=False):
+    """True if the committed version of `relpath` already carries THIS
+    placeholder — so an unresolved one there should have resolved.
+
+    `_file_is_committed` asks whether the file has ever been committed, and
+    `LOG/index.md` always has, so index lines the current session wrote minutes
+    ago — placeholders exactly as the entry template says to write them — read
+    as a failing backfill at the next opening
+    ([housekeeping-note-misreads-uncommitted-placeholders]). The question is
+    whether the LINE is committed: for an index line, a committed line carrying
+    the same token and pointing at the same entry file; for a record, the file
+    being committed with a placeholder still in its heading. Matching on token
+    and filename rather than the whole line keeps an index summary reworded
+    after its commit reported, which is the case the note exists for.
+    """
+    match = _placeholder_in_slot(line, is_index_file, is_legacy_log)
+    if not match:
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "show", "HEAD:" + relpath.replace(os.sep, "/")],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    if result.returncode != 0:
+        return False
+    token = match.group("token")
+    target = line.rsplit("→", 1)[1].strip() if is_index_file and "→" in line else ""
+    for committed in result.stdout.splitlines():
+        c = _placeholder_in_slot(committed, is_index_file, is_legacy_log)
+        if not c or c.group("token") != token:
+            continue
+        if not is_index_file:
+            return True
+        c_target = committed.rsplit("→", 1)[1].strip() if "→" in committed else ""
+        if c_target == target:
+            return True
+    return False
+
+
 def _log_is_tracked(cwd):
     """True if any file under LOG/ is tracked by git right now.
 
@@ -371,9 +417,12 @@ def backfill_log_hashes(cwd):
                     continue
             if not commit:
                 # An unresolved placeholder is normal for the current session's
-                # own entry (not committed yet). But if this entry file is
-                # already committed, it should have resolved — flag it.
-                if not file_flagged and _file_is_committed(cwd, relpath):
+                # own entry or index line (not committed yet). But if this
+                # placeholder is already committed, it should have resolved —
+                # flag it. Line-level, not file-level: the index file is
+                # always committed, its newest lines usually are not.
+                if not file_flagged and _placeholder_line_is_committed(
+                        cwd, relpath, line, is_index_file, is_legacy_log):
                     unresolved_committed.append(
                         "%s (%s)" % (name, match.group("token")))
                     file_flagged = True
