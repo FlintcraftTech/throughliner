@@ -3,7 +3,8 @@ name: done-build
 docset: current
 note: >
   Close-out for build-flavor work items. Reached from done.md's router for the
-  run's build items (work items carrying no flavor tag).
+  run's build items (work items carrying no flavor tag), and — through the
+  audit delta at the end — for its [audit] items.
 ---
 
 # Build close-out
@@ -25,7 +26,7 @@ Captures meaning that would be lost after compaction.
 
 ### Mid-close directive — new scope vs build-completing fix  [PROMPT]
 
-If a new directive arises during the close — the user raises a change, or
+If a new directive arises during /done — the user raises a change, or
 verification turns one up — decide by one line: **does it complete the just-built
 work's own verification, or is it new scope?**
 
@@ -88,7 +89,7 @@ Append each finding to Unprocessed, placed per the Captures placement rule
 
 ### 1.3 Spec check-against  [SILENT] when the run agrees with SPEC; [PROMPT] on a contradiction
 
-**The build close checks the run's work against SPEC. It does not sync SPEC to
+**The build session's /done checks the run's work against SPEC. It does not sync SPEC to
 match it.** Each item was already checked as it was built (next-build.md, step 4);
 this is the run-level look, over work that has accumulated.
 
@@ -102,7 +103,7 @@ run CONTRADICTS SPEC   ->  name the SPEC sentence and the work that contradicts
 **Where the build found that SPEC owes a sentence, it filed a capture and wrote
 nothing** (next-build.md, Scope management). Confirm the capture exists and say
 in one line that SPEC lags that sentence until the next planning run. **Do
-not write it here:** the close is the same session as the build, so writing it
+not write it here:** /done is the same session as the build, so writing it
 now moves the self-certification later rather than crossing the session boundary
 the rule exists for.
 
@@ -128,7 +129,7 @@ Silent when no built item carries a flag.
 ### 1.5 Reply to mail the run opened  [SILENT] when no mail arrived; [PROMPT] when it did
 
 Where /next's pre-flight opened a message that asked a question, a reply is owed:
-draft it now and show it. A defect report is owed nothing by default. The close is the moment the user is reliably present, which
+draft it now and show it. A defect report is owed nothing by default. /done is the moment the user is reliably present, which
 mid-run is not — and a reply leaves the machine, so it goes out only on their
 explicit yes to the exact wording, with the draft put in front of them unprompted.
 
@@ -160,14 +161,14 @@ removed each item as it ticked:
 git show HEAD:QUEUE.md
 ```
 
-The run has not committed yet — the close is what commits — so every item this run
+The run has not committed yet — /done is what commits — so every item this run
 built is still in the last commit's copy, whole. **Take the item's whole block —
 from its `#### ` heading to the next heading, or the section's end** — and
 nothing else; a read of the whole file is not needed to answer one slug. A hand-sized grep or line window is not used:
 a window shorter than the item once truncated the read twice in one close, and
 both outputs reasoned from the cut-off text, one reaching the user.
 
-**Where the fetched item's own text already dispositions a question the close is
+**Where the fetched item's own text already dispositions a question /done is
 about to put to the user, transcribe the disposition instead of asking** — and
 an ask that deliberately re-opens one names the recorded decision it re-opens.
 
@@ -183,7 +184,7 @@ removes it — so after the build the LOG entry is the only surviving record of
 what the work was for. The count rule never forbids done.md's sibling-citation
 provision: where one decision settled several of the run's items, one entry
 carries the reasoning and the sibling entries cite it, each still named for its
-own slug. The close sees the grouping from what it already reads — each built
+own slug. /done sees the grouping from what it already reads — each built
 item's queue text, read back one at a time — so items whose text records the
 same settlement are the siblings.
 
@@ -196,20 +197,20 @@ contested decision.
 
 **Read each item's rule-gate disposition from the working file by its slug too**
 — `Rule gate: <slug> — run, …` — for the same reason and in the same pass. The
-line the close then writes into the session's LOG entry stays slugless: it
+line /done then writes into the session's LOG entry stays slugless: it
 describes the session rather than one item, which is the form
 `workshop/resources/rule_signals.py` reads.
 
-**A built slug with no depth line is read as short**, and noted at the close as
+**A built slug with no depth line is read as short**, and noted at /done as
 a discipline slip rather than passing silently: the field is required, so a
 missing one means the build skipped a step, and saying so is what keeps it from
 decaying back into an optional line.
 
 **Transcribe each item's tick form into its LOG entry, and announce every
-unconfirmed item at the close** [BRIEF]. The tick reads either `done, confirmed`
+unconfirmed item at /done** [BRIEF]. The tick reads either `done, confirmed`
 or `done, UNCONFIRMED: <what still needs running>` (next-build.md). Carry
 whichever it says into the entry verbatim — transcribed, not composed — and where any item
-is unconfirmed, say so plainly in the close's narration, naming the item and what
+is unconfirmed, say so plainly in /done's narration, naming the item and what
 has not been run.
 
 **The announcement is required rather than left to judgment.** `done-plan.md`'s
@@ -246,7 +247,7 @@ Run the commit core in done.md.
 
 ## Phase 3: Recommend next  [BRIEF, PROMPT]
 
-Run done.md's **Recommend next** and apply its **Build close** delta: the shared
+Run done.md's **Recommend next** and apply its build delta: the shared
 overlap scan + queue-state ladder are the whole recommendation.
 
 **Leave the next run's size to the cleared-to-run line**, in the recommendation
@@ -255,3 +256,44 @@ user sets it at /plan; a second, softer cap downstream of it is a guess with no
 measurement behind it, since Claude has no gauge of context filling at all.
 Where a run genuinely needs to stop early, the no-progress halt is what stops
 it — a behaviour-based stop rather than a number.
+
+## Audit delta — for a run's `[audit]` items
+
+Run the phases above and apply this delta, the shape done-plan.md uses. Audits
+edit no source files — **the session's product is the captures it appended to
+Unprocessed** — and only what follows differs for an `[audit]` item.
+
+**1.1 Verify completion** asks whether every *finding* is ticked — captured or
+dropped — in place of every item built. Close partial the same way. An audit
+item carries **no** memory-reconcile delta: a finding is ticked when captured or
+dropped.
+
+**1.2 Route stragglers.** The findings themselves were appended during the
+audit; this step sweeps anything *else* flagged along the way — observations
+outside the audit's criteria, process issues — from the same record the build
+step sweeps.
+
+**2.1 Write LOG entry** — one per audit item, named after its slug, using
+done.md's **Audit** body fields:
+
+```
+Files touched       the target artifacts READ — the audit edited nothing
+Routed to Captures  findings captured, or "none"
+Findings routing    how many were filed as captures, and any dropped on
+                    Claude's own re-reading before filing, with the reason
+```
+
+**An audit doesn't clear red flags** — clearing happens at processing. A
+security, privacy or breach risk this audit surfaces is filed as an ordinary
+**uncleared** capture in Unprocessed (`Red flag · State: uncleared`), which a
+later /plan clears; note in the entry that the audit surfaced it. An audit item
+that itself carries a marker is closed by 1.4 above like any built item.
+
+**2.4 Commit.** No source-file edits are staged because the audit produced none
+— the staged paths are the QUEUE.md capture additions, the LOG/ changes, and the
+build working file's deletion.
+
+**Phase 3** applies done.md's audit-session delta: findings appended this
+session sit unprocessed, so the default recommendation is /plan, to sort them
+into work — name the count. Only when nothing was appended does the shared
+overlap scan run and the ladder apply.

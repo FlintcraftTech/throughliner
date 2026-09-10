@@ -47,7 +47,7 @@ gets built first — through discussion, not silently.
   sentence go wrong or incomplete?**) — edit SPEC in that same /plan run, with
   the user present and approving. The /plan-close spec-sync gate enforces the
   same-commit atomicity between a behaviour change and its SPEC sentence, and it
-  is now the **only** sync gate — a build close checks its work against SPEC instead of
+  is now the **only** sync gate — a build session's /done checks its work against SPEC instead of
   editing SPEC to match. When a change touches no SPEC sentence, none of this
   applies. One other route exists: a large SPEC rework is its own piece of work,
   naming SPEC.md among its files like any other build.
@@ -127,7 +127,7 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
 
 - **`[freeform]` placement, for the uncommon case where one reaches the queue at
   all.** Most freeform work is done by hand in a session of its own and never
-  passes through /plan — the tag's main job is telling the close what kind of
+  passes through /plan — the tag's main job is telling /done what kind of
   session it is looking at. What follows governs a freeform item that *is* filed.
   Either the user or Claude may designate it,
   typically as a stopgap or as the nuclear option for something too big to fix
@@ -658,7 +658,7 @@ stop on the way to it.
 preview**, so the checkpoint below satisfies `[SEQUENCE]`.
 
 **/plan writes no working file.** Each item's disposition and reasoning go into
-that item's own rationale in QUEUE.md as it is processed, so the close recovers
+that item's own rationale in QUEUE.md as it is processed, so /done recovers
 the session with `git diff HEAD -- QUEUE.md`. The queue is the only planning
 artifact; leave it that way.
 
@@ -705,9 +705,8 @@ outside the project, so the date passing says the wait is over and says nothing
 about whether the thing it waited for turned out as assumed.
 
 **Pass over any Unprocessed entry whose `Blocked by:` names an entry not yet
-processed or built** [SILENT], on the same terms. On a capture the field means
-don't offer this again until the named entry has been processed or built, so
-such an entry is not ranked, not presented and not counted toward the session's
+processed or built** [SILENT], on the same terms. So, per the always-loaded
+field rule, such an entry is not ranked, not presented and not counted toward the session's
 floor. It returns by itself once every named entry has been processed or built
 — an entry kept into Processed, cleared or held, counts as processed, so a
 capture held on it returns in the session it is kept — the digest prints each named blocker's
@@ -903,10 +902,8 @@ closing the interview:
                                    let sub-step 2 carry the recommendation
 ```
 
-**The no-open-question case is the common one, for a keep as for a delete.** A
-separate recommendation turn that repeats the interview's reading hands the user
-the same content twice; the process-now specimen's four-turn shape stands only
-while a question is open.
+**The no-open-question case is the common one, for a keep as for a delete.** The
+process-now specimen's four-turn shape stands only while a question is open.
 
 **View-in-doc.** The item already exists in QUEUE.md, so pointing is the default:
 lead with a one-line pointer instead of the pasted quote. The confirm re-read
@@ -1034,14 +1031,15 @@ is performed once here, proving the source reachable and recording what it
 found, so a build-time or drive-time re-read refreshes a known answer rather
 than fetches an unknown one.
 
-**Third limb: where an item repeals or rewords a specific sentence or value, grep
-its distinctive words across the project before writing the Files line.** A
+**Third limb: where an item changes how a mechanism behaves, or repeals or
+rewords a specific sentence or value, grep the mechanism's or the sentence's
+distinctive words across the project before writing the Files line.** A
 repealed sentence is a literal string, so this needs no judgment — the item either
 grepped for it or did not.
 
 ```
 the Files line is derived FROM the grep, not from the discussion
-    -> the grep names every doc, template and FAQ entry carrying the string
+    -> the grep names every doc, template and FAQ entry carrying the words
     -> anything the grep finds and the item does not want changed is stated
        as an exclusion, in its own sentence outside the Files line
 ```
@@ -1108,7 +1106,7 @@ written here.** Six things, one line each, in the item's text where the run
 reads them:
 
 ```
-which files change, and what changes inside each
+which files change, and what changes inside each, a new path placed by the temporary-files rule and the Parts block
 which files the work READS but does not change   # where any do
 the observation that shows the change landed
 the files that observation REACHES, named among the files that change
@@ -1220,7 +1218,7 @@ split          ->  buildable half   kept into Processed, passing both limbs
 
 The split's mechanics are the decomposition sub-step in sub-step 3's Into Processed.
 **A mixed item is designed out or split, and a failing limb is what decides
-which** — a close condition requiring the unbuilt half to be re-filed later is
+which** — a condition at /done requiring the unbuilt half to be re-filed later is
 neither.
 
 This is where a design item is caught: an item whose build list is *the design's
@@ -1386,17 +1384,17 @@ steps cannot all be scripted yet, file it with a rough walkthrough and
 sharpen it here.
 
 *Where a kept item produces text the user may edit — a draft, a post, an
-article — ask once: "do you potentially want to edit the draft?"* On a yes,
-write the item's drafting steps in the co-authored-draft shape (the `.txt`
-handed to the side panel, read back on their word — the walkthrough sub-rule
-in skill-nonspecific-rules.md, which stays canonical there), and have the
-draft step name where the draft lives: the session scratchpad by default, or
-a project path only where the item's Files line names one.
+article — write the item's drafting steps in the co-authored-draft shape* (the
+`.txt` handed to the side panel, read back on their word — the walkthrough
+sub-rule in skill-nonspecific-rules.md, which stays canonical there), and have
+the draft step name where the draft lives: the session scratchpad by default,
+or a project path only where the item's Files line names one.
 
 **Run the THOROUGH capability check here — this is its site.** Restate the
 question as *what would answer this?* **before** searching, then name the tool
-that would do the work — the candidates include the method's own skills and
-flows, not only external tools, and whether such a feature exists is answered
+that would do the work, or would produce the item's starting point — the
+candidates include the method's own skills and flows and the tools on record in
+`TOOLS.md`, not only external tools, and whether such a feature exists is answered
 by reading the FAQ index, the record of what has been announced — and confirm
 it is absent or unauthenticated. Trying a tool
 is allowed where trying is quick: the user is in the room, which is what makes
@@ -1428,7 +1426,11 @@ the irreducible user action  ->  a single [user] item, reduced to ONLY that
 
 *If the item goes below the cleared-to-run line, place it destination-first too.*
 Below the line means one of two things: a named queue item blocks this one, or a
-date it must not be built before has not yet passed.
+date it must not be built before has not yet passed. Before writing the field,
+ask whether this item and the one it waits on could simply run in order in one
+run; where they could, the ordering is placement plus a sentence in the item's
+prose naming what it follows, and the field is not written — the field hides
+the entry from the run.
 
 **Where the holding fact is a date, write the date and stop there** — a
 `Not before: YYYY-MM-DD` line on the item, and no blocker item at all. The date
@@ -1483,7 +1485,7 @@ this item's prose names a slug that LOG records as built but not yet verified,
 place it into Processed **below** the line naming that slug as its blocker,
 rather than clearing it. The rule's statement stays in done-plan.md — this is a
 reference to it, not a second copy, so the two can't drift. The reason it is
-needed here as well as at the close: /next runs before /done, so an item cleared
+needed here as well as at /done: /next runs before /done, so an item cleared
 at a /plan opening can be built unattended the same day, on a foundation nobody
 has confirmed.
 
@@ -1567,7 +1569,7 @@ After every item, present the next item. That is the whole checkpoint.
 
 > Into Processed, cleared to run. Next up:
 >
-> **#### The close invites another /next in the same session [close-invites-same-session-next]**
+> **#### /done invites another /next in the same session [close-invites-same-session-next]**
 > Captured by you (2026-08-13), from a live instance minutes earlier in another
 > project running this plugin.
 >
@@ -1727,7 +1729,10 @@ When the *user* raises something fresh mid-/plan, offer the branch **before
 writing anything — and before any analysis, design, or other work on the raised
 thing: work delivered ahead of the offer spends the choice**. Close on the
 offer rather than on a bare "anything
-else?", which can read as parking their idea:
+else?", which can read as parking their idea. The offer is made once per raised
+thing, on either branch below: a reply on the thing's substance counts as
+"process it now", and every later turn on it ends on that item's own
+recommend-and-ask, never on the routing question again:
 
 ```
 process it now   ->  RECOMMEND THIS. Loops straight into the present-and-
@@ -1856,7 +1861,7 @@ per-stretch bound needs.
 New items from conversation follow the same loop — check QUEUE.md for overlap
 first. If you notice a gap: "I notice [X] — want to hear a suggestion?"
 
-The close-out phase here is retired and no longer exists. /plan plans; /done records and commits, and it
+/plan's close-out phase is retired and no longer exists. /plan plans; /done records and commits, and it
 runs the wind-down re-scan at every close whatever the session type. The user's
 exit is `/done`, named in the work cycle in the always-loaded rules and available
 at every checkpoint.

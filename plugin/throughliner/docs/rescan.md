@@ -23,7 +23,7 @@ everything as a capture:
 reveals work still to do          ->  a capture in QUEUE.md Unprocessed
 what already HAPPENED             ->  appended to THIS chat's LOG entry, as a
     — including work done after       marked tail
-    the close
+    /done
 evidence a future chat must       ->  a durable file under workshop/resources/
     re-read word for word
 ```
@@ -37,8 +37,8 @@ evidence a future chat must       ->  a durable file under workshop/resources/
 
 **The tail is what makes this the one-word route for post-close work**, which is
 common and otherwise has to be asked for in prose every time. Mark it as a tail
-rather than blending it in, so what was recorded at the close stays visible as
-what the close recorded.
+rather than blending it in, so what was recorded at /done stays visible as
+what /done recorded.
 
 Filing is capture-making and is open to every skill. Routing and building are
 /plan's and /next's, and this skill stays on the filing side of that line.
@@ -116,13 +116,13 @@ made and this skill files only.
 than rewrite, under a heading that says what it is:
 
 ```
-## After the close
+## After /done
 
 <what was done, and why — the same authoring standard as the entry above it>
 ```
 
 **Where this chat has no LOG entry yet**, there is nothing to append to: the work
-is recorded by the close when it runs, so say that and file only the captures.
+is recorded by /done when it runs, so say that and file only the captures.
 
 Say so when reporting that nothing is committed here, so the user is not left
 thinking the record is saved. A second
@@ -150,7 +150,7 @@ Say it once, plainly.
 
 **Then resume whatever was running and carry on from where it was.** A scan run
 inside a build or a planning run interrupts that work and returns it; the
-hand-back is a return, not a close, and nothing has to be restarted — the skill's
+hand-back is a return, not a /done run, and nothing has to be restarted — the skill's
 instructions are still in the conversation.
 
 **Content line for the hand-back turn — three things, in this order:** what was
@@ -162,7 +162,7 @@ second.
 
 **Recommend nothing else.** This skill exists partly because close machinery
 accumulating at the end of a chat pulls the whole chat toward ending. A /rescan
-that finishes by suggesting the close would rebuild that pull at a new site.
+that finishes by suggesting /done would rebuild that pull at a new site.
 Naming the command that commits the captures is a fact about where they go,
-stated the way the close's own Recommend-next turn states its continuations,
+stated the way /done's own Recommend-next turn states its continuations,
 and is not a recommendation.

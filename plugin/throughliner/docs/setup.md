@@ -133,7 +133,7 @@ show it done, or wait for the user to mention it.
 boundary travels as approval-gated mail, and the receiving project files it with
 its own hands.
 
-**At the close, draft the pop-out message to the parent's INBOX**  [PROMPT] —
+**At /done, draft the pop-out message to the parent's INBOX**  [PROMPT] —
 shown to the user in full, sent only on an explicit yes, like any other outbound
 mail.
 
@@ -191,7 +191,7 @@ source's shape wholesale.
   the source used a path block or pointed its docs elsewhere, that doesn't carry
   over.
 
-## Step 2C: Migration scaffolding  [SILENT] for the checks and file creation; [BRIEF] at the close
+## Step 2C: Migration scaffolding  [SILENT] for the checks and file creation; [BRIEF] at /done
 
 The plugin version changed since this project was last set up. Re-scaffold without
 overwriting user content. Run the checks and file creation **silently**; keep the
@@ -262,7 +262,7 @@ plain statement, so nobody is left thinking the mail is now private.
 offer, never a halt. Where the project is one flat repository, say in two or
 three sentences what the nested shape is (the product in a subfolder with its
 own clean repository, the method's documents tracked privately in the outer
-one, the close committing both) and which of the two conversions this project
+one, /done committing both) and which of the two conversions this project
 gets: where the repository has no remote, the product's files move into a new
 inner repository (the **split**); where it already has one, that repository is
 already the product's and is kept whole as the inner, the opened folder
@@ -307,8 +307,7 @@ parts block, with a stub `SPEC.md` in each part's folder and a `## Parts`
 section in the root spec, as the scaffold's parts step writes them. On
 anything else, drop it: the project keeps the workshop rule
 as its default, and nothing runs at a later session opening for this. The
-top-up does not carry it — reorganising a repository is this run's work, done
-by hand with the user, not a setting added silently.
+top-up does not carry it.
 
 **2. Retire REGISTRY.md if present**  [SILENT] when it holds only what the old
 setup put there; [BRIEF, PROMPT] when the user has written into it. No longer
@@ -543,8 +542,7 @@ conjured on first use.
 `INBOX/` line. It is where a session puts what the project does not keep: a
 fetched transcript, a file downloaded to read once, a draft that never became a
 deliverable. Everything in it is disposable by definition, so nothing records
-when it should be deleted — the counterpart to `workshop/`, which holds what the
-project works with and keeps.
+when it should be deleted.
 
 **INBOX/ folder** — create it empty, with an `INBOX/archive/` inside it. It's this
 project's mailbox: another project you run can drop a message file in here, and
@@ -601,7 +599,7 @@ repository is missing: once at the project root, once in the product
 subfolder. The inner repository holds only the product, displayed cleanly,
 and is the one that goes public when the user asks; the outer one never gets
 a remote, so the method's documents are tracked there — privately — and undo,
-history and the close's read-back all work from ordinary git. The close
+history and /done's read-back all work from ordinary git. /done
 commits both, the product commit into the inner repository and everything
 else into the outer. One product subfolder per project; a project with
 several outgrowing parts uses the subproject pop-out, which exists for that.
@@ -621,9 +619,6 @@ the template's `## Parts` slot carries the pattern — one line per part naming 
 folder and its repository, and one line saying where a file belonging to no
 part goes. Where the inner repository will never be public, say so in one
 line and let the split be looser: more may sit alongside the product there.
-The block is what a later session reads when it creates a file, so a
-scaffold that leaves it blank leaves "where does this go" to the workshop
-rule alone.
 
 **Each part gets its own spec.** Write a stub `SPEC.md` into each part's folder
 — a heading and one line saying what the part is — and a `## Parts` section
@@ -712,7 +707,7 @@ KEPT     Claude still writes to these first and reports what landed. Before
          each change the plugin saves a copy of the previous version into a
          local folder that is itself kept out of the repository, so an
          unwanted change — a deleted queue item included — can be put back.
-CHANGED  the close cannot read its own work back from the file's history, so
+CHANGED  /done cannot read its own work back from the file's history, so
          it records the session from what it remembers.
 LIMIT    those saved copies live on this machine and carry no history, so a
          lost disk loses them. Say this rather than describing the net as an

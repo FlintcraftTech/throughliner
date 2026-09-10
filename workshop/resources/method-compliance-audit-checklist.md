@@ -17,12 +17,12 @@ Run every lens over each doc in scope. One read of the doc serves them all. Find
 **An audit compares a doc against its parent; it compares siblings only for a rule one parent rule would replace.** Say which axis you are running on before the first read, and if it is not the parent axis, argue for the one you have chosen.
 
 ```
-parent axis     done-build.md vs done.md; next-audit.md vs next.md; any
+parent axis     done-build.md vs done.md; next-build.md vs next.md; any
                 sub-doc vs skill-nonspecific-rules.md. Finds a child restating
                 what its parent already carries — genuine duplication, because
                 the child is loaded WITH the parent and the reader has both.
 
-sibling axis    done-build.md vs done-audit.md, next-build.md vs next-audit.md.
+sibling axis    done-build.md vs done-plan.md.
                 Finds the same RULE in two or more siblings where one rule at
                 their common parent, conditioned, would replace the copies
                 (Lens 8, Across siblings). WORDING similarity alone is not a
@@ -79,11 +79,13 @@ Read corpus-wide, the gate asks things it can't ask one rule at a time:
 
 - **Admission, retroactively.** Which rules here would not be admitted today? A rule with no pointed-to failure, one Claude follows unprompted, one that applies to only some sessions but is always loaded.
 - **Eviction debt.** Where does a rule sit alongside the earlier version it was meant to supersede? Consolidation that never repealed its priors is the signature.
-- **Distribution.** Which always-loaded rules are reference material that could be fetched on demand — and, the reverse error, which fetched material is a standing behavioural rule a session would never know to look for?
+- **Distribution.** Which always-loaded rules are reference material that could be fetched on demand — and, the reverse error, which fetched material is a standing behavioural rule a session would never know to look for? Then the misplaced-rules question, run doc by doc with plan.md first, since it is the one that grew: for each rule in a procedure doc, name the moment it governs as a command and a step; where that moment belongs to a different command, file a finding naming the rule, the doc it sits in and the doc that owns its moment. Two limits: it reaches only a rule about another command's moment — a rule that genuinely governs planning's moment but was written as a fresh paragraph because plan.md was open is the unclaimed-parents test's, not this one's; and the read is judgment, since nothing mechanical knows which step a sentence governs.
 - **Rationale placement.** Which operative statements still carry their why inline, and where should it go — the shipped FAQ if a consumer would want it, the deciding LOG entry if it's an authoring decision? When moving one, check the clause isn't *stating* a rule while arguing for it.
 - **Consistency.** Is a rule held to its own standard across docs? Hardened in one doc but cited loosely in another is a finding even when each instance reads fine alone.
 - **False subordination.** A nested unit that is a complete sentence is a freestanding rule wearing a bullet, and is read against the gate as one — admission, eviction, distribution and wording — rather than passing as part of its parent.
 - **Exceptions, retroactively.** For each existing exception, restate the rule so that it does not need one; an exception that restates away without losing content is a finding.
+- **Vacated rules.** For a rule carrying qualifications, list the cases its bare statement covers, take away each qualification's cases, and read what remains; a rule with no case left where it fires as written is a finding, since its qualifications were the rule all along and the bare statement is what to restate. A rule whose provisions have grown past what a reader holds when they reach its end is filed under the same test, naming the bare instruction and the count of provisions beneath it. The test above reads one exception at a time; this one reads their sum. Limit: a judgment read, since no count tells a qualification from a cancellation.
+- **Unclaimed parents.** For each counted rule statement in a document, run the parent lookup against the rest of the corpus (`py throughliner/workshop/resources/rule_signals.py . --parent "<statement>"`), take the top hits as candidates, and read each pair by the gate's subordinate-unit test; a freestanding statement that reads as a refinement of another is a finding naming its parent, to be folded. One document per turn where the corpus is too large for one pass. Limit: the lookup ranks by shared words, so a refinement phrased in other words than its parent is not reached.
 
 **Eviction does not happen in this run.** The sweep names what should go and why; the removal is separate work, filed to Captures like every other finding — see the dispositions note above for why the concern behind the older, opposite instruction is answered by the queue rather than by letting an audit edit.
 

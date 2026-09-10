@@ -9,7 +9,7 @@ have gone with it, so a stale reference produces a visible signal rather than
 silence.
 
 **It is source data, not derived state.** A retirement is an event, recorded once
-at the close that retires it — which is why storing it does not contradict
+at /done that retires it — which is why storing it does not contradict
 computing everything else fresh.
 
 **How a term gets added.** The session that retires something appends a line

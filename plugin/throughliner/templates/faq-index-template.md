@@ -14,7 +14,7 @@ announced yet, not that questions aren't welcome: just ask in chat.
 - **What does `/next` do?** — how a build run works, what stops it, and the
   three work tags. [faq.md](faq.md)
 - **Why does every session end with `/done`, and why start a fresh chat?** —
-  what the close records, and why the context window makes a fresh chat the
+  what /done records, and why the context window makes a fresh chat the
   next step. [faq.md](faq.md)
 - **What is `/rescan` for?** — sweeping up what was said but never filed, and
   the two limits on how far back it reaches. [faq.md](faq.md)

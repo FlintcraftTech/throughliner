@@ -123,8 +123,8 @@ a check Claude CAN run   ->  just building
 a check needing the user ->  a [user] capture, which /plan would have kept as
                              its own item; /next walks the user through it
 a check Claude can run   ->  it stays OUTSTANDING in the run's working file.
-  but a circumstance of      Retry it before the close; if the circumstance
-  the moment blocks          still hasn't cleared, the close files it as a
+  but a circumstance of      Retry it before /done; if the circumstance
+  the moment blocks          still hasn't cleared, /done files it as a
   (the app must be on        capture. No new state, no new tag.
   screen and stealing
   focus would interrupt
@@ -220,7 +220,7 @@ second ask, SIGNIFICANT        ->  still propose the split. A repeated request
                                    absorbing a many-file change mid-run is what
                                    the run bound exists to prevent.
 QUEUE MOVE the user explicitly ->  perform it with the queue mover, narrate it
-  directs mid-run                  in one line, and record it at the close.
+  directs mid-run                  in one line, and record it at /done.
                                    An inferred move is never made and never
                                    offered; a delete keeps its own rules.
 ```
@@ -312,7 +312,7 @@ has no facts on record, which answers nothing and costs one look.
 per fact** — a tool present and its path, or a failure mode such as "fails from
 Claude's shell, runs from the user's terminal". The file is writable whatever the
 run's scope-locked file list says, so this needs no scope addition and never
-waits for the close.
+waits for /done.
 
 **And confirm before connecting to or acting on the user's physical device or
 external hardware** — adb against a connected phone, flashing firmware, driving
@@ -364,7 +364,7 @@ direction or learning the queue needs in conversation = capture needed.* Unroute
 it survives only in the LOG entry, which /plan doesn't read at planning time, so
 the item re-presents unchanged at the next /next.
 
-the build working file stays in place so /done's router still fires the build close-out. The
+the build working file stays in place so /done's router still fires the build's close-out. The
 differences: the LOG entry describes the attempt and why it was aborted, and the
 item returns to QUEUE.md rather than disappearing into the log.
 
@@ -388,17 +388,110 @@ Either way, pair it with the fresh-session handoff offer.
 When this item is done, next.md moves to the run's next. When the whole run is
 built (every Claude-work item ticked, any `[user]` item walked through):
 
-```
-1. tell the user the build is complete
-2. say what remains — nothing recorded yet, and done work can be tightened
-   before closing
-3. end on a statement, naming any command in words and keeping it clear of
-   the sentence's end. The user reaches for the close themselves.
-```
-
-**The completion message carries those two things and stops there.**
+**What the completion turn carries.** That the build is complete; what remains
+— nothing recorded yet, and done work can be tightened before closing; and,
+where a held item bounded the run and the run shipped its blocker, what of the
+intended change is not yet on screen, in product terms — "part of the change
+you asked for is not in the app yet", never "now unblocked". It ends on a
+statement, naming any command in words and keeping it clear of the sentence's
+end; the user reaches for /done themselves. It carries those things and
+stops there.
 
 Tightening means refining done work; anything new routes through the existing
 paths.
 
 **Leave the build working file in place** — deleting it is /done's job.
+
+## Audit procedure — for an `[audit]` item
+
+next.md routes here for each `[audit]` item. Nothing above applies to one; this
+section is its whole procedure.
+
+**The output contract defines an audit:** findings route to Unprocessed so /plan
+can process them into normal work items — **no direct edits to the artifacts the
+audit reads.**
+
+What gets read varies — procedure docs, the user's spec, code, UI flows, workflow
+output. The shape is the same regardless: **read many, propose many.**
+
+Audit items contribute nothing to the run's `Files:` list — settled at next.md's
+self-scoping step.
+
+### If the audit item directs a write into a document, stop and ask  [PROMPT]
+
+Before reading, check the item's wording against the contract.
+
+```
+item directs a write into a named document   ->  CONTRADICTS the contract
+    ("append findings to MAP.md", or names        surface it; don't silently follow
+     a findings doc to fill)
+```
+
+An item marked `[audit]` but pointed at a doc-write is a planning slip. Following
+it silently writes unvetted findings straight into a durable doc — exactly what
+the route-to-Unprocessed contract prevents.
+
+Lead with the recommendation, then wait before reading:
+
+> "This item is an audit, but it says to write findings into review-notes.md. An
+> audit files findings to the queue so you can weigh them before anything lands
+> in a document, so I'd file them as captures. If you'd rather have them written
+> straight into review-notes.md, say so and I'll run it as a build instead."
+
+### Read the target systematically against the criteria  [SILENT]
+
+Read every artifact the item names. **Apply the criteria pass by pass — one
+criterion across the whole target, then the next** — not all criteria per
+artifact. A single criterion held across the whole target is applied more
+consistently than re-deciding every criterion afresh for each artifact, and it
+groups findings by criterion ready for the compile step. Reading each artifact
+once against everything tends to collapse into a per-artifact skim.
+
+Read each artifact through, since an audit's value is reading what is there.
+Accumulate observations in the build working file Changes with precise references
+(file:line) so the user can verify each.
+
+### Compile findings  [SILENT]
+
+Group observations into discrete findings — **one finding per discrete
+observation.** Phrase each as *observed + why it matters*, the shape a capture
+takes, since that's where they'll land.
+
+**Whether a finding is worth acting on is not decided here.** That is settled at
+/plan, with the user present. A filter running in a silent step before the work
+reaches them can only drop things and never surface them, and deciding what
+counts as a finding within the audit's parameters is already discretion enough.
+
+### File the findings to Unprocessed  [SILENT]
+
+Append every finding to Unprocessed, each placed per the Captures placement rule
+and written to the capture-authoring standard. Tick each in the build working
+file Progress as `captured`. Then say in one line how many were filed and which
+audit they came from.
+
+**Each capture carries a prose line saying it is unreviewed audit output** —
+"from the <name> audit, not yet reviewed" — written into the rationale like any
+other provenance. Not a parsed field: /plan's decision step reads the line, and
+nothing else needs to.
+
+**Nothing waits for approval here.** A finding is a capture like any other, and a
+capture is filed and then weighed at /plan — asking the user to accept a set of
+findings before filing them makes them assess the same material twice, once with
+no context and again when it is actually being decided.
+
+The `dropped` tick form stays available for a finding that turns out to be
+wrong on Claude's own re-reading before filing — it is not a route for the user
+to reject one, which happens at /plan.
+
+### Close  [BRIEF, PROMPT]
+
+When the audit item is done, next.md moves to the run's next item. When the whole
+run is done, tell the user how many findings were filed, and say: "We can run the
+rescan first to catch anything decided but never written down, then /done to
+record this and commit — or keep reviewing."
+
+Reviewing means re-examining what was already found — not raising new work.
+Anything new routes through the existing paths: a discovery outside the audit's
+target follows the discovery rule; thinking work goes to Unprocessed. No chat
+summary of the routed findings — the LOG entry /done writes is the single session
+record.

@@ -132,6 +132,12 @@ def test_mid_line_marker_is_flagged():
         warnings = [w for w in lint(bad) if "mid-line" in w]
         check(f"a mid-line '{marker.split(':')[0]}:' is flagged", warnings,
               f"got: {lint(bad)}")
+        # The advice is followable at every site the check fires on: a field
+        # goes on its own line, and prose discussing the field goes in
+        # backticks ([lint-mid-line-flag-names-backtick-remedy]).
+        check(f"the '{marker.split(':')[0]}:' flag names the backtick remedy",
+              warnings and "in backticks where the words are prose" in warnings[0],
+              f"got: {warnings}")
 
 
 def test_marker_on_its_own_line_is_not_flagged():

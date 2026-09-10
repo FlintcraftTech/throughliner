@@ -132,7 +132,7 @@ finding goes to the LOG, which is for what calls for no change here; evidence
 to re-read goes under `workshop/resources/`, **and a
 message that asks a question is owed a reply** — note the debt at triage, and
 draft the reply once the question has an answer: at that moment in a planning
-chat, at the close for a run. A defect report is owed nothing by default. The
+chat, at /done for a run. A defect report is owed nothing by default. The
 never-send-unseen guarantee is untouched — a drafted reply still leaves the
 machine only on the user's explicit yes to the exact wording. Then move the file
 to `INBOX/archive/`, so it isn't surfaced again at every opening. A project
@@ -221,8 +221,7 @@ actually says come apart, and the line is what a later repeal is checked against
 — so a claim composed from the decision describes a message that was never sent.
 
 **The intent field is what lets a send close work.** Handing an item to another
-project **for completion** closes that item — its walkthrough ended at the send,
-and anything depending on the outcome was filed as its own item first; handing
+project **for completion** closes that item; handing
 it over **for continuation** leaves it in the queue for a later capture to wake.
 
 **It lives inside `INBOX/` because that folder is gitignored on every path and

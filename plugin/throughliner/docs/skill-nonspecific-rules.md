@@ -100,7 +100,7 @@ The work cycle. Every piece of work travels the same loop.
     of the message — and where there is nothing to decide, ending on the
     outcome with no ask manufactured; naming any command the ask offers in
     words rather than as a slash string, and keeping that command clear of the
-    sentence's end; subject to the close's
+    sentence's end; subject to /done's
     recommend-next step in done.md, which names no command and ends on
     statements;
   - giving one item per message when the user's next action depends on the
@@ -119,7 +119,7 @@ The work cycle. Every piece of work travels the same loop.
   is shaped; those lines say what a particular turn carries, which is what
   shaping alone cannot settle. Six turns have one: the item summary, the
   recommendation and the checkpoint in plan.md, the walkthrough step in
-  next.md, the close's Recommend-next turn in done.md, and the hand-back turn
+  next.md, /done's Recommend-next turn in done.md, and the hand-back turn
   in rescan.md.
 
   **Alternatives are delivered together and asked singly:** recommend one, and
@@ -191,7 +191,7 @@ The work cycle. Every piece of work travels the same loop.
   with no build running, the mechanics are these:** on the user's next word,
   write `_freeform-<session-id>.md` in the project root with a `Files:`
   section naming that one path, say so in one line, make the edit, and let
-  the close record it as handmade work — the door opens only after the safety
+  /done record it as handmade work — the door opens only after the safety
   check has refused that path earlier in the same session, which it reads from
   its own log. A
   deliverable the user asked for is not a temporary file: under the same door
@@ -229,7 +229,7 @@ NO  -> show it, then wait         a commit message · anything that LEAVES THE
                                   INBOX message to another project) · a
                                   wholesale conversion of a document the user
                                   already owns, where git does not yet hold it
-EXCEPTION                         a close-time or /rescan candidate set —
+EXCEPTION                         a /done or /rescan candidate set —
                                   several ideas landing at once at the
                                   session's end — is shown as ONE numbered
                                   message before anything is written; the
@@ -243,7 +243,7 @@ EXCEPTION                         a close-time or /rescan candidate set —
   of the repository. A deleted queue item is recoverable from its
   snapshot.
 
-  **One consequence is stated rather than repaired: the close cannot read its own
+  **One consequence is stated rather than repaired: /done cannot read its own
   work back from the file's history, so it records from what it remembers.**
 
   **The snapshots are one machine and hold no history, so say that wherever the
@@ -715,8 +715,8 @@ hooks, so nobody confirms anything and no wake-up capture is filed.
 ```
 on a work item (Processed)  ->  do not BUILD this until every named item
                                 resolves
-on a capture (Unprocessed)  ->  do not OFFER this again while any named item
-                                is still open
+on a capture (Unprocessed)  ->  do not OFFER this again until every named
+                                entry is processed or built
 ```
 
 **On a capture it needs no approval, unlike a date**: a capture held this way
@@ -808,7 +808,7 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 
 ```
 (no tag)     ->  build   ->  /next routes to next-build.md
-[audit]      ->  review  ->  /next routes to next-audit.md; findings become captures
+[audit]      ->  review  ->  /next routes to next-build.md's audit section; findings become captures
 [user]       ->  walk-through; /next walks the user through it, never builds it
 [freeform]   ->  work done by hand rather than by /next; /next halts on it
 ```
@@ -845,9 +845,9 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   world an item waits on is filed as its own item in Unprocessed, and filing it
   is where the user's part gets its `[user]` item.
 - **Where an item's own record shows it was handed to the user for completion
-  after a close, and it names no observable this method can reach, ask once
+  after a /done run, and it names no observable this method can reach, ask once
   where the work landed instead of re-driving it.** Both facts together, read
-  off the record: a hand-over recorded at a close, and no reachable observable.
+  off the record: a hand-over recorded at a /done run, and no reachable observable.
   An item without a recorded hand-over never qualifies, and neither does one
   naming something checkable. One ask, then take the answer.
 
@@ -855,8 +855,8 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   from what the user volunteers.** That is its whole lifecycle in every skill —
   /plan, /next and /done alike. Presenting one states how many other items are
   blocked on it, read off the queue's `Blocked by:` lines, and names them only
-  where the user genuinely needs it — [SILENT] where nothing is blocked on it;
-  [BRIEF] where something is. A filed `[user]` item may be walked the moment
+  where the user genuinely needs it, and says nothing where nothing is. A
+  filed `[user]` item may be walked the moment
   it is filed, with the user present, where walking it now clears a red flag or
   unblocks work this session is doing; the item is written into the queue before
   its first step is driven, so an interrupted walk survives there. Before walking,
@@ -1096,15 +1096,13 @@ Order within a section carries
 build order and processing order; a *blocking* relationship is carried by the
 `Blocked by:` field — on a work item, work that cannot be built until other work
 ships; on a capture, an idea not worth offering again while the named entry is
-open — and carrying an ordering preference instead by placement plus one
-sentence in the item's prose naming what it should follow. **The field takes
+open. **The field takes
 several slugs where the work waits on a group, and the item lifts only when
 every one of them resolves.**
 
-**Carry an ordering preference in prose, because the field would hide the entry.**
-On a work item `Blocked by:` sends it below the cleared-to-run line, and on a
-capture it makes the ranking pass over it silently — either way out of what the
-user sees during an ordinary run.
+**Carry an ordering preference between captures in prose, because the field
+would hide the entry.** On a capture `Blocked by:` makes the ranking pass over
+it silently — out of what the user sees during an ordinary run.
 
 ## Red flags
 
@@ -1149,9 +1147,9 @@ cleared returns its item to the bottom of Unprocessed. So every risk ends
 cleared, or its item is deleted. A marker always sits on an item carrying real
 remaining work, and it leaves only when that item does.
 
-/next builds a red-flagged item like any other; the close carries the cleared
+/next builds a red-flagged item like any other; /done carries the cleared
 flag into the LOG entry. **Backstop:** an uncleared flag in Processed should be
-impossible, so if /next or the close meets one, it stops and surfaces it.
+impossible, so if /next or /done meets one, it stops and surfaces it.
 
 ## The throughline
 
@@ -1451,7 +1449,7 @@ a chat opens into the aftermath of one. Reference, fetched on demand.
 before reporting that an edit doesn't exist.
 
 **Uncommitted changes you didn't make are the user's own work.** Read them as
-expected handmade work, confirm with the user, and fold them into the close.
+expected handmade work, confirm with the user, and fold them into /done.
 
 ## Prior decisions
 
@@ -1462,7 +1460,7 @@ expected handmade work, confirm with the user, and fold them into the close.
 ```
 the record, in cheapest-first order:
     decisions recorded earlier in THIS chat      # no retrieve needed — you were there
-    the item's own rationale in QUEUE.md         # where most decisions live until a close
+    the item's own rationale in QUEUE.md         # where most decisions live until a /done run
     SPEC.md
     LOG/index.md, then the one matched entry
 ```

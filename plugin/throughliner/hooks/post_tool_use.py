@@ -808,7 +808,8 @@ def _check_mid_line_markers(annotated, warnings):
                 "queue digest, the session opening, this lint, the queue mover "
                 "— anchors to the start of a line, so as written the field is "
                 "invisible to all of them and fails silently. Put it on its own "
-                "line."
+                "line, or in backticks where the words are prose discussing "
+                "the field."
             )
     _check_unbracketed_blocker(annotated, warnings)
 
@@ -887,6 +888,44 @@ def _item_word_counts(content: str) -> dict:
             body = [ln for ln in b["lines"] if ln.strip() != CLEARED_MARKER]
             counts[m.group(1)] = len("\n".join(body).split())
     return counts
+
+
+def _item_sections(content: str) -> dict:
+    """{slug: section name} for every work item, read from the same blocks."""
+    sections = {}
+    for b in _workline_blocks(_annotate(content)):
+        m = SLUG_AT_END.search(b["heading"])
+        if m:
+            sections[m.group(1)] = b.get("section")
+    return sections
+
+
+def _section_medians(counts: dict, sections: dict) -> dict:
+    """{section name: median word count of its items}, as the queue now stands.
+
+    The median is the bound the always-loaded authoring standard reads off the
+    corpus — the same count `scripts/measure_written_shape_length.py` prints,
+    counted the same way (whitespace-split words; copied rather than imported,
+    since a hook runs standalone from a copied cache). Printed beside a changed
+    item's total so the bound is in front of the writer at the moment of
+    writing. A number, not a threshold: nothing here judges it.
+    """
+    by_section = {}
+    for slug, count in counts.items():
+        by_section.setdefault(sections.get(slug), []).append(count)
+    medians = {}
+    for section, values in by_section.items():
+        values = sorted(values)
+        n = len(values)
+        if n == 0:
+            continue
+        mid = n // 2
+        medians[section] = (values[mid] if n % 2
+                            else (values[mid - 1] + values[mid]) / 2)
+    return medians
+
+
+_SECTION_SHAPE = {"Processed": "work items", "Unprocessed": "captures"}
 
 
 def _head_queue(cwd: str) -> str:
@@ -1082,12 +1121,26 @@ def _growth_report(cwd: str, content: str) -> list[str]:
         return []
 
     now = _item_word_counts(content)
+    return _growth_lines(before, now, _item_sections(content))
+
+
+def _growth_lines(before: dict, now: dict, sections: dict) -> list[str]:
+    """One line per changed item: the growth, the item's total now, and the
+    median of its section's items — "[slug] +119 words, now 916; work items
+    median 525". The total and the median are the two facts the authoring
+    bound is read against; the growth alone said nothing about either."""
+    medians = _section_medians(now, sections)
     lines = []
     for slug, count in now.items():
         was = before.get(slug)
         if was is None or count == was:
             continue
-        lines.append(f"[{slug}] {count - was:+d} words")
+        section = sections.get(slug)
+        shape = _SECTION_SHAPE.get(section, "items")
+        median = medians.get(section)
+        median_text = (f"{median:g}" if median is not None else "n/a")
+        lines.append(f"[{slug}] {count - was:+d} words, now {count}; "
+                     f"{shape} median {median_text}")
     return lines
 
 

@@ -31,7 +31,7 @@ FALSE, and no longer claimed anywhere:
     the session while it goes:
       - a `[user]` item, walked through live, one step at a time
       - a `[freeform]` item, which halts it outright
-      - the close, which is the user's command to run — so a run left alone
+      - /done, which is the user's command to run — so a run left alone
         finishes its builds and sits there uncommitted
 ```
 
@@ -79,7 +79,7 @@ above the cleared-to-run marker.
 run       = Processed[ top .. `--- Cleared to run above this line ---` )
 flavor(item):
     (no tag)    ->  build   ->  next-build.md
-    [audit]     ->  review  ->  next-audit.md
+    [audit]     ->  review  ->  next-build.md's audit section
     [user]      ->  walk the user through it; never built
     [freeform]  ->  HALT — needs a session of its own; never built here
 ```
@@ -200,7 +200,7 @@ message — and hand over only what needs the user's eyes, decision, or hands.
 This is the last line of defence
 against a wrong tag, and it's nearly free — the run is about to act on that tag.
 If the check finds every step is Claude's, do the work as ordinary work and note
-the correction for the close; a wrong `[user]` item otherwise stops an unattended
+the correction for /done; a wrong `[user]` item otherwise stops an unattended
 run dead for work nobody needed the user to do.
 
 **Light, not thorough — no reframe, no search, no trying the tool.** The heavy
@@ -222,7 +222,7 @@ the run can still change rather than after scope is locked.
       region                        RUN ONLY. Leave the queue untouched.
 ```
 
-A reply, where one is owed, is drafted at the close.
+A reply, where one is owed, is drafted at /done.
 
 ### 3b. Cycles due-ness check  [SILENT] when no cycles doc exists; [BRIEF] whenever one does
 
@@ -339,7 +339,7 @@ you CAN scope it, but notice OTHER work      ->  adjacent-work discovery
 section, written at the moment of the write** — it belongs to the run rather
 than to any item, so no tick will ever record it, and after a crash the
 working file would otherwise say it never happened. A working file from before
-this section existed simply lacks it, and the close falls back to memory as it
+this section existed simply lacks it, and /done falls back to memory as it
 always did.
 
 **An item is buildable only when it says what changes *inside* the files it
@@ -401,7 +401,7 @@ becomes part of the path and silently breaks the match. Make sure no other line
 in the file starts with `Files:`.
 
 **Rationale is not copied here.** Each item's reasoning stays in QUEUE.md, which
-is where the run reads it and where the close reads it back. Copying it into the
+is where the run reads it and where /done reads it back. Copying it into the
 working file would put a second copy in a file scheduled for deletion. **The
 safety that governs this is step 3 below** — each item stays in QUEUE.md until
 the moment it is ticked, so no item's only copy ever sits in that file. **If
@@ -457,7 +457,7 @@ is what lets a `[user]` item be walked through without terminating the run.
 
 ```
 build item (no tag)  ->  read and follow next-build.md
-[audit] item         ->  read and follow next-audit.md
+[audit] item         ->  read and follow next-build.md's audit section
 ```
 
 Between build items, keep going autonomously — the user confirmed the whole run
@@ -541,7 +541,7 @@ item strands in Processed and the next /next presents it again as if unbuilt.
   do, run whatever parts you can, give the **first** concrete step, and **wait**.
   One step at a time. This is a live drive, not an offer — you walk *beside* the
   user, you don't step back and hand off.
-- **The close is named only after the walk-through finishes.** How completion gets
+- **/done is named only after the walk-through finishes.** How completion gets
   recorded is told to the user *after* the last step is done or they defer.
 - **One `[user]` item at a time**, each in its own message, led by its own live
   walk-through. Not a bulk-approval result set.
@@ -551,7 +551,7 @@ item strands in Processed and the next /next presents it again as if unbuilt.
 - **A completed `[user]` item has a defined close:** log it under its slug and
   remove it from Processed. Lives in **both** /done (the user runs /done right
   after finishing) and /plan (they completed it async and mention it).
-- **Re-clearing dependents** is the below-the-line revisit's job, not the close's.
+- **Re-clearing dependents** is the below-the-line revisit's job, not /done's.
 
 ### Walk-through branch — the `[user]` items  [SEQUENCE, PROMPT]
 
@@ -569,7 +569,7 @@ step is driven, append every path on the item's Files line to the working
 file's Files section, and say so in one clause.** **Write one line in the
 working file's Run-level section when the record is opened.** The item itself
 stays in QUEUE.md untouched, so nothing is stranded, and a crash mid-walk-through
-leaves a partial entry saying exactly what was done. The close then finds an
+leaves a partial entry saying exactly what was done. /done then finds an
 entry already started rather than writing one fresh.
 
 **Present every `[user]` item the pass reaches.** No item is set aside before it
@@ -597,7 +597,7 @@ moving to the next. (This is *not* the [SEQUENCE] bulk-approval inversion: that'
 for a deterministic result set the user reads and accepts in one pass. A
 walk-through is an action driven live.)
 
-**Where the item's record shows it was handed over for completion after a close
+**Where the item's record shows it was handed over for completion after a /done run
 and names no observable this run can reach, replace the drive with the one
 ask** — where did that land? Both facts together, read off the record, and one
 ask rather than a walk-through of steps the user may already have finished days
@@ -684,7 +684,7 @@ user to run: they are a no-code developer, they cannot tell a typo from a broken
 and the failure arrives in their hands rather than yours.
 
 **Say nothing about /done until the walk-through is complete** — while driving
-the steps, keep the close, "handing over" and recording out of the conversation
+the steps, keep /done, "handing over" and recording out of the conversation
 entirely.
 
 **Once an item's walk-through is complete (or deferred), name its close.** A

@@ -28,10 +28,10 @@ only the method docs; none is /plan-only.
 
 ## Spec-sync gate  [SILENT] in sync; [PROMPT] on drift
 
-**This is the only close that syncs SPEC.** A build close runs a *check-against*
+**This is the only /done run that syncs SPEC.** A build session's /done runs a *check-against*
 instead (done-build.md) — it reads what was built against SPEC and reports a
 contradiction rather than editing SPEC to match. Audits land no product changes,
-so an audit close has neither.
+so an audit session's /done has neither.
 
 **Read what the session changed, not what it remembers — two reads, stated as
 commands:**
@@ -43,8 +43,8 @@ git diff HEAD -- SPEC.md '**/SPEC.md'   # every SPEC sentence written or changed
 git diff HEAD -- QUEUE.md               # every item kept or reshaped this session
 ```
 
-In a nested project run the first read in the inner repository too, since a
-product part's spec sits there. For every SPEC sentence the first diff shows
+In a nested project run the first read in the inner repository too. For every
+SPEC sentence the first diff shows
 written or changed, read the queue
 item it was written for **as that item now stands**, and where the two have come
 apart, correct the sentence. For every kept item the second diff shows, read its
@@ -55,7 +55,7 @@ under the drift branch below. Where SPEC.md or QUEUE.md is gitignored, the diff
 falls to the copy the safety check keeps in the project's snapshot folder, read
 against the file as it stands.
 
-If either read finds drift, **stop the close before committing.** Surface the drift in plain
+If either read finds drift, **stop /done before committing.** Surface the drift in plain
 words, naming which SPEC sentence the session made wrong, get approval to fix it,
 then edit SPEC and commit it **in this same commit** rather than filing it as a
 capture for a later session.
@@ -66,7 +66,7 @@ RECORDING, not re-planning. That covers all three shapes alike.
 
 **The gate checks that every decision this session made had its SPEC sentence
 written at the decision step, and that the sentence still matches the item at
-the close.** By the time the close runs, the sentence either exists
+/done.** By the time /done runs, the sentence either exists
 or was missed, or was written correctly and made wrong when the same session
 later reshaped its item; the two diffs are what catch both.
 
@@ -91,7 +91,7 @@ the session didn't make are most likely the user's expected work. Run `git statu
 --porcelain`, and where what changed isn't self-evident, look. Confirm with the
 user that these are theirs and meant to be saved. **Read them as expected work
 rather than a broken repo, and leave them intact.** Where a scope file
-(`_freeform-<session-id>.md`) is present at the close with no queue item behind
+(`_freeform-<session-id>.md`) is present at /done with no queue item behind
 it, read it as the record of what the user directed through the scope-lock's
 door, and name those paths in the entry. **Read the door's uses from the safety
 check's own log rather than from the scope file alone:** `.throughliner/pre-tool-use.log`
@@ -120,7 +120,7 @@ project work, not bookkeeping.
 ## Batch the human stops in Processed  [SILENT] when nothing moves; [BRIEF] when it does
 
 **One pass, over Processed only: put `[user]` and `[audit]` lines at the end.**
-That is the whole of the close's reordering.
+That is the whole of /done's reordering.
 
 **`Blocks:` / `Depends on:` headers stay retired.** The one dependency
 field that exists is `Blocked by:`, written on the item that is held and naming
@@ -147,7 +147,7 @@ them at the **end** of the block so the stops that need the user batch together.
 The second dependency runs the other way from the first — the audit depends on
 the build — and it carries no `Blocked by:` line, because placement is what
 orders the pair. Moving the audit to the end separates it from the tool it runs,
-and the close happens after /next, so the separation arrives in time to break the
+and /done happens after /next, so the separation arrives in time to break the
 *next* run rather than this one.
 
 Order here is low-stakes and reversible, so the narration is the catch-point
@@ -233,7 +233,7 @@ which.
 dependency entry's transcribed tick.** Every built item's entry carries either
 `done, confirmed` or `done, UNCONFIRMED: <what still needs running>`, written into
 the build working file at the moment the work happened and copied into the entry
-at the close (next-build.md, done-build.md). Read that field. This rule and the
+at /done (next-build.md, done-build.md). Read that field. This rule and the
 `[user]`-placement rule below both depend on the answer, and a fresh short session
 has no memory to fall back on.
 
@@ -285,10 +285,10 @@ readiness check of its own. Narrate it when a `[user]` item moves above the mark
 ## Completed `[user]` items  [SILENT] when none; [BRIEF] when closing one
 
 A `[user]` item never entered a build working file, so it isn't ticked and closed
-like a build. This is the close that records it and removes it from Processed, so
+like a build. This is /done that records it and removes it from Processed, so
 a finished item doesn't strand in the queue and get re-presented by the next
-/next. It runs as a close of its own, inside a planning close, and — for the
-removal — inside a build close.
+/next. It runs as a /done run of its own, inside a planning session's /done, and — for the
+removal — inside a build session's /done.
 
 **Completion is read as the always-loaded `[user]` lifecycle states**
 (skill-nonspecific-rules.md, "Walk a `[user]` item through whenever it is
@@ -321,7 +321,7 @@ index-entry candidate — author the index entry fresh.
 
 If a red flag was cleared this session, record **how** in the session's LOG
 entry. Clearing happens at processing, so /plan is where this record is written
-— the close **records** and does not re-decide:
+— /done **records** and does not re-decide:
 
 ```
 designed out / fixed  ->  how the risk was removed
@@ -384,7 +384,7 @@ uses and a user reads it as tidying up.
 reports worktrees carrying unmerged commits — git refuses to update a branch
 checked out in another working tree. Say that too, so the user knows the work
 has somewhere to go. (The always-loaded rules carry this same instruction for
-every session shape, so a build or audit close in a worktree is covered there.)
+every session shape, so a build or audit session's /done in a worktree is covered there.)
 
 ## 3. Recommend next  [BRIEF, PROMPT]
 

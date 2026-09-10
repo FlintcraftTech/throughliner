@@ -10,7 +10,8 @@ behaviour and Claude locates the part; this map is what Claude answers from.
   *"Stop putting the question in the middle of the message"* lands here.
 - **One procedure doc per command** (`plugin/throughliner/docs/`) — what each
   command actually does, step by step: `plan.md`, `next.md` (+ `next-build.md`,
-  `next-audit.md`), `done.md` (+ its per-flavour close docs), `setup.md`,
+  which carries the audit section too), `done.md` (+ its per-flavour close
+  docs), `setup.md`,
   `rescan.md`. *"When /plan presents an item, I want the analysis shorter"*
   lands in plan.md.
 - **The brevity output style** (`plugin/throughliner/output-styles/brevity.md`)

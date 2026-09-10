@@ -160,7 +160,7 @@ than lost.
 What it finds is routed by where it belongs: work still to do becomes a
 capture, while something that already *happened* is added to this session's
 record as a marked tail. That second half is what makes `/rescan` the one-word
-way to record work you did after the close.
+way to record work you did after /done.
 
 Two limits worth knowing. It reaches only as far back as Claude can still see
 in the conversation. And it stops at the last `/rescan` in that chat, so
@@ -309,7 +309,7 @@ per document. What still works: Claude writes to those files first and tells
 you what landed, exactly as before, because before each change the plugin
 saves a copy of the previous version into a local folder that is itself kept
 out of the repository. A deleted queue item can be put back from there. What
-changes: the close cannot read its own work back from the file's history, so
+changes: /done cannot read its own work back from the file's history, so
 it records the session from what it remembers, and those saved copies live on
 this machine only — a lost disk loses them.
 
@@ -347,7 +347,7 @@ hold one until something else lands, or move one to the bottom, and Claude
 makes the move with the queue tool, says so in one line, and carries on
 building. Nothing pauses and nothing is re-confirmed, because the instruction
 was yours. You can check by opening QUEUE.md and finding the item where you sent
-it, and the move is written into the session's record at the close. Two limits:
+it, and the move is written into the session's record at /done. Two limits:
 Claude never guesses a move you did not ask for and never offers one mid-run —
 that waits for planning — and deleting an item is a separate decision a run
 will not make on the fly, so ask for a delete at planning instead.

@@ -12,13 +12,13 @@ note: >
 the record it writes is where this session's reasoning survives. Close the
 current session — record what happened, update docs, commit.
 
-## Declare the close  [SILENT]
+## Declare /done  [SILENT]
 
 **First action of every close: write an empty file named
 `.throughliner-close-active` into the session scratchpad directory, and delete it
-as the last action before the close finishes.** While it exists the scope-lock
+as the last action before /done finishes.** While it exists the scope-lock
 permits the few files the method's own close obligations name — `README.md`
-today. Outside the close those paths are denied exactly as before, and a close
+today. Outside /done those paths are denied exactly as before, and a /done run
 that dies before removing the marker leaves it in the scratchpad, which clears
 itself.
 
@@ -30,7 +30,7 @@ already holds its own close — the entry written and the commit made — a seco
 the three-way triage, append what happened to this session's existing entry as
 a marked tail, and commit nothing. The one line carries which files were
 appended to, that nothing was committed, and where the fresh-chat route leads:
-open a fresh chat and run `/done` there, where the no-build close commits
+open a fresh chat and run `/done` there, where /done's no-build close-out commits
 handmade work as a session of its own.
 
 Otherwise check for **this session's** build working file,
@@ -39,10 +39,10 @@ running in another chat. **The check is automatic: route on what you find,
 silently.**
 
 **Run every judgment step the routed sub-doc calls for, whatever the user says
-about committing.** "Just commit" asks for the close to be quick, not for its
+about committing.** "Just commit" asks for /done to be quick, not for its
 checks to be dropped.
 
-**Read the build working file in full before the close-out runs, whatever you
+**Read the build working file in full before /done's close-out runs, whatever you
 remember of the session.** Conversation memory enriches the LOG entry — the
 tradeoffs, the colour the file doesn't capture — and the read still happens in
 full alongside it.
@@ -52,7 +52,7 @@ the build working file EXISTS  ->  read it, then route by the run's work-item fl
     build items (no tag)  ->  done-build.md
                               # a build that changed SPEC.md closes here like
                               # any other build — same steps, same commit core
-    [audit] items         ->  done-audit.md
+    [audit] items         ->  done-build.md, applying its audit delta
     mixed run             ->  each item closes through its OWN flavor's
                               close-out, one LOG entry per item, sharing the
                               single end-of-session commit
@@ -73,11 +73,11 @@ no queue item and no build working file. **Read the edits as the user's expected
 work, and split them across separate log entries by judgment where they cover
 several distinct changes.**
 
-A no-build close touches QUEUE.md, SPEC.md and LOG/ and nothing else, whichever
+A no-build /done run touches QUEUE.md, SPEC.md and LOG/ and nothing else, whichever
 of the three it is.
 
 Detect a completed `[user]` item from what the session can already see. The
-detection rules and the close itself are in done-plan.md, which handles a
+detection rules and /done itself are in done-plan.md, which handles a
 completed item and a planning session together, since the two can coincide.
 
 **Record each `[user]` item the session touched under an outcome, and read that
@@ -85,7 +85,7 @@ outcome off the session's own trail, never off what the item's presence in the
 queue suggests.** The values, and the arm for an outcome none of them fits, are
 next.md's walk-through outcomes provision — stated there once and cited here.
 
-The sub-doc runs the close-out. When it reaches its Commit step, run the commit
+The sub-doc runs /done's close-out. When it reaches its Commit step, run the commit
 core below, then return to the sub-doc for the recommendation.
 
 **There is no test close-out** — the test flavor is retired. A check Claude can
@@ -94,9 +94,9 @@ a `[user]` work item, which never enters a build working file — so /done doesn
 *as a build*, but once the user has run it, /done records its completion and
 removes it from the queue through done-plan.md.
 
-## The close's checks report as one narration  [BRIEF]
+## /done's checks report as one narration  [BRIEF]
 
-Several checks fire across a close — verify completion, the staleness sweep, the
+Several checks fire across a /done run — verify completion, the staleness sweep, the
 red-flag lifecycle, the wind-down re-scan. Combine what they turn up into one
 "here's what came up: …" rather than letting each speak in turn.
 
@@ -155,8 +155,8 @@ moment.
 
 **How long an entry or an index line runs — one subject, four provisions.**
 
-- an entry splits per unit of work, not by length: per item built at a build
-  close, per item processed at a planning close;
+- an entry splits per unit of work, not by length: per item built in a build
+  session, per item processed in a planning session;
 - where one decision settles several items, one entry carries the reasoning and
   its siblings cite it rather than restating it — each still named for its own
   slug, so `<date>-<slug>.md` resolves for every one of them;
@@ -201,8 +201,8 @@ plan/setup  **Queue changes:**       work processed, reordered, or modified
                                      the docs scaffolded)
             **Work processed:**      kept / deleted, with slugs, or "none"
 
-build and audit body fields live in done-build.md and done-audit.md, beside
-the entry-writing steps that use them.
+build and audit body fields live in done-build.md, beside the entry-writing
+steps that use them.
 ```
 
 **The forward-recommendation advisory — one field on every flavor, and five
@@ -217,11 +217,11 @@ Advisory: not needed — <why>
 
 - write the label plain, matching the other close obligations that produce a
   recorded line;
-- complete the close only once the line is written;
+- complete /done only once the line is written;
 - file the advisory itself as a capture at the top of Unprocessed, worded as
   advice, where the Recommend-next step made a *concrete* recommendation — a
   generic one files nothing, and the disposition line says which;
-- **where this close is a planning close and its wind-down look-back filed one
+- **where this is a planning session's /done and its wind-down look-back filed one
   or more captures, the advisory names them by slug as what to open on**, in
   addition to any recommendation it carries — so the next planning session
   opens on them rather than meeting them in queue order; the disposition line
@@ -258,14 +258,14 @@ living in QUEUE.md rather than in a file of its own.
 ```
 
 `/rescan` covers the same class on demand; this section covers it arriving at
-the close, which always runs.
+/done, which always runs.
 
 **Where the section goes depends on how many entries this close writes**, which
-the close already knows:
+/done already knows:
 
 ```
 close writes ONE entry      ->  `Also in this chat:` stays inline, unchanged.
-                                Every planning close is this case.
+                                Every planning session's /done is this case.
 close writes SEVERAL        ->  the chat-level record becomes its OWN entry,
   entries                       named for the chat rather than for a slug, with
                                 its own line in LOG/index.md.
@@ -326,7 +326,7 @@ that name taken too           ->  append -2, -3, …
 never shortened or reworded.** Where the bare name is taken, the record's kind
 is what distinguishes it.
 
-**Every date written at a close is the close date** — today's date, at the moment
+**Every date written at /done is the date /done runs** — today's date, at the moment
 you are closing. That covers the filename prefix and every date written into the
 words of a session record or a queue item alike ("processed 2026-08-12",
 "cleared 2026-08-12"). It is not the commit date, and the filename prefix is not
@@ -342,7 +342,7 @@ sentence in its record, and change no filename or datestamp:**
 
 **Write the hash into the entry heading and the index line only** — the commit
 hash doesn't exist yet when the file is written, which is why the placeholder
-pattern exists, and the filename carries the date instead. The close itself
+pattern exists, and the filename carries the date instead. /done itself
 fills the placeholder right after the commit (the commit step below says how).
 
 **Write the literal placeholder token in hash position only**, where the
@@ -393,13 +393,13 @@ the limit sentence, the artifact cross-check, the asymmetry, the no-proxy rule
 **Look back only as far as the last /rescan in this chat.** /rescan is the same
 step with its own trigger, and it can be run as often as the user likes; the
 close picks up whatever came after the last one. Invoke it shortly before
-closing and this costs a line. With no /rescan run, the close does the full job,
+closing and this costs a line. With no /rescan run, /done does the full job,
 scanning the whole chat.
 
 **Where nothing has happened since that rescan — no work, no decisions, only the
 close being invoked — perform no second pass, and write one line into the record:
 "covered by the rescan just run."** Conversation
-between the rescan and the close is still scanned under the window rule above,
+between the rescan and /done is still scanned under the window rule above,
 so this arm reaches only the case where the window is genuinely empty.
 
 **Cycles due-ness check first** [SILENT] when no cycles doc exists; [BRIEF]
@@ -430,13 +430,16 @@ Saying so is what gives them the chance to; a capture alone leaves the item to
 be built as it stands.
 
 **Show the candidate set as ONE numbered message before anything is written**
-[PROMPT], **opening by naming itself as the close's standing look-back over the
+[PROMPT], **opening by naming itself as /done's standing look-back over the
 conversation** — in the user's words, before what it found — so the step reads
 as the rule it is rather than as an improvised idea.
 **End the message with what each answer does: "Say go to file them all, or
 contest by number."** Numbering explains contesting on its own; "go" explains
 nothing unless the sentence says it files the whole set. The writes then land,
-and a contested item is dropped or reworked one at a time.
+and a contested item is dropped or reworked one at a time. The set
+holds writes only — captures and record edits — and a candidate deletion is
+presented after it as its own ask, under the session-file cleanup step's own
+rules.
 
 Add them to this session's LOG entry's "Routed to Captures:" line as a
 working-tree edit riding this commit.
@@ -478,7 +481,7 @@ look-back window above. /plan has none, and gains none.**
 ## Session-file cleanup (throwaway artifacts)  [BRIEF, PROMPT]
 
 Commit core points here, so it runs at every close. The build working file is
-deleted by the close already; this generalises that lifecycle to *other* throwaway
+deleted by /done already; this generalises that lifecycle to *other* throwaway
 files this session created.
 
 Offer to delete only files meeting **all** of these:
@@ -523,7 +526,7 @@ Processed and confirm it's been removed. A work item is normally removed when
 a shipped slug is still sitting in Processed as active work, surface it in one line
 and remove it (or halt and ask) before committing.
 
-A planning close names no shipped slug, so there's nothing to check. **Silent
+A planning session's /done names no shipped slug, so there's nothing to check. **Silent
 unless a stray slug is found.**
 
 **1. Stage explicitly — name each path:** files this session changed (from
@@ -627,7 +630,7 @@ or the user decides.
 **6. Commit with `git commit -F`.** No fresh okay needed. Then offer push only
 when a remote exists, and push only if the user accepts.
 
-**In a nested project the close commits both repositories** — the product's
+**In a nested project /done commits both repositories** — the product's
 changes as a commit in the inner repository (the product subfolder's own), and
 everything else, the method documents included, in the outer. Same message
 mechanics for each, the inner commit's message covering the product work
@@ -635,7 +638,7 @@ alone. A session that touched only one side makes only that side's commit. A
 flat project — one repository — is unchanged by all of this.
 
 **Then write the commit hash into the headings and index lines this close just
-wrote** — the close is the one moment the hash exists and the files are at
+wrote** — /done is the one moment the hash exists and the files are at
 hand, and it is one convention for tracked and untracked projects alike (an
 untracked log never appears in any commit, so nothing later can attribute it
 from git). Read the hash from the commit just made, replace each placeholder
@@ -649,7 +652,9 @@ Every sub-doc's final step points here, adding only its flavor delta.
 **Content line for this turn: it states the queue situation as the next
 planning session would present it, any cycle whose turn is due — named whether
 or not a capture was filed for it — and the continuations — more planning, or a
-build — as statements of fact, and nothing else.** Neither continuation is
+build — as statements of fact, and where the run this close records stopped at
+a held item whose blocker it shipped, what of the intended change is
+not yet on screen, in product terms, and nothing else.** Neither continuation is
 assumed or recommended over the other: a user may plan as many times as they
 want until enough is queued to justify a build, so which comes next is theirs,
 and this turn's job is to leave them holding the facts that decide it.
@@ -702,18 +707,22 @@ as a hedge.
            (counted as the narration above defines). Where the build route is
            stated, the statement includes that a build runs best in a fresh
            session — information about that route, never the assumed next
-           step. End the message there — a statement, with no command string
-           in it
+           step. End the message on a statement that names each
+           continuation's command in words, mid-sentence — the plan command
+           for more planning, the next command for a build — with no command
+           string at its end
 2b. Processed holds work but the cleared region is EMPTY (the marker is at
     the top)
-       ->  say the next work still needs vetting, and point at planning.
-           A build run would soft-stop here, costing a round trip.
+       ->  say the next work still needs vetting, and that running the plan
+           command is what vets it. A build run would soft-stop here, costing
+           a round trip.
 3. Processed empty
-       ->  say the queue is clear and that planning is where more work comes
-           from.
+       ->  say the queue is clear and that running the plan command is where
+           more work comes from.
 ```
 
-**Every rung states its situation and names no command.** A message that ends by
+**Every rung states its situation and names the command that starts each
+continuation in words, clear of the sentence's end.** A message that ends by
 asking a question whose answer looks like a command is one keystroke from being
 run by accident, because the harness offers the slash command it just saw as a
 tab-completion.
@@ -724,13 +733,13 @@ much as building, which is why rung 2 states both continuations rather than
 inviting either.
 
 **A session makes exactly one commit, and the tail makes none.** That is the
-whole shape, and everything below follows from it. The close commits; work
+whole shape, and everything below follows from it. /done commits; work
 arriving afterwards is written to the working tree and left there, to be carried
 by the next close. No amendment commit, no delta commit, no second close — and
-a second `/done` is the tail, not a close.
+a second `/done` is the tail, not a /done run.
 
 ```
-the close                ->  ONE commit. Everything the session did.
+/done                ->  ONE commit. Everything the session did.
 the post-commit tail     ->  writes files, commits NOTHING:
                                a capture appended to QUEUE.md
                                an append to this session's LOG entry
@@ -752,7 +761,7 @@ recognises the signature instead of investigating it.
 
 **Read tail-shaped dirt as the previous session's LOG entry, a capture at the
 bottom of Unprocessed, or a filled-in hash, and give anything else the full
-treatment** — which is what keeps the close's staging check its teeth.
+treatment** — which is what keeps /done's staging check its teeth.
 
 **In a tail, route an urge to run or drive testing or verification into a skill
 rather than doing it here** — a quick /plan to structure the work, or /next to
@@ -765,14 +774,14 @@ It happened in one, and nothing says it only happens there. Siting the clause he
 covers the recorded instance and not the general case; a second instance occurring
 outside a tail is what would reopen this.
 
-**After the close, if further work changes a file, offer once to append it to
+**After /done, if further work changes a file, offer once to append it to
 this session's LOG entry** [BRIEF, PROMPT]. The entry is written and committed by
 now, so anything done afterwards — a fix, a question answered, a piece of work
 run on request — is invisible in the record unless the entry is amended.
 
 ```
 append, never rewrite   ->  a marked tail section on the existing entry, so it
-                            reads plainly as work that came after the close.
+                            reads plainly as work that came after /done.
                             Leave the index line alone unless the tail changes
                             what the entry is ABOUT.
 once per tail           ->  not once per exchange. An offer reappearing after
@@ -811,8 +820,8 @@ a generic one is not, and the entry says which.
 
 ```
 flavor deltas:
-    build close   ->  the shared ladder is the whole recommendation
-    audit close   ->  findings appended this session sit unprocessed, so the
+    build session ->  the shared ladder is the whole recommendation
+    audit session ->  findings appended this session sit unprocessed, so the
                       DEFAULT is /plan, to sort them into work — name the count.
                       Only when nothing was appended does the overlap scan run
                       and the ladder apply (steps 2–3).

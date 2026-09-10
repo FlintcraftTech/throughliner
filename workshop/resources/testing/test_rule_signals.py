@@ -527,6 +527,87 @@ def test_inner_commit_without_a_gate_line_is_flagged_with_both_hashes():
     shutil.rmtree(outer, ignore_errors=True)
 
 
+def _rise_fixture(gate_line):
+    """A repo whose newest commit adds one statement to plan.md — a shipped
+    doc that is NOT always-loaded — with a backfilled LOG entry carrying
+    `gate_line` under that commit's hash ([rule-checks-count-trigger-set-and-read-in-place])."""
+    root, baseline = repo("PLACEHOLDER")
+    plan = os.path.join(root, "plugin", "throughliner", "docs", "plan.md")
+    with open(plan, "a", encoding="utf-8") as f:
+        f.write("\n- **A new rule.**\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "the rise")
+    real = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root,
+                          capture_output=True, text=True).stdout.strip()
+    with open(os.path.join(root, "LOG", "2026-08-21-thing.md"), "w",
+              encoding="utf-8") as f:
+        f.write(f"# {real} — a session\n\n{gate_line}\n")
+    signals.DISPOSITION_BASELINE = baseline
+    return root, real
+
+
+def test_in_place_claim_with_a_rise_over_a_shipped_doc_fires():
+    """Every disposition says 'run — in place' while plan.md gained a
+    statement: a contradiction the check now reaches, in a file the old
+    always-loaded count never read."""
+    root, real = _rise_fixture("Rule gate: run — in place — one clause reworded.")
+    result = signals.signal_contradicted(root)
+    check("an in-place claim with a rise in a shipped doc fires",
+          result["firing"] and real in result["message"], result["message"])
+    check("the message names the unanimity limit and the subordinate-unit limit",
+          "unanimity" in result["message"]
+          and "subordinate units" in result["message"], result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_run_claim_with_the_same_rise_does_not_fire():
+    root, real = _rise_fixture("Rule gate: run — one rule admitted.")
+    result = signals.signal_contradicted(root)
+    check("a plain 'run' disposition with a rise is not a contradiction",
+          not result["firing"], result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_not_needed_claim_with_a_rise_in_a_shipped_doc_fires():
+    """The not-needed arm reads the widened count too."""
+    root, real = _rise_fixture("Rule gate: not needed — a typo fix.")
+    result = signals.signal_contradicted(root)
+    check("a not-needed claim with a rise in plan.md fires under the widened count",
+          result["firing"] and real in result["message"], result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_disposition_kinds_are_read_per_line():
+    check("the in-place form, dash separator", signals.disposition_kind(
+        "Rule gate: run — in place — a clause reworded.") == "in place")
+    check("the in-place form, colon separator", signals.disposition_kind(
+        "Rule gate: run — in place: a clause reworded.") == "in place")
+    check("a plain run", signals.disposition_kind(
+        "Rule gate: run — admitted as a subordinate unit.") == "run")
+    check("not needed", signals.disposition_kind(
+        "Rule gate: not needed — hook output only.") == "not needed")
+    root = tempfile.mkdtemp(prefix="rule-signals-kinds-")
+    os.makedirs(os.path.join(root, "LOG"))
+    with open(os.path.join(root, "LOG", "e.md"), "w", encoding="utf-8") as f:
+        f.write("# abc1234 — a session\n\nRule gate: run — in place — x.\n"
+                "Rule gate: not needed — y.\n")
+    kinds = signals._log_dispositions(root).get("abc1234")
+    check("an entry with two dispositions contributes both kinds",
+          kinds == {"in place", "not needed"}, repr(kinds))
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_measurement_counts_every_shipped_doc_per_file():
+    root, _ = _rise_fixture("Rule gate: run — admitted.")
+    result = signals.signal_measured(root)
+    check("the gate trigger set line names plan.md with its count",
+          "gate trigger set" in result["message"]
+          and "plan.md: 1" in result["message"], result["message"])
+    check("the always-loaded subtotal is still printed on its own line",
+          "always-loaded, this project:" in result["message"], result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_flat_project_has_no_inner():
     root = tempfile.mkdtemp(prefix="rule-signals-flat-")
     os.makedirs(os.path.join(root, "LOG"))
@@ -551,6 +632,11 @@ if __name__ == "__main__":
     test_inner_commit_is_attributed_to_the_outer_close()
     test_inner_commit_without_a_gate_line_is_flagged_with_both_hashes()
     test_dispositions_window_follows_index_order()
+    test_in_place_claim_with_a_rise_over_a_shipped_doc_fires()
+    test_run_claim_with_the_same_rise_does_not_fire()
+    test_not_needed_claim_with_a_rise_in_a_shipped_doc_fires()
+    test_disposition_kinds_are_read_per_line()
+    test_measurement_counts_every_shipped_doc_per_file()
     test_placeholder_entry_suppresses_the_freshest_commit()
     test_backfilled_entry_restores_normal_behaviour()
     test_placeholder_only_counts_in_a_heading()

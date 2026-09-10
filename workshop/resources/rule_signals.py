@@ -35,20 +35,27 @@ can never fire is a measurement nobody reads. AUDIT-LAG supersedes it with a
 trigger that needs no threshold: rule-bearing commits since the most recent
 compliance-audit LOG entry.
 
-MEASURED   a structural rule-statement count across the always-loaded files,
-           reported per audience as a growth report. No threshold, no verdict:
-           it never fires. See GROWTH_NOTE for why the ceiling was removed.
+MEASURED   a structural rule-statement count across the gate's trigger set —
+           every shipped doc under plugin/throughliner/docs/ plus this
+           project's CLAUDE.md — printed per file with the always-loaded
+           subtotal kept readable, as a growth report. No threshold, no
+           verdict: it never fires. See GROWTH_NOTE for why the ceiling was
+           removed. The three workshop checklists the gate also fires on are
+           records, not rule text, and stay out of the count.
 AUDIT-LAG  rule-bearing commits made since the most recent compliance-audit
            LOG entry. Fires while any exist; the capture it files is one
            [audit] scoped to the changed files (delta scope, never the corpus).
 BORN       commits that should carry a gate-disposition line and do not,
            matched against commits touching the rule-bearing file set.
 CONTRADICTED
-           commits whose LOG entry says the gate was not needed while the
-           always-loaded count ROSE. BORN checks a disposition EXISTS; this
-           checks it isn't contradicted by the commit it describes. It cannot
-           tell whether a gate recorded as *run* ran honestly, and does not
-           claim to.
+           commits whose LOG entry says the gate was not needed — or says
+           every edit was made in place, inside an existing sentence — while
+           the count over the gate's trigger set ROSE. BORN checks a
+           disposition EXISTS; this checks it isn't contradicted by the
+           commit it describes. It cannot tell whether a gate recorded as
+           *run* ran honestly, and does not claim to; and it cannot reach an
+           amendment written as subordinate units, since the counter counts a
+           sub-bullet as a statement.
 MAINTAINED near-duplicate rule statements across the corpus. This is
            codification — one subject, one rule, stated once.
 REPEALED   live rules naming a term on the retired list.
@@ -136,12 +143,40 @@ HOST_ALWAYS_LOADED = [
     "CLAUDE.md",
 ]
 
-# Every file loaded in every session of THIS project. CONTRADICTED measures
-# growth against this combined set rather than the shipped file alone: a
-# commit that adds rules to CLAUDE.md grows the corpus a session actually
-# carries, and CLAUDE.md is already in RULE_BEARING, so measuring only the
-# shipped half left that growth invisible to the one check aimed at it.
+# Every file loaded in every session of THIS project — the subtotal the
+# measurement keeps readable inside the wider count below.
 ALWAYS_LOADED = SHIPPED_ALWAYS_LOADED + HOST_ALWAYS_LOADED
+
+# The folder every shipped procedure doc lives in. The COUNTED set — what
+# MEASURED reports and CONTRADICTED measures growth against — is every doc in
+# it plus the host's CLAUDE.md: the same files the rule gate fires on, less the
+# three workshop checklists, which are records rather than rule text. The
+# count used to stop at the always-loaded files, a proxy left over from when a
+# ceiling was measured against them, so a disposition on a plan.md edit was
+# checked by nobody.
+SHIPPED_DOCS_DIR = "plugin/throughliner/docs/"
+
+
+def shipped_docs(root):
+    """Every `.md` under the shipped docs folder, sorted, as corpus-relative
+    paths — read from disk so a doc added or folded away needs no list kept
+    here."""
+    repo, rel = locate(root, SHIPPED_DOCS_DIR.rstrip("/"))
+    folder = os.path.join(repo, rel)
+    try:
+        names = sorted(n for n in os.listdir(folder) if n.endswith(".md"))
+    except OSError:
+        return []
+    return [SHIPPED_DOCS_DIR + n for n in names]
+
+
+def counted_set(root):
+    """The gate's counted trigger set: shipped docs plus the host's
+    always-loaded file, with the always-loaded files first so the subtotal
+    reads off the front of the per-file detail."""
+    docs = shipped_docs(root)
+    rest = [d for d in docs if d not in SHIPPED_ALWAYS_LOADED]
+    return SHIPPED_ALWAYS_LOADED + HOST_ALWAYS_LOADED + rest
 
 # Fetched procedure docs. Not always-loaded — each is paid only by the sessions
 # that run its skill — so they are reported as their own group and never summed
@@ -152,7 +187,6 @@ FETCHED_DOCS = [
     "plugin/throughliner/docs/plan.md",
     "plugin/throughliner/docs/next.md",
     "plugin/throughliner/docs/next-build.md",
-    "plugin/throughliner/docs/next-audit.md",
     "plugin/throughliner/docs/done.md",
     "plugin/throughliner/docs/done-build.md",
     "plugin/throughliner/docs/done-plan.md",
@@ -436,6 +470,8 @@ def signal_measured(root):
     """
     shipped, _ = count_statements(root, SHIPPED_ALWAYS_LOADED)
     host, _ = count_statements(root, HOST_ALWAYS_LOADED)
+    counted = counted_set(root)
+    total, _ = count_statements(root, counted)
     lines = [
         "always-loaded, consumer: " + _group_report(
             root, "", SHIPPED_ALWAYS_LOADED).strip(),
@@ -444,13 +480,16 @@ def signal_measured(root):
             _growth(root, ALWAYS_LOADED, shipped + host)),
         "fetched procedure docs: " + _group_report(
             root, "", FETCHED_DOCS).strip(),
+        "gate trigger set (every shipped doc plus CLAUDE.md; the always-loaded "
+        "%d is the subtotal above): " % (shipped + host)
+        + _group_report(root, "", counted).strip(),
     ]
     return {
         "stage": "MEASURED",
         # A REPORT, not a signal: it has no threshold, so it cannot fire. The
         # `firing: False` key it used to carry read as meaningful and was not.
         "kind": "report",
-        "value": shipped + host,
+        "value": total,
         "slug": "rule-corpus-over-ceiling",
         "message": (
             "Growth report (no ceiling, no verdict). " + " | ".join(lines)
@@ -744,6 +783,24 @@ def signal_audit_lag(root):
 DISPOSITION_RE = re.compile(r"^\*{0,2}Rule gate:", re.IGNORECASE | re.MULTILINE)
 NOT_NEEDED_RE = re.compile(r"^\*{0,2}Rule gate:\*{0,2}\s*not needed",
                            re.IGNORECASE | re.MULTILINE)
+# The third disposition kind: a gate that ran and made every edit IN PLACE —
+# a rewrite inside an existing sentence, adding no statement. Written as
+# `Rule gate: run — in place — <what was rewritten>` (the CLAUDE.md block's
+# form; a colon after "in place" is accepted too, since the queue items that
+# feed the LOG write it that way). Changed together with the two above, as
+# the comment on them requires.
+IN_PLACE_RE = re.compile(
+    r"^\*{0,2}Rule gate:\*{0,2}\s*run\s*[—–:-]+\s*in place",
+    re.IGNORECASE | re.MULTILINE)
+
+
+def disposition_kind(line):
+    """'not needed', 'in place' or 'run' for one `Rule gate:` line."""
+    if NOT_NEEDED_RE.match(line):
+        return "not needed"
+    if IN_PLACE_RE.match(line):
+        return "in place"
+    return "run"
 
 
 PLACEHOLDER_HASH = "[HASH]"
@@ -909,7 +966,8 @@ def _attribute_inner_commits(root, commits):
 def _log_dispositions(root):
     """Map of short sha -> set of disposition kinds found in LOG entries.
 
-    Kinds are "run" and "not needed". A commit's entry is matched by the hash
+    Kinds are "run", "not needed" and "in place", read line by line so an
+    entry carrying several dispositions contributes each. A commit's entry is matched by the hash
     in the entry's HEADING — the position the backfill writes and the one the
     entry's own identity rests on.
 
@@ -935,12 +993,13 @@ def _log_dispositions(root):
             continue
         if not DISPOSITION_RE.search(text):
             continue
-        kind = "not needed" if NOT_NEEDED_RE.search(text) else "run"
+        kinds = {disposition_kind(ln) for ln in text.splitlines()
+                 if DISPOSITION_RE.match(ln)}
         # The heading is the entry's first non-empty line, written as
         # "# <sha> — <title>". Only hashes there attribute the disposition.
         heading = next((ln for ln in text.splitlines() if ln.strip()), "")
         for sha in re.findall(r"\b([0-9a-f]{7,40})\b", heading):
-            found.setdefault(sha[:7], set()).add(kind)
+            found.setdefault(sha[:7], set()).update(kinds)
     return found
 
 
@@ -998,8 +1057,8 @@ def signal_born(root):
 
 
 def signal_contradicted(root):
-    """Commits whose always-loaded rule count ROSE while their LOG entry says
-    the gate was not needed.
+    """Commits whose rule count over the gate's trigger set ROSE while their
+    LOG entry says the gate was not needed, or says every edit was in place.
 
     BORN is a PRESENCE check: a session that added four rules and wrote
     "Rule gate: not needed — typo fix" satisfies it completely. That reasoning
@@ -1016,11 +1075,22 @@ def signal_contradicted(root):
     One-directional by design, and unanimous:
 
         count ROSE  + EVERY disposition "not needed"   ->  FLAG
+        count ROSE  + EVERY disposition "run — in place"
+                                                       ->  FLAG: an in-place
+                                                           rewrite adds no
+                                                           statement, so a
+                                                           rise contradicts it
         count ROSE  + any disposition "run — ..."      ->  fine
         count FELL or unchanged                        ->  fine, ALWAYS
 
     An eviction pass lowers the count and owes no disposition defence, so a fall
     is never a finding.
+
+    The in-place arm reaches one amendment shape only. The gate's preferred
+    form — subordinate units under a parent — is written as sub-bullets, and
+    the counter's own definition makes a sub-bullet a statement, so no count
+    can tell such an amendment from freestanding rules; that form records
+    "run — <what>" and is not reached here. The message says so.
 
     The unanimity requirement is what makes the check usable on a large run. A
     commit is the wrong unit once one run ships sixteen items under one hash:
@@ -1060,11 +1130,15 @@ def signal_contradicted(root):
         # repair — sat alongside a sibling that authored a rule and correctly
         # recorded "run", and the pair was read as a contradiction between two
         # artifacts that do not in fact disagree.
-        if not kinds or kinds != {"not needed"}:
+        if kinds == {"not needed"}:
+            claim = "not needed"
+        elif kinds == {"in place"}:
+            claim = "in place"
+        else:
             continue
         delta = _count_delta_at(root, commit["full"], commit.get("repo", root))
         if delta is not None and delta > 0:
-            flagged.append((commit["sha"], delta))
+            flagged.append((commit["sha"], delta, claim))
 
     return {
         "stage": "CONTRADICTED",
@@ -1072,35 +1146,45 @@ def signal_contradicted(root):
         "value": len(flagged),
         "slug": "rule-gate-disposition-is-unverified",
         "message": (
-            "%d commit(s) where EVERY gate disposition says 'not needed' while "
-            "the always-loaded rule-statement count ROSE: %s. This is a "
-            "contradiction between two artifacts, not proof of a bad rule. Two "
-            "things it does NOT cover: a commit whose gate is recorded as run "
-            "(it cannot tell an honest 'run' from a dishonest one), and a mixed "
-            "run where one item wrongly recorded 'not needed' alongside a "
-            "sibling that recorded 'run'." % (
+            "%d commit(s) where EVERY gate disposition says 'not needed', or "
+            "every one says 'run — in place', while the rule-statement count "
+            "over the gate's trigger set (the shipped docs plus CLAUDE.md) "
+            "ROSE: %s. This is a contradiction between two artifacts, not "
+            "proof of a bad rule. Three things it does NOT cover: a commit "
+            "whose gate is recorded as run (it cannot tell an honest 'run' "
+            "from a dishonest one); a mixed run where one item wrongly "
+            "recorded 'not needed' or 'in place' alongside a sibling that "
+            "recorded 'run' — the check needs unanimity; and an amendment "
+            "written as subordinate units, which adds counted statements by "
+            "the counter's own definition and is recorded as 'run', so no "
+            "count reaches it." % (
                 len(flagged),
-                ", ".join("%s (+%d)" % (sha, d) for sha, d in flagged[:8]),
+                ", ".join("%s (+%d, every disposition '%s')" % (sha, d, claim)
+                          for sha, d, claim in flagged[:8]),
             )
             if flagged else
-            "No commit since %s claims the gate was not needed while the "
-            "corpus grew." % DISPOSITION_BASELINE
+            "No commit since %s claims the gate was not needed, or claims "
+            "every edit was in place, while the count over the gate's "
+            "trigger set grew." % DISPOSITION_BASELINE
         ),
     }
 
 
 def _count_delta_at(root, rev, repo=None):
-    """Always-loaded statement count at `rev` minus the count at its parent.
+    """Statement count over the gate's counted set at `rev` minus the count
+    at its parent.
 
     Returns None where either side can't be read — a first commit, a file that
     didn't exist yet, an unreadable blob. Reuses the same counter MEASURED
     uses via `git show <rev>:<path>`, so there is no second counting logic to
     drift. `repo` is the repository the commit belongs to; only the corpus
     files that repository holds are counted, since a commit in one repository
-    cannot have changed a file in the other.
+    cannot have changed a file in the other. A doc that did not exist at the
+    parent counts zero there (non-strict), so adding a doc reads as growth —
+    which it is.
     """
     repo = repo or root
-    files = [rel for rel in ALWAYS_LOADED
+    files = [rel for rel in counted_set(root)
              if os.path.normcase(locate(root, rel)[0]) == os.path.normcase(repo)]
     if not files:
         return None
@@ -1652,7 +1736,7 @@ CHECK_LABELS = {
     "SIZE": "How big each rule document is",
     "AUDIT_LAG": "Rule changes are covered by a compliance audit",
     "BORN": "Rule-bearing commits carry a gate line",
-    "CONTRADICTED": "No commit says 'gate not needed' while rules grew",
+    "CONTRADICTED": "No commit says 'gate not needed' or 'all in place' while rules grew",
     "MAINTAINED": "No two rules say nearly the same thing",
     "REPEALED": "No live rule names a retired mechanism",
     "CONTRACTED": "Every interaction turn carries a content line",
@@ -1844,7 +1928,7 @@ def dispositions(root, window=True):
         sha = shas[0][:7] if shas else "unrecorded"
         for line in text.splitlines():
             if DISPOSITION_RE.match(line):
-                outcome = ("not needed" if NOT_NEEDED_RE.match(line) else "run")
+                outcome = disposition_kind(line)
                 found.append({
                     "entry": name, "sha": sha, "outcome": outcome,
                     "text": line.strip(),
