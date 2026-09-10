@@ -654,7 +654,8 @@ def signal_size(root):
 
 # --- AUDIT-LAG ----------------------------------------------------------
 
-COMPLIANCE_AUDIT_ENTRY_RE = re.compile(r"compliance-audit", re.IGNORECASE)
+COMPLIANCE_AUDIT_ENTRY_RE = re.compile(
+    r"compliance-audit|maintenance-sweep", re.IGNORECASE)
 
 # A filename naming a compliance audit is not enough: a planning session that
 # PROCESSES an audit item writes a record named for that item's slug, so the
@@ -679,6 +680,25 @@ def _is_audit_record(path):
     return any(m in body for m in AUDIT_RECORD_MARKERS)
 
 
+def audit_boundary(log_dir):
+    """The newest LOG entry whose filename names a compliance audit or a
+    maintenance sweep AND whose body reads as an audit record; None where
+    there is none. A sweep turn is a full-corpus audit against the same
+    checklist, so its record bounds this check exactly as an audit's does
+    ([audit-lag-accepts-sweep-record])."""
+    if not os.path.isdir(log_dir):
+        return None
+    # Newest first, and the filename match is only the candidate set: each
+    # candidate's body must read as a genuine audit record, or the search
+    # continues older. A planning record named for the audit item it merely
+    # processed silenced this check once.
+    for name in sorted(os.listdir(log_dir), reverse=True):
+        if name.endswith(".md") and COMPLIANCE_AUDIT_ENTRY_RE.search(name):
+            if _is_audit_record(os.path.join(log_dir, name)):
+                return name
+    return None
+
+
 def signal_audit_lag(root):
     """Rule-bearing commits made since the most recent compliance-audit entry.
 
@@ -694,18 +714,7 @@ def signal_audit_lag(root):
     typo commit to docs/ summons an audit whose finding is "nothing to audit",
     which costs one line.
     """
-    log_dir = os.path.join(root, "LOG")
-    boundary = None
-    if os.path.isdir(log_dir):
-        # Newest first, and the filename match is only the candidate set: each
-        # candidate's body must read as a genuine audit record, or the search
-        # continues older. A planning record named for the audit item it merely
-        # processed silenced this check once.
-        for name in sorted(os.listdir(log_dir), reverse=True):
-            if name.endswith(".md") and COMPLIANCE_AUDIT_ENTRY_RE.search(name):
-                if _is_audit_record(os.path.join(log_dir, name)):
-                    boundary = name
-                    break
+    boundary = audit_boundary(os.path.join(root, "LOG"))
     # The date prefix on the entry's filename is the boundary. Same-day
     # commits before the audit re-report — the over-fire direction, accepted.
     since = None

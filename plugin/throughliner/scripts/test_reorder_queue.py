@@ -234,6 +234,52 @@ def test_delete_reports_only_what_landed():
               "success was reported but the slug is still in the file")
 
 
+def test_retitle_changes_the_heading_and_nothing_else():
+    """--retitle rewrites one heading line; every other byte is identical
+    ([queue-tool-no-heading-fix])."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "QUEUE.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(FIXTURE)
+        result = subprocess.run(
+            [sys.executable, SCRIPT, path, "--retitle", "gamma",
+             "--heading", "Held item, distinguishing words first"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+        with open(path, "r", encoding="utf-8") as f:
+            after = f.read()
+        expected = FIXTURE.replace(
+            "#### A held item [gamma]",
+            "#### Held item, distinguishing words first [gamma]")
+        check("the retitle succeeds", result.returncode == 0,
+              f"exit {result.returncode}: {result.stderr.strip()}")
+        check("the heading changed and every other byte is identical",
+              after == expected, "file differs beyond the heading line")
+        check("old and new heading are reported",
+              "old: #### A held item [gamma]" in result.stderr
+              and "new: #### Held item, distinguishing words first [gamma]"
+              in result.stderr, result.stderr.strip())
+
+
+def test_retitle_refuses_a_bracketed_heading():
+    """A heading carrying a bracket would read as a second slug: refused, and
+    the file is untouched."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "QUEUE.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(FIXTURE)
+        result = subprocess.run(
+            [sys.executable, SCRIPT, path, "--retitle", "gamma",
+             "--heading", "Held item [other]"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+        with open(path, "r", encoding="utf-8") as f:
+            after = f.read()
+        check("a bracketed heading is refused", result.returncode != 0,
+              "exit 0")
+        check("the file is untouched", after == FIXTURE, "file changed")
+
+
 def test_write_verified_refuses_a_write_that_did_not_land():
     """The verification itself fails loudly when the re-read disagrees.
 
@@ -373,6 +419,8 @@ if __name__ == "__main__":
     test_move_section_applies_marker_after()
     test_move_section_marker_failure_writes_nothing()
     test_delete_reports_only_what_landed()
+    test_retitle_changes_the_heading_and_nothing_else()
+    test_retitle_refuses_a_bracketed_heading()
     test_write_verified_refuses_a_write_that_did_not_land()
     test_move_section_refuses_an_unnamed_sweep()
     test_named_move_across_the_line_still_reports_and_succeeds()

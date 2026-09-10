@@ -534,8 +534,9 @@ def content_stamp(root):
     disk holds CRLF, so hashing raw bytes made a build and the commit it was built
     from stamp differently by construction. That defeats the one mechanical answer
     to "is this build the build I think it is" — including the release ritual's
-    check of an archived zip against the commit its readme names, which compares a
-    working-tree walk against `git archive` output. Normalising costs one pass over
+    stamp of the zip built from the release commit against `git archive` of that
+    same commit, which compares an extracted-tree walk against `git archive`
+    output. Normalising costs one pass over
     each file and makes the two comparable. A `.gitattributes` was refused: it
     renormalises the whole working tree in one sweep, where this touches nothing
     outside the function.
@@ -1685,8 +1686,8 @@ def _untracked_core_docs(cwd: str) -> list:
     the design. /setup fires once, and the project that reported this was
     already adopted — so a setup-only check would have missed the very case that
     produced it. It is also what dissolves the deadlock that project hit: their
-    close could not repair it, because the planning scope-lock refuses
-    `.gitignore` and the close marker's permitted list omits it, so the fix
+    /done could not repair it, because the planning scope-lock refuses
+    `.gitignore` and the /done marker's permitted list omits it, so the fix
     became a request that a non-coder hand-edit `.gitignore` mid-close. Read at
     the opening, before any work, the same walkthrough costs nothing and
     interrupts nothing.
@@ -2172,7 +2173,7 @@ def main() -> int:
             "queue item included — can be put back from there.\n"
             "  2. Those copies are on this machine only and carry no history, "
             "so a lost disk loses them. Git is not keeping a copy.\n"
-            "  3. The close cannot read back its own work from the file's "
+            "  3. /done cannot read back its own work from the file's "
             "history, so it records from what it remembers of the session."
             % ", ".join(ignored)
         )
@@ -2196,7 +2197,7 @@ def main() -> int:
         context_parts.append(
             "[Throughliner] Isolation: this session is in its own git "
             "worktree, so its edits live on a branch of their own. This "
-            "session's work is NOT merged back automatically — the close says "
+            "session's work is NOT merged back automatically — /done says "
             "which branch it is on and warns that choosing \"remove\" at exit "
             "would delete it."
         )

@@ -690,13 +690,13 @@ def _is_retired_terms_file(filepath: str, cwd: str) -> bool:
     that; the write is unschedulable by construction.
 
     Without this, the obligation was satisfiable only in a narrow undocumented
-    window: denied during the build and anywhere in the close before the
+    window: denied during the build and anywhere in /done before the
     working file is deleted, and working only after, by accident of ordering.
     A session that hit the denial mid-close was told to ask the user to widen
     scope, which is a bad trade for a bookkeeping append.
 
     Two alternatives were weighed and lost. Stating the ordering in done.md
-    works but leaves a trap for anyone who reorders the close, and the ordering
+    works but leaves a trap for anyone who reorders /done, and the ordering
     that currently works is an accident rather than a design. Having /next
     widen `Files:` whenever a run touches rule-bearing files is more machinery
     than the problem deserves, and it guesses.
@@ -791,8 +791,8 @@ def _is_snapshot_subject(filepath: str, cwd: str) -> bool:
     The set is the documents /setup scaffolds and the privacy posture offers to
     keep out of the repository — the ones whose only undo is git, and which
     therefore have no undo at all once they are untracked. Working files are
-    deliberately absent: a build or plan working file is deleted at the close by
-    design, so snapshotting it would preserve the thing the close removes.
+    deliberately absent: a build or plan working file is deleted at /done by
+    design, so snapshotting it would preserve the thing /done removes.
     """
     norm = _normalise(filepath)
     for name in ("SPEC.md", "QUEUE.md", "CYCLES.md", "TOOLS.md", "CLAUDE.md"):
@@ -1085,7 +1085,7 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
         return True
     if rel.startswith(os.path.normcase("LOG") + "/"):
         return True
-    # FAQ/ is on the list for the same reason workshop/resources/research/ is: the close
+    # FAQ/ is on the list for the same reason workshop/resources/research/ is: /done
     # REQUIRES an FAQ disposition, so denying the path would break a mandated
     # step rather than merely inconvenience a session. Recovered from the
     # pre-reversion version of this gate, which carried it and said so; the
@@ -1126,7 +1126,7 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     # no decision moved downstream.
     #
     # It is also genuinely unlike the three exceptions fixed the same day — the
-    # rezip's plugin.json, the close's README.md, and /setup's markers. Each of
+    # rezip's plugin.json, /done's README.md, and /setup's markers. Each of
     # those was a required write with no permitted moment anywhere in the method.
     # This write has a proper home.
     if rel.startswith(os.path.normcase("FAQ") + "/"):
@@ -1333,7 +1333,7 @@ METHOD_SKILLS = frozenset({"setup", "plan", "next", "rescan", "done"})
 # without this a required write had no permitted moment anywhere.
 #
 # README.md is the recorded case. The README feature-list sync rides the
-# SPEC-sync trigger, which fires at the close; /next self-scopes from the items
+# SPEC-sync trigger, which fires at /done; /next self-scopes from the items
 # it is about to build, and no item names README.md because the obligation is a
 # consequence of several items TOGETHER. So the file could not have entered the
 # build's list by any correct application of the scoping rule, and three
@@ -1344,7 +1344,7 @@ METHOD_SKILLS = frozenset({"setup", "plan", "next", "rescan", "done"})
 # close obligation added later that names a new file must be added here in the
 # same build, or the identical denial recurs one file over.
 #
-# It widens a BUILD's scope not at all — the marker below is written by the close
+# It widens a BUILD's scope not at all — the marker below is written by /done
 # and removed at its end, so during the build these paths are denied exactly as
 # they were.
 CLOSE_PHASE_FILES = ("README.md",)
@@ -1380,7 +1380,7 @@ def _setup_marker_present(session_id: str) -> bool:
 def _scratchpad_marker_present(session_id: str, marker_name: str) -> bool:
     """True while THIS session's scratchpad carries `marker_name`.
 
-    The shared mechanism behind the /setup marker and the close marker. Matched
+    The shared mechanism behind the /setup marker and the /done marker. Matched
     by path shape under the system temp directory and scoped to this session's
     own id, so one project's run cannot unlock another's. Never raises: a
     scratchpad that cannot be read reports no marker, which leaves the lock ON.
@@ -1404,9 +1404,9 @@ def _scratchpad_marker_present(session_id: str, marker_name: str) -> bool:
 def _is_close_phase_file(filepath: str, cwd: str, session_id: str) -> bool:
     """True for a close-obligation file while this session's close is running.
 
-    Two conditions, and both must hold: the close has declared itself with a
+    Two conditions, and both must hold: /done has declared itself with a
     scratchpad marker, and the path is one the method's close obligations name
-    (CLOSE_PHASE_FILES). Outside the close the marker is absent and these paths
+    (CLOSE_PHASE_FILES). Outside /done the marker is absent and these paths
     are denied exactly as before, so a build's scope is unchanged.
 
     The marker rather than a standing permission, because the hook has no other
@@ -1614,7 +1614,7 @@ def _is_log_entry_overwrite(tool_name: str, filepath: str, cwd: str) -> bool:
     correct is caught. A genuinely new entry filename does not exist yet, so
     this never fires on a correct close either.
 
-    The filename derives from the close date plus the session type, so every
+    The filename derives from the /done date plus the session type, so every
     session of the same kind on one day competes for one name. A consumer
     running one session a day never meets this; a day with a morning and an
     afternoon session meets it immediately.
@@ -1959,6 +1959,11 @@ def main() -> int:
         # Edit would. Without this, every per-item removal in a run — the most
         # frequent queue write there is — would go unprotected in a project whose
         # queue has left git.
+        #
+        # inbox_send.py is the other sanctioned script: it passes here for the
+        # same reason the mover does — the command text is a script path and
+        # carries no write call — and it needs no snapshot, since it writes
+        # into another project's INBOX/ and never into this project's files.
         if "reorder_queue" in command:
             _snapshot_before_write(cwd, os.path.join(cwd, "QUEUE.md"))
 
@@ -2100,7 +2105,8 @@ def main() -> int:
         # A build does not edit QUEUE.md by hand. It reads the file — that is
         # where its instructions and their reasoning live — and the only queue
         # WRITES a run makes, removing a ticked item and appending a capture, go
-        # through reorder_queue.py, which the shell guard permits by name. A
+        # through reorder_queue.py, which the shell guard permits by name (as
+        # it does inbox_send.py, the outbound-mail script). A
         # direct Edit or Write here is either a build rewriting an item's
         # rationale, or the awkward hand-editing the mover exists to replace.
         #
@@ -2137,7 +2143,7 @@ def main() -> int:
         # working files by name, and without the id it looks for
         # `_build-unknown.md` and never matches the real one — which denied a
         # scoped build every write to its own working file, including the
-        # progress ticks and change notes the close reads.
+        # progress ticks and change notes /done reads.
         sid = data.get("session_id", "")
         # The Files list is checked further down; a listed path is allowed
         # there. What follows here is the ordered chain of standing

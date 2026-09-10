@@ -14,7 +14,7 @@ None of this is specific to my plugin, Throughliner, or to Claude. If you are wr
 
 Every rule got its reasoning attached — and not on a hunch. Research on the model I was running at the time, Opus 4.8, showed it followed a rule more reliably when the reason for it travelled alongside. So the reasons went in, and for that model it worked. The models that followed — the 5-series — turned out to want the opposite: less prescription, not more, which is what made it possible to take the reasons back out.
 
-The result was a document nobody could hold in their head, the machine included. Not only that but there was no system maintaining it, so rules contradicted each other and behaviour drifted. 
+The result was a document nobody could hold in their head, the machine included. Not only that but there was no system maintaining it, so rules contradicted each other and behaviour drifted.
 
 > The reasoning attached to every rule was not free. It was the thing crowding out the rules, themselves.
 
@@ -88,7 +88,40 @@ Eleven percent of everything a session might read, gone in an afternoon, with no
 
 **The number I'd rather not report:** the docset is a third bigger today than it was the week of that cut. The rules are still written to the standard above. There are simply more of them. Length is governed at the door, one rule at a time, and every rule admitted costs the ones already there. The writing standard makes each rule cheaper. It doesn't make there be fewer.
 
-## 5. Negatives that stayed
+## 5. The door
+
+Section 3 is how to write a rule the model will follow. It says nothing about whether the rule should exist. That turned out to be the larger half, and I only saw it properly after the numbers above: a corpus a third bigger than the week of the cut, every rule in it written to standard. Something other than the writing has to decide how many rules there are.
+
+Legislation has this too. A bill doesn't reach the statute book because somebody thought of it. It passes through a process that asks whether it is needed, what it amends, and what it repeals. I borrowed four parts of that process, and together they are the discipline the first half of this article was missing.
+
+### Admission: name the parent first
+
+Before writing a rule, say which existing rule it amends. An amendment competes with nothing — it sits under its parent, and the reader meets it there. A freestanding rule competes with everything already in the file. Most proposals that arrive as new rules are refinements whose parent was never looked for, so the first question is "what does this amend?", and looking for the answer is where half of them dissolve into a clause on something that already exists.
+
+Then four questions, and a rule that fails the first stops there:
+
+- **Has this actually failed, in a way you can point to?** A rule written against a failure you imagine costs the same attention as one written against a failure you saw.
+- **Does the model already do it unprompted?** Then the rule taxes attention for behaviour you already have.
+- **Does it apply to every session, or only some?** A rule that fires in one situation and is read in all of them is noise most of the time.
+- **Could a mechanism do it instead, at no attention cost?** A script that refuses a bad write catches every case and is read by nobody. A rule about the same thing catches most cases and is read every time.
+
+### Eviction: name what comes out
+
+Adding a rule names which rule it replaces, and repeals it in the same move. This is the one I got wrong most often, and how I got it wrong is the point: I would write a clearer version of a rule and leave the old one standing, because deleting felt riskier than adding. The result is a corpus where everything is said twice, in two wordings — the near-identical-rules problem from section 1, manufactured by the person trying to fix it. A restatement that leaves the original in place has doubled the text, not merged it.
+
+### Distribution: always loaded, or fetched
+
+Not every rule has to be in front of the model all the time. The test is whether the model could know to go looking for it. A rule that must shape behaviour unprompted — how to speak to the user, what to do when something is noticed mid-task — cannot be fetched, because a session cannot fetch a rule it has never read. It pays the full attention cost, always. Reference material with a trigger the model can't miss — a word the user says, a step that says "now open this" — can live in a file that is opened when needed and costs nothing the rest of the time. Getting this split right did more for the size of the always-loaded file than any amount of tightening its sentences.
+
+### Repeal tracing: search before you reword
+
+Rewording a rule means searching for its distinctive words across the whole corpus first. The old wording is cited in places the edit never touches — a procedure that points at it, a checklist that quotes it, a note that explains it — and a pointer to text that no longer exists fails silently. Statute law handles this with a schedule of consequential amendments. I handle it with a search, and with a rule that the search runs before the rewording rather than after.
+
+### What the door doesn't do
+
+It makes the intended outcome more likely. It guarantees nothing. Nothing can tell an honest "I checked, and this rule is needed" from a dishonest one, because the process is the author checking the author's own work. What it buys is a moment where refusal is possible, and a record of what was decided — so a rule that was refused is not proposed again by someone who never saw the refusal. That last part is most of the value. The rejected rule carries why it lost, and settled things stay settled.
+
+## 6. Negatives that stayed
 
 A mechanical pass would have destroyed these. Three kinds of negative statement survived, because in each the negative *is* the content:
 
@@ -98,7 +131,7 @@ A mechanical pass would have destroyed these. Three kinds of negative statement 
 
 A style rule that can't tell these apart isn't a style rule. It's a find-and-replace. Telling them apart means reading the provision around each sentence, which is why this was a job of work and not a script.
 
-## 6. What I can't claim
+## 7. What I can't claim
 
 - The rewrite covered the findings I had, the terminology, and what a full read of each file surfaced. It is not a claim that all 299 statements now conform to the standard.
 - A flat count cannot detect a rewrite that changed a rule's meaning. It told me the corpus hadn't grown. It could not tell me whether I'd altered what a rule required while tidying it, and nothing else was watching for that.
@@ -106,7 +139,7 @@ A style rule that can't tell these apart isn't a style rule. It's a find-and-rep
 
 And the largest caveat: this is one project, measured on its own documents. I have a corpus, before-and-after behaviour, and a strong conviction. I don't have a controlled experiment.
 
-## 7. Take the method
+## 8. Take the method
 
 The drafting rules ship with this article as a plain prompt you can paste into whatever you're using. No install, nothing to sign up for.
 

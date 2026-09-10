@@ -62,8 +62,10 @@ Drawn by the cycle's turns.
 Cycle: [weekly-release]
 
 #### Three — held behind an open blocker [three]
-Waits on alpha.
-Blocked by: [alpha]
+Waits on one, which is still a capture. (A capture held on a PROCESSED item is
+presentable under the rule — see test_queue_digest.py — so the hold here names
+an entry still in Unprocessed.)
+Blocked by: [one]
 
 #### Four — plain [four]
 Ordinary.

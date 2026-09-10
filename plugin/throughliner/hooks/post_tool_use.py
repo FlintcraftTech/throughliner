@@ -220,7 +220,9 @@ def _check_heading_articles(blocks, warnings):
                 f"line {b['idx'] + 1}: entry {b['heading'][:60]!r} starts "
                 "with an article (The/A/An) — put the heading's "
                 "distinguishing words first, since the outline view truncates "
-                "each heading mid-phrase. Advisory, and it reaches the "
+                "each heading mid-phrase. Rewrite it in place with the queue "
+                "tool: reorder_queue.py <QUEUE.md> --retitle <slug> --heading "
+                "\"<new heading>\". Advisory, and it reaches the "
                 "article case only, not every front-loaded heading."
             )
 
@@ -1038,7 +1040,7 @@ def _read_lint_state(cwd: str):
 
     A cleared flag's "gone" notice reads this rather than the commit: against
     the commit a flag cleared this session stays "gone" after every tool call
-    until the close commits, and one notice printed dozens of times in a
+    until /done commits, and one notice printed dozens of times in a
     session. Missing or unreadable means no gone notices this run — never an
     error, since the lint is advisory.
     """

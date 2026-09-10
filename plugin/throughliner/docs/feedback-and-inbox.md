@@ -260,14 +260,25 @@ moment the sender is known for certain: a receiving-side check can see the field
 is missing and can never recover it.
 
 **Check the recipient's `INBOX/` exists before writing, and say plainly when one
-has to be created.** A project whose installed method predates INBOX scaffolding
+has to be created — the send script runs this check and the next, and performs
+the copy:**
+
+```
+python <plugin-root>/scripts/inbox_send.py <project root> \
+    --to "<correspondent name>" --file <message path>
+# refuses where the correspondent has no mailbox; --create-mailbox creates
+# one on the user's say-so. Prints the name and the filename, never the path.
+```
+
+A project whose installed method predates INBOX scaffolding
 has nothing at its session start that surfaces waiting mail, so a message
 delivered into a folder this project just made can sit unread indefinitely with
 nothing on this side ever knowing. That has happened.
 
 **And confirm the recipient's `INBOX/` is covered by that project's
 `.gitignore`. Where it is not, say so plainly and do not send until the user
-says go.** One more limb on the check that already runs, not a new mechanism.
+says go** — the script refuses and sends nothing in that case. One more limb
+on the check that already runs, not a new mechanism.
 A reply is written into the recipient's own folder, so a file from this project
 appears inside a repository whose ignore rules this project does not control —
 and where those rules do not cover the mailbox, the message gets committed
@@ -309,7 +320,8 @@ first message — one nobody is replying to — still has somewhere to go. Neith
 covers the other's case.
 
 **The address book is write-and-send only.** A session may pass a recorded path
-to a send, and that is the only read: the path stays unquoted, correspondents
+to a send, and that is the only read — the send script above makes it, taking a
+correspondent's name and resolving the path itself: the path stays unquoted, correspondents
 stay unnamed in every document, and neither is carried into chat. Some projects are private in a way
 that goes past "not published" — the folder name alone can identify a real
 person and a sensitive matter — and the gitignore protects against publication

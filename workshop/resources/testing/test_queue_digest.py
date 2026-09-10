@@ -913,6 +913,67 @@ def test_whats_next_respects_a_capture_bowing_out():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_capture_held_on_a_processed_item_is_offerable():
+    """A capture's `Blocked by:` releases once the named entry is in Processed:
+    the rule reads "processed or built", and a kept item counts as processed
+    ([digest-offerable-reads-processed-or-built])."""
+    root = project(
+        processed=(
+            "#### Kept item [kept]\nProse.\n" + BLOCK + "\n" + MARKER + "\n"
+        ),
+        unprocessed=(
+            "#### Waiting on the kept item [waits]\nProse.\n"
+            "Blocked by: [kept]\n"
+        ),
+    )
+    queue = os.path.join(root, "QUEUE.md")
+    items = digest.parse(queue)
+    pool = [i["slug"] for i in digest.offerable(items, root)]
+    check("a capture held on a Processed item is in the pool",
+          pool == ["waits"], str(pool))
+    _, _, item = digest.whats_next(items, root, queue)
+    check("--next offers it", item is not None and item["slug"] == "waits",
+          str(item and item["slug"]))
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_capture_held_on_an_unprocessed_item_still_bows_out():
+    """A named entry still in Unprocessed holds the capture, as before."""
+    root = project(
+        unprocessed=(
+            "#### Still a capture [open]\nProse.\n"
+            "\n"
+            "#### Waiting on the open capture [waits]\nProse.\n"
+            "Blocked by: [open]\n"
+        ),
+    )
+    queue = os.path.join(root, "QUEUE.md")
+    pool = [i["slug"] for i in digest.offerable(digest.parse(queue), root)]
+    check("a capture held on an Unprocessed entry is not in the pool",
+          pool == ["open"], str(pool))
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_full_print_names_how_many_cite_a_capture():
+    """The per-entry line on a capture carries a cited-by count where other
+    entries name its slug ([opening-names-blocking-captures])."""
+    root = project(
+        unprocessed=(
+            "#### The umbrella [umbrella]\nProse.\n"
+            "\n"
+            "#### First dependent [one]\nProse.\nBlocked by: [umbrella]\n"
+            "\n"
+            "#### Second dependent [two]\nWaits on [umbrella] too.\n"
+        ),
+    )
+    queue = os.path.join(root, "QUEUE.md")
+    text = digest.render(digest.parse(queue), root, queue)
+    line = next(l for l in text.splitlines() if "[umbrella]" in l and l.startswith("- "))
+    check("the umbrella's line says two other entries cite it",
+          "Cited by: 2 other entries" in line, line)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_incoming_citations_are_computed_not_guessed():
     """Rung 2's field is computed here and nowhere else, which is what makes
     'every rung reads a computed field' true rather than aspirational."""
@@ -1207,6 +1268,9 @@ if __name__ == "__main__":
     test_whats_next_cycle_pass_over_and_due_rung()
     test_whats_next_holds_the_openings_medians_when_passed()
     test_whats_next_respects_a_capture_bowing_out()
+    test_capture_held_on_a_processed_item_is_offerable()
+    test_capture_held_on_an_unprocessed_item_still_bows_out()
+    test_full_print_names_how_many_cite_a_capture()
     test_incoming_citations_are_computed_not_guessed()
     test_copied_finding_flags_the_item_as_resting_on_a_snapshot()
     test_research_without_the_copied_line_prints_no_snapshot_flag()

@@ -772,7 +772,7 @@ def delete_item(queue_path, slug, section):
 def replace_in_item(queue_path, slug, old, new, section=None):
     """Replace one literal string inside one entry's block, and nothing else.
 
-    Why this exists ([pointer-drift-unfixable-at-a-build-close]): the close's
+    Why this exists ([pointer-drift-unfixable-at-a-build-close]): /done's
     staleness sweep may find a pure pointer drift — an entry naming a filename
     that has since moved — and the fix is mechanical, but a build close's
     scope-lock refuses hand edits to QUEUE.md, so the sweep's arm was
@@ -849,6 +849,79 @@ def replace_in_item(queue_path, slug, old, new, section=None):
     write_verified(queue_path, new_lines, present=[(slug, sec)])
     sys.stderr.write("reorder_queue: replaced in [%s] (%s): %r -> %r\n"
                      % (slug, sec, old, new))
+
+
+def retitle_item(queue_path, slug, heading):
+    """Rewrite one entry's heading line and nothing else.
+
+    Why this exists ([queue-tool-no-heading-fix]): the lint's article-leading
+    heading flag fired on a capture filed mid-run, and the only sanctioned
+    correction was a delete and a re-append — two commands, a second filing
+    stamp, and a delete the queue's own notes treat as a signal worth
+    explaining. This is the one queue write a build was otherwise missing.
+
+    The slug is supplied from the match and never retyped: slugs are stable
+    by rule and every record cites them. The body is carried byte-identical.
+    Refuses where the slug names no entry or more than one, where the new
+    text is empty, or where it contains a bracket that would read as a
+    second slug.
+    """
+    heading = heading.strip()
+    if not heading:
+        die("--retitle: --heading must not be empty")
+    if '[' in heading or ']' in heading:
+        die("--retitle: the new heading contains a bracket, which would read "
+            "as a second slug. Give the heading text alone; the slug [%s] is "
+            "kept by the tool." % slug)
+
+    with open(queue_path, 'r', encoding='utf-8', newline='') as f:
+        lines = f.read().splitlines(keepends=True)
+    sections = parse(lines)
+    found = []
+    for sec in ('Processed', 'Unprocessed'):
+        if sec not in sections:
+            continue
+        start, end = sections[sec]
+        preamble, blocks, marker_after, had_marker = split_blocks(lines[start:end])
+        for s, blk in blocks:
+            if s == slug:
+                found.append((sec, start, end, preamble, blocks, marker_after,
+                              had_marker, blk))
+    if not found:
+        die("--retitle slug '%s' is not an entry in either section. The "
+            "script refuses rather than guessing." % slug)
+    if len(found) > 1:
+        die("--retitle slug '%s' matches %d entries. Two items sharing a "
+            "slug is itself a fault; fix the duplicate first." % (slug, len(found)))
+
+    sec, start, end, preamble, blocks, marker_after, had_marker, blk = found[0]
+    old_heading = blk[0]
+    ending = '\r\n' if old_heading.endswith('\r\n') else '\n'
+    new_heading = '#### %s [%s]%s' % (heading, slug, ending)
+    if new_heading == old_heading:
+        die("--retitle: the heading already reads that way; nothing to do")
+    new_blk = [new_heading] + blk[1:]
+    new_blocks = [(s, new_blk if s == slug else b) for s, b in blocks]
+    pref = 'TOP' if marker_after is None else marker_after
+    out = assemble_section(preamble,
+                           elements_with_marker(new_blocks, had_marker, pref))
+    new_lines = lines[:start] + out + lines[end:]
+
+    out_text = ''.join(out)
+    for s, b in blocks:
+        if s != slug and ''.join(b) not in out_text:
+            die("self-check failed: block for [%s] changed content" % s)
+    if ''.join(new_blk) not in out_text:
+        die("self-check failed: the retitled block did not land intact")
+    if had_marker != any(MARKER_RE.match(l) for l in out):
+        die("self-check failed: marker presence changed")
+    if lines[:start] != new_lines[:start] or lines[end:] != new_lines[start + len(out):]:
+        die("self-check failed: content outside the section changed")
+
+    write_verified(queue_path, new_lines, present=[(slug, sec)])
+    sys.stderr.write("reorder_queue: retitled [%s] (%s)\n  old: %s\n  new: %s\n"
+                     % (slug, sec, old_heading.rstrip('\r\n'),
+                        new_heading.rstrip('\r\n')))
 
 
 def move_section(queue_path, slug, sec_from, sec_to, position, anchor,
@@ -1050,6 +1123,28 @@ def main():
             die("usage: reorder_queue.py <queue_path> --delete <slug> "
                 "<Processed|Unprocessed>")
         delete_item(rest[0], del_slug, del_section)
+        return
+
+    if '--retitle' in args:
+        k = args.index('--retitle')
+        try:
+            rt_slug = args[k + 1]
+        except IndexError:
+            die("--retitle needs a slug")
+        rest = args[:k] + args[k + 2:]
+        if '--heading' not in rest:
+            die("--retitle needs --heading \"<new heading text>\" — the text "
+                "alone, without the slug, which the tool keeps.")
+        j = rest.index('--heading')
+        try:
+            rt_heading = rest[j + 1]
+        except IndexError:
+            die("--heading needs a value")
+        rest = rest[:j] + rest[j + 2:]
+        if len(rest) != 1:
+            die("usage: reorder_queue.py <queue_path> --retitle <slug> "
+                "--heading \"<new heading text>\"")
+        retitle_item(rest[0], rt_slug, rt_heading)
         return
 
     if '--replace-in' in args:

@@ -228,7 +228,9 @@ the order.**
 can often be settled together.
 
 **Name the held work in the opening narration: each held item, what it waits on,
-and how long it has been held — not a count.** "Held since
+and how long it has been held — not a count — and a passed-over capture that
+other captures wait on, named with what it holds and how many wait on it.**
+"Held since
 the 14th, waiting on you" is what a reader acts on. The digest supplies all three
 fields per item, including the held-since date; where that date could not be
 attributed the digest prints none, and the narration says the item is held

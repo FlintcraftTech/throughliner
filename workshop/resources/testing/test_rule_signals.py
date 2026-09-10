@@ -438,6 +438,43 @@ def test_size_report_deltas_against_the_last_sweep_turn():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_audit_lag_boundary_accepts_a_sweep_record_with_a_marker():
+    """An older compliance-audit record and a newer maintenance-sweep record
+    whose body routes findings: the sweep record is the boundary
+    ([audit-lag-accepts-sweep-record])."""
+    log_dir = tempfile.mkdtemp(prefix="rule-signals-audit-lag-")
+    with open(os.path.join(log_dir, "2026-09-01-compliance-audit-lag-build.md"),
+              "w", encoding="utf-8") as f:
+        f.write("# abc1234 — [audit] delta\n\nRouted to Captures: none\n")
+    with open(os.path.join(log_dir, "2026-09-06-maintenance-sweep-build.md"),
+              "w", encoding="utf-8") as f:
+        f.write("# def5678 — the sweep\n\nThis record records a completed turn."
+                "\n\nRouted to Captures: two findings\n")
+    check("a sweep record carrying an audit marker sets the boundary",
+          signals.audit_boundary(log_dir)
+          == "2026-09-06-maintenance-sweep-build.md",
+          repr(signals.audit_boundary(log_dir)))
+    shutil.rmtree(log_dir, ignore_errors=True)
+
+
+def test_audit_lag_boundary_skips_a_sweep_record_without_a_marker():
+    """A newer maintenance-sweep record with neither audit marker — a planning
+    record under the sweep's slug — leaves the boundary on the older audit."""
+    log_dir = tempfile.mkdtemp(prefix="rule-signals-audit-lag-")
+    with open(os.path.join(log_dir, "2026-09-01-compliance-audit-lag-build.md"),
+              "w", encoding="utf-8") as f:
+        f.write("# abc1234 — [audit] delta\n\nFiles touched: plan.md\n")
+    with open(os.path.join(log_dir, "2026-09-06-maintenance-sweep.md"),
+              "w", encoding="utf-8") as f:
+        f.write("# def5678 — plan — the sweep processed\n\n"
+                "Work processed: the sweep item\n")
+    check("a sweep record with no marker is passed over",
+          signals.audit_boundary(log_dir)
+          == "2026-09-01-compliance-audit-lag-build.md",
+          repr(signals.audit_boundary(log_dir)))
+    shutil.rmtree(log_dir, ignore_errors=True)
+
+
 def _nested_close_fixture(with_gate_line):
     """An inner commit touching docs/ and, one second later, an outer commit
     touching LOG/ whose record carries the OUTER hash in its heading — the
@@ -629,6 +666,8 @@ if __name__ == "__main__":
     test_interaction_turns_without_a_contract_are_named()
     test_function_words_alone_do_not_match()
     test_size_report_deltas_against_the_last_sweep_turn()
+    test_audit_lag_boundary_accepts_a_sweep_record_with_a_marker()
+    test_audit_lag_boundary_skips_a_sweep_record_without_a_marker()
     test_inner_commit_is_attributed_to_the_outer_close()
     test_inner_commit_without_a_gate_line_is_flagged_with_both_hashes()
     test_dispositions_window_follows_index_order()

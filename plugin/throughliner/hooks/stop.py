@@ -259,8 +259,8 @@ def _slugs_with_a_log_entry(cwd):
 def _slugs_ticked_in_working_file(cwd, session_id):
     """Slugs ticked in THIS session's build working file.
 
-    Between an item's tick and the close it is in neither the queue (the run
-    removed it at the tick) nor LOG/ (the close writes the entry), so a
+    Between an item's tick and /done it is in neither the queue (the run
+    removed it at the tick) nor LOG/ (/done writes the entry), so a
     citation of work built minutes earlier in the same run still drew a block
     — a guard false-firing at the moment of highest confidence. A tick line
     reads `- [x] <description>` under Progress, and the run's items carry
@@ -370,7 +370,7 @@ def main():
     # the sentence to tell them apart cannot work.
     recorded = _slugs_with_a_log_entry(cwd)
     # ...and a slug named in this session's own build working file is work this
-    # run built (or is building): between its tick and the close it is in
+    # run built (or is building): between its tick and /done it is in
     # neither the queue nor LOG/, so without this the guard fired on a run
     # correctly citing its own finished work.
     ticked = _slugs_ticked_in_working_file(cwd, session_id)

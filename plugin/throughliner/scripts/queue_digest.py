@@ -169,7 +169,7 @@ FLAVOR_TAGS = frozenset({"audit", "user", "freeform"})
 # shipped, which is the whole resolve — no history scan needed.
 LOG_ENTRY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-([a-z0-9][a-z0-9-]*)\.md$")
 # A record's kind suffix, or the legacy numeric one. A slug's second record
-# cannot reuse the bare filename, so the close suffixes the record's kind —
+# cannot reuse the bare filename, so /done suffixes the record's kind —
 # and older records took a bare number instead. Both are stripped so the
 # record still attributes to its slug; without this a second record is
 # invisible to the digest and its item reads as never written about.
@@ -900,6 +900,10 @@ def render(items, root="", queue_path="QUEUE.md"):
     shipped = shipped_slugs(root, wanted)
     held_dates = {}
     ages = first_seen(root, queue_path, held_dates)
+    # How many other entries name each capture — the count the planning
+    # opening reads to name a passed-over capture that other captures wait
+    # on. Computed by the same function rung 2 of the ladder reads.
+    incoming = incoming_citations(items)
     for section in ("Processed", "Unprocessed"):
         in_section = [i for i in items if i["section"] == section]
         out.append(f"## {section} — {len(in_section)} item(s)")
@@ -946,6 +950,9 @@ def render(items, root="", queue_path="QUEUE.md"):
                 line += f"  | Cycle: [{item['cycle']}]"
             if item["flag"]:
                 line += f"  | Red flag: {item['flag']}"
+            if section == "Unprocessed" and item["slug"] and incoming.get(item["slug"]):
+                line += f"  | Cited by: {incoming[item['slug']]} other entr" + (
+                    "y" if incoming[item["slug"]] == 1 else "ies")
             # Only citations that resolve to a LOG entry are printed. A citation
             # with no record at all is the normal state and would print on
             # nearly every line for nothing; a citation with one is the signal.
@@ -1216,15 +1223,21 @@ def offerable(items, root, skip=(), today=None):
     """The Unprocessed entries a pick may offer right now — the pass-overs
     applied in one place.
 
-    A capture bows out while a date holds it, while a named blocker is still an
-    open entry, or while a live cycle definition claims it as material; a slug
-    the session set aside is passed over too. This is the one implementation
-    of the pass-over: `whats_next` picks from it, and the checkpoint-counts
-    tool counts it, so the two can never disagree about what is presentable.
+    A capture bows out while a date holds it, until every entry its `Blocked
+    by:` names is processed or built, or while a live cycle definition claims
+    it as material; a slug the session set aside is passed over too. This is
+    the one implementation of the pass-over: `whats_next` picks from it, and
+    the checkpoint-counts tool counts it, so the two can never disagree about
+    what is presentable.
     """
     import datetime
     today = today or datetime.date.today().isoformat()
     cycle_slugs = _cycle_definition_slugs(root)
+    wanted = set()
+    for item in items:
+        if item["section"] == "Unprocessed":
+            wanted.update(item["blocked_by"])
+    shipped = shipped_slugs(root, wanted) if wanted else {}
 
     pool = []
     for item in items:
@@ -1232,11 +1245,12 @@ def offerable(items, root, skip=(), today=None):
             continue
         if item["slug"] and item["slug"] in skip:
             continue
-        # A capture bows out while a date holds it or a named entry is open —
-        # both mean "do not OFFER this again", which is what a pick does.
+        # A capture bows out while a date holds it or a named entry still
+        # holds it — both mean "do not OFFER this again", which is what a pick
+        # does.
         if item["not_before"] and item["not_before"] > today:
             continue
-        if any(_entry_open(items, ref) for ref in item["blocked_by"]):
+        if any(_entry_holds(items, ref, shipped) for ref in item["blocked_by"]):
             continue
         if item["cycle"] and item["cycle"] in cycle_slugs:
             continue
@@ -1244,8 +1258,19 @@ def offerable(items, root, skip=(), today=None):
     return pool
 
 
-def _entry_open(items, slug):
-    return any(i["slug"] == slug for i in items)
+def _entry_holds(items, slug, shipped):
+    """Whether a capture's `Blocked by:` reference still holds it.
+
+    The rule reads "do not OFFER this again until every named entry is
+    processed or built": an entry kept into Processed counts as processed, so
+    only one still sitting in Unprocessed holds the capture. An absent entry
+    with a build record was built and releases it; an absent entry with no
+    record is a wrong reference — the lint reports it — and stays a hold.
+    """
+    for i in items:
+        if i["slug"] == slug:
+            return i["section"] == "Unprocessed"
+    return shipped.get(slug) != "built"
 
 
 def _cycle_definition_slugs(root):

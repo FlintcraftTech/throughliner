@@ -774,24 +774,6 @@ It happened in one, and nothing says it only happens there. Siting the clause he
 covers the recorded instance and not the general case; a second instance occurring
 outside a tail is what would reopen this.
 
-**After /done, if further work changes a file, offer once to append it to
-this session's LOG entry** [BRIEF, PROMPT]. The entry is written and committed by
-now, so anything done afterwards — a fix, a question answered, a piece of work
-run on request — is invisible in the record unless the entry is amended.
-
-```
-append, never rewrite   ->  a marked tail section on the existing entry, so it
-                            reads plainly as work that came after /done.
-                            Leave the index line alone unless the tail changes
-                            what the entry is ABOUT.
-once per tail           ->  not once per exchange. An offer reappearing after
-                            every message is the nagging shape this method
-                            keeps deleting.
-only where a file        -> post-close conversation that alters nothing has
-  changed                   nothing to record, and offering there trains the
-                            user to decline.
-```
-
 **Announce a `[freeform]` item if Processed holds one.** /next halts on one rather
 than building it, so say plainly what the item is and that it needs a session
 where the work is done by hand rather than run from the queue.

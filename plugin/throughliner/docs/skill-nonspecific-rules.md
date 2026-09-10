@@ -1322,6 +1322,20 @@ premise is broken       ->  halt and course-correct
     re-proposed later". The capture may carry `Not before:` or `Blocked by:`
     under their existing provisions; what it may not do is exist only as prose
     in a record or a rules file.
+- **After this chat's /done, offer once to append later work to this session's
+  record as a marked tail — at the end of a piece of work, where a file
+  changed.** The offer names both routes: a yes here, or running /done again,
+  which appends the same tail.
+
+```
+once per finished piece of work    ->  not after each reply
+only where a file changed          ->  conversation that alters nothing has
+                                       nothing to record
+a change that already carries its  ->  offered as a one-line pointer in the
+  own record (a rezip's entry, a       tail, never a rewrite
+  filed capture)
+```
+
 - **One build at a time.** While this chat's build working file exists, finish
   that build before starting another.
 - **One chat runs /plan and /next as many times as the work needs, one after
