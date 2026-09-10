@@ -16,11 +16,11 @@ What that buys you: settled things stop being re-decided, because a rejected opt
 
 Open a fresh chat at [claude.ai](https://claude.ai), paste this link — `https://github.com/FlintcraftTech/throughliner/raw/main/INSTALL.md` — and ask Claude to **read the guide and walk you through it step by step**. Asking Claude to read it is the part that matters: the guide is written to be followed exactly, and a Claude that improvises from the link alone will skip steps it cannot see.
 
-The guide covers installing Claude Code, setting up a paid plan, and installing the plugin. It assumes no terminal experience, and Claude runs any commands for you.
+The guide covers installing Claude Code, setting up a paid plan, and installing the plugin. It assumes no terminal experience: the two install commands are the only terminal step, and the guide gives them one at a time with what each prints.
 
 ### Already have Claude Code?
 
-Open a chat in Claude Code and ask it to install Throughliner — Claude runs the install commands for you, so you never touch a terminal. Just say: *"Add the marketplace `FlintcraftTech/throughliner#beta` and install the `throughliner@flintcraft` plugin."* (For reference, those are the two commands `claude plugin marketplace add FlintcraftTech/throughliner#beta` and `claude plugin install throughliner@flintcraft`.) Then fully restart Claude Code so the plugin loads. To update later, ask Claude to run `claude plugin update throughliner@flintcraft`, then restart again — you'll pick up the newest beta each time.
+The install is two commands run in a terminal — the desktop app has no menu that adds a marketplace. With the `claude` command-line tool installed (check with `claude --version`), run `claude plugin marketplace add FlintcraftTech/throughliner#beta` and then `claude plugin install throughliner@flintcraft`. Then fully restart Claude Code so the plugin loads. To update later, run `claude plugin update throughliner@flintcraft`, then restart again — you'll pick up the newest beta each time.
 
 **Why `#beta`?** That's the tested weekly pick — the version we're happy for people to run. The plugin's main line carries day-to-day development and can change under you mid-week, so `#beta` is the one to install unless you specifically want the newest unfinished work.
 

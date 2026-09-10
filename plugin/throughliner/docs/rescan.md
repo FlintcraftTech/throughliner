@@ -32,7 +32,7 @@ evidence a future chat must       ->  a durable file under workshop/resources/
 /rescan  ->  FILES what it finds, by that triage
          ->  never ROUTES it (keep / delete / where it sits)
          ->  never BUILDS it
-         ->  never COMMITS. The tail rides the next close's commit.
+         ->  never COMMITS. The tail rides the next /done run's commit.
 ```
 
 **The tail is what makes this the one-word route for post-close work**, which is
@@ -157,8 +157,9 @@ instructions are still in the conversation.
 filed, named; that running /done — named in words — is what records and commits
 it; and the resumed work's own pending question, put back in bold as the
 message's last line, so the message ends on the ask the user was in the middle
-of. Where nothing was running, the third is absent and the message ends on the
-second.
+of. Where nothing was running, or the run has finished and not closed — the hand-back to the /done step —
+the third part is running /done, named in words and clear of the sentence's
+end, in bold as the last line, since that step is the pending one.
 
 **Recommend nothing else.** This skill exists partly because close machinery
 accumulating at the end of a chat pulls the whole chat toward ending. A /rescan

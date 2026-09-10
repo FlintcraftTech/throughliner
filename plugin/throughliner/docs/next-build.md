@@ -448,8 +448,9 @@ groups findings by criterion ready for the compile step. Reading each artifact
 once against everything tends to collapse into a per-artifact skim.
 
 Read each artifact through, since an audit's value is reading what is there.
-Accumulate observations in the build working file Changes with precise references
-(file:line) so the user can verify each.
+Accumulate observations in a scratch file in the session scratchpad, with precise
+references (file:line) so the user can verify each; the item's `Changes:` entry
+is written from that file at the tick.
 
 ### Compile findings  [SILENT]
 
@@ -487,8 +488,8 @@ to reject one, which happens at /plan.
 
 When the audit item is done, next.md moves to the run's next item. When the whole
 run is done, tell the user how many findings were filed, and say: "We can run the
-rescan first to catch anything decided but never written down, then /done to
-record this and commit — or keep reviewing."
+rescan first to catch anything decided but never written down, then the done
+command to record this and commit — or keep reviewing."
 
 Reviewing means re-examining what was already found — not raising new work.
 Anything new routes through the existing paths: a discovery outside the audit's

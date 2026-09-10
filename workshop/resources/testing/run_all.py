@@ -11,10 +11,13 @@ nothing anywhere reported the omission — a suite left out of the list is
 indistinguishable from a suite that passed. Discovery removes the list.
 
 **What counts as a suite is a naming convention, not a list**: a `.py` file in
-this folder named `test_*.py` or `*_check.py`. A new suite named that way is
-picked up with no edit here, which is the whole point. Anything else in the
-folder is a fixture, a transcript, or a probe — `statusline_probe.py` reads a
-status line off stdin and would hang a runner that tried to execute it.
+this folder named `test_*.py` or `*_check.py`, or a `test_*.py` beside the
+shipped scripts in `plugin/throughliner/scripts/` — a script's own tests live
+beside it, and a suite there went unrun for days because nothing here looked.
+A new suite named that way is picked up with no edit here, which is the whole
+point. Anything else in the folder is a fixture, a transcript, or a probe —
+`statusline_probe.py` reads a status line off stdin and would hang a runner
+that tried to execute it.
 
 **Any `.py` file that matches neither is REPORTED as skipped rather than passed
 over in silence.** A suite misnamed at birth would otherwise be invisible in
@@ -49,6 +52,9 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 # What must exist under a correct root. The suites test the hooks, so a root
 # with no hooks folder is not this project.
 FOOTING = os.path.join("plugin", "throughliner", "hooks")
+# The second place suites live: beside the shipped scripts they test. The
+# repository cleanup's path grep repairs this with the rest when folders move.
+SCRIPTS_DIR = os.path.join(PROJECT_ROOT, "plugin", "throughliner", "scripts")
 
 
 def assert_footing():
@@ -90,31 +96,42 @@ def main():
     entries = sorted(
         n for n in os.listdir(HERE) if os.path.isfile(os.path.join(HERE, n))
     )
-    suites = [n for n in entries if is_suite(n)]
+    # (folder, name) pairs: this folder's suites first, then the ones beside
+    # the shipped scripts, each run from its own folder.
+    suites = [(HERE, n) for n in entries if is_suite(n)]
     skipped = [
         n for n in entries
         if n.endswith(".py") and n != SELF and not is_suite(n)
     ]
+    script_suites = []
+    if os.path.isdir(SCRIPTS_DIR):
+        script_suites = [
+            (SCRIPTS_DIR, n) for n in sorted(os.listdir(SCRIPTS_DIR))
+            if n.startswith("test_") and n.endswith(".py")
+            and os.path.isfile(os.path.join(SCRIPTS_DIR, n))
+        ]
+    suites.extend(script_suites)
 
     if not suites:
         print("run_all: no suites found in workshop/resources/testing/ — that "
               "is itself a finding, not a pass.")
         return 1
 
-    print(f"run_all: {len(suites)} suite(s) discovered in "
-          f"workshop/resources/testing/")
+    print(f"run_all: {len(suites) - len(script_suites)} suite(s) discovered in "
+          f"workshop/resources/testing/, {len(script_suites)} beside "
+          f"plugin/throughliner/scripts/")
     if skipped:
         print("run_all: not run (name matches neither test_*.py nor "
               "*_check.py): " + ", ".join(skipped))
     print()
 
     failed = []
-    for name in suites:
-        path = os.path.join(HERE, name)
+    for folder, name in suites:
+        path = os.path.join(folder, name)
         print(f"=== {name} ===")
         proc = subprocess.run(
             ["py", path],
-            cwd=HERE,
+            cwd=folder,
             capture_output=True,
             text=True,
             encoding="utf-8",

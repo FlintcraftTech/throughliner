@@ -128,13 +128,13 @@ def test_report_agrees_with_file():
               f"(said ABOVE={said_above}, actually above={is_above})")
 
 
-def test_move_section_applies_marker_after():
-    """A cross-section move can place the readiness marker in the same call.
+def test_move_section_marker_after_the_moved_item_is_refused():
+    """Anchoring the marker to the item just placed, with a cleared item
+    below it, is the drop guard's case: delta would be swept below the line
+    with nothing saying why. Refused, and the file untouched.
 
-    Moving an item into Processed AND clearing it is the ordinary shape of
-    keeping work at /plan, so it must be one command. It used to be two: this
-    branch accepted --marker-after and silently ignored it, exiting 0 with the
-    move applied and the marker untouched.
+    This case used to assert the opposite — that the call succeeds and the
+    marker lands after beta — and predates the guard (added 2026-09-06).
     """
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "QUEUE.md")
@@ -145,6 +145,36 @@ def test_move_section_applies_marker_after():
             [sys.executable, SCRIPT, path,
              "--move-section", "beta", "Unprocessed", "Processed",
              "--position", "AFTER", "alpha", "--marker-after", "beta"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+        output = result.stdout + result.stderr
+
+        check("the sweep behind the moved item is refused",
+              result.returncode != 0, f"exit {result.returncode}: {output}")
+        check("the refusal names the item it would drop",
+              "DROP" in output and "[delta]" in output, f"got: {output}")
+        check("nothing was written",
+              open(path, "r", encoding="utf-8").read() == FIXTURE)
+
+
+def test_move_section_applies_marker_after():
+    """A cross-section move can place the readiness marker in the same call.
+
+    Moving an item into Processed AND clearing it is the ordinary shape of
+    keeping work at /plan, so it must be one command. It used to be two: this
+    branch accepted --marker-after and silently ignored it, exiting 0 with the
+    move applied and the marker untouched. `--marker-after` names the LAST
+    item that should stay cleared — delta, not the item just placed.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "QUEUE.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(FIXTURE)
+
+        result = subprocess.run(
+            [sys.executable, SCRIPT, path,
+             "--move-section", "beta", "Unprocessed", "Processed",
+             "--position", "AFTER", "alpha", "--marker-after", "delta"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
         )
         output = result.stdout + result.stderr
@@ -162,9 +192,9 @@ def test_move_section_applies_marker_after():
               f"exit {result.returncode}: {output.strip()}")
         check("the item landed in Processed above the marker", beta_i < marker_i,
               f"(item at {beta_i}, marker at {marker_i})")
-        check("the marker moved to just after the named slug",
-              beta_i < marker_i < delta_i or (beta_i < marker_i and delta_i > marker_i),
-              f"(beta {beta_i}, marker {marker_i}, delta {delta_i})")
+        check("the marker sits after the last item that should stay cleared",
+              beta_i < delta_i < marker_i,
+              f"(beta {beta_i}, delta {delta_i}, marker {marker_i})")
         check("report says ABOVE", "ABOVE" in output, f"got: {output.strip()}")
 
 
@@ -336,7 +366,9 @@ def test_named_move_across_the_line_still_reports_and_succeeds():
 
     Moving an item across the line is a legitimate way to clear or shelve work.
     The original code reported rather than refused for exactly this case, and
-    that reasoning is unchanged — only unnamed crossings are new.
+    that reasoning is unchanged — only unnamed crossings are new. gamma lands
+    after alpha, and `--marker-after` names delta, the last item that should
+    stay cleared, so gamma crosses into the cleared region and nothing is swept.
     """
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "QUEUE.md")
@@ -345,15 +377,24 @@ def test_named_move_across_the_line_still_reports_and_succeeds():
 
         result = subprocess.run(
             [sys.executable, SCRIPT, path, "Processed",
-             "--move", "gamma", "AFTER", "alpha", "--marker-after", "gamma"],
+             "--move", "gamma", "AFTER", "alpha", "--marker-after", "delta"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
         )
         output = result.stdout + result.stderr
+
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+        marker_i = next(i for i, l in enumerate(lines)
+                        if "Cleared to run above this line" in l)
+        gamma_i = next(i for i, l in enumerate(lines)
+                       if l.startswith("#### ") and l.rstrip().endswith("[gamma]"))
 
         check("the named move succeeds", result.returncode == 0,
               f"exit {result.returncode}: {output}")
         check("the crossing is reported",
               "crossed the readiness line" in output, f"got: {output}")
+        check("the moved item sits above the marker", gamma_i < marker_i,
+              f"(gamma {gamma_i}, marker {marker_i})")
 
 
 def test_append_stamps_an_unstamped_capture():
@@ -418,6 +459,7 @@ if __name__ == "__main__":
     test_report_agrees_with_file()
     test_move_section_applies_marker_after()
     test_move_section_marker_failure_writes_nothing()
+    test_move_section_marker_after_the_moved_item_is_refused()
     test_delete_reports_only_what_landed()
     test_retitle_changes_the_heading_and_nothing_else()
     test_retitle_refuses_a_bracketed_heading()

@@ -687,6 +687,33 @@ def _check_duplicate_gate_lines(blocks, warnings):
             )
 
 
+def _check_bolded_gate_label(annotated, warnings):
+    """A `Rule gate:` label written bold at the start of its line.
+
+    The mid-line check tolerates `**Blocked by:**` because every reader of
+    that field accepts the emphasis. The gate label has two readers that do
+    not: the state server's tick tool and the session record's parser both
+    read the label plain at the start of its line. Advisory, like every flag
+    here; the fix is at the writing end, never a wider read.
+    """
+    in_fence = False
+    for i, line, h2, is_heading in annotated:
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence or is_heading or h2 != "Processed":
+            continue
+        stripped = line.lstrip()
+        if re.match(r"^\*{1,2}_?Rule gate:", stripped, re.IGNORECASE):
+            warnings.append(
+                f"line {i + 1}: 'Rule gate:' is written bold. The tick tool "
+                "and the session record's parser read the label plain at the "
+                "start of its line, so as written the disposition is "
+                "invisible to both. Write it plain: `Rule gate: run — …` or "
+                "`Rule gate: not needed — …`."
+            )
+
+
 def _check_cleared_gate_disposition(annotated, blocks, warnings):
     """Check 10: a cleared rule-touching item carries a gate disposition.
 
@@ -769,8 +796,14 @@ def _check_cleared_names_queue(annotated, blocks, warnings):
 # reading-end move has already been taken twice in this family (widening the
 # patterns for a bolded `Rule gate:`), and it leaves the deviation itself
 # invisible. One canonical shape, checked where it is written.
+#
+# `Rule gate:` joined the family after two items in one planning session
+# carried the disposition bold and mid-paragraph; the tick tool read no line,
+# refused, and the working-file lines were written by hand. Mid-line is caught
+# here; the bolded line-leading form, which this check tolerates for the other
+# markers, is the separate check below.
 MID_LINE_MARKERS = ("Red flag · State:", "Blocked by:", "Not before:",
-                    "Cycle:")
+                    "Cycle:", "Rule gate:")
 
 
 def _check_mid_line_markers(annotated, warnings):
@@ -868,6 +901,7 @@ def lint(content: str) -> list[str]:
     _check_orphaned_prose(annotated, warnings)
     _check_quote_claim_without_quote(blocks, warnings)
     _check_duplicate_gate_lines(blocks, warnings)
+    _check_bolded_gate_label(annotated, warnings)
     _check_cleared_gate_disposition(annotated, blocks, warnings)
     _check_cleared_names_queue(annotated, blocks, warnings)
     return warnings

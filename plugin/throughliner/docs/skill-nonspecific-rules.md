@@ -100,9 +100,7 @@ The work cycle. Every piece of work travels the same loop.
     of the message — and where there is nothing to decide, ending on the
     outcome with no ask manufactured; naming any command the ask offers in
     words rather than as a slash string, and keeping that command clear of the
-    sentence's end; subject to /done's
-    recommend-next step in done.md, which names no command and ends on
-    statements;
+    sentence's end;
   - giving one item per message when the user's next action depends on the
     prior one, per `[SEQUENCE]` below — in every multi-part exchange, inside
     skills and out, with no exemption for items that seem short;
@@ -1352,7 +1350,7 @@ a change that already carries its  ->  offered as a one-line pointer in the
 
   **What happens to an isolated chat's work at close.** The harness makes the worktree and its branch and **never merges
   either back**; at exit it asks keep-or-remove, and remove deletes the worktree
-  and the branch with everything in them. So an isolated close commits, then says
+  and the branch with everything in them. So an isolated /done run commits, then says
   which branch the work is on, that it is not merged, and that "remove" would
   delete it. The merge itself cannot happen there — git refuses to update a branch
   checked out in another working tree — so it is offered at the opening of

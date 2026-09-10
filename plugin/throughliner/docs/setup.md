@@ -41,8 +41,8 @@ that build's own list. Starting anyway would not be blocked cleanly at the door;
 it would fail partway, file by file, leaving the setup half-finished. So:
 
 > There's a build running in this project at the moment, and setting up while it
-> runs would leave things half-changed. Finish it, or run /done to close it, and
-> then start me again — I'll pick up from there.
+> runs would leave things half-changed. Finish it, or run the done command to
+> close it, and then start me again — I'll pick up from there.
 
 Then stop there — no scaffolding, no continue-anyway question, no workaround.
 
@@ -54,8 +54,8 @@ about to happen and let the user choose:
 
 > You've got a planning session going here. I can set up now — setting up
 > changes a few files outside the usual ones, which is fine and expected. Worth
-> knowing that the planning work in this chat isn't saved yet; /done is what
-> records it. Set up now, or close first?
+> knowing that the planning work in this chat isn't saved yet; the done command
+> is what records it. Set up now, or close first?
 
 Then wait for their answer, and do what they say.
 

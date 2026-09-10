@@ -645,6 +645,62 @@ def test_measurement_counts_every_shipped_doc_per_file():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def _retired_terms_fixture(term, corpus_lines):
+    """A flat root with a retired-terms register naming `term` and one shipped
+    doc holding `corpus_lines`, so the check has something to scan."""
+    root = tempfile.mkdtemp(prefix="rule-signals-retired-")
+    os.makedirs(os.path.join(root, "LOG"))
+    res = os.path.join(root, "workshop", "resources")
+    os.makedirs(res)
+    with open(os.path.join(res, "retired-terms.md"), "w", encoding="utf-8") as f:
+        f.write("# Retired terms\n\n## The list\n\n"
+                f"- `{term}` — a thing, retired 2026-09-01\n")
+    docs = os.path.join(root, "plugin", "throughliner", "docs")
+    os.makedirs(docs)
+    with open(os.path.join(docs, "done.md"), "w", encoding="utf-8") as f:
+        f.write("\n".join(corpus_lines) + "\n")
+    return root
+
+
+def test_retired_terms_check_prints_every_site_in_one_file():
+    # Twelve sites of one term in one file — more than the old slice of eight,
+    # and the old per-file dedupe would have reported one.
+    lines = []
+    for i in range(12):
+        lines.append(f"Rule {i}: write the widget field at this step.")
+        lines.append("")
+    root = _retired_terms_fixture("the widget", lines)
+    result = signals.signal_repealed(root)
+    check("every occurrence is counted, not one per file",
+          result["value"] == 12, str(result["value"]))
+    expected = [str(2 * i + 1) for i in range(12)]
+    check("every line number is in the message",
+          all(f" {n}" in result["message"].replace(",", " ") for n in expected)
+          and "plugin/throughliner/docs/done.md: the widget at lines"
+          in result["message"], result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_retired_noun_is_seen_under_any_determiner():
+    root = _retired_terms_fixture("the widget", [
+        "Every widget writes an empty file first.",
+        "",
+        "An isolated widget commits, then says which branch.",
+        "",
+        "The widget-out procedure stays as it is.",
+        "",
+        "It runs at widget time, whatever happens.",
+        "",
+        "Any widget reaching this doc has no scope-lock.",
+    ])
+    result = signals.signal_repealed(root)
+    check("the noun directly after another determiner is a hit; a word "
+          "between, a hyphen after, and the bare noun are not",
+          result["value"] == 2 and "at lines 1, 9" in result["message"],
+          result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_flat_project_has_no_inner():
     root = tempfile.mkdtemp(prefix="rule-signals-flat-")
     os.makedirs(os.path.join(root, "LOG"))
@@ -659,6 +715,8 @@ if __name__ == "__main__":
     print("test_rule_signals")
     test_nested_project_reads_both_histories()
     test_flat_project_has_no_inner()
+    test_retired_terms_check_prints_every_site_in_one_file()
+    test_retired_noun_is_seen_under_any_determiner()
     test_parent_lookup_ranks_a_paraphrase_first()
     test_duplicate_check_flags_a_cross_group_pair()
     test_accepted_pair_is_skipped_and_unlisted_pair_still_fires()

@@ -209,7 +209,7 @@ def _is_root_commit(cwd, commit):
     """True where `commit` has no parent — the repository's first commit.
 
     A record found first in the root commit was imported with the repository
-    rather than written by a close inside it: a wrap, a clone or a folder move
+    rather than written by a /done run inside it: a wrap, a clone or a folder move
     adds every existing record in one commit, and the oldest-commit test then
     attributes all of them to it. Such a record keeps its placeholder and is
     reported as an import.
@@ -1556,7 +1556,7 @@ def _waiting_inbox_messages(cwd):
     substitutes a short preview plus a file path. So enough unread mail costs the
     session its project state, its queue facts and its rules directive — not
     merely the mail. Two unarchived messages totalling 7,107 characters took one
-    payload to 10,978, and the failure landed on a close.
+    payload to 10,978, and the failure landed on a /done run.
 
     Bodies were inlined for a period because an instruction to go and read a
     file is a step, and a step can be skipped — which happened, and cost a

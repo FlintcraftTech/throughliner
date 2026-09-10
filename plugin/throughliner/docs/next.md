@@ -687,7 +687,7 @@ and the failure arrives in their hands rather than yours.
 the steps, keep /done, "handing over" and recording out of the conversation
 entirely.
 
-**Once an item's walk-through is complete (or deferred), name its close.** A
+**Once an item's walk-through is complete (or deferred), name how it is closed.** A
 `[user]` item stays in the queue for a later session, so it won't record or remove
 itself:
 

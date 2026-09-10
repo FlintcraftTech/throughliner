@@ -140,6 +140,39 @@ def test_mid_line_marker_is_flagged():
               f"got: {warnings}")
 
 
+def test_mid_line_rule_gate_label_is_flagged():
+    """The recorded instance: `**Rule gate: run — …**` bold and mid-paragraph
+    on two items in one planning session; the tick tool read no line."""
+    lint = load_lint()
+    bad = CLEAN.replace(
+        "Filed by Claude. Rationale for alpha.",
+        "Filed by Claude. Rationale for alpha. **Rule gate: run — an "
+        "amendment.**")
+    warnings = [w for w in lint(bad) if "Rule gate:" in w and "mid-line" in w]
+    check("a mid-line 'Rule gate:' is flagged", warnings, f"got: {lint(bad)}")
+
+
+def test_bolded_rule_gate_label_is_flagged_and_plain_is_not():
+    """The bolded line-leading form the mid-line check tolerates for other
+    markers; the gate label's readers do not."""
+    lint = load_lint()
+    bold = CLEAN.replace(
+        "Filed by Claude. Rationale for alpha.",
+        "Filed by Claude. Rationale for alpha.\n**Rule gate: run — an "
+        "amendment.**")
+    warnings = [w for w in lint(bold) if "written bold" in w]
+    check("a line-leading '**Rule gate:' is flagged", warnings,
+          f"got: {lint(bold)}")
+    check("the flag names the readers that fail",
+          warnings and "tick tool" in warnings[0], f"got: {warnings}")
+    plain = CLEAN.replace(
+        "Filed by Claude. Rationale for alpha.",
+        "Filed by Claude. Rationale for alpha.\nRule gate: run — an amendment.")
+    warnings = [w for w in lint(plain) if "Rule gate:" in w]
+    check("a plain line-leading 'Rule gate:' is not flagged", not warnings,
+          f"got: {warnings}")
+
+
 def test_marker_on_its_own_line_is_not_flagged():
     """The other half — the canonical shape, and the tolerated emphasis."""
     lint = load_lint()
@@ -604,6 +637,8 @@ def test_untracked_no_snapshot_yields_no_baseline():
 if __name__ == "__main__":
     print("test_queue_lint_flags")
     test_clean_queue_is_silent()
+    test_mid_line_rule_gate_label_is_flagged()
+    test_bolded_rule_gate_label_is_flagged_and_plain_is_not()
     test_slugless_heading_is_flagged()
     test_missing_section_heading_is_flagged()
     test_invalid_red_flag_state_is_flagged()

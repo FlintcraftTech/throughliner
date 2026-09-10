@@ -810,11 +810,11 @@ including when the derivation lands on zero.
 
 Word it as a recommendation, not a cap: "Ordered to process the biggest
 unblockers first — three items are holding other work up, so I'd recommend
-processing at least those three before your next /next." It's a
+processing at least those three before your next build run." It's a
 planning-throughput target, not a context-budget count.
 
 **State the four routes here, once, in the same breath** — *"I'll work through
-these one at a time; say skip, stop, or run /done whenever."* This is the only place
+these one at a time; say skip, stop, or run the done command whenever you like."* This is the only place
 they are recited. **Close that same message checkpoint-shaped**: a pointer to the
 first item and one bold question taking the user into it. The per-item checkpoint
 then presents just the next item, in the same shape.
@@ -915,8 +915,8 @@ still runs in its pointer form (a resolves-check, not a text-match).
 
 > Ordered to process the biggest unblockers first — three items are holding
 > other work up, so I'd recommend processing at least those three before your
-> next /next. I'll work through these one at a time; say skip, stop, or run
-> /done whenever.
+> next build run. I'll work through these one at a time; say skip, stop, or run
+> the done command whenever you like.
 >
 > First item — **[work-slug]** — is in [QUEUE.md](QUEUE.md) under Unprocessed.
 >
@@ -1128,7 +1128,8 @@ it means the fact has not been checked, and the item does not clear until it is.
 **Write them for a reader with less of the project in view than you have, and
 possibly less capability.** The session that builds this did not sit through the
 conversation that designed it, so anything the work needs in order to start —
-paths, names, values — is stated, not implied. **A kept item's prose opens with
+paths, names, values — is stated, not implied, and a command that runs in one of
+a nested project's repositories names only commits from that repository's log. **A kept item's prose opens with
 one plain-language sentence saying what its subject is, before the rationale**,
 a `[user]` item most of all.
 
@@ -1308,7 +1309,9 @@ audit findings are filed straight to Unprocessed with no approval on the way in,
 so this turn is the first time anyone has judged them.
 
 Part of moving an entry into Processed is settling who does it and how: Claude-work by default or
-`[user]`; and for Claude-work, its flavor. Claude places the item in Processed by
+`[user]`; and for Claude-work, its flavor — a capture asking for a check is a
+build where every hit has one fix and the search is written into the item, so
+the build derives its sites from it, and an `[audit]` otherwise. Claude places the item in Processed by
 relationship judgment and reports where it went.
 
 **Where an item's build produces a tool that measures or reports, file the
@@ -1864,6 +1867,6 @@ New items from conversation follow the same loop — check QUEUE.md for overlap
 first. If you notice a gap: "I notice [X] — want to hear a suggestion?"
 
 /plan's close-out phase is retired and no longer exists. /plan plans; /done records and commits, and it
-runs the wind-down re-scan at every close whatever the session type. The user's
+runs the wind-down re-scan at every /done run whatever the session type. The user's
 exit is `/done`, named in the work cycle in the always-loaded rules and available
 at every checkpoint.

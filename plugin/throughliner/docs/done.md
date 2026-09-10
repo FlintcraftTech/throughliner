@@ -14,7 +14,7 @@ current session — record what happened, update docs, commit.
 
 ## Declare /done  [SILENT]
 
-**First action of every close: write an empty file named
+**First action of every /done run: write an empty file named
 `.throughliner-close-active` into the session scratchpad directory, and delete it
 as the last action before /done finishes.** While it exists the scope-lock
 permits the few files the method's own close obligations name — `README.md`
@@ -178,7 +178,7 @@ the rationale  ->  the entry body
 The user approves both once, at the entry-writing step, and the commit step reuses
 them verbatim — nothing new to read.
 
-**Entry template** (placeholder hash — this close replaces it with the real
+**Entry template** (placeholder hash — this /done run replaces it with the real
 hash right after the commit, when the hash first exists):
 
 ````markdown
@@ -208,7 +208,7 @@ steps that use them.
 **The forward-recommendation advisory — one field on every flavor, and five
 provisions under it.**
 
-- write the disposition into this close's entry, in one of two forms:
+- write the disposition into this /done run's entry, in one of two forms:
 
 ```
 Advisory: filed — <slug>
@@ -227,7 +227,7 @@ Advisory: not needed — <why>
   opens on them rather than meeting them in queue order; the disposition line
   above is unchanged;
 - **where the reserved slot already holds a spent advisory, replace it**: delete
-  the spent note and file this close's own in the freed slot, with the new note
+  the spent note and file this /done run's own in the freed slot, with the new note
   saying it replaced one. The reserved slug must be unique — filing alongside a
   spent note stops the queue mover dead;
 - head the capture with the fixed, reserved slug, always that literal string:
@@ -244,7 +244,7 @@ never:      it sits ninth, with eight items ahead of it
 ```
 
 **The advisory is a transient orientation handoff, not work.** It is read and
-cleared at the next /plan's opening (plan.md), so the only one this close clears
+cleared at the next /plan's opening (plan.md), so the only one this /done run clears
 is one it is replacing. It is never processed and never reaches Processed,
 living in QUEUE.md rather than in a file of its own.
 
@@ -260,7 +260,7 @@ living in QUEUE.md rather than in a file of its own.
 `/rescan` covers the same class on demand; this section covers it arriving at
 /done, which always runs.
 
-**Where the section goes depends on how many entries this close writes**, which
+**Where the section goes depends on how many entries this /done run writes**, which
 /done already knows:
 
 ```
@@ -480,7 +480,7 @@ look-back window above. /plan has none, and gains none.**
 
 ## Session-file cleanup (throwaway artifacts)  [BRIEF, PROMPT]
 
-Commit core points here, so it runs at every close. The build working file is
+Commit core points here, so it runs at every /done run. The build working file is
 deleted by /done already; this generalises that lifecycle to *other* throwaway
 files this session created.
 
@@ -621,7 +621,7 @@ on every machine — it sidesteps inline-quoting fragility, and the scratchpad i
 on the scope-lock's standing list, so the write passes in every session type.
 
 **5a. A staging step that partly failed is a STOP, not something to commit
-around** [BRIEF, PROMPT]. Check that every path this close meant to stage is
+around** [BRIEF, PROMPT]. Check that every path this /done run meant to stage is
 actually staged — `git status --porcelain` and read what is in the index — before
 running the commit. Where anything intended is missing, say plainly what did not
 stage and why, and **hold the commit** until the staging is fixed and re-checked,
@@ -637,7 +637,7 @@ mechanics for each, the inner commit's message covering the product work
 alone. A session that touched only one side makes only that side's commit. A
 flat project — one repository — is unchanged by all of this.
 
-**Then write the commit hash into the headings and index lines this close just
+**Then write the commit hash into the headings and index lines this /done run just
 wrote** — /done is the one moment the hash exists and the files are at
 hand, and it is one convention for tracked and untracked projects alike (an
 untracked log never appears in any commit, so nothing later can attribute it
@@ -652,14 +652,14 @@ Every sub-doc's final step points here, adding only its flavor delta.
 **Content line for this turn: it states the queue situation as the next
 planning session would present it, any cycle whose turn is due — named whether
 or not a capture was filed for it — and the continuations — more planning, or a
-build — as statements of fact, and where the run this close records stopped at
+build — as statements of fact, and where the run this /done run records stopped at
 a held item whose blocker it shipped, what of the intended change is
 not yet on screen, in product terms, and nothing else.** Neither continuation is
 assumed or recommended over the other: a user may plan as many times as they
 want until enough is queued to justify a build, so which comes next is theirs,
 and this turn's job is to leave them holding the facts that decide it.
 
-**Two arms, decided by whether this close filed a concrete advisory:**
+**Two arms, decided by whether this /done run filed a concrete advisory:**
 
 ```
 advisory FILED       ->  the closing message carries ONE line naming it and
@@ -721,12 +721,6 @@ as a hedge.
            more work comes from.
 ```
 
-**Every rung states its situation and names the command that starts each
-continuation in words, clear of the sentence's end.** A message that ends by
-asking a question whose answer looks like a command is one keystroke from being
-run by accident, because the harness offers the slash command it just saw as a
-tab-completion.
-
 **A build runs best in a fresh session — a fact about the build route, not the
 assumed next step.** What comes next is the user's decision, planning again as
 much as building, which is why rung 2 states both continuations rather than
@@ -735,7 +729,7 @@ inviting either.
 **A session makes exactly one commit, and the tail makes none.** That is the
 whole shape, and everything below follows from it. /done commits; work
 arriving afterwards is written to the working tree and left there, to be carried
-by the next close. No amendment commit, no delta commit, no second close — and
+by the next /done run. No amendment commit, no delta commit, no second /done run — and
 a second `/done` is the tail, not a /done run.
 
 ```
@@ -743,7 +737,7 @@ a second `/done` is the tail, not a /done run.
 the post-commit tail     ->  writes files, commits NOTHING:
                                a capture appended to QUEUE.md
                                an append to this session's LOG entry
-                               the hash this close wrote in after its commit
+                               the hash this /done run wrote in after its commit
                              all of it rides into the NEXT close's commit
 /rescan                  ->  the one-word route to the same tail. Files by the
                              three-way triage — work to Unprocessed, what
@@ -753,7 +747,7 @@ the post-commit tail     ->  writes files, commits NOTHING:
                              judge when the tail has ended.
 ```
 
-**The cost, stated rather than discovered: the tree is dirty between one close
+**The cost, stated rather than discovered: the tree is dirty between one /done run
 and the next, always.** That is accepted, and it is what makes the dirt
 *legible* — uncommitted changes at a session's opening mean one thing, the
 previous session's tail plus its post-commit hash write, so a session
@@ -787,7 +781,7 @@ We're doing the freeform work item [<slug>] by hand in this chat — it's work
 done by hand rather than run from the queue. Its entry is in QUEUE.md (in this
 project's root folder), at the end of the cleared-to-run region of the
 Processed section; read that entry first — it says what the work is and where
-its recipe lives. When we're finished I'll run /done to record and commit.
+its recipe lives. When we're finished, the done command records and commits it.
 ```
 
 Verbatim, not a template to adapt: fresh composition by an immersed session is

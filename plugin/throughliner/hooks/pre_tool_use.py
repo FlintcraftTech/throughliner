@@ -1410,7 +1410,7 @@ def _is_close_phase_file(filepath: str, cwd: str, session_id: str) -> bool:
     are denied exactly as before, so a build's scope is unchanged.
 
     The marker rather than a standing permission, because the hook has no other
-    way to tell a close from the build that preceded it — they share one working
+    way to tell a /done run from the build that preceded it — they share one working
     file, and the build's Files list is what denies the write. This copies
     /setup's declaration mechanism rather than inventing a second one, and it is
     strictly narrower: /setup's marker permits everything, this one permits a
@@ -1670,7 +1670,7 @@ def _is_hook_suite_file(filepath: str, cwd: str, build_files: list[str]) -> bool
     """A test suite, in a run that is already changing a hook.
 
     Bounded to exactly that pairing, and it completes a requirement the method
-    already imposes rather than widening what a run may write: a close whose
+    already imposes rather than widening what a run may write: a /done run whose
     staged paths include the hooks directory must run these suites before it can
     commit, so a hook-touching run ALWAYS meets its suites. Refusing them guarded
     files the rules make part of every such change.
@@ -1764,7 +1764,7 @@ def main() -> int:
     # --- Skill: the method's own commands are the user's to type ---
     # These five ship with model invocation disabled, so an attempt fails and
     # shows the user a red error at the moment they have least context for it.
-    # It has happened at a close, landing between "now closing the session" and
+    # It has happened at a /done run, landing between "now closing the session" and
     # any explanation, and the wording-only rule has now failed twice on record
     # — which is what moves this to a hook under the gate's fourth admission
     # question: the failure is mechanical, it recurs, and its cost lands on the

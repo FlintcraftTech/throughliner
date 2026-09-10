@@ -60,7 +60,7 @@ words, naming which SPEC sentence the session made wrong, get approval to fix it
 then edit SPEC and commit it **in this same commit** rather than filing it as a
 capture for a later session.
 
-No scope-lock is active at any close reaching this doc, so edit SPEC.md directly
+No scope-lock is active at any /done run reaching this doc, so edit SPEC.md directly
 in-session. Editing SPEC to match a decision the user already made this session is
 RECORDING, not re-planning. That covers all three shapes alike.
 

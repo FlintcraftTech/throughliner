@@ -165,7 +165,7 @@ The run has not committed yet — /done is what commits — so every item this r
 built is still in the last commit's copy, whole. **Take the item's whole block —
 from its `#### ` heading to the next heading, or the section's end** — and
 nothing else; a read of the whole file is not needed to answer one slug. A hand-sized grep or line window is not used:
-a window shorter than the item once truncated the read twice in one close, and
+a window shorter than the item once truncated the read twice in one /done run, and
 both outputs reasoned from the cut-off text, one reaching the user.
 
 **Where the fetched item's own text already dispositions a question /done is
@@ -293,7 +293,4 @@ that itself carries a marker is closed by 1.4 above like any built item.
 — the staged paths are the QUEUE.md capture additions, the LOG/ changes, and the
 build working file's deletion.
 
-**Phase 3** applies done.md's audit-session delta: findings appended this
-session sit unprocessed, so the default recommendation is /plan, to sort them
-into work — name the count. Only when nothing was appended does the shared
-overlap scan run and the ladder apply.
+**Phase 3** applies done.md's audit-session delta.

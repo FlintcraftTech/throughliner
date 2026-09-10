@@ -1524,11 +1524,40 @@ def _term_appears_as_a_name(term, raw):
         if t[:1].isalnum():
             pattern = r"\b" + pattern
         if t[-1:].isalnum():
-            pattern = pattern + r"\b"
-        return re.search(pattern, low) is not None
+            # ... and not into a hyphenated compound: "close-out" is not
+            # "the close" even when "the" precedes it.
+            pattern = pattern + r"\b(?!-)"
+        if re.search(pattern, low) is not None:
+            return True
+        return _head_noun_under_a_determiner(t, low)
     if ("`" + t) in low or ("**" + t) in low:
         return True
     return low.lstrip().lstrip("-*# ").startswith(t)
+
+
+# A retired phrase written as determiner + noun (`the close`) survives under
+# every other determiner — "this close", "every close", "any close" — and the
+# literal match sees none of them. So a term of that shape also matches its
+# head noun directly after any determiner. Not reached, and stated as the
+# limit wherever this is described: a word between the two ("an isolated
+# close", "a build close") — allowing one was tried and matched "a normal
+# close" of the app and "let the user close it", which name nothing retired.
+# A hyphen after the noun is excluded: "close-out" and "close-leaning" are
+# different words, and the register says so.
+_DETERMINERS = ("the", "a", "an", "this", "that", "these", "those", "every",
+                "each", "any", "no", "its", "one", "their", "our", "your")
+_DETERMINER_RE = re.compile(r"^(?:%s)\s+(.+)$" % "|".join(_DETERMINERS))
+
+
+def _head_noun_under_a_determiner(term_low, low):
+    """True where `term_low` is `<determiner> <noun>` and `low` carries that
+    noun directly after any determiner."""
+    m = _DETERMINER_RE.match(term_low)
+    if not m:
+        return False
+    noun = re.escape(m.group(1).strip())
+    pattern = r"\b(?:%s)\s+%s\b(?!-)" % ("|".join(_DETERMINERS), noun)
+    return re.search(pattern, low) is not None
 
 
 def _paragraph_says_retired(lines, index):
@@ -1560,6 +1589,12 @@ def signal_repealed(root):
     default-state principle: retiring a mechanism automatically puts every
     rule that mentions it into question, and leaving the references standing
     produces a visible signal. No number, no calendar.
+
+    The limit: the check matches the register's literal phrase — and, for a
+    phrase of the shape determiner + noun, that noun directly after any
+    determiner, with nothing between — and it reports every site it matches:
+    every occurrence in every file, no cap. A word between determiner and
+    noun ("a build close") is not reached.
     """
     terms = load_retired_terms(root)
     retired_path = os.path.join(*locate(root, RETIRED_TERMS_FILE))
@@ -1609,26 +1644,30 @@ def signal_repealed(root):
             rel_path = os.path.relpath(path, base_repo).replace("\\", "/")
             if _is_archival(rel_path):
                 continue
-            seen = set()
             for n, raw in enumerate(lines, 1):
                 if _paragraph_says_retired(lines, n - 1):
                     continue
                 for term, _why in terms:
-                    key = (rel_path, term)
-                    if key in seen:
-                        continue
                     if _term_appears_as_a_name(term, raw):
-                        seen.add(key)
-                        hits.append((f"{rel_path}:{n}", term))
+                        hits.append((rel_path, term, n))
 
+    # Every occurrence, grouped by file and term, every line number printed.
+    # An item scoped to this printout carries the whole job only if the
+    # printout is the whole set — no per-file dedupe, no slice.
+    grouped = {}
+    for rel_path, term, n in hits:
+        grouped.setdefault((rel_path, term), []).append(n)
+    listing = "; ".join(
+        f"{p}: {t} at lines " + ", ".join(str(n) for n in ns)
+        for (p, t), ns in grouped.items()
+    )
     return {
         "stage": "REPEALED",
         "firing": bool(hits),
         "value": len(hits),
         "slug": "live-rules-name-retired-terms",
         "message": (
-            f"{len(hits)} live reference(s) to retired terms: "
-            + "; ".join(f"{p} names '{t}'" for p, t in hits[:8])
+            f"{len(hits)} live reference(s) to retired terms: {listing}"
             if hits else "No live references to retired terms."
         ),
     }

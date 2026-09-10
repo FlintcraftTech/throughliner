@@ -6,7 +6,7 @@
 
 **What to expect.** Claude will ask you a couple of quick questions to find out where you're starting from, then guide you through getting Claude Code (if you don't have it), making sure you're on a paid plan, and adding the plugin. It goes one step at a time and waits for you at each one.
 
-**Already have Claude Code and a paid plan?** You can skip the opening questions below. Still do the quick app check in [Step 1 — Opening interview](#step-1--opening-interview) to confirm you're actually in Claude Code (not the Claude chat app), then jump straight to [Branch B — Install the Throughliner plugin](#branch-b--install-the-throughliner-plugin). Branch B installs by asking Claude Code to add the plugin's marketplace and install it — Claude runs the commands for you, so you never type in a terminal.
+**Already have Claude Code and a paid plan?** You can skip the opening questions below. Still do the quick app check in [Step 1 — Opening interview](#step-1--opening-interview) to confirm you're actually in Claude Code (not the Claude chat app), then jump straight to [Branch B — Install the Throughliner plugin](#branch-b--install-the-throughliner-plugin). Branch B checks two prerequisites, then has you paste two install commands into a terminal.
 
 **How you can tell Claude actually read this guide.** Claude's first message to you should open with this exact line:
 
@@ -65,32 +65,34 @@ Recommend the subscription path for a non-coder unless they already have API cre
 
 ## Branch B — Install the Throughliner plugin
 
-Once Claude Code is installed and the user is on a paid plan, the plugin installs from its marketplace on GitHub. The good news for a non-coder: **Claude Code runs the install commands for you** — you ask it, in plain English, and it does the rest. You never type in a terminal.
+Once Claude Code is installed and the user is on a paid plan, the plugin installs from its marketplace on GitHub. The install is two commands typed into a terminal, and the desktop app has no menu that does the same job — its Plugins menu can browse marketplaces that have already been added, and cannot add one.
 
-**This still hands off.** You (Claude, in the claude.ai chat) cannot run the install from here — you have no access to the user's machine. The install happens inside **Claude Code**, driven by the Claude Code agent there. Your job in this chat is to tell the user exactly what to ask Claude Code to do, then wait for them to report back. Never pretend this chat can run the install itself.
+**This still hands off.** You (Claude, in the claude.ai chat) cannot run the install from here — you have no access to the user's machine. Your job in this chat is to give the user each command, say what it prints when it works, and wait for them to report back. Never pretend this chat can run the install itself.
 
-**Prerequisite — Python 3, installed and on the path.** The plugin's safety checks and its session-opening facts are small Python scripts that Claude Code runs for you; without Python they silently do nothing, and the plugin reports success anyway. Before installing, have the user ask Claude Code to run `python --version`. It must print a version number. On a fresh Windows machine it may instead print "Python was not found; run without arguments to install from the Microsoft Store" — that is a placeholder, not Python. Install Python from python.org (ticking "Add python.exe to PATH" in the installer), fully restart Claude Code, and check again before going on.
+### B.1 — Check the two prerequisites, then run the two install commands
 
-### B.1 — Ask Claude Code to install the plugin
+**Two prerequisites, each with its own check.** Have the user open a terminal — on Windows, PowerShell; on a Mac, Terminal — and run each check before going on.
 
-The install uses Claude Code's plugin marketplace. It's two commands — but the user does **not** have to type them. Instead, have them open a chat **inside Claude Code** and ask the Claude Code agent, in plain words, to install the plugin. Give them this to paste or say:
+- **Python 3, installed and on the path.** The plugin's safety checks and its session-opening facts are small Python scripts; without Python they silently do nothing, and the plugin reports success anyway. The check is `python --version`, and it must print a version number. On a fresh Windows machine it may instead print "Python was not found; run without arguments to install from the Microsoft Store" — that is a placeholder, not Python. Install Python from python.org (ticking "Add python.exe to PATH" in the installer), close and reopen the terminal, and check again.
+- **The `claude` command-line tool.** This is separate from the desktop app: the app can be installed without it, and the plugin commands below exist only in it. The check is `claude --version`, and it must print a version number. If it prints "command not found" or "not recognized", install the tool from the official setup page — https://code.claude.com/docs/en/setup — which gives one install command per operating system; then close and reopen the terminal and check again.
 
-> Please add the plugin marketplace `FlintcraftTech/throughliner#beta` and then install the `throughliner@flintcraft` plugin from it.
-
-The `#beta` on the end matters: it points at the tested weekly pick rather than the day-to-day development line, so the user installs a version that has been checked over. Keep it exactly as written.
-
-The Claude Code agent will run the two commands itself:
+**Then the two commands, in this order**, each pasted into the same terminal:
 
 ```
 claude plugin marketplace add FlintcraftTech/throughliner#beta
+```
+
+When it works, it prints that the marketplace `flintcraft` was added. The `#beta` on the end matters: it points at the tested weekly pick rather than the day-to-day development line, so the user installs a version that has been checked over. Keep it exactly as written.
+
+```
 claude plugin install throughliner@flintcraft
 ```
 
-(If the user would rather run them by hand, those are the commands — but the default and easiest path is to let Claude Code run them.)
+When it works, it prints that `throughliner` was installed, with a version number. If either command errors — for example, the marketplace can't be found — have the user paste the exact error back to you and work it from there.
 
 **The repository and the plugin now share the name `throughliner`.** If the user is coming from the plugin's old name, Sovereign Implementer, Claude Code follows the old name automatically but still needs to fetch the plugin under the new one — so the install above is run once, then the app is fully restarted.
 
-After both succeed, the plugin activates on a full restart of Claude Code. Have the user fully quit and reopen the app, then run the smoke test in B.2 to confirm it took. If the marketplace-add or install errors — for example, the marketplace can't be found — have them tell the Claude Code agent the exact error and work it from there; the agent can retry or diagnose.
+**Then restart, and look for the plugin in the app.** Have the user fully quit and reopen the Claude Code desktop app. Afterwards, the **+** button beside the chat box opens a menu with a **Plugins** entry, and that menu shows three labels: **Throughliner**, **Manage plugins** and **Browse plugins**. And the top of a new chat shows a few lines beginning `[Throughliner]` — those come from the plugin and mean it is running. Then run the smoke test in B.2.
 
 ### B.2 — Smoke test — confirm the plugin works
 
@@ -104,13 +106,13 @@ This is just a quick check that the install took. It doesn't need a real project
 
 If it fails, work through these in order — don't jump straight to reinstalling:
 1. **Fully quit and reopen the app** — not just a new session. Plugin commands register when the app launches, and on Windows a normal "quit" can leave the app running in the background, so a new chat or even a normal close-and-reopen may not pick them up. Quit the app, then on Windows confirm the process has actually exited (check Task Manager and end it if it's still there) before reopening. Then try `/setup` again.
-2. If it still doesn't show, have the user ask the Claude Code agent to confirm the plugin is installed and enabled (the agent can list installed plugins), and to reinstall it with `claude plugin install throughliner@flintcraft` if needed. Then fully restart again.
+2. If it still doesn't show, have the user run `claude plugin list` in the terminal to confirm the plugin is installed and enabled, and reinstall it with `claude plugin install throughliner@flintcraft` if needed. Then fully restart again.
 
 A note for real use later: `/setup` is also the command that sets up a real project once the plugin is confirmed working — that's a separate step you'll do in your own project folder, not part of this test.
 
 ### Updating later
 
-To update, have the user ask the Claude Code agent to run `claude plugin update throughliner@flintcraft` (Claude Code runs it — no terminal typing), then fully restart the app so the new version loads. Because the marketplace is pinned to `#beta`, each update brings the newest tested weekly pick rather than whatever is on the development line that day.
+To update, have the user run `claude plugin update throughliner@flintcraft` in the terminal, then fully restart the app so the new version loads. Because the marketplace is pinned to `#beta`, each update brings the newest tested weekly pick rather than whatever is on the development line that day.
 
 ## Step 2 — First-run pointer
 
@@ -137,7 +139,7 @@ This section is for the assistant reading the guide, not for the human installer
 Then go to the opening interview. The line is how a non-coder can tell a guide that was read from advice that was improvised, and it is stated near the top of this file so they know to look for it. Say it only when you have actually read this guide.
 
 **Ground rules:**
-- Assume the user has zero terminal experience and is mildly allergic to terminals. Use the Claude Code **desktop app** at all times. The plugin install (Branch B) uses `claude plugin ...` commands, but the user does not type them — the Claude Code agent runs them on the user's behalf. Frame it that way: they ask Claude Code in plain English and it runs the commands. Don't have the user open or type into a terminal, and don't suggest unrelated CLI workflows (`claude --version`, `/config` in a terminal, etc.).
+- Assume the user has zero terminal experience and is mildly allergic to terminals. Use the Claude Code **desktop app** for everything except Branch B, whose checks and two `claude plugin ...` commands exist only in the terminal — give one command at a time, say exactly what it prints when it works, and wait for the report. Don't suggest any CLI workflow beyond the ones Branch B names.
 - You don't have access to their machine from this chat. You're giving them instructions to follow in their own desktop app and browser. Wait for them to report back at each step.
 - If you need a current download URL or up-to-date install instructions for Claude Code itself, do a web search rather than guessing — official pages change.
 - The pacing rules below are mandatory. Read them before you start the walkthrough.
