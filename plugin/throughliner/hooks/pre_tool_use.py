@@ -1180,7 +1180,7 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     # `plugin/throughliner/`, where a sibling write is still denied.
     #
     # SUPERSEDED WHEN [ritual-declares-writable-paths] SHIPS **and** the rezip
-    # exists as a ritual definition declaring this path — not before, or the
+    # exists as a checklist definition declaring this path — not before, or the
     # rezip loses its only permitted route.
     if rel.startswith(os.path.normcase("plugin/rezip-archive")
                       .replace("\\", "/") + "/"):
@@ -1197,31 +1197,31 @@ CYCLE_WRITES_RE = re.compile(r"^\s*\*{0,2}Writes\s*:\*{0,2}\s*(.+?)\s*$",
                              re.IGNORECASE)
 
 
-def _ritual_declared_paths(cwd: str) -> list[str]:
-    """Paths the project's own cycles doc declares its rituals' steps write.
+def _checklist_declared_paths(cwd: str) -> list[str]:
+    """Paths the project's own cycles doc declares its checklists' steps write.
 
-    A ritual's steps routinely need somewhere outside the planning session's
+    A checklist's steps routinely need somewhere outside the planning session's
     standing list — a build folder, a generated artifact — and the alternative
-    is a carve-out in this file per ritual, which has now been written twice.
+    is a carve-out in this file per checklist, which has now been written twice.
     So a definition names the paths it writes and the lock reads them.
 
     **This is not the self-declared marker refused beside the manifest
     carve-out.** That objection is against a session granting itself
-    permission. A ritual's declaration lives in CYCLES.md, written at a
+    permission. A checklist's declaration lives in CYCLES.md, written at a
     planning session with the user present and committed — exactly as a
     `[freeform]` session's list comes from a queued item's Files line. Who
     wrote the permission and when is the distinction, not whether a file is
     read at check time. Keep that true or this becomes the refused thing.
 
     **Declared paths are permitted whenever the project is open, not only while
-    the ritual runs**, on the user's decision of 2026-08-29. The cost is stated
+    the checklist runs**, on the user's decision of 2026-08-29. The cost is stated
     rather than buried: a declared path is writable in any session. Nothing
-    needs to detect which ritual is running, and the manifest carve-out has
+    needs to detect which checklist is running, and the manifest carve-out has
     worked this way unconditionally with nothing going wrong.
 
     The field is read wherever it appears rather than only on definitions with
-    no cadence: the authoring rule sites it on rituals, but a cycle whose turn
-    runs a ritual's steps has the identical need, and a definition that declares
+    no cadence: the authoring rule sites it on checklists, but a cycle whose turn
+    runs a checklist's steps has the identical need, and a definition that declares
     nothing contributes nothing either way.
 
     A project with no cycles doc gets an empty list and pays one `isfile`.
@@ -1250,13 +1250,13 @@ def _ritual_declared_paths(cwd: str) -> list[str]:
     return declared
 
 
-def _is_ritual_declared_path(filepath: str, cwd: str) -> bool:
+def _is_checklist_declared_path(filepath: str, cwd: str) -> bool:
     """True where the cycles doc declares this path, or a folder above it."""
     if not _is_inside(filepath, cwd):
         return False
     rel = os.path.relpath(os.path.normpath(filepath), os.path.normpath(cwd))
     rel = os.path.normcase(rel).replace("\\", "/")
-    for declared in _ritual_declared_paths(cwd):
+    for declared in _checklist_declared_paths(cwd):
         target = os.path.normcase(declared).replace("\\", "/")
         if rel == target or rel.startswith(target + "/"):
             return True
@@ -1606,13 +1606,13 @@ def _is_log_entry_overwrite(tool_name: str, filepath: str, cwd: str) -> bool:
     write reports success, the file exists, the index line resolves, and the
     entry reads correctly because it is the one just written. The only trace is
     a ` M` where `??` was expected in a list of twenty-odd staged paths. Two
-    committed entries were destroyed that way in a single close and recovered
+    committed entries were destroyed that way in a single /done run and recovered
     only because the character was noticed by chance.
 
     WRITE ONLY, never Edit. A close legitimately edits `LOG/index.md` and
     appends a tail to an existing entry, and both go through Edit — so nothing
     correct is caught. A genuinely new entry filename does not exist yet, so
-    this never fires on a correct close either.
+    this never fires on a correct /done run either.
 
     The filename derives from the /done date plus the session type, so every
     session of the same kind on one day competes for one name. A consumer
@@ -2147,15 +2147,15 @@ def main() -> int:
         sid = data.get("session_id", "")
         # The Files list is checked further down; a listed path is allowed
         # there. What follows here is the ordered chain of standing
-        # exemptions, and the ritual `Writes:` field sits at its head: a path
+        # exemptions, and the checklist `Writes:` field sits at its head: a path
         # a cycles-doc definition declares is permitted whenever the project
         # is open, in a build session as much as a planning one
         # ([ritual-writes-refused-in-build-sessions]).
         if _is_build_file(filepath, cwd, build_files or []):
             return _allow("build scope: in Files list")
         for branch, hit in (
-            ("ritual Writes: field",
-             lambda: _is_ritual_declared_path(filepath, cwd)),
+            ("checklist Writes: field",
+             lambda: _is_checklist_declared_path(filepath, cwd)),
             ("build scope: method doc",
              lambda: _is_method_doc(filepath, cwd, sid)),
             ("build scope: memory dir", lambda: _is_memory_dir(filepath)),
@@ -2242,8 +2242,8 @@ def main() -> int:
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
-            ("ritual Writes: field",
-             lambda: _is_ritual_declared_path(filepath, cwd)),
+            ("checklist Writes: field",
+             lambda: _is_checklist_declared_path(filepath, cwd)),
         ):
             if hit():
                 return _allow(branch)
@@ -2266,7 +2266,7 @@ def main() -> int:
                 "A planning session may write QUEUE.md, any SPEC.md (the "
                 "root's or a part's), CYCLES.md, TOOLS.md, anything in "
                 "LOG/, research notes and its own scratch files — plus any "
-                "path a ritual definition in CYCLES.md declares its steps "
+                "path a checklist definition in CYCLES.md declares its steps "
                 "write. Everything "
                 "else is work, and work gets queued and built rather than done "
                 "here.\n\n"

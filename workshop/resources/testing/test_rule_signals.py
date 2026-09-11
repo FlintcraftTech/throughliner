@@ -701,6 +701,39 @@ def test_retired_noun_is_seen_under_any_determiner():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_retired_noun_in_a_cleared_items_instruction_is_reported_by_slug():
+    root = _retired_terms_fixture("the widget", ["Nothing retired here."])
+    with open(os.path.join(root, "QUEUE.md"), "w", encoding="utf-8") as f:
+        f.write("# QUEUE\n\n## Processed\n\n"
+                "#### Rewrite the opening line [alpha]\n"
+                "Files: done.md — the sentence reads \"the hand-back to the widget\".\n"
+                "\n--- Cleared to run above this line ---\n\n"
+                "## Unprocessed\n\n"
+                "#### Something else [beta]\n"
+                "Uses the widget too, but this section is not read.\n")
+    result = signals.signal_repealed(root)
+    check("a retired noun in a Processed item's text is reported under its slug and line",
+          result["firing"] and "[alpha]: the widget at lines 6" in result["message"],
+          result["message"])
+    check("Unprocessed is not read",
+          "[beta]" not in result["message"], result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_queue_with_only_verb_uses_reports_nothing():
+    root = _retired_terms_fixture("the widget", ["Nothing retired here."])
+    with open(os.path.join(root, "QUEUE.md"), "w", encoding="utf-8") as f:
+        f.write("# QUEUE\n\n## Processed\n\n"
+                "#### Let the user widget it [alpha]\n"
+                "Then widget the session and stop.\n"
+                "\n--- Cleared to run above this line ---\n\n"
+                "## Unprocessed\n")
+    result = signals.signal_repealed(root)
+    check("verb uses in the queue report nothing",
+          not result["firing"], result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_flat_project_has_no_inner():
     root = tempfile.mkdtemp(prefix="rule-signals-flat-")
     os.makedirs(os.path.join(root, "LOG"))
@@ -717,6 +750,8 @@ if __name__ == "__main__":
     test_flat_project_has_no_inner()
     test_retired_terms_check_prints_every_site_in_one_file()
     test_retired_noun_is_seen_under_any_determiner()
+    test_retired_noun_in_a_cleared_items_instruction_is_reported_by_slug()
+    test_queue_with_only_verb_uses_reports_nothing()
     test_parent_lookup_ranks_a_paraphrase_first()
     test_duplicate_check_flags_a_cross_group_pair()
     test_accepted_pair_is_skipped_and_unlisted_pair_still_fires()

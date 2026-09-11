@@ -1,5 +1,5 @@
 {
   "name": "throughliner",
-  "version": "1.22.0-test4",
+  "version": "1.22.0-test5",
   "description": "Your intent keeps running the project after Claude has forgotten it. Throughliner is a structured workflow for no-code developers building their projects — software among them — with Claude Code: five skills (/setup, /plan, /next, /rescan, /done) and four hooks that carry the reasoning behind every decision through capture, build and record."
 }

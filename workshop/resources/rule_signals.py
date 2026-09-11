@@ -85,14 +85,16 @@ kept and cleared — the signal firing loudest exactly when the work was
 furthest along.
 
 The check is NOT mechanical, which is the easiest thing here to miss. This
-script computes and prints; it never parses QUEUE.md and never files anything.
-The satisfied-test is performed by whoever reads the output, so this wording
-IS the mechanism — there is no code to fall back on.
+script computes and prints; it never files anything. The satisfied-test is
+performed by whoever reads the output, so this wording IS the mechanism —
+there is no code to fall back on.
 
-Having the script scan QUEUE.md itself was weighed and rejected:
+Having the script scan QUEUE.md for open captures was weighed and rejected:
 post_tool_use.py already parses QUEUE.md for the lint, and a second parser in
 a second script is two things that must agree about the file's shape and will
-drift.
+drift. One read of the queue exists since 2026-09-11 and is narrower than
+that: the retired-terms check reads the Processed section's text for retired
+nouns, keyed by heading slug, and reads nothing else from the file.
 
 Usage:
     py throughliner/workshop/resources/rule_signals.py [project root]
@@ -1661,16 +1663,68 @@ def signal_repealed(root):
         f"{p}: {t} at lines " + ", ".join(str(n) for n in ns)
         for (p, t), ns in grouped.items()
     )
+
+    # The queue arm ([cleared-item-wording-uses-a-term-a-sibling-retires]):
+    # the same match over the Processed section of the outer's QUEUE.md, so a
+    # kept item's instruction text written in a retired term is caught at
+    # planning rather than by the build that reads it. Read only, grouped by
+    # the item's slug, under the same determiner-plus-noun limit as the docs.
+    queue_hits = _queue_processed_hits(root, terms)
+    queue_grouped = {}
+    for slug, term, n in queue_hits:
+        queue_grouped.setdefault((slug, term), []).append(n)
+    queue_listing = "; ".join(
+        f"[{s}]: {t} at lines " + ", ".join(str(n) for n in ns)
+        for (s, t), ns in queue_grouped.items()
+    )
+    total = len(hits) + len(queue_hits)
+    parts = []
+    if hits:
+        parts.append(f"{len(hits)} live reference(s) to retired terms: {listing}")
+    if queue_hits:
+        parts.append(f"{len(queue_hits)} in Processed queue items: {queue_listing}")
     return {
         "stage": "REPEALED",
-        "firing": bool(hits),
-        "value": len(hits),
+        "firing": bool(total),
+        "value": total,
         "slug": "live-rules-name-retired-terms",
-        "message": (
-            f"{len(hits)} live reference(s) to retired terms: {listing}"
-            if hits else "No live references to retired terms."
-        ),
+        "message": ("; ".join(parts) if total
+                    else "No live references to retired terms."),
     }
+
+
+def _queue_processed_hits(root, terms):
+    """(slug, term, line) for every retired term appearing as a name in the
+    Processed section of the project's own QUEUE.md — the outer's, which is
+    where the queue lives in a nested project. The file is read and never
+    written. A missing queue reports nothing."""
+    path = os.path.join(root, "QUEUE.md")
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return []
+    hits = []
+    in_processed = False
+    slug = None
+    for n, raw in enumerate(lines, 1):
+        if raw.startswith("## "):
+            in_processed = raw.strip().lower() == "## processed"
+            slug = None
+            continue
+        if not in_processed:
+            continue
+        if raw.startswith("#### "):
+            m = re.search(r"\[([a-z0-9][a-z0-9-]*)\]\s*$", raw)
+            slug = m.group(1) if m else None
+        if _paragraph_says_retired(lines, n - 1):
+            continue
+        for term, _why in terms:
+            if _term_appears_as_a_name(term, raw):
+                hits.append((slug or "(no slug)", term, n))
+    return hits
 
 
 # --- CONTRACTED: interaction turns carrying no content line ---------------

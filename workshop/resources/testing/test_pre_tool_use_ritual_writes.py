@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Regression tests for pre_tool_use.py's ritual `Writes:` field in a BUILD.
+"""Regression tests for pre_tool_use.py's checklist `Writes:` field in a BUILD.
 
 Host-only dev artifact — not shipped in the plugin package.
 
 Run:  py workshop/resources/testing/test_pre_tool_use_ritual_writes.py
 (Plain script, never pytest — see CLAUDE.md's scripting constraints.)
 
-[ritual-writes-refused-in-build-sessions]: SPEC says a path a ritual
+[ritual-writes-refused-in-build-sessions]: SPEC says a path a checklist
 definition declares is permitted whenever the project is open, and the hook
 read the field only in the planning branch — the rezip's plugin.json bump was
 refused inside a build run. The build branch's allow chain now carries the
 same check, after the working file's Files list and before the standing
-exemptions, logged under the branch "ritual Writes: field".
+exemptions, logged under the branch "checklist Writes: field".
 """
 
 import json
@@ -30,7 +30,7 @@ for _stream in (sys.stderr, sys.stdout):
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 HOOK = os.path.join(ROOT, "plugin", "throughliner", "hooks", "pre_tool_use.py")
 
-SESSION = "ritual-writes-session"
+SESSION = "checklist-writes-session"
 failures = []
 
 
@@ -42,8 +42,8 @@ def check(label, ok, detail=""):
 
 def project(cycles=True):
     """A build session: SPEC.md, a working file naming ONE path, and — when
-    asked — a CYCLES.md whose ritual declares a different folder."""
-    d = tempfile.mkdtemp(prefix="ritual-writes-test-")
+    asked — a CYCLES.md whose checklist declares a different folder."""
+    d = tempfile.mkdtemp(prefix="checklist-writes-test-")
     with open(os.path.join(d, "SPEC.md"), "w", encoding="utf-8") as f:
         f.write("# SPEC\n")
     with open(os.path.join(d, f"_build-{SESSION}.md"), "w", encoding="utf-8") as f:
@@ -80,7 +80,7 @@ def log_text(d):
         return f.read()
 
 
-print("test_pre_tool_use_ritual_writes")
+print("test_pre_tool_use_checklist_writes")
 
 # 1. A build session writing a declared path outside its Files list is allowed,
 # and the log line names the branch.
@@ -89,8 +89,8 @@ declared = os.path.join(d, "plugin", "rezip-archive", "readme.md")
 r = drive(d, declared)
 check("a declared folder's path is allowed in a build session",
       decision(r) == "allow", repr(r))
-check("the decision log names the branch 'ritual Writes: field'",
-      "\tallow\tritual Writes: field\t" in log_text(d), log_text(d))
+check("the decision log names the branch 'checklist Writes: field'",
+      "\tallow\tchecklist Writes: field\t" in log_text(d), log_text(d))
 r = drive(d, os.path.join(d, "plugin", "plugin.json"))
 check("a declared file is allowed too", decision(r) == "allow", repr(r))
 

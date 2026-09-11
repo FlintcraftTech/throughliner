@@ -145,33 +145,33 @@ Trigger: the word "rezip".
 """
 
 
-def test_rituals_are_read_and_kept_out_of_the_cycles():
-    """A ritual has a trigger and no cadence, so the two never mix.
+def test_checklists_are_read_and_kept_out_of_the_cycles():
+    """A checklist has a trigger and no cadence, so the two never mix.
 
     The discriminator is what the definition carries, which is what makes the
     format additive: every existing cycles doc has cadences and stays valid.
     """
     d = project(MIXED)
     cycles = hook.cycles_facts(d)
-    rituals = hook.rituals_facts(d)
+    checklists = hook.checklists_facts(d)
     shutil.rmtree(d, ignore_errors=True)
-    check("the ritual is not reported as a cycle",
+    check("the checklist is not reported as a cycle",
           cycles is not None and [row[0] for row in cycles] == ["weekly-release"],
           repr(cycles))
-    check("the ritual is reported on its own",
-          rituals is not None and len(rituals) == 1
-          and rituals[0][0] == "rezip", repr(rituals))
-    if rituals:
+    check("the checklist is reported on its own",
+          checklists is not None and len(checklists) == 1
+          and checklists[0][0] == "rezip", repr(checklists))
+    if checklists:
         check("the trigger word travels as written",
-              rituals[0][2] == 'the word "rezip".', repr(rituals[0][2]))
+              checklists[0][2] == 'the word "rezip".', repr(checklists[0][2]))
 
 
-def test_a_doc_of_only_cycles_has_no_rituals():
+def test_a_doc_of_only_cycles_has_no_checklists():
     d = project(DEMO)
-    rituals = hook.rituals_facts(d)
+    checklists = hook.checklists_facts(d)
     shutil.rmtree(d, ignore_errors=True)
-    check("a doc with no rituals reports an empty list, not None",
-          rituals == [], repr(rituals))
+    check("a doc with no checklists reports an empty list, not None",
+          checklists == [], repr(checklists))
 
 
 def test_no_doc_is_silent():
@@ -200,10 +200,10 @@ CHAINED = """# CYCLES
 
 **Anchor:** Wednesday morning. Every lead below counts back from it.
 
-**Chain:** the rituals of one turn, in order, each with its lead:
+**Chain:** the checklists of one turn, in order, each with its lead:
 1. **Maintenance sweep [maintenance-sweep]** — due by the first session on or
    after Monday (two days before the anchor). Its findings land in Unprocessed.
-2. **Findings processed and built** — by Tuesday's sessions. No ritual of its
+2. **Findings processed and built** — by Tuesday's sessions. No checklist of its
    own.
 3. **Rezip [rezip]** — the build that carries the subtraction.
 4. **Release [release]** — the anchor. Refuses while step 2 is incomplete.
@@ -221,7 +221,7 @@ Trigger: the word "release".
 def test_a_chain_is_computed_for_each_weekday():
     """The live chain: sweep Monday, release Wednesday, nothing any other day.
 
-    Dates only — the hook never says whether a ritual whose date arrived still
+    Dates only — the hook never says whether a checklist whose date arrived still
     needs running; the skill reads the record for that.
     """
     import datetime
@@ -233,21 +233,21 @@ def test_a_chain_is_computed_for_each_weekday():
         chain = chains[0]
         check("the anchor's next date is the coming Wednesday",
               chain["anchor_date"] == "2026-09-09", repr(chain))
-        rituals = dict(chain["rituals"])
+        checklists = dict(chain["checklists"])
         check("the sweep is due two days before the anchor",
-              rituals.get("maintenance-sweep") == "2026-09-07", repr(rituals))
+              checklists.get("maintenance-sweep") == "2026-09-07", repr(checklists))
         check("the release is due on the anchor",
-              rituals.get("release") == "2026-09-09", repr(rituals))
-        check("a ritual with no lead reports none rather than a guess",
-              "rezip" in rituals and rituals["rezip"] is None, repr(rituals))
-        check("the step naming no ritual is not listed",
-              len(chain["rituals"]) == 3, repr(chain["rituals"]))
+              checklists.get("release") == "2026-09-09", repr(checklists))
+        check("a checklist with no lead reports none rather than a guess",
+              "rezip" in checklists and checklists["rezip"] is None, repr(checklists))
+        check("the step naming no checklist is not listed",
+              len(chain["checklists"]) == 3, repr(chain["checklists"]))
     expected = {0: ["maintenance-sweep"], 1: [], 2: ["release"], 3: [], 4: [],
                 5: [], 6: []}
     monday = datetime.date(2026, 9, 7)
     for offset in range(7):
         day = monday + datetime.timedelta(days=offset)
-        due = [ritual for _cycle, ritual in hook.rituals_due_on(d, day)]
+        due = [checklist for _cycle, checklist in hook.checklists_due_on(d, day)]
         check("due on %s: %s" % (day.strftime("%A"), expected[offset] or "nothing"),
               due == expected[offset], repr(due))
     plain = hook.cycle_chains(project(DEMO), datetime.date(2026, 9, 3))
@@ -261,8 +261,8 @@ if __name__ == "__main__":
     test_a_doc_produces_a_definition_per_cycle()
     test_a_wrapped_field_reads_whole()
     test_a_blank_line_ends_a_field()
-    test_rituals_are_read_and_kept_out_of_the_cycles()
-    test_a_doc_of_only_cycles_has_no_rituals()
+    test_checklists_are_read_and_kept_out_of_the_cycles()
+    test_a_doc_of_only_cycles_has_no_checklists()
     test_no_doc_is_silent()
     test_a_doc_with_no_definitions_reports_empty()
     print()

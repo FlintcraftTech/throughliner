@@ -127,7 +127,7 @@ is recorded by /done when it runs, so say that and file only the captures.
 Say so when reporting that nothing is committed here, so the user is not left
 thinking the record is saved. A second
 `/done` typed in a chat that has already closed reaches this same tail rather
-than a second close — done.md's router carries that arm.
+than a second /done run — done.md's router carries that arm.
 
 **Where a candidate is genuinely both** — work that was done AND revealed more to
 do — write both, each carrying its own half: the tail records what happened, the

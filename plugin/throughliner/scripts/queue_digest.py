@@ -71,7 +71,7 @@ NOT_BEFORE_RE = re.compile(r"^Not before:\s*(\S+)\s*$", re.IGNORECASE)
 CYCLE_RE = re.compile(r"^Cycle:\s*\[?([a-z0-9][a-z0-9-]*)\]?\s*$",
                       re.IGNORECASE)
 FLAG_RE = re.compile(r"^Red flag\s*·\s*State:\s*(\w+)", re.IGNORECASE)
-FLAVOR_RE = re.compile(r"^\[(audit|user|freeform)\]\s*", re.IGNORECASE)
+FLAVOR_RE = re.compile(r"^\[(audit|user|freeform|co-write)\]\s*", re.IGNORECASE)
 # "Runs alone" — the item is ready, but /next must not build it alongside other
 # work. Printed on the item's digest line because a solo item changes how much
 # of the ready region a single run can actually clear, which is exactly what a
@@ -164,7 +164,7 @@ PATH_SHAPE_RE = re.compile(r"(\.(md|py|json|js|txt|ya?ml|toml)|/)$", re.IGNORECA
 # The flavor tags are written in the same square brackets as a slug, so prose
 # saying an item is `[freeform]` would otherwise read as a citation of a slug
 # by that name — and this project has a LOG entry that would resolve it.
-FLAVOR_TAGS = frozenset({"audit", "user", "freeform"})
+FLAVOR_TAGS = frozenset({"audit", "user", "freeform", "co-write"})
 # A LOG entry filename: <date>-<slug>.md. A slug having an entry means it
 # shipped, which is the whole resolve — no history scan needed.
 LOG_ENTRY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-([a-z0-9][a-z0-9-]*)\.md$")

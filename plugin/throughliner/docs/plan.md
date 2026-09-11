@@ -117,7 +117,11 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
 - **A user-credit stays on the item after processing** — see the provenance rule
   in skill-nonspecific-rules.md for what earns one.
 - **Who does the work, and how.** Work is Claude's to build by default, and the
-  flavor tags are in skill-nonspecific-rules.md. A `[user]` item must carry a
+  flavor tags are in skill-nonspecific-rules.md. A `[co-write]` item — a text
+  the user and Claude finish together, which the user asks for by saying they
+  want to co-write something — names the one file the text lives in and says
+  whether the text exists yet, and sits last in the cleared region after every
+  `[user]` item, unless a build is held on it by slug. A `[user]` item must carry a
   DESCRIBED walkthrough, settled here at the decision step — including that each step
   names the thing to click or type and the thing to look for, not just where to
   go. The requirement is stated in full in skill-nonspecific-rules.md; this is the
@@ -474,8 +478,9 @@ verified**, per done-plan.md's hold-back-unverified-work rule.
 **Nothing else here is a question for the user.** Lifting is narrated; a
 still-blocked item says nothing at all.
 
-**Lift with the mover**, which moves the block byte-for-byte and places the
-marker in the same call:
+**Lift with the state server's `queue_move` tool where the server is
+registered** — it moves the block byte-for-byte and places the marker in the
+same call — and otherwise with the mover, which does the same:
 
 ```
 python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> Processed \
@@ -559,14 +564,15 @@ so a project with cycles cannot reach this step without having been told they
 exist, and one without cycles gets no line and pays nothing. Where the line is
 there, read the doc and say in one line which cycles are due and which are not,
 whether or not anything is filed. Each definition names an artifact,
-the steps of one turn, a cadence, and **the observable that marks a completed
-turn** — a release's date, a sent-record line. Compute each cycle's due-ness
+the steps of one turn, its due rule — time-based, a cadence, or
+condition-based, an observable read against a condition — and **the observable
+that marks a completed turn** — a release's date, a sent-record line. Compute each cycle's due-ness
 from its observable: read the observable's current state, and where a full
 cadence interval has passed since the last completed turn, the cycle is due.
-Where a cycle carries a chain, due-ness is per ritual: a ritual is due when
+Where a cycle carries a chain, due-ness is per checklist: a checklist is due when
 its computed date — reported on the opening's cycles line — has arrived and no
 completed turn of this cycle is recorded since the previous anchor, and the
-capture filed names that ritual in its heading, under the cycle's slug. A
+capture filed names that checklist in its heading, under the cycle's slug. A
 cycle with no chain is unchanged.
 
 ```
@@ -1238,7 +1244,19 @@ turn is due; nothing stores a position.
 **A definition's steps, criteria and observable pass the same test a kept item's
 instructions do** — the buildability check's design-decision clause, applied at
 authoring: no open class, no decision scheduled into the turn, stated concretely
-enough that two sessions given the text produce the same turn.
+enough that two sessions given the text produce the same turn. Three things the
+test reads for, subordinate to it:
+  - the due rule, named as one of two — **time-based**, a cadence, or
+    **condition-based**, an observable read against a condition — with the
+    record that closes a turn named as such;
+  - for every step, what fires it — a date, a word, or the step before it —
+    and who performs it, Claude or the user; a step naming neither is refused
+    at authoring, and a default stated once for the definition ("each step
+    fires on the one before it and is Claude's unless the step says
+    otherwise") names both for every step it covers;
+  - where a cycle chains checklists, the chain written as a **close calendar**
+    — each earlier checklist counted back from the anchor with its lead, "two
+    days before, the day before, the day".
 
 It needs saying here because the check that catches this on a queue item runs at
 the decision step, while a definition is written straight into the cycles doc by
@@ -1256,14 +1274,14 @@ turn's record opens by saying that it records a completed turn, and the
 observable reads only those records.
 
 **And where the user asks for a named step list with no schedule, author it here
-as a ritual** — into the same cycles doc, carrying the artifact, the steps,
+as a checklist** — into the same cycles doc, carrying the artifact, the steps,
 **the word that fires it** in place of a cadence and an observable, and **the
-paths its steps write**. A ritual is run when the user says its word and at no
+paths its steps write**. A checklist is run when the user says its word and at no
 other time, so nothing computes due-ness for one and nothing files a capture for
 one.
 
 **Write the paths as a `Writes:` field, and name them narrowly.** A planning
-session may write only the project's own documents, and a ritual's steps often
+session may write only the project's own documents, and a checklist's steps often
 need somewhere else — a build folder, a generated artifact — so the safety check
 reads this field and permits exactly what it names:
 
@@ -1272,9 +1290,9 @@ reads this field and permits exactly what it names:
 ```
 
 The cost is stated rather than hidden: a declared path is writable whenever the
-project is open, not only while its ritual runs. Nothing marks a ritual as
+project is open, not only while its checklist runs. Nothing marks a checklist as
 running, and the one exception that already worked this way has never needed
-one. A ritual whose steps write nothing outside the standing list needs no field
+one. A checklist whose steps write nothing outside the standing list needs no field
 at all.
 
 **And where work is either shape, offer once, in the message already discussing
@@ -1284,12 +1302,12 @@ that item, never as a turn of its own:**
 recurring-shaped   the same artifact worked repeatedly, a cadence visible
                    in the record            ->  offer a cycle
 procedure-shaped   the same multi-step sequence done on request more than
-                   once, no cadence         ->  offer a ritual
+                   once, no cadence         ->  offer a checklist
 ```
 
 Creating either stays the user's call.
 
-**And where a ritual turns out to have a cadence, re-author it as a cycle** —
+**And where a checklist turns out to have a cadence, re-author it as a cycle** —
 the same steps gain the cadence and the observable that marks a completed turn.
 The promotion is the user's call like the creation, and it is a rewrite of the
 one definition rather than a second entry beside it.
@@ -1444,14 +1462,17 @@ resolves itself.
 Otherwise name the blocker, and **if that blocker is not already a queue item,
 write it into Unprocessed first**, then write the held item with its
 `Blocked by: [slug]` line — a reference resolves only once its target exists. If
-nothing in the queue blocks the item, it belongs **above** the line. Where the
-project's state server is registered, write either hold with its `hold_entry`
-tool, which composes the line, refuses a dangling slug or a spent date, and
-moves a cleared item below the line in the same call.
+nothing in the queue blocks the item, it belongs **above** the line. Write
+either hold with the state server's `hold_entry` tool, which composes the line,
+refuses a dangling slug or a spent date, and moves a cleared item below the
+line in the same call; a project with no server registered writes the line
+with the editing tools and moves the item with the mover below.
 
-**Move the item with the mover, not by hand.** Rewrite the item's rationale
-where it sits, then move the block with one command — it travels byte-for-byte,
-so nothing is retyped:
+**Move the item with the state server's `queue_move_section` tool where the
+server is registered, and otherwise with the mover — never by hand.** Rewrite
+the item's rationale where it sits, then move the block with one call — it
+travels byte-for-byte, so nothing is retyped. The mover's form, for a project
+with no server:
 
 ```
 python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> \
@@ -1461,9 +1482,10 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> \
 ```
 
 `--marker-after` places the readiness marker in the same call, so keeping an
-item and clearing it is one command rather than two. The same script does the
-below-the-line lift (`--move` within Processed) and skip-to-defer
-(`--move <slug> BOTTOM`) — note that those two forms take the section name
+item and clearing it is one command rather than two. The below-the-line lift
+and skip-to-defer are the server's `queue_move` tool where it is registered;
+the same script does both otherwise (`--move` within Processed, and
+`--move <slug> BOTTOM`) — note that those two forms take the section name
 before `--move`, which `--move-section` does not.
 
 **`--position BOTTOM` with `--marker-after` sweeps the held region, whenever one
@@ -1540,7 +1562,9 @@ informed consent — what they were warned about and that they chose to go ahead
 An item only moves into Processed with its flag cleared; if it can't be cleared,
 return it to the bottom of Unprocessed.
 
-**Delete** — Remove the item from Unprocessed.
+**Delete** — Remove the item from Unprocessed, with the state server's
+`queue_delete` tool where the server is registered and otherwise with the
+mover's `--delete <slug> Unprocessed`.
 
 ```
 every part of the item's content has already been
@@ -1629,7 +1653,7 @@ item. That ban stands and is untouched. It reaches a count of what this session
 got through, and it never reached the size of the cleared region.
 
 **The question is what the user answers; the recital is what was removed.** What
-is banned here is the four-route recital ending in a named close — an ordinary
+is banned here is the four-route recital ending in a named /done step — an ordinary
 question about the item in hand is not that.
 
 **If the rung has changed since the last pick, say so here in one clause**
@@ -1691,9 +1715,9 @@ Unprocessed, and:
   the queue, subject to the blocker provisions below;
 - propose a `Not before:` date, where it waits on something outside the project
   entirely, subject to the date provisions below;
-- write either field with the state server's `hold_entry` tool where the
-  server is registered — it composes the line and refuses a dangling slug or a
-  spent date at the door.
+- write either field with the state server's `hold_entry` tool — it composes
+  the line and refuses a dangling slug or a spent date at the door — and with
+  the editing tools only in a project with no server registered.
 
 Naming the blocker-in-kind turns an open item into an answerable one. **The ask is
 the load-bearing provision:** enrichment substituting for a decision that was

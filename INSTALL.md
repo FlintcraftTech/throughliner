@@ -79,10 +79,10 @@ Once Claude Code is installed and the user is on a paid plan, the plugin install
 **Then the two commands, in this order**, each pasted into the same terminal:
 
 ```
-claude plugin marketplace add FlintcraftTech/throughliner#beta
+claude plugin marketplace add FlintcraftTech/throughliner#stable
 ```
 
-When it works, it prints that the marketplace `flintcraft` was added. The `#beta` on the end matters: it points at the tested weekly pick rather than the day-to-day development line, so the user installs a version that has been checked over. Keep it exactly as written.
+When it works, it prints that the marketplace `flintcraft` was added. The `#stable` on the end matters: it points at the weekly release rather than the day-to-day development line, so the user installs a version that has been tested for a week. Keep it exactly as written. (Anyone who wants to test the coming week's release a week ahead of it can write `#beta` instead — that is the release candidate, and it is where testers' bug reports go.)
 
 ```
 claude plugin install throughliner@flintcraft
@@ -112,7 +112,7 @@ A note for real use later: `/setup` is also the command that sets up a real proj
 
 ### Updating later
 
-To update, have the user run `claude plugin update throughliner@flintcraft` in the terminal, then fully restart the app so the new version loads. Because the marketplace is pinned to `#beta`, each update brings the newest tested weekly pick rather than whatever is on the development line that day.
+To update, have the user run `claude plugin update throughliner@flintcraft` in the terminal, then fully restart the app so the new version loads. Because the marketplace is pinned to `#stable`, each update brings the newest weekly release rather than whatever is on the development line that day (a marketplace added with `#beta` brings the newest release candidate instead).
 
 ## Step 2 — First-run pointer
 

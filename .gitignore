@@ -1,5 +1,4 @@
 *.zip
-!plugin/*.zip
 plugin/rezip-archive/
 .throughliner/
 INBOX/

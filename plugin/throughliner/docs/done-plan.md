@@ -114,13 +114,13 @@ Write each entry's one-liner and rationale, then **report what landed.**
 **3. Stage the hand-edited files explicitly** at the commit step. The commit
 message is the approved entry; for several entries, the title names the
 handmade-work close and the body carries each entry's summary. Unlike a planning
-close, a handmade close **does** offer push when a remote exists — it's real
+close, a handmade /done run **does** offer push when a remote exists — it's real
 project work, not bookkeeping.
 
 ## Batch the human stops in Processed  [SILENT] when nothing moves; [BRIEF] when it does
 
-**One pass, over Processed only: put `[user]` and `[audit]` lines at the end.**
-That is the whole of /done's reordering.
+**One pass, over Processed only: put `[user]` and `[audit]` lines at the end,
+and a `[co-write]` line after them.** That is the whole of /done's reordering.
 
 **`Blocks:` / `Depends on:` headers stay retired.** The one dependency
 field that exists is `Blocked by:`, written on the item that is held and naming
@@ -135,6 +135,7 @@ build work. Both flavors force /next to stop for the user — a step they must r
 an audit whose findings they must approve — so one sitting *inside* a contiguous
 build run interrupts a sequence that would otherwise never stop to ask. Position
 them at the **end** of the block so the stops that need the user batch together.
+A `[co-write]` line goes after both, unless a build is held on it by slug.
 
 **Two exceptions, and the default holds everywhere else:**
 
@@ -364,7 +365,7 @@ planning / setup / method-doc-only  ->  commit, and DON'T offer push. Planning
                                         state is local bookkeeping, and push is
                                         reserved for shipping — in a
                                         self-hosting project a push fires the
-                                        full ritual off a commit that shipped
+                                        full checklist off a commit that shipped
                                         nothing. A default, not a prohibition:
                                         push stays available when the user asks
                                         or is deliberately backing up.

@@ -113,6 +113,11 @@ Work can carry a tag saying how it runs:
 - **`[freeform]`** — work `/next` must not run, because it's large or because
   it can't safely run inside a build. `/next` stops when it reaches one rather
   than skipping past it.
+- **`[co-write]`** — a text you and Claude finish together, in one named
+  file. Claude drafts it or takes the file as it stands, hands it to you as a
+  link that opens it, and waits; you edit and save; Claude reads it back when
+  you say to and asks whether there's anything else, until you say you're
+  finished. Ask for one by saying you want to co-write something.
 
 **If you ask for something mid-build that isn't part of the current job**,
 Claude files it as a capture and says why in one clause, rather than quietly
@@ -313,20 +318,20 @@ changes: /done cannot read its own work back from the file's history, so
 it records the session from what it remembers, and those saved copies live on
 this machine only — a lost disk loses them.
 
-## What is a ritual, and how is it different from a cycle?
+## What is a checklist, and how is it different from a cycle?
 
 Both live in your cycles doc. A cycle is recurring work with a rhythm — a
 weekly release, a posting cadence — and the method works out when its next
-turn is due and puts that turn into your queue. A ritual is a step list with
+turn is due and puts that turn into your queue. A checklist is a step list with
 no rhythm: you save a procedure you repeat, give it a firing word, and it runs
 when you say the word and never otherwise. Your session opening names each
-ritual you have with its word. Ask in planning to save a repeated procedure as
-a ritual and it is written down with you there — or Claude offers it, once,
+checklist you have with its word. Ask in planning to save a repeated procedure as
+a checklist and it is written down with you there — or Claude offers it, once,
 where it has noticed you asking for the same sequence more than once; if it
 later turns out to have a rhythm, it becomes a cycle by gaining a cadence. A
-ritual whose steps write somewhere outside the usual project documents lists
+checklist whose steps write somewhere outside the usual project documents lists
 those paths in its definition, and they stay writable whenever the project is
-open, not only while the ritual runs — so the list is kept narrow.
+open, not only while the checklist runs — so the list is kept narrow.
 
 ## What does planning tell me when held work comes back?
 

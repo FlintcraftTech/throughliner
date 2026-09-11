@@ -994,7 +994,7 @@ host-versus-target framing. Put the two files where the project keeps its own
 notes rather than at a fixed path, and say where they went.
 
 **What is deliberately not seeded, and it is worth saying to the user:** this
-project's own release and packaging rituals, and its rule-checking scripts. They
+project's own release and packaging checklists, and its rule-checking scripts. They
 are shaped around one repository's layout, and shipping them would mean
 maintaining a tool before anyone has proven they need it. The discipline
 generalises; the machinery does not.

@@ -27,9 +27,11 @@ TRUE, and what every "do not interrupt this" rule below rests on:
     follow — so stopping it to ask costs far more than the question is worth
 
 FALSE, and no longer claimed anywhere:
-    that it finishes on its own. A run pauses at three points and occupies
+    that it finishes on its own. A run pauses at four points and occupies
     the session while it goes:
       - a `[user]` item, walked through live, one step at a time
+      - a `[co-write]` item, driven as the co-authored-draft loop on its
+        one file, and the run stops at it as at a `[user]` item
       - a `[freeform]` item, which halts it outright
       - /done, which is the user's command to run — so a run left alone
         finishes its builds and sits there uncommitted
@@ -81,6 +83,9 @@ flavor(item):
     (no tag)    ->  build   ->  next-build.md
     [audit]     ->  review  ->  next-build.md's audit section
     [user]      ->  walk the user through it; never built
+    [co-write]  ->  walk it as the co-authored-draft loop in
+                    skill-nonspecific-rules.md, on the one file it names;
+                    the run stops at it as at a [user] item
     [freeform]  ->  HALT — needs a session of its own; never built here
 ```
 
@@ -548,7 +553,7 @@ item strands in Processed and the next /next presents it again as if unbuilt.
 - **Completion is read as the always-loaded lifecycle states** —
   skill-nonspecific-rules.md's "Walk a `[user]` item through whenever it is
   reached" bullet; an item whose blocker visibly hasn't shipped is not complete.
-- **A completed `[user]` item has a defined close:** log it under its slug and
+- **A completed `[user]` item closes in a defined way:** log it under its slug and
   remove it from Processed. Lives in **both** /done (the user runs /done right
   after finishing) and /plan (they completed it async and mention it).
 - **Re-clearing dependents** is the below-the-line revisit's job, not /done's.

@@ -12,7 +12,7 @@ announced yet, not that questions aren't welcome: just ask in chat.
 - **What actually happens in a `/plan` session?** — captures, what gets cleared
   to run, and what the opening checks for. [faq.md](faq.md)
 - **What does `/next` do?** — how a build run works, what stops it, and the
-  three work tags. [faq.md](faq.md)
+  four work tags, the co-write among them. [faq.md](faq.md)
 - **Why does every session end with `/done`, and why start a fresh chat?** —
   what /done records, and why the context window makes a fresh chat the
   next step. [faq.md](faq.md)
@@ -38,7 +38,7 @@ announced yet, not that questions aren't welcome: just ask in chat.
 - **Can I keep my planning documents out of the repository, and does undo still
   work?** — the per-document choice setup proposes, the saved copies that keep
   undo working, and the one thing that changes. [faq.md](faq.md)
-- **What is a ritual, and how is it different from a cycle?** — a step list you
+- **What is a checklist, and how is it different from a cycle?** — a step list you
   fire with a word versus recurring work with a rhythm, and how one becomes the
   other. [faq.md](faq.md)
 - **What does planning tell me when held work comes back?** — what the lift

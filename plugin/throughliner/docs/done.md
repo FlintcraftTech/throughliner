@@ -25,8 +25,8 @@ itself.
 ## Route by session shape  [SILENT]
 
 **First arm: this chat has already closed** [BRIEF]. Where this conversation
-already holds its own close — the entry written and the commit made — a second
-`/done` is the post-close tail, not a second close: file what it finds through
+already holds its own /done run — the entry written and the commit made — a second
+`/done` is the post-close tail, not a second /done run: file what it finds through
 the three-way triage, append what happened to this session's existing entry as
 a marked tail, and commit nothing. The one line carries which files were
 appended to, that nothing was committed, and where the fresh-chat route leads:
@@ -62,12 +62,12 @@ NO build working file          ->  done-plan.md, which carries all three
     a planning session
         (queue managed, captures processed, readiness line moved)
     a completed [user] item
-    standalone handmade work — a FREEFORM close
+    standalone handmade work — the FREEFORM /done run
         (no planning either, and the tree holds uncommitted edits the
          session didn't make)
 ```
 
-**The freeform close is this third shape.** A freeform session is work done by
+**The freeform /done run is this third shape.** A freeform session is work done by
 hand rather than by /next, so most never pass through /plan at all and there is
 no queue item and no build working file. **Read the edits as the user's expected
 work, and split them across separate log entries by judgment where they cover
@@ -84,6 +84,8 @@ completed item and a planning session together, since the two can coincide.
 outcome off the session's own trail, never off what the item's presence in the
 queue suggests.** The values, and the arm for an outcome none of them fits, are
 next.md's walk-through outcomes provision — stated there once and cited here.
+A `[co-write]` item is recorded on the same terms — done, deferred or not
+reached — with the path of its one file in the record.
 
 The sub-doc runs /done's close-out. When it reaches its Commit step, run the commit
 core below, then return to the sub-doc for the recommendation.
@@ -215,7 +217,7 @@ Advisory: filed — <slug>
 Advisory: not needed — <why>
 ```
 
-- write the label plain, matching the other close obligations that produce a
+- write the label plain, matching the other /done obligations that produce a
   recorded line;
 - complete /done only once the line is written;
 - file the advisory itself as a capture at the top of Unprocessed, worded as
@@ -407,7 +409,7 @@ whenever one does. Run the cycles due-ness check as plan.md's Step 1 states it
 ("Cycles due-ness check"), filing only — routing stays planning work — with
 one limb of this site's own: **read the project root for `CYCLES.md` here as
 well**, because a doc created this session carries no opening line and would
-otherwise be invisible to its own close.
+otherwise be invisible to its own /done run.
 
 Before committing, re-read that stretch of the chat and surface candidate
 captures — things the user thought out loud but never flagged.
@@ -548,7 +550,7 @@ RECOGNISE THE INHERITED TAIL FIRST — and skip the investigation:
 RECOGNISE THE HASH-BACKFILL SIGNATURE TOO — and skip the investigation:
     a dirty LOG/index.md or LOG/<slug>.md whose ONLY change is a placeholder
     hash becoming a real hash, in an entry heading or the start of an index line
-        -> the previous close's own post-commit hash write (or, in a tracked
+        -> the previous /done run's own post-commit hash write (or, in a tracked
            project, the session-start backfill's safety-net fill)
         -> fold it in with at most a one-line note, no diff opened
 
@@ -738,11 +740,11 @@ the post-commit tail     ->  writes files, commits NOTHING:
                                a capture appended to QUEUE.md
                                an append to this session's LOG entry
                                the hash this /done run wrote in after its commit
-                             all of it rides into the NEXT close's commit
+                             all of it rides into the NEXT /done run's commit
 /rescan                  ->  the one-word route to the same tail. Files by the
                              three-way triage — work to Unprocessed, what
                              HAPPENED to this session's entry as a marked tail
-                             — and commits nothing, so it is not a second close
+                             — and commits nothing, so it is not a second /done run
                              under another name. Repeatable, so nothing has to
                              judge when the tail has ended.
 ```

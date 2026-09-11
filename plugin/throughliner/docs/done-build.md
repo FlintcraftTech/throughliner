@@ -121,7 +121,7 @@ the queue. Its flag was cleared at an earlier /plan run, so two things:
    # how-it-cleared record was written at the /plan close that cleared it.
 2. BACKSTOP [PROMPT]: marker still reads State: uncleared?
    # should be impossible. STOP and surface it rather than committing — an
-   # uncleared flag at a ship close means the model was bypassed.
+   # uncleared flag at a build session's /done run means the model was bypassed.
 ```
 
 Silent when no built item carries a flag.

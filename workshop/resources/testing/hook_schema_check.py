@@ -16,7 +16,7 @@ sample payload and asserts the OUTPUT SHAPE against the published contract.
 
 WHAT IT CANNOT TELL YOU. A correctly-shaped hook can still be dropped before it
 reaches a session. Shape conformance is not delivery. The other half of the fix
-is the liveness step in CLAUDE.md's Rezip and Push rituals: after a rebuild and
+is the liveness step in CLAUDE.md's Rezip and Push checklists: after a rebuild and
 a full restart, ask a fresh session **what it actually received** — never
 whether the output "looks right". Both halves are needed; neither substitutes
 for the other.
@@ -519,7 +519,7 @@ def test_content_stamp_ignores_the_cli_in_use_marker():
 
     This asserts the shape of the fix rather than the one filename: any future
     CLI artifact of the same kind should be caught here, by the pre-restart
-    check in the Rezip and Release rituals, rather than by another multi-day
+    check in the Rezip and Release checklists, rather than by another multi-day
     investigation.
     """
     sys.path.insert(0, HOOKS)

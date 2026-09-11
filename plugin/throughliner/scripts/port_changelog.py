@@ -12,7 +12,7 @@ ships.
 **The ship boundary is a folder, which is what makes this derivable rather than
 hand-written.** Everything under `plugin/throughliner/` ships; everything else
 belongs to the development project. A large share of that project's work is
-explicitly host-only — release rituals, the rule gate, the compliance checklist
+explicitly host-only — release checklists, the rule gate, the compliance checklist
 — so a porter following the session records blind would try to port things that
 were never meant to leave.
 

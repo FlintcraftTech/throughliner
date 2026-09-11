@@ -252,17 +252,17 @@ if got != "deny":
 print(f"[{'ok' if got == 'deny' else 'FAIL'}] setup marker cleaned up -> {got} "
       "(the exemption ends with the run)")
 
-# --- ritual-declared paths ---------------------------------------------------
+# --- checklist-declared paths ---------------------------------------------------
 #
-# A ritual definition names the paths its steps write, and the standing list
+# A checklist definition names the paths its steps write, and the standing list
 # permits exactly those. The declaration is committed text written at a planning
 # session with the user present, which is what distinguishes it from the
 # self-declared marker refused beside the manifest carve-out.
 
-RITUAL_TARGET = os.path.join(_tmp, "build-output", "artifact.zip")
+CHECKLIST_TARGET = os.path.join(_tmp, "build-output", "artifact.zip")
 UNDECLARED_TARGET = os.path.join(_tmp, "build-output-other", "artifact.zip")
 
-got = _decide(_tmp, RITUAL_TARGET)
+got = _decide(_tmp, CHECKLIST_TARGET)
 if got != "deny":
     failures.append(("build-output/", "deny", got,
                      "denied with no cycles doc at all"))
@@ -280,12 +280,12 @@ with open(os.path.join(_tmp, "CYCLES.md"), "w", encoding="utf-8") as _f:
         "1. Build the zip into that folder.\n"
     )
 
-got = _decide(_tmp, RITUAL_TARGET)
+got = _decide(_tmp, CHECKLIST_TARGET)
 if got != "pass":
     failures.append(("build-output/", "pass", got,
                      "a declared path is permitted"))
 print(f"[{'ok' if got == 'pass' else 'FAIL'}] declared path -> {got} "
-      "(the ritual's own definition permits it)")
+      "(the checklist's own definition permits it)")
 
 got = _decide(_tmp, UNDECLARED_TARGET)
 if got != "deny":

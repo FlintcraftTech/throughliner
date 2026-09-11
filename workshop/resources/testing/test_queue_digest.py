@@ -401,6 +401,27 @@ def test_flavor_tag_is_not_a_citation():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_co_write_heading_prints_its_flavor_and_is_not_a_citation():
+    """A [co-write] heading prints (co-write) as its flavor, and the tag is
+    never read as a cited slug."""
+    root = project(
+        processed="#### [co-write] Finish the readme [beta]\nThe one file: README.md.\n",
+        log_entries=("2026-08-01-co-write.md",),
+    )
+    _, out = run(root)
+    check(
+        "a co-write heading prints its flavor",
+        "co-write" in out,
+        out,
+    )
+    check(
+        "the co-write tag is not read as a citation",
+        "Cites shipped" not in out,
+        out,
+    )
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_own_slug_is_not_a_citation():
     root = project(
         processed="#### Do the thing [alpha]\nAs [alpha] says, do it.\n",
@@ -1245,6 +1266,7 @@ if __name__ == "__main__":
     test_built_blocker_says_it_was_built()
     test_unshipped_citation_stays_quiet()
     test_flavor_tag_is_not_a_citation()
+    test_co_write_heading_prints_its_flavor_and_is_not_a_citation()
     test_own_slug_is_not_a_citation()
     test_shared_file_is_grouped()
     test_single_file_is_not_grouped()

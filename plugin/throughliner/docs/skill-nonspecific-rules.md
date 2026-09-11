@@ -55,7 +55,7 @@ The work cycle. Every piece of work travels the same loop.
      Any chat may file one; only /plan may process one.
   1. /plan — think and organise. Processes a capture: kept into
      Processed, or deleted. Keeping settles how it runs — build,
-     [audit], [user], [freeform] — and where it sits.
+     [audit], [user], [freeform], [co-write] — and where it sits.
      Processing a capture is also how HELD work blocked by
      another item is released: process the item that blocks it.
      Where nothing in the queue blocks it yet, file the blocker
@@ -809,6 +809,9 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 [audit]      ->  review  ->  /next routes to next-build.md's audit section; findings become captures
 [user]       ->  walk-through; /next walks the user through it, never builds it
 [freeform]   ->  work done by hand rather than by /next; /next halts on it
+[co-write]   ->  a text the user and Claude finish together, named with the
+                 one file it lives in; walked as the co-authored-draft loop
+                 below, and /next stops at it
 ```
 
 The tag **leads** the description. One leading tag at most. Flavor is settled
@@ -899,7 +902,7 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     had it when the step was written;
   - where a step verifies something, listing the claims it checks;
   - where a step sends anything off the machine, writing the explicit yes onto
-    that step — in a walkthrough or in a cycle or ritual definition alike;
+    that step — in a walkthrough or in a cycle or checklist definition alike;
   - ending at the item's own observable, with cleanup after the test filed as
     its own item rather than written as trailing steps;
   - where the item's send hands the work to another project for completion,
@@ -919,7 +922,9 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     the draft is still written to the file for the record and shown to them
     in full, and their changes come back as chat text that Claude applies to
     the file and reads back, repeating until they say they are finished;
-    deferring the step stays their option.
+    deferring the step stays their option. A `[co-write]` item's whole
+    walkthrough is this loop, run on the one file the item names — the file
+    as it stands where the text already exists, a fresh draft otherwise.
 
 The `[freeform]` tag names **work done by hand rather than by /next** — because it
 is large, or because it characteristically cannot run inside a run. **Before its first
@@ -1020,8 +1025,11 @@ kind.
 narration line. **A capture filed mid-run follows the same rule and gets no
 special priority.**
 
-**File it with the queue tool**, the way a move uses it: write the entry's text
-to the session scratchpad with the editing tools, then
+**File it with the state server's `file_capture` tool where the server is
+registered** — it takes the heading, slug and body as fields, stamps the
+filed-at time from the clock, and refuses a taken slug at the door. A project
+with no server files it with the queue tool, the way a move uses it: write the
+entry's text to the session scratchpad with the editing tools, then
 
 ```
 python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> \

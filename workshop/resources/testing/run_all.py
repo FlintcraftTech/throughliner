@@ -5,7 +5,7 @@ Host-only dev artifact — not shipped in the plugin package.
 
 Run:  py workshop/resources/testing/run_all.py
 
-Why this exists ([testing-suite-runner-discovers-all]): the release ritual named
+Why this exists ([testing-suite-runner-discovers-all]): the release checklist named
 three suites by hand. That list went stale the moment a fourth was written, and
 nothing anywhere reported the omission — a suite left out of the list is
 indistinguishable from a suite that passed. Discovery removes the list.
@@ -28,7 +28,7 @@ CLAUDE.md's scripting constraints: `python` on this machine resolves to an
 application's bundled interpreter that has no pytest, and its error names that
 application, which sends a session chasing the wrong cause.
 
-Exits non-zero on the first failing suite, so the rituals that call it stop
+Exits non-zero on the first failing suite, so the checklists that call it stop
 rather than warn.
 """
 

@@ -533,7 +533,7 @@ def content_stamp(root):
     and no `.gitattributes`, a commit's blobs hold LF while the installed build on
     disk holds CRLF, so hashing raw bytes made a build and the commit it was built
     from stamp differently by construction. That defeats the one mechanical answer
-    to "is this build the build I think it is" — including the release ritual's
+    to "is this build the build I think it is" — including the release checklist's
     stamp of the zip built from the release commit against `git archive` of that
     same commit, which compares an extracted-tree walk against `git archive`
     output. Normalising costs one pass over
@@ -604,7 +604,7 @@ def content_stamp(root):
 def _plugin_json_without_version(raw):
     """The plugin manifest's bytes with the `version` key dropped.
 
-    The version string is the one field the two packaging rituals deliberately
+    The version string is the one field the two packaging checklists deliberately
     disagree about — the rezip sets a `-testN` suffix and the release bump strips
     it, while neither changes what the plugin does — and
     neither changes what the plugin does. Left in, it made the stamp report the
@@ -1094,12 +1094,12 @@ CYCLE_OBSERVABLE_RE = re.compile(r"^\s*\*{0,2}Observable\s*:\*{0,2}\s*(.+?)\s*$"
                                  re.IGNORECASE)
 CYCLE_CADENCE_RE = re.compile(r"^\s*\*{0,2}Cadence\s*:\*{0,2}\s*(.+?)\s*$",
                               re.IGNORECASE)
-# A ritual's field: the word that fires it, standing where a cadence would be.
+# A checklist's field: the word that fires it, standing where a cadence would be.
 CYCLE_TRIGGER_RE = re.compile(r"^\s*\*{0,2}Trigger\s*:\*{0,2}\s*(.+?)\s*$",
                               re.IGNORECASE)
 # A chained cycle's two extra fields. Anchor names a weekday (and a time of
 # day, which is read for the user and not computed on); Chain is a numbered
-# list whose items each name a ritual by [slug] and a lead in days before the
+# list whose items each name a checklist by [slug] and a lead in days before the
 # anchor, or say they are the anchor itself.
 CYCLE_ANCHOR_RE = re.compile(r"^\s*\*{0,2}Anchor\s*:\*{0,2}\s*(.+?)\s*$",
                              re.IGNORECASE)
@@ -1125,9 +1125,9 @@ CYCLE_FIELD_START_RE = re.compile(
 
 
 def _parse_cycles_doc(cwd):
-    """Every definition in the cycles doc, as written — cycles and rituals alike.
+    """Every definition in the cycles doc, as written — cycles and checklists alike.
 
-    The shared parse behind cycles_facts() and rituals_facts(). Returns None
+    The shared parse behind cycles_facts() and checklists_facts(). Returns None
     where the project has no cycles doc, otherwise a list of dicts carrying
     slug, description, cadence, observable and trigger, any of which may be None.
 
@@ -1224,12 +1224,12 @@ def _parse_cycles_doc(cwd):
     return cycles
 
 
-def _is_ritual(entry):
+def _is_checklist(entry):
     """A definition fired by a word rather than by a cadence.
 
     The discriminator is what the definition carries, so the format grows
     additively and every existing cycles doc stays valid: a cycle has a cadence,
-    a ritual has a trigger and no cadence.
+    a checklist has a trigger and no cadence.
     """
     return entry["trigger"] is not None and entry["cadence"] is None
 
@@ -1237,7 +1237,7 @@ def _is_ritual(entry):
 def cycles_facts(cwd):
     """Each CYCLE definition's slug, cadence and observable, as written.
 
-    Ritual definitions are excluded — see rituals_facts() — so a ritual is never
+    Checklist definitions are excluded — see checklists_facts() — so a checklist is never
     reported as a cycle whose cadence is missing.
 
     Returns None where the project has no cycles doc, otherwise a list of
@@ -1248,7 +1248,7 @@ def cycles_facts(cwd):
         return None
     out = []
     for entry in entries:
-        if _is_ritual(entry):
+        if _is_checklist(entry):
             continue
         observable = entry["observable"]
         dates = ISO_DATE_IN_TEXT_RE.findall(observable or "")
@@ -1258,11 +1258,11 @@ def cycles_facts(cwd):
 
 
 def _parse_chain(text):
-    """The rituals a Chain: field names, each with its lead in days.
+    """The checklists a Chain: field names, each with its lead in days.
 
-    Returns a list of (ritual_slug, lead_days_or_None). An item naming no
-    ritual (a step that is the ordinary /plan and /next) is skipped; an item
-    naming a ritual but no lead travels with None, so the report can say the
+    Returns a list of (checklist_slug, lead_days_or_None). An item naming no
+    checklist (a step that is the ordinary /plan and /next) is skipped; an item
+    naming a checklist but no lead travels with None, so the report can say the
     lead is not stated rather than guessing one.
     """
     out = []
@@ -1292,14 +1292,14 @@ def _anchor_weekday(text):
 
 
 def cycle_chains(cwd, today=None):
-    """Each chained cycle's next anchor date and the due date of every ritual
+    """Each chained cycle's next anchor date and the due date of every checklist
     in its chain, computed from the calendar.
 
     Returns None where the project has no cycles doc, otherwise a list of
     dicts: slug, anchor (the field as written), anchor_date (an ISO date, the
-    next occurrence of the anchor's weekday on or after today), and rituals —
-    a list of (ritual_slug, due_date_or_None). A cycle with no Chain: field is
-    not listed. Dates only, never a verdict: whether a ritual whose date has
+    next occurrence of the anchor's weekday on or after today), and checklists —
+    a list of (checklist_slug, due_date_or_None). A cycle with no Chain: field is
+    not listed. Dates only, never a verdict: whether a checklist whose date has
     arrived still needs running is read from the record by the skill.
     """
     entries = _parse_cycles_doc(cwd)
@@ -1309,28 +1309,28 @@ def cycle_chains(cwd, today=None):
         today = datetime.date.today()
     out = []
     for entry in entries:
-        if _is_ritual(entry) or not entry["chain"]:
+        if _is_checklist(entry) or not entry["chain"]:
             continue
         weekday = _anchor_weekday(entry["anchor"])
         anchor_date = None
         if weekday is not None:
             anchor_date = today + datetime.timedelta(
                 days=(weekday - today.weekday()) % 7)
-        rituals = []
-        for ritual_slug, lead in _parse_chain(entry["chain"]):
+        checklists = []
+        for checklist_slug, lead in _parse_chain(entry["chain"]):
             due = None
             if anchor_date is not None and lead is not None:
                 due = (anchor_date - datetime.timedelta(days=lead)).isoformat()
-            rituals.append((ritual_slug, due))
+            checklists.append((checklist_slug, due))
         out.append({"slug": entry["slug"],
                     "anchor": entry["anchor"],
                     "anchor_date": anchor_date.isoformat() if anchor_date else None,
-                    "rituals": rituals})
+                    "checklists": checklists})
     return out
 
 
-def rituals_due_on(cwd, today=None):
-    """The (cycle_slug, ritual_slug) pairs whose computed due date is today.
+def checklists_due_on(cwd, today=None):
+    """The (cycle_slug, checklist_slug) pairs whose computed due date is today.
 
     A date fact from cycle_chains(); the skill still reads the record for a
     completed turn since the previous anchor before filing anything.
@@ -1339,16 +1339,16 @@ def rituals_due_on(cwd, today=None):
         today = datetime.date.today()
     chains = cycle_chains(cwd, today) or []
     iso = today.isoformat()
-    return [(chain["slug"], ritual) for chain in chains
-            for ritual, due in chain["rituals"] if due == iso]
+    return [(chain["slug"], checklist) for chain in chains
+            for checklist, due in chain["checklists"] if due == iso]
 
 
-def rituals_facts(cwd):
-    """Each RITUAL definition's slug, name and trigger word, as written.
+def checklists_facts(cwd):
+    """Each CHECKLIST definition's slug, name and trigger word, as written.
 
-    Name and trigger only, and deliberately nothing else: a ritual has no
+    Name and trigger only, and deliberately nothing else: a checklist has no
     cadence and no observable, so there is no due-ness to compute and nothing
-    for a session to file. What a session needs is to know the ritual exists and
+    for a session to file. What a session needs is to know the checklist exists and
     what word runs it — the steps are read from the doc when that word is said.
 
     Returns None where the project has no cycles doc, otherwise a list of
@@ -1358,7 +1358,7 @@ def rituals_facts(cwd):
     if entries is None:
         return None
     return [(entry["slug"], entry["description"], entry["trigger"])
-            for entry in entries if _is_ritual(entry)]
+            for entry in entries if _is_checklist(entry)]
 
 
 WORKING_FILE_RE = re.compile(r"^_(build|plan)-(.+)\.md$")
@@ -2106,17 +2106,17 @@ def main() -> int:
                     part += "; no observable line"
                 described.append(part)
             # A chained cycle also reports its next anchor date and each
-            # ritual's computed due date — dates, never a verdict on whether
-            # the ritual still needs running.
+            # checklist's computed due date — dates, never a verdict on whether
+            # the checklist still needs running.
             for chain in cycle_chains(cwd) or []:
-                rituals = ", ".join(
-                    "[%s] due %s" % (ritual, due or "no lead stated")
-                    for ritual, due in chain["rituals"])
+                checklists = ", ".join(
+                    "[%s] due %s" % (checklist, due or "no lead stated")
+                    for checklist, due in chain["checklists"])
                 described.append(
-                    "[%s] chain — anchor %s, next %s; rituals: %s"
+                    "[%s] chain — anchor %s, next %s; checklists: %s"
                     % (chain["slug"], chain["anchor"] or "not stated",
                        chain["anchor_date"] or "weekday not read",
-                       rituals or "none named"))
+                       checklists or "none named"))
             context_parts.append(
                 "[Throughliner] Cycles on file (%d): %s. Facts, not verdicts — "
                 "the hook reports what each definition says and what its "
@@ -2125,24 +2125,24 @@ def main() -> int:
                 % (len(cycles), "; ".join(described))
             )
 
-    # Rituals ride the same doc and are reported by name and trigger word only.
-    # No due-ness is computed for one and no capture is ever filed: a ritual has
+    # Checklists ride the same doc and are reported by name and trigger word only.
+    # No due-ness is computed for one and no capture is ever filed: a checklist has
     # no cadence, so it runs when the user says its word and at no other time.
-    rituals = rituals_facts(cwd)
-    if rituals:
+    checklists = checklists_facts(cwd)
+    if checklists:
         named = []
-        for slug, description, trigger in rituals:
+        for slug, description, trigger in checklists:
             part = f"[{slug}]"
             if description:
                 part += f" {description}"
             part += f" — fires on: {trigger or 'no trigger word stated'}"
             named.append(part)
         context_parts.append(
-            "[Throughliner] Rituals on file (%d): %s. A ritual runs when the "
+            "[Throughliner] Checklists on file (%d): %s. A checklist runs when the "
             "user says its word — nothing computes due-ness for one and nothing "
             "files a capture for one. Read its steps from the cycles doc when "
             "that word is said."
-            % (len(rituals), "; ".join(named))
+            % (len(checklists), "; ".join(named))
         )
 
     # Which isolation model is actually in force, measured rather than assumed.
@@ -2214,7 +2214,7 @@ def main() -> int:
         # Only a main-checkout session can merge a session branch back: git
         # refuses to update a branch that is checked out in another working
         # tree, so the isolated session cannot merge itself. That inverts the
-        # obvious design — the merge cannot happen at the isolated close, so
+        # obvious design — the merge cannot happen at the isolated /done run, so
         # this is the moment it gets offered.
         stranded = _unmerged_session_branches(cwd)
         session_work = [b for b in stranded if b[2]]

@@ -83,7 +83,7 @@ def build_fixture(repo):
           "FORMAT_EPOCH = 4\n")
     write(repo, "plugin/throughliner/.claude-plugin/plugin.json",
           '{\n  "name": "throughliner",\n  "version": "1.0.0"\n}\n')
-    write(repo, "resources/release-ritual.md", "# ritual\n\noriginal\n")
+    write(repo, "resources/release-checklist.md", "# checklist\n\noriginal\n")
     base = commit(repo, "baseline")
 
     write(repo, "plugin/throughliner/docs/next.md", "# next\n\nreworded\n")
@@ -93,8 +93,8 @@ def build_fixture(repo):
           "FORMAT_EPOCH = 5\n")
     bumped = commit(repo, "bump the format epoch")
 
-    write(repo, "resources/release-ritual.md", "# ritual\n\nreworded\n")
-    host_only = commit(repo, "reword the release ritual")
+    write(repo, "resources/release-checklist.md", "# checklist\n\nreworded\n")
+    host_only = commit(repo, "reword the release checklist")
 
     write(repo, "plugin/throughliner/.claude-plugin/plugin.json",
           '{\n  "name": "throughliner",\n  "version": "1.0.0-test1"\n}\n')
@@ -113,7 +113,7 @@ def build_fixture(repo):
           "An existing project's cleared items gain a field, so their files "
           "are structurally wrong until migrated.\n\n"
           "**Files touched:** `plugin/throughliner/hooks/session_start.py`\n\n"
-          "Host-only note: the rezip ritual's own step list is untouched.\n"
+          "Host-only note: the rezip checklist's own step list is untouched.\n"
           % bumped[:7])
     commit(repo, "records")
 

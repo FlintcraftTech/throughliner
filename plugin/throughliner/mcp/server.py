@@ -207,23 +207,23 @@ def tool_cycles_state(_arguments):
             lines.append("  latest date in that observable: %s" % last_date)
         lines.append("")
 
-    # A chained cycle: its next anchor date and each ritual's computed due
+    # A chained cycle: its next anchor date and each checklist's computed due
     # date, from the hook's own calendar arithmetic. Dates, not verdicts —
-    # whether a ritual whose date has arrived still needs running is read from
+    # whether a checklist whose date has arrived still needs running is read from
     # the record by the skill.
     chains = getattr(hooks, "cycle_chains", None)
     for chain in (chains(root) if chains else []) or []:
         lines.append("[%s] chain — anchor %s, next %s" % (
             chain["slug"], chain["anchor"] or "not stated",
             chain["anchor_date"] or "weekday not read"))
-        for ritual, due in chain["rituals"]:
-            lines.append("  [%s] due %s" % (ritual, due or "no lead stated"))
+        for checklist, due in chain["checklists"]:
+            lines.append("  [%s] due %s" % (checklist, due or "no lead stated"))
         lines.append("")
 
-    rituals = hooks.rituals_facts(root)
-    if rituals:
-        lines.append("Rituals (fired by a word, never due):")
-        for slug, description, trigger in rituals:
+    checklists = hooks.checklists_facts(root)
+    if checklists:
+        lines.append("Checklists (fired by a word, never due):")
+        for slug, description, trigger in checklists:
             lines.append("  [%s] %s — %s" % (slug, description, trigger))
         lines.append("")
 
@@ -1303,7 +1303,7 @@ TOOLS = [
         "name": "cycles_state",
         "description":
             "Every cycle definition's cadence and what its observable "
-            "currently reads, plus any rituals and their firing words. Facts "
+            "currently reads, plus any checklists and their firing words. Facts "
             "as written — computing due-ness from them is the reader's step, "
             "exactly as it is at a session opening.",
         "inputSchema": {"type": "object", "properties": {}},
