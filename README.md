@@ -4,13 +4,14 @@
 
 A Claude Code plugin that lets you build the project you have in mind — an app, a website, a tool, whatever you're making — without writing code yourself. You describe what you want; Claude builds it — and the plugin keeps the work organised across sessions so nothing drifts or gets lost.
 
-**What makes it different: your intent keeps running the project whatever Claude remembers.** Claude Code now carries some memory of its own between sessions — private notes it keeps lossily, on no schedule you control, and never shows you. The throughline is different in kind: a structured record of *why*, vouched by you, carried alongside the work itself — so any session, including a fresh one, still builds your project the way you meant instead of guessing from your code or from Claude's own unvouched notes.
+**What makes it different: Intent and reasoning are read while Claude is planning and building, so the throughline shapes every decision quietly rather than only when you ask "why is this like this?" The log is the deep archive, pulled up when you need it.
 
-The throughline is not one file. Your intent lives in the spec, the reasoning rides on every item in your queue, and the history lives in your session log. The first two are read while Claude is planning and building, so the throughline shapes every decision quietly rather than only when you ask "why is this like this?" The log is the deep archive, pulled up when you need it.
+What this means:
+- settled things stop being re-decided, because a rejected option's reason for losing is on the record and doesn't get re-proposed. 
+- Silent regressions get caught, because you can see why something is the way it is before changing it. 
+- You can come back after a break — or hand the project to someone else — and the reasoning is still there. 
 
-What that buys you: settled things stop being re-decided, because a rejected option's reason for losing is on the record and doesn't get re-proposed. Silent regressions get caught, because you can see why something is the way it is before changing it. You can come back after a break — or hand the project to someone else — and the reasoning is still there. And the small cost of approving drafts is what makes the record genuinely *yours*: a reason you never vouched for is one you can't trust when you read it back.
-
-## Install
+## Install [note to claude: [we need to keep this section in cync with the instructions in the discord]]
 
 ### New to Claude Code? Start here
 
@@ -26,11 +27,9 @@ The install is two commands run in a terminal — the desktop app has no menu th
 
 ### What the beta channel is
 
-Once a week — on a Wednesday — one build gets picked and put on the beta channel. That build has already been used for a week's real work before it reaches you, and the week after that it becomes the stable release. So the version you install has been lived in, not just compiled.
+Once a week — on a Wednesday — one build gets put on the beta channel. So the version you install has been lived in, not just compiled.
 
-It is honestly early, and that's the plain description rather than a disclaimer. The plugin is in active testing, the number of people running it is small, and things will still be rough in places. What you get for that is a version someone has actually used rather than the newest unfinished commit.
-
-Updates arrive when you ask for them. Nothing updates itself: ask Claude to update the plugin and fully restart Claude Code, and you'll be on the current week's beta. If you'd rather be told when a new one lands, the Watch setting in [Get notified of new versions](#get-notified-of-new-versions) below emails you.
+Updates arrive when you ask for them. Ask Claude to update the plugin to the current beta and fully restart Claude Code. If you'd rather be told when a new one lands, the Watch setting in [Get notified of new versions](#get-notified-of-new-versions) below emails you.
 
 If something breaks, say so — either on the [Discord](https://discord.gg/Z7ftKnSjR) or by telling Claude in your own project, which knows how to file a report and will show you the text before anything is sent.
 
