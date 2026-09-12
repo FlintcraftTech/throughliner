@@ -692,7 +692,9 @@ Blocked by: [slug], [slug]                     # one OR MORE slugs; lifts only
                                                # meaning something different in
                                                # each — see below. Below the
                                                # cleared-to-run line one of it
-                                               # or `Not before:` is required
+                                               # or `Not before:` is required.
+                                               # On a capture the line may end
+                                               # `until built` — see below
 Not before: YYYY-MM-DD                         # a date. Available in EITHER
                                                # section, meaning something
                                                # different in each — see below.
@@ -713,8 +715,11 @@ hooks, so nobody confirms anything and no wake-up capture is filed.
 ```
 on a work item (Processed)  ->  do not BUILD this until every named item
                                 resolves
-on a capture (Unprocessed)  ->  do not OFFER this again until every named
-                                entry is processed or built
+on a capture (Unprocessed)  ->  do not OFFER this again
+                                  until every named entry is processed or
+                                    built, or,
+                                  where the line ends `until built`, until
+                                    every one is built
 ```
 
 **On a capture it needs no approval, unlike a date**: a capture held this way
@@ -1479,7 +1484,7 @@ expected handmade work, confirm with the user, and fold them into /done.
 
 ```
 the record, in cheapest-first order:
-    decisions recorded earlier in THIS chat      # no retrieve needed — you were there
+    decisions recorded earlier in THIS chat and still in view   # no retrieve needed — you were there
     the item's own rationale in QUEUE.md         # where most decisions live until a /done run
     SPEC.md
     LOG/index.md, then the one matched entry

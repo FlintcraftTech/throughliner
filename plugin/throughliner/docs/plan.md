@@ -717,7 +717,9 @@ processed or built** [SILENT], on the same terms. So, per the always-loaded
 field rule, such an entry is not ranked, not presented and not counted toward the session's
 floor. It returns by itself once every named entry has been processed or built
 — an entry kept into Processed, cleared or held, counts as processed, so a
-capture held on it returns in the session it is kept — the digest prints each named blocker's
+capture held on it returns in the session it is kept — except that a line
+ending `until built` passes the capture over until every named entry has a
+build record; the digest prints each named blocker's
 resolved state on the capture's own line, so this reads a computed field too.
 
 **Pass over any Unprocessed entry whose `Cycle:` names a definition in the
@@ -893,9 +895,10 @@ what it found. Where it is a choice they own, ask.
 beat** — the summary and the analysis arrive together, and the wait that follows
 is the [PROMPT] at the end of the interview.
 
-Re-read the item from QUEUE.md before pointing at it, to confirm the pointer
-resolves — at the opening for the first item, and at the prior checkpoint for
-every one after.
+Read the item's entry whole from QUEUE.md before its summary is written, and
+write the summary from that read — at the opening for the first item, and at
+the prior checkpoint for every one after. The whole read is what confirms the
+pointer resolves.
 
 Engage with the item's substance: ask follow-ups to sharpen it or surface missing
 context, depth scaling with the item, until the picture is clear.
@@ -914,8 +917,7 @@ closing the interview:
 process-now specimen's four-turn shape stands only while a question is open.
 
 **View-in-doc.** The item already exists in QUEUE.md, so pointing is the default:
-lead with a one-line pointer instead of the pasted quote. The confirm re-read
-still runs in its pointer form (a resolves-check, not a text-match).
+lead with a one-line pointer instead of the pasted quote.
 
 **The opening specimen — the same shape the checkpoint uses:**
 
@@ -1712,7 +1714,9 @@ Unprocessed, and:
   build that must ship first;
 - ask before skipping, where that answer is a decision the user owns;
 - write `Blocked by: [slug]`, where the thing it waits on is an entry already in
-  the queue, subject to the blocker provisions below;
+  the queue, subject to the blocker provisions below — on a capture, ending the
+  line `until built` where it waits for that entry to ship rather than to be
+  designed, so the hold says which of the two it waits for;
 - propose a `Not before:` date, where it waits on something outside the project
   entirely, subject to the date provisions below;
 - write either field with the state server's `hold_entry` tool — it composes
@@ -1727,7 +1731,10 @@ available for the asking is the failure this fixes.
 something already in the queue has to be settled first — a decision another
 entry carries, a build this one is scoped against. Write the field naming that
 entry; it needs no approval, because the queue can check it and the capture
-returns by itself the moment the blocker is processed or built.
+returns by itself the moment the blocker is processed or built. Say which of
+the two it waits for: a capture waiting on the decision another entry carries
+is written bare and returns when that entry is kept; one waiting on the build
+ends its line `until built` and returns when the entry has a build record.
 
 **Where nothing in the queue blocks it yet, file the blocker as a capture first,
 then write the field.** A slug that resolves to nothing is a lint failure and a

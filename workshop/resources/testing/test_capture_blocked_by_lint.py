@@ -109,6 +109,24 @@ def test_capture_with_several_blockers_is_accepted():
           not warnings, f"got: {warnings}")
 
 
+def test_until_built_is_accepted_on_a_capture_and_flagged_on_a_work_item():
+    """The trailing words hold a capture until its blockers are BUILT; on a
+    work item they add nothing, so the lint says so
+    ([capture-hold-says-designed-or-shipped])."""
+    lint = load_lint()
+    warnings = lint(queue("Blocked by: [alpha] until built"))
+    check("`until built` on a capture is accepted silently",
+          not warnings, f"got: {warnings}")
+    text = queue().replace(
+        "#### Perfectly ordinary work item [alpha]\nFiled by Claude. Rationale for alpha.\n",
+        "#### Perfectly ordinary work item [alpha]\nFiled by Claude. Rationale for alpha.\n"
+        "Blocked by: [gamma] until built\n")
+    warnings = lint(text)
+    hit = [w for w in warnings if "until built" in w and "adds nothing" in w]
+    check("`until built` on a work item is flagged as adding nothing",
+          len(hit) == 1, f"got: {warnings}")
+
+
 def test_capture_blocked_by_a_missing_slug_is_flagged():
     """The case the whole change turns on."""
     lint = load_lint()
@@ -166,6 +184,7 @@ for fn in [
     test_capture_blocked_by_a_real_entry_is_accepted,
     test_capture_blocked_by_another_capture_is_accepted,
     test_capture_with_several_blockers_is_accepted,
+    test_until_built_is_accepted_on_a_capture_and_flagged_on_a_work_item,
     test_capture_blocked_by_a_missing_slug_is_flagged,
     test_one_bad_slug_among_good_ones_is_flagged,
     test_capture_naming_itself_is_flagged,

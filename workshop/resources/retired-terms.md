@@ -24,6 +24,12 @@ line, one place, carrying both what the gate decided and what was retired.
 - `term` — what it was, and when it was retired
 ```
 
+An entry may end with a `Kept compounds:` clause listing, in backticks, the
+compounds the retired noun still forms on purpose — `` Kept compounds: `close
+calendar`. `` A compound listed there is the noun followed by that word and is
+not the retired term, so the check passes over it; a compound not listed is
+still reported.
+
 **Retired artifacts are recorded here too, in their own section below.** A retired
 step leaves behind the files it produced, and nothing else in the project holds a
 list of outputs whose producer no longer exists — so a stale artifact can sit next
@@ -87,7 +93,7 @@ early turns the signal off while the problem stands.
 - `keep-check` — the name of the two-limb buildability check at that step, retired 2026-08-27 with the step's name. The check itself is unchanged.
 - `` `[user]` line `` — the name for a `[user]` work item, retired 2026-08-27; it is a `[user]` **item**. Listed as the two-word phrase and never as the bare word `line`, which is load-bearing elsewhere in correct writing — the readiness line, the cleared-to-run line, an index line, "one line either way".
 - `--- Build block ---` — the delimited region inside a cleared work item holding what changes in which files, how to tell it worked, and any refusal, retired 2026-08-27. A run reads the item's own text now, so an item's instructions are ordinary prose. **Old delimiters left in existing items are not stale and are not to be swept**: they read as part of the item, which is exactly how the new model treats them.
-- `the close` — the docs' name for the /done step, retired 2026-09-10. The step is named by its command, `/done` (or "the /done step" where a noun is needed); "closes the session" and "closing" stay as ordinary English verbs, and "close-out" names the sub-doc's procedure, not the step. The noun is retired under any determiner — "this close", "every close", "an isolated close" — not only after "the". The check reaches the noun directly after a determiner only; the adjective-separated shape ("a build close", "the freeform close") was swept by hand on 2026-09-11, and verb uses ("close the session", "let the user close it") are kept.
+- `the close` — the docs' name for the /done step, retired 2026-09-10. The step is named by its command, `/done` (or "the /done step" where a noun is needed); "closes the session" and "closing" stay as ordinary English verbs, and "close-out" names the sub-doc's procedure, not the step. The noun is retired under any determiner — "this close", "every close", "an isolated close" — not only after "the". The check reaches the noun directly after a determiner only; the adjective-separated shape ("a build close", "the freeform close") was swept by hand on 2026-09-11, and verb uses ("close the session", "let the user close it") are kept. Kept compounds: `close calendar`.
 - `done-audit.md` — the audit-flavour close-out doc, retired 2026-09-10; folded into `done-build.md` as its audit delta.
 - `next-audit.md` — the audit-flavour procedure doc, retired 2026-09-10; folded into `next-build.md` as its audit section.
 - `ritual` — the name for a named step list fired by a word, retired 2026-09-11 for **checklist**, the word maintenance and accounting use for the same thing; a cycle keeps its name and names its due rule as time-based or condition-based, and a chain is described as a close calendar. Slugs and filenames carrying the old word — `[ritual-declares-writable-paths]`, `[cycle-chains-compute-due-rituals]`, `release-ritual.md`, `test_pre_tool_use_ritual_writes.py` — are names of records and files and stay as written.

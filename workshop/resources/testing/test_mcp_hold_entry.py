@@ -144,6 +144,21 @@ check("non-ASCII text elsewhere is untouched",
       "an em-dash and a résumé" in after and "â€”" not in after)
 shutil.rmtree(d, ignore_errors=True)
 
+# --- until_built: a capture's line ends `until built`; a work item is refused --
+d = project()
+text = call(d, {"slug": "delta", "blocked_by": ["alpha"], "until_built": True})
+after = queue_text(d)
+check("until_built on a capture writes the qualified line",
+      "Delta's rationale.\nBlocked by: [alpha] until built\n" in after, repr(after))
+check("the tool reports the qualified line", "until built" in text, repr(text))
+shutil.rmtree(d, ignore_errors=True)
+refused("until_built on a work item",
+        {"slug": "gamma", "blocked_by": ["alpha"], "until_built": True},
+        "adds nothing")
+refused("until_built without blocked_by",
+        {"slug": "delta", "not_before": "2031-01-01", "until_built": True},
+        "without blocked_by")
+
 # --- replace, not double: date kind over date kind ---------------------------
 d = project()
 call(d, {"slug": "epsilon", "not_before": "2032-06-01"})

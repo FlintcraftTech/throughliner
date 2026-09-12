@@ -335,14 +335,15 @@ open, not only while the checklist runs — so the list is kept narrow.
 
 ## What does planning tell me when held work comes back?
 
-Work waits below the ready line for one of two reasons, another queue item or
-a date, and planning checks each one at its opening. When something lifts, the
-turn offering it says what that work's design was assuming and whether
-anything has confirmed it since — read from the item's own note of the outside
-facts it rests on, or said plainly where it recorded none. A capture that was
-set aside until a date gets the same treatment when the date passes. The
-point: the wait being over says nothing about whether the thing waited for
-turned out as assumed, and this is the one moment anyone looks.
+A planning session's opening lines name the work that is waiting — a line like
+"Held until a date: … not before …", or an item waiting on another item — and
+planning checks each one at its opening. When a wait ends and the item is
+offered again, that offer says what the item's design was assuming when it was
+written and whether anything has confirmed it since — read from the item's own
+note of the outside facts it rests on, or said plainly where it recorded none.
+A captured idea set aside until a date gets the same treatment when the date
+passes. The point: the wait being over says nothing about whether the thing
+waited for turned out as assumed, and this is the one moment anyone looks.
 
 ## Can I move a queue item while a build is running?
 

@@ -887,6 +887,36 @@ def _check_unbracketed_blocker(annotated, warnings):
         )
 
 
+UNTIL_BUILT_RE = re.compile(r"\buntil built\s*$", re.IGNORECASE)
+
+
+def _check_until_built_on_work_item(annotated, warnings):
+    """Flag a `Blocked by:` line ending `until built` on a work item.
+
+    The trailing words are a capture's: they say the capture waits for the
+    named entries to be BUILT rather than merely processed. A work item's hold
+    already means "do not build until every named item resolves", so the words
+    add nothing there and are flagged so the two holds cannot be read as
+    different kinds. Accepted silently on a capture.
+    """
+    in_fence = False
+    for i, line, h2, is_heading in annotated:
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence or is_heading or h2 != "Processed":
+            continue
+        stripped = line.strip()
+        if BLOCKED_BY_LINE.match(stripped) and UNTIL_BUILT_RE.search(stripped):
+            warnings.append(
+                f"line {i + 1}: 'Blocked by:' on a work item ends 'until "
+                "built', which adds nothing — a work item's hold already "
+                "means do not build until every named item resolves. The "
+                "words belong on a capture, where they say it waits for the "
+                f"build rather than the processing. Drop them here: {stripped}"
+            )
+
+
 def lint(content: str) -> list[str]:
     annotated = _annotate(content)
     blocks = _workline_blocks(annotated)
@@ -898,6 +928,7 @@ def lint(content: str) -> list[str]:
     _check_mid_line_markers(annotated, warnings)
     _check_readiness_marker(annotated, blocks, warnings)
     _check_blocked_by(annotated, blocks, warnings)
+    _check_until_built_on_work_item(annotated, warnings)
     _check_orphaned_prose(annotated, warnings)
     _check_quote_claim_without_quote(blocks, warnings)
     _check_duplicate_gate_lines(blocks, warnings)

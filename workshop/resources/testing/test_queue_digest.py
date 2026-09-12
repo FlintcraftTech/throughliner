@@ -958,6 +958,53 @@ def test_capture_held_on_a_processed_item_is_offerable():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_capture_held_until_built_waits_for_the_build_record():
+    """`Blocked by: [slug] until built` holds a capture past the blocker's
+    processing: kept into Processed and not built, the capture stays out of
+    the pool; with a build record it returns. The same line without the words
+    releases on the keep ([capture-hold-says-designed-or-shipped])."""
+    root = project(
+        processed=(
+            "#### Kept item [kept]\nProse.\n" + BLOCK + "\n" + MARKER + "\n"
+        ),
+        unprocessed=(
+            "#### Waiting for the build [waits-build]\nProse.\n"
+            "Blocked by: [kept] until built\n"
+            "\n"
+            "#### Waiting for the keep [waits-keep]\nProse.\n"
+            "Blocked by: [kept]\n"
+        ),
+    )
+    queue = os.path.join(root, "QUEUE.md")
+    items = digest.parse(queue)
+    pool = [i["slug"] for i in digest.offerable(items, root)]
+    check("the qualified capture is passed over while the same bare line is offered",
+          pool == ["waits-keep"], str(pool))
+    _, _, item = digest.whats_next(items, root, queue)
+    check("--next does not offer the qualified capture",
+          item is not None and item["slug"] == "waits-keep",
+          str(item and item["slug"]))
+    _, out = run(root)
+    line = [l for l in out.splitlines() if "[waits-build]" in l]
+    check("the digest line prints the qualifier",
+          line and "until built" in line[0], str(line))
+    shutil.rmtree(root, ignore_errors=True)
+
+    # With a build record for the blocker, the qualified capture returns.
+    root = project(
+        unprocessed=(
+            "#### Waiting for the build [waits-build]\nProse.\n"
+            "Blocked by: [kept] until built\n"
+        ),
+        log_entries=["2026-09-12-kept.md"],
+    )
+    queue = os.path.join(root, "QUEUE.md")
+    pool = [i["slug"] for i in digest.offerable(digest.parse(queue), root)]
+    check("a built blocker releases the qualified capture",
+          pool == ["waits-build"], str(pool))
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_capture_held_on_an_unprocessed_item_still_bows_out():
     """A named entry still in Unprocessed holds the capture, as before."""
     root = project(
@@ -1292,6 +1339,7 @@ if __name__ == "__main__":
     test_whats_next_respects_a_capture_bowing_out()
     test_capture_held_on_a_processed_item_is_offerable()
     test_capture_held_on_an_unprocessed_item_still_bows_out()
+    test_capture_held_until_built_waits_for_the_build_record()
     test_full_print_names_how_many_cite_a_capture()
     test_incoming_citations_are_computed_not_guessed()
     test_copied_finding_flags_the_item_as_resting_on_a_snapshot()

@@ -586,7 +586,7 @@ def archived_plugin_zip(project_root, version=None):
     archive_dir = next((p for p in tried if os.path.isdir(p)), None)
     if archive_dir is None:
         raise DiscordError(
-            "No rezip archive at %s. It is written by the rezip ritual's "
+            "No rezip archive at %s. It is written by the Rezip checklist's "
             "archive step — run a rezip before posting an entry."
             % " or ".join(tried))
 

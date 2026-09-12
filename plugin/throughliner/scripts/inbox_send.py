@@ -4,7 +4,7 @@ printing the correspondent's path.
 
 Usage:
     python inbox_send.py <project root> --to <correspondent name> --file <message path>
-                          [--create-mailbox]
+                          [--create-mailbox] [--send-uncovered]
 
 Why this exists ([inbox-send-script]): the outbound send is three checks and a
 copy — the recipient has a mailbox, that mailbox is gitignored there, and the
@@ -18,8 +18,9 @@ line naming the correspondent and the filename — never the path.
 Refuses, with a status line and a non-zero exit, where the name is not in the
 address book, the recipient's folder is missing, the recipient has no INBOX/
 (naming that one would have to be created — the user's call, performed only
-with --create-mailbox), the recipient's .gitignore does not cover INBOX/, or a
-file of the same name already sits in the recipient's mailbox.
+with --create-mailbox), the recipient's .gitignore does not cover INBOX/ (the
+go the doc promises is given by re-running with --send-uncovered on the user's
+say-so), or a file of the same name already sits in the recipient's mailbox.
 
 Standard library only. UTF-8 reconfiguration copied from reorder_queue.py.
 """
@@ -85,11 +86,14 @@ def main(argv):
     create = "--create-mailbox" in args
     if create:
         args.remove("--create-mailbox")
+    send_uncovered = "--send-uncovered" in args
+    if send_uncovered:
+        args.remove("--send-uncovered")
     to = fname = None
     for flag in ("--to", "--file"):
         if flag not in args:
             fail("usage: inbox_send.py <project root> --to <correspondent name> "
-                 "--file <message path> [--create-mailbox]")
+                 "--file <message path> [--create-mailbox] [--send-uncovered]")
         k = args.index(flag)
         try:
             val = args[k + 1]
@@ -102,7 +106,7 @@ def main(argv):
             fname = val
     if len(args) != 1:
         fail("usage: inbox_send.py <project root> --to <correspondent name> "
-             "--file <message path> [--create-mailbox]")
+             "--file <message path> [--create-mailbox] [--send-uncovered]")
     root = args[0]
 
     if not os.path.isfile(fname):
@@ -126,9 +130,14 @@ def main(argv):
         sys.stderr.write("inbox_send: %s: created INBOX/ on the user's "
                          "say-so.\n" % name)
     if not gitignore_covers_inbox(folder):
-        fail("%s: that project's .gitignore does not cover INBOX/, so a "
-             "message would be committed there. Say so plainly and do not "
-             "send until the user says go. Nothing was sent." % name)
+        if not send_uncovered:
+            fail("%s: that project's .gitignore does not cover INBOX/, so a "
+                 "message would be committed there. Say so plainly and do "
+                 "not send until the user says go, which is the user's call. "
+                 "Re-run with --send-uncovered on their say-so. Nothing was "
+                 "sent." % name)
+        sys.stderr.write("inbox_send: %s: sent to an uncovered mailbox on "
+                         "the user's say-so.\n" % name)
     dest = os.path.join(mailbox, os.path.basename(fname))
     if os.path.exists(dest):
         fail("%s: a message named %s is already in the mailbox. Nothing was "

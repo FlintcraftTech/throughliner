@@ -1501,8 +1501,38 @@ def _is_archival(rel_path):
     )
 
 
-def _term_appears_as_a_name(term, raw):
+# A register entry may end `Kept compounds: `close calendar`.` — the compounds
+# the retired noun still forms on purpose. A listed compound is the noun
+# followed by that word and is not the retired term. A compound NOT listed is
+# still reported: the register is the only place kept forms live, so the
+# next compound is a register line and never a code change.
+_KEPT_COMPOUNDS_RE = re.compile(r"Kept compounds:\s*((?:`[^`]+`\s*,?\s*)+)")
+
+
+def kept_compounds(why):
+    """The compounds an entry's `Kept compounds:` clause lists, lowercased."""
+    m = _KEPT_COMPOUNDS_RE.search(why or "")
+    if not m:
+        return ()
+    return tuple(c.strip().lower() for c in re.findall(r"`([^`]+)`", m.group(1)))
+
+
+def _not_followed_by_a_kept_word(noun_low, kept):
+    """A lookahead excluding the words that turn `noun_low` into a kept
+    compound — "" where no kept compound starts with that noun."""
+    following = [c[len(noun_low) + 1:] for c in kept
+                 if c.startswith(noun_low + " ")]
+    if not following:
+        return ""
+    return r"(?!\s+(?:%s)\b)" % "|".join(re.escape(f) for f in following)
+
+
+def _term_appears_as_a_name(term, raw, kept=()):
     """True where `term` is used as the NAME of the mechanism, not incidentally.
+
+    `kept` is the entry's kept compounds (see `kept_compounds`): where the
+    term's last word is followed by a kept compound's next word, that is a
+    different term and no hit. A compound not in the register is still a hit.
 
     The terms include field names ending in a colon — `Blocks:`, `Depends on:`,
     `Editor:`. A bare case-insensitive substring test matches the Python line
@@ -1524,14 +1554,20 @@ def _term_appears_as_a_name(term, raw):
         # term like `plugin-behaviour.md` still matches.
         pattern = re.escape(t)
         if t[:1].isalnum():
-            pattern = r"\b" + pattern
+            # ... and not out of a hyphenated compound either: the filename
+            # `release-ritual.md` is not the word "ritual", the mirror of the
+            # exclusion below that keeps "close-out" clear.
+            pattern = r"(?<!-)\b" + pattern
         if t[-1:].isalnum():
             # ... and not into a hyphenated compound: "close-out" is not
-            # "the close" even when "the" precedes it.
-            pattern = pattern + r"\b(?!-)"
+            # "the close" even when "the" precedes it — nor into a kept
+            # compound from the register: "the close calendar" is not "the
+            # close".
+            pattern = (pattern + r"\b(?!-)"
+                       + _not_followed_by_a_kept_word(t.split()[-1], kept))
         if re.search(pattern, low) is not None:
             return True
-        return _head_noun_under_a_determiner(t, low)
+        return _head_noun_under_a_determiner(t, low, kept)
     if ("`" + t) in low or ("**" + t) in low:
         return True
     return low.lstrip().lstrip("-*# ").startswith(t)
@@ -1545,20 +1581,26 @@ def _term_appears_as_a_name(term, raw):
 # close", "a build close") — allowing one was tried and matched "a normal
 # close" of the app and "let the user close it", which name nothing retired.
 # A hyphen after the noun is excluded: "close-out" and "close-leaning" are
-# different words, and the register says so.
+# different words, and the register says so. So is a kept compound the
+# register lists on the entry: "the close calendar" is the noun followed by
+# a listed word and is not the retired term. A compound the register does not
+# list is still reported.
 _DETERMINERS = ("the", "a", "an", "this", "that", "these", "those", "every",
                 "each", "any", "no", "its", "one", "their", "our", "your")
 _DETERMINER_RE = re.compile(r"^(?:%s)\s+(.+)$" % "|".join(_DETERMINERS))
 
 
-def _head_noun_under_a_determiner(term_low, low):
+def _head_noun_under_a_determiner(term_low, low, kept=()):
     """True where `term_low` is `<determiner> <noun>` and `low` carries that
-    noun directly after any determiner."""
+    noun directly after any determiner — and not followed by a word that
+    makes it one of the entry's kept compounds."""
     m = _DETERMINER_RE.match(term_low)
     if not m:
         return False
-    noun = re.escape(m.group(1).strip())
-    pattern = r"\b(?:%s)\s+%s\b(?!-)" % ("|".join(_DETERMINERS), noun)
+    noun_low = m.group(1).strip()
+    pattern = (r"\b(?:%s)\s+%s\b(?!-)" % ("|".join(_DETERMINERS),
+                                          re.escape(noun_low))
+               + _not_followed_by_a_kept_word(noun_low, kept))
     return re.search(pattern, low) is not None
 
 
@@ -1649,8 +1691,8 @@ def signal_repealed(root):
             for n, raw in enumerate(lines, 1):
                 if _paragraph_says_retired(lines, n - 1):
                     continue
-                for term, _why in terms:
-                    if _term_appears_as_a_name(term, raw):
+                for term, why in terms:
+                    if _term_appears_as_a_name(term, raw, kept_compounds(why)):
                         hits.append((rel_path, term, n))
 
     # Every occurrence, grouped by file and term, every line number printed.
@@ -1721,8 +1763,8 @@ def _queue_processed_hits(root, terms):
             slug = m.group(1) if m else None
         if _paragraph_says_retired(lines, n - 1):
             continue
-        for term, _why in terms:
-            if _term_appears_as_a_name(term, raw):
+        for term, why in terms:
+            if _term_appears_as_a_name(term, raw, kept_compounds(why)):
                 hits.append((slug or "(no slug)", term, n))
     return hits
 

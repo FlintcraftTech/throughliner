@@ -606,6 +606,7 @@ def tool_hold_entry(arguments):
         blocked_by = [s.strip() for s in blocked_by.split(",") if s.strip()]
     blocked_by = [s.strip().strip("[]") for s in blocked_by if s.strip()]
     not_before = (arguments.get("not_before") or "").strip()
+    until_built = bool(arguments.get("until_built"))
 
     problems = []
     if not slug:
@@ -616,6 +617,9 @@ def tool_hold_entry(arguments):
     if not blocked_by and not not_before:
         problems.append("neither blocked_by nor not_before was given — "
                         "nothing to write.")
+    if until_built and not blocked_by:
+        problems.append("until_built was given without blocked_by — the "
+                        "words qualify a Blocked by: hold and nothing else.")
 
     items = digest.parse(queue)
     by_slug = {}
@@ -645,13 +649,21 @@ def tool_hold_entry(arguments):
             if date <= datetime.date.today():
                 problems.append("not_before %s is already past — a spent "
                                 "date holds nothing." % not_before)
+    if until_built and slug in by_slug and len(by_slug[slug]) == 1 \
+            and by_slug[slug][0]["section"] != "Unprocessed":
+        problems.append("until_built on a work item adds nothing — a work "
+                        "item's hold already means do not build until every "
+                        "named item resolves; the words belong on a capture, "
+                        "which they hold until the named entries are built "
+                        "rather than merely processed.")
     if problems:
         return "Refused — nothing was written:\n" + \
                "\n".join("- " + p for p in problems)
 
     item = by_slug[slug][0]
     section = item["section"]
-    new_line = ("Blocked by: %s" % ", ".join("[%s]" % b for b in blocked_by)
+    new_line = ("Blocked by: %s%s" % (", ".join("[%s]" % b for b in blocked_by),
+                                      " until built" if until_built else "")
                 if blocked_by else "Not before: %s" % not_before)
 
     # Read the entry's block to find an existing hold line of either kind,
@@ -1435,7 +1447,11 @@ TOOLS = [
             "Refuses a slug naming no entry, both or neither field, a blocker "
             "that is not a real entry, the entry naming itself, an unreal "
             "date, or a date already past, echoing the reason. A date on a "
-            "capture still needs the user's approval, which no tool can check.",
+            "capture still needs the user's approval, which no tool can check. "
+            "On a capture, until_built writes the hold as `Blocked by: [slug] "
+            "until built`, which holds the capture until every named entry "
+            "has a build record rather than releasing when one is kept into "
+            "Processed; refused on a work item, whose hold already means that.",
         "inputSchema": {
             "type": "object",
             "required": ["slug"],
@@ -1456,6 +1472,14 @@ TOOLS = [
                     "description":
                         "YYYY-MM-DD, a future date the entry must not be "
                         "built (work item) or offered again (capture) before.",
+                },
+                "until_built": {
+                    "type": "boolean",
+                    "description":
+                        "Captures only, with blocked_by: hold the capture "
+                        "until every named entry is BUILT, not merely "
+                        "processed. Written as the trailing words `until "
+                        "built` on the Blocked by: line.",
                 },
             },
         },

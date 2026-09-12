@@ -58,6 +58,13 @@ ITEM_RE = re.compile(r"^####\s+\S")
 # would report liftable with most of the group outstanding.
 BLOCKED_RE = re.compile(r"^Blocked by:", re.IGNORECASE)
 SLUG_REF_RE = re.compile(r"\[([a-z0-9][a-z0-9-]*)\]")
+# A capture's hold may end `until built`: then the capture returns only when
+# every named entry has a build record, not the moment one is kept into
+# Processed. The words without the qualifier keep the "processed or built"
+# reading. On a work item the words add nothing (its hold already means
+# until built), so the lint flags them there and this reads them nowhere
+# but on a capture.
+UNTIL_BUILT_RE = re.compile(r"\buntil built\s*$", re.IGNORECASE)
 # `Not before: YYYY-MM-DD` — the second holding fact, and the only one that
 # resolves without anyone confirming it. Printed with whether the date has
 # passed, so the lift is a fact on the line rather than a date the reader has
@@ -229,6 +236,8 @@ def parse(path):
                 # slug matches no `[slug]` — and the two states are otherwise
                 # indistinguishable from `blocked_by` alone.
                 "blocked_raw": [],
+                # True where a `Blocked by:` line ends `until built`.
+                "until_built": False,
                 "not_before": None,
                 "flag": None,
                 "cycle": None,
@@ -256,6 +265,8 @@ def parse(path):
         if current is not None:
             if BLOCKED_RE.match(stripped):
                 current["blocked_raw"].append(stripped)
+                if UNTIL_BUILT_RE.search(stripped):
+                    current["until_built"] = True
                 for ref in SLUG_REF_RE.findall(stripped):
                     if ref not in current["blocked_by"]:
                         current["blocked_by"].append(ref)
@@ -944,6 +955,8 @@ def render(items, root="", queue_path="QUEUE.md"):
                     for ref in item["blocked_by"]
                 )
                 line += f"  | Blocked by: {shown}"
+                if item["until_built"]:
+                    line += " until built"
             if item["not_before"]:
                 line += f"  | Not before: {item['not_before']} -> {not_before_state(item['not_before'])}"
             if item["cycle"]:
@@ -1250,7 +1263,8 @@ def offerable(items, root, skip=(), today=None):
         # does.
         if item["not_before"] and item["not_before"] > today:
             continue
-        if any(_entry_holds(items, ref, shipped) for ref in item["blocked_by"]):
+        if any(_entry_holds(items, ref, shipped, item["until_built"])
+               for ref in item["blocked_by"]):
             continue
         if item["cycle"] and item["cycle"] in cycle_slugs:
             continue
@@ -1258,7 +1272,7 @@ def offerable(items, root, skip=(), today=None):
     return pool
 
 
-def _entry_holds(items, slug, shipped):
+def _entry_holds(items, slug, shipped, until_built=False):
     """Whether a capture's `Blocked by:` reference still holds it.
 
     The rule reads "do not OFFER this again until every named entry is
@@ -1266,7 +1280,13 @@ def _entry_holds(items, slug, shipped):
     only one still sitting in Unprocessed holds the capture. An absent entry
     with a build record was built and releases it; an absent entry with no
     record is a wrong reference — the lint reports it — and stays a hold.
+
+    Where the line ends `until built`, the capture waits for the build: only a
+    build record for the named entry releases it — the same LOG read the lift
+    uses — and an entry still in the queue, in either section, holds it.
     """
+    if until_built:
+        return shipped.get(slug) != "built"
     for i in items:
         if i["slug"] == slug:
             return i["section"] == "Unprocessed"

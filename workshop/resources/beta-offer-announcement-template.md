@@ -4,7 +4,7 @@ Cycle material for `[weekly-release]` (see `CYCLES.md`, step 6). Filled in and
 posted on the Wednesday turn, and read by `[beta-launch-announcement]` for the
 first one.
 
-**How to use it.** Fill every `<...>` from the turn itself — the release ritual
+**How to use it.** Fill every `<...>` from the turn itself — the Release checklist
 knows the version, the rezip archive entry knows the commit, and the week's LOG
 entries say what changed. Delete the launch paragraph after the first post. Show
 the filled text to the user in full and post only on their explicit yes; write

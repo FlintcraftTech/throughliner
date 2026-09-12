@@ -645,7 +645,7 @@ def test_measurement_counts_every_shipped_doc_per_file():
     shutil.rmtree(root, ignore_errors=True)
 
 
-def _retired_terms_fixture(term, corpus_lines):
+def _retired_terms_fixture(term, corpus_lines, why="a thing, retired 2026-09-01"):
     """A flat root with a retired-terms register naming `term` and one shipped
     doc holding `corpus_lines`, so the check has something to scan."""
     root = tempfile.mkdtemp(prefix="rule-signals-retired-")
@@ -654,7 +654,7 @@ def _retired_terms_fixture(term, corpus_lines):
     os.makedirs(res)
     with open(os.path.join(res, "retired-terms.md"), "w", encoding="utf-8") as f:
         f.write("# Retired terms\n\n## The list\n\n"
-                f"- `{term}` — a thing, retired 2026-09-01\n")
+                f"- `{term}` — {why}\n")
     docs = os.path.join(root, "plugin", "throughliner", "docs")
     os.makedirs(docs)
     with open(os.path.join(docs, "done.md"), "w", encoding="utf-8") as f:
@@ -697,6 +697,38 @@ def test_retired_noun_is_seen_under_any_determiner():
     check("the noun directly after another determiner is a hit; a word "
           "between, a hyphen after, and the bare noun are not",
           result["value"] == 2 and "at lines 1, 9" in result["message"],
+          result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_kept_compound_on_the_register_entry_is_not_the_retired_term():
+    root = _retired_terms_fixture("the widget", [
+        "The widget calendar is anchored on a Wednesday.",
+        "",
+        "Every widget calendar counts back from its anchor.",
+        "",
+        "The widget itself is what the run finishes with.",
+        "",
+        "A widget ledger is not on the register.",
+    ], why="a thing, retired 2026-09-01. Kept compounds: `widget calendar`.")
+    result = signals.signal_repealed(root)
+    check("a kept compound is passed over under the literal term and under "
+          "another determiner; the bare noun and an unlisted compound still fire",
+          result["value"] == 2 and "at lines 5, 7" in result["message"],
+          result["message"])
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_hyphen_before_a_bare_term_is_not_the_term():
+    root = _retired_terms_fixture("ritual", [
+        "The recovery is in release-ritual.md, which keeps its name.",
+        "",
+        "A ritual fires on a word from the user.",
+    ])
+    result = signals.signal_repealed(root)
+    check("a filename carrying the word after a hyphen is not reported; "
+          "the bare word on another line still is",
+          result["value"] == 1 and "at lines 3" in result["message"],
           result["message"])
     shutil.rmtree(root, ignore_errors=True)
 
@@ -750,6 +782,8 @@ if __name__ == "__main__":
     test_flat_project_has_no_inner()
     test_retired_terms_check_prints_every_site_in_one_file()
     test_retired_noun_is_seen_under_any_determiner()
+    test_kept_compound_on_the_register_entry_is_not_the_retired_term()
+    test_hyphen_before_a_bare_term_is_not_the_term()
     test_retired_noun_in_a_cleared_items_instruction_is_reported_by_slug()
     test_queue_with_only_verb_uses_reports_nothing()
     test_parent_lookup_ranks_a_paraphrase_first()

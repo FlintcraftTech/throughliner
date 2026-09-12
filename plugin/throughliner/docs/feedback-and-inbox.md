@@ -267,7 +267,9 @@ the copy:**
 python <plugin-root>/scripts/inbox_send.py <project root> \
     --to "<correspondent name>" --file <message path>
 # refuses where the correspondent has no mailbox; --create-mailbox creates
-# one on the user's say-so. Prints the name and the filename, never the path.
+# one on the user's say-so. Refuses where that project's .gitignore does not
+# cover INBOX/; --send-uncovered sends anyway on the user's say-so.
+# Prints the name and the filename, never the path.
 ```
 
 A project whose installed method predates INBOX scaffolding
@@ -277,7 +279,8 @@ nothing on this side ever knowing. That has happened.
 
 **And confirm the recipient's `INBOX/` is covered by that project's
 `.gitignore`. Where it is not, say so plainly and do not send until the user
-says go** — the script refuses and sends nothing in that case. One more limb
+says go, and give the go by re-running the script with `--send-uncovered`** —
+the script refuses and sends nothing without it. One more limb
 on the check that already runs, not a new mechanism.
 A reply is written into the recipient's own folder, so a file from this project
 appears inside a repository whose ignore rules this project does not control —

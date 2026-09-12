@@ -138,8 +138,26 @@ def test_waiting_to_be_planned_is_the_fourth_number():
           repr(facts))
 
 
+def test_qualified_blocked_by_line_still_parses():
+    """A held item's `Blocked by:` may carry trailing words (`until built` is
+    a capture's, but a line is read as a line): the slug is still read out
+    and the blocker counted ([capture-hold-says-designed-or-shipped])."""
+    d, path = queue_file(
+        processed=("#### Cleared [one]\nR.\n" + MARKER + "\n"
+                   "#### Held [two]\nR.\nBlocked by: [three] until built\n"),
+        unprocessed="#### Three [three]\nR.\n",
+    )
+    facts = hook._queue_dependency_facts(path)
+    shutil.rmtree(d, ignore_errors=True)
+    check("1 cleared, 1 held, its blocker read despite the trailing words",
+          facts is not None and facts[0] == 1 and facts[1] == 1
+          and facts[2] == 1 and ("two", "three") in facts[3],
+          repr(facts))
+
+
 if __name__ == "__main__":
     print("test_session_start_queue_facts.py")
+    test_qualified_blocked_by_line_still_parses()
     test_marker_text_in_prose_does_not_move_the_line()
     test_the_real_marker_still_splits_the_section()
     test_waiting_to_be_planned_is_the_fourth_number()

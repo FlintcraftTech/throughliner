@@ -542,6 +542,20 @@ def test_delete_reports_inbound_citations():
     )
 
 
+def test_delete_reports_a_dependent_whose_hold_ends_until_built():
+    """A capture's `Blocked by: [slug] until built` names the deleted slug
+    with trailing words; the dependents note still reads the slug
+    ([capture-hold-says-designed-or-shipped])."""
+    text = build_queue(
+        "#### The one being deleted [alpha]\nRationale.\n\n" + MARKER + "\n",
+        "#### A capture waiting for the build [beta]\nRationale.\n"
+        "Blocked by: [alpha] until built\n",
+    )
+    rc, err, _ = run(text, "--delete", "alpha", "Processed")
+    check("delete with a qualified dependent: exits 0", rc == 0, err)
+    check("the qualified dependent is named", "[beta]" in err, err)
+
+
 def test_delete_skips_cycle_lines_in_the_citation_note():
     """A `Cycle:` line names a cycle definition, not the deleted capture.
 
@@ -1131,6 +1145,7 @@ def main():
         test_move_section_after_last_cleared_reports_below,
         test_move_section_top_reports_above,
         test_delete_reports_inbound_citations,
+        test_delete_reports_a_dependent_whose_hold_ends_until_built,
         test_delete_skips_cycle_lines_in_the_citation_note,
         test_delete_reports_nothing_when_uncited,
         test_replace_in_fires,

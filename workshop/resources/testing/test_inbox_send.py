@@ -108,6 +108,15 @@ def test_uncovered_mailbox_is_refused():
     check("nothing was delivered",
           not os.listdir(os.path.join(recipient, "INBOX")))
     check("the path never appears in the output", no_path(r, recipient))
+    check("the refusal names the go route", "--send-uncovered" in r.stderr,
+          r.stderr.strip())
+    r2 = run(sender, "--to", "Other Project", "--file", msg, "--send-uncovered")
+    check("with the flag the file is delivered to the uncovered mailbox",
+          r2.returncode == 0 and os.path.isfile(
+              os.path.join(recipient, "INBOX", os.path.basename(msg))),
+          r2.stderr.strip())
+    check("the uncovered send is reported", "uncovered mailbox" in r2.stderr)
+    check("the path never appears in the output", no_path(r2, recipient))
     shutil.rmtree(base, ignore_errors=True)
 
 

@@ -21,15 +21,15 @@ The guide covers installing Claude Code, setting up a paid plan, and installing 
 
 ### Already have Claude Code?
 
-The install is two commands run in a terminal — the desktop app has no menu that adds a marketplace. With the `claude` command-line tool installed (check with `claude --version`), run `claude plugin marketplace add FlintcraftTech/throughliner#stable` and then `claude plugin install throughliner@flintcraft`. Then fully restart Claude Code so the plugin loads. To update later, run `claude plugin update throughliner@flintcraft`, then restart again — you'll pick up the newest beta each time.
+The install is two commands run in a terminal — the desktop app has no menu that adds a marketplace. With the `claude` command-line tool installed (check with `claude --version`), run `claude plugin marketplace add FlintcraftTech/throughliner#stable` and then `claude plugin install throughliner@flintcraft`. Then fully restart Claude Code so the plugin loads. To update later, run `claude plugin marketplace update flintcraft` and then `claude plugin update throughliner@flintcraft`, then restart again — you'll pick up the newest weekly release each time.
 
-**Why `#beta`?** That's the tested weekly pick — the version we're happy for people to run. The plugin's main line carries day-to-day development and can change under you mid-week, so `#beta` is the one to install unless you specifically want the newest unfinished work.
+**Which branch?** `#stable` is the weekly release and the default — the version we're happy for people to run. `#beta` is the release candidate, for testers who want the following release a week early. The plugin's main line carries day-to-day development and can change under you mid-week, so it is not the one to install unless you specifically want the newest unfinished work.
 
 ### What the beta channel is
 
 Once a week — on a Wednesday — one build gets put on the beta channel. So the version you install has been lived in, not just compiled.
 
-Updates arrive when you ask for them. Ask Claude to update the plugin to the current beta and fully restart Claude Code. If you'd rather be told when a new one lands, the Watch setting in [Get notified of new versions](#get-notified-of-new-versions) below emails you.
+Updates arrive when you ask for them. The update is two commands the install guide gives — a marketplace refresh, then the plugin update — followed by a full restart of Claude Code; ask Claude to run them, or run them yourself. If you'd rather be told when a new one lands, the Watch setting in [Get notified of new versions](#get-notified-of-new-versions) below emails you.
 
 If something breaks, say so — either on the [Discord](https://discord.gg/Z7ftKnSjR) or by telling Claude in your own project, which knows how to file a report and will show you the text before anything is sent.
 

@@ -67,7 +67,7 @@ Recommend the subscription path for a non-coder unless they already have API cre
 
 Once Claude Code is installed and the user is on a paid plan, the plugin installs from its marketplace on GitHub. The install is two commands typed into a terminal, and the desktop app has no menu that does the same job — its Plugins menu can browse marketplaces that have already been added, and cannot add one.
 
-**This still hands off.** You (Claude, in the claude.ai chat) cannot run the install from here — you have no access to the user's machine. Your job in this chat is to give the user each command, say what it prints when it works, and wait for them to report back. Never pretend this chat can run the install itself.
+**Which chat is reading this?** Two kinds of chat read this guide, and what you can do depends on which one you are in. In a **claude.ai chat**, you cannot reach the user's machine: your job is to give the user each command, say what it prints when it works, and wait for them to report back — never pretend this chat can run the install itself. In a **Claude Code chat** (the desktop app or the terminal), you may run the two prerequisite checks and the two install commands yourself from your shell tool — by the full path to the `claude` tool where it is not on that shell's PATH — reporting what each printed; the one thing you still hand over is the full restart, because plugins load at launch and only the user can restart the app. The rest of this branch is written for the hand-off case; read "have the user run" as "run it yourself" where you can.
 
 ### B.1 — Check the two prerequisites, then run the two install commands
 
@@ -112,7 +112,7 @@ A note for real use later: `/setup` is also the command that sets up a real proj
 
 ### Updating later
 
-To update, have the user run `claude plugin update throughliner@flintcraft` in the terminal, then fully restart the app so the new version loads. Because the marketplace is pinned to `#stable`, each update brings the newest weekly release rather than whatever is on the development line that day (a marketplace added with `#beta` brings the newest release candidate instead).
+An update is two commands, run in that order, then a full restart. First refresh the marketplace: `claude plugin marketplace update flintcraft`, which prints "Refreshing marketplace cache" — the app keeps a cached copy of the marketplace and does not re-fetch it on its own, so without this step nothing looks newer and the update is a no-op. Then `claude plugin update throughliner@flintcraft`, which prints the old version updated to the new (for example, 1.21.1 updated to 1.22.0). Where the update command runs from Claude's shell rather than a terminal the user is typing in, add `-y` to it, because the update asks for confirmation otherwise. Then fully restart the app so the new version loads. Because the marketplace is pinned to `#stable`, each update brings the newest weekly release rather than whatever is on the development line that day (a marketplace added with `#beta` brings the newest release candidate instead).
 
 ## Step 2 — First-run pointer
 
