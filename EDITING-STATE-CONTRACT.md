@@ -9,7 +9,7 @@ not change without a version bump.
 
 **Known consumers:** a companion application reads these markers, so a version-3
 change is a change with a live dependency — the conformance test at
-`resources/testing/test_editing_state_contract.py` pins this document to what
+`tests/test_editing_state_contract.py` pins this document to what
 the hook actually writes. It lives at the repository root, rather than in
 `SPEC.md` or a development folder, because a consumer of the contract has to be
 able to find it: SPEC.md answers "what is this product", and a field-level

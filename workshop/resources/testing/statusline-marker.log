@@ -1,6 +1,0 @@
-# Status-line probe marker. Every line below was written by resources/testing/statusline_probe.py
-# while the desktop app was running. Lines written BEFORE the app restart do not count —
-# the whole test is whether the app runs the probe at all after a full quit and relaunch.
-# Cleared 2026-08-10 after a manual smoke test confirmed the script itself works
-# (fed {"context_window":{"used_percentage":41.5}} by hand, wrote the line correctly).
-# Anything appearing below this block came from the app.
