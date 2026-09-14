@@ -1379,8 +1379,12 @@ TOOLS = [
                     "type": "string",
                     "description":
                         "Slug of a cycle definition this capture is "
-                        "material for. Must name a definition in the "
-                        "project's cycles doc.",
+                        "material for — standing material the cycle's "
+                        "turns draw and the planning ladder passes over. "
+                        "Must name a definition in the project's cycles "
+                        "doc. Never set it on a cycle's DUE TURN itself: "
+                        "that capture is filed under the cycle's slug with "
+                        "no cycle field, and the slug is what ranks it.",
                 },
             },
         },

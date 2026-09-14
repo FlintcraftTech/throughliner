@@ -113,9 +113,8 @@ Write each entry's one-liner and rationale, then **report what landed.**
 
 **3. Stage the hand-edited files explicitly** at the commit step. The commit
 message is the approved entry; for several entries, the title names the
-handmade-work close and the body carries each entry's summary. Unlike a planning
-close, a handmade /done run **does** offer push when a remote exists — it's real
-project work, not bookkeeping.
+handmade-work close and the body carries each entry's summary. Push is offered
+where a remote exists, as the commit core's one rule says.
 
 ## Batch the human stops in Processed  [SILENT] when nothing moves; [BRIEF] when it does
 
@@ -357,21 +356,9 @@ Run the commit core in done.md. Staged paths are the changed method docs
 (QUEUE.md, SPEC.md, LOG/), plus the hand-edited files where this was a handmade
 close — planning sessions touch nothing else.
 
-**The push offer differs by which shape closed, so decide it before running the
-core:**
-
-```
-planning / setup / method-doc-only  ->  commit, and DON'T offer push. Planning
-                                        state is local bookkeeping, and push is
-                                        reserved for shipping — in a
-                                        self-hosting project a push fires the
-                                        full checklist off a commit that shipped
-                                        nothing. A default, not a prohibition:
-                                        push stays available when the user asks
-                                        or is deliberately backing up.
-completed [user] item / handmade    ->  offer push as the commit core does.
-                                        Both are real project progress.
-```
+**The push offer is the commit core's one rule for every shape that closes
+here:** offered where the repository has a remote, omitted and unmentioned
+where it has none.
 
 **An isolated session names its branch and warns about "remove"** [BRIEF].
 Fires only where session_start reported this session is in its own worktree; in

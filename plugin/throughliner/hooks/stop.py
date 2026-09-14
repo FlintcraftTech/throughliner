@@ -315,6 +315,31 @@ def _already_blocked(cwd, session_id, slug):
     return False
 
 
+def project_root(data: dict) -> str:
+    """The project root every path test runs against.
+
+    The hook payload's `cwd` follows Claude: after a shell `cd` into a nested
+    project's inner repository it is the inner folder, and every path test
+    then refuses the outer's own files ([scope-lock-root-follows-shell-cwd]).
+    `CLAUDE_PROJECT_DIR` is the folder the session started in, exported into
+    every hook's environment, so it is the root where it is set and holds
+    SPEC.md. The one exception: a `cwd` inside a `.claude/worktrees/` folder
+    is kept, since a linked-worktree session's started-in folder is the main
+    checkout and would be the wrong root there.
+
+    Copied into each hook rather than shared — the hooks run standalone from
+    a copied plugin cache and cannot import a module. Change one, change all.
+    """
+    cwd = data.get("cwd", "") or ""
+    env_root = os.environ.get("CLAUDE_PROJECT_DIR", "") or ""
+    if not env_root or not os.path.isfile(os.path.join(env_root, "SPEC.md")):
+        return cwd
+    norm_cwd = os.path.normcase(os.path.normpath(cwd)).replace("\\", "/")
+    if "/.claude/worktrees/" in norm_cwd + "/":
+        return cwd
+    return env_root
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -325,7 +350,7 @@ def main():
     if not message:
         sys.exit(0)
 
-    cwd = payload.get("cwd") or os.getcwd()
+    cwd = project_root(payload) or os.getcwd()
     session_id = payload.get("session_id") or ""
     queue_path = os.path.join(cwd, "QUEUE.md")
 

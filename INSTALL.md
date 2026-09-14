@@ -6,7 +6,7 @@
 
 **What to expect.** Claude will ask you a couple of quick questions to find out where you're starting from, then guide you through getting Claude Code (if you don't have it), making sure you're on a paid plan, and adding the plugin. It goes one step at a time and waits for you at each one.
 
-**Already have Claude Code and a paid plan?** You can skip the opening questions below. Still do the quick app check in [Step 1 — Opening interview](#step-1--opening-interview) to confirm you're actually in Claude Code (not the Claude chat app), then jump straight to [Branch B — Install the Throughliner plugin](#branch-b--install-the-throughliner-plugin). Branch B checks two prerequisites, then has you paste two install commands into a terminal.
+**Already have Claude Code and a paid plan?** You can skip the opening questions below. Still do the quick app check in [Step 1 — Opening interview](#step-1--opening-interview) to confirm you're actually in Claude Code (not the Claude chat app), then jump straight to [Branch B — Install the Throughliner plugin](#branch-b--install-the-throughliner-plugin). Branch B checks three prerequisites, then has you paste two install commands into a terminal.
 
 **How you can tell Claude actually read this guide.** Claude's first message to you should open with this exact line:
 
@@ -71,10 +71,11 @@ Once Claude Code is installed and the user is on a paid plan, the plugin install
 
 ### B.1 — Check the two prerequisites, then run the two install commands
 
-**Two prerequisites, each with its own check.** Have the user open a terminal — on Windows, PowerShell; on a Mac, Terminal — and run each check before going on.
+**Three prerequisites, each with its own check.** Have the user open a terminal — on Windows, PowerShell; on a Mac, Terminal — and run each check before going on.
 
 - **Python 3, installed and on the path.** The plugin's safety checks and its session-opening facts are small Python scripts; without Python they silently do nothing, and the plugin reports success anyway. The check is `python --version`, and it must print a version number. On a fresh Windows machine it may instead print "Python was not found; run without arguments to install from the Microsoft Store" — that is a placeholder, not Python. Install Python from python.org (ticking "Add python.exe to PATH" in the installer), close and reopen the terminal, and check again.
 - **The `claude` command-line tool.** This is separate from the desktop app: the app can be installed without it, and the plugin commands below exist only in it. The check is `claude --version`, and it must print a version number. If it prints "command not found" or "not recognized", install the tool from the official setup page — https://code.claude.com/docs/en/setup — which gives one install command per operating system; then close and reopen the terminal and check again.
+- **The GitHub command-line tool, `gh`, signed in.** This is how the plugin checks once a week for a newer version on the user's channel, and how it files a problem report on the plugin's own repository. Two checks: `gh --version` must print a version number, and `gh auth status` must say the user is logged in to github.com. If the first fails, install it from https://cli.github.com — one command per operating system — then close and reopen the terminal. If the second fails, run `gh auth login` and follow the browser flow it opens; a free GitHub account is enough. A user who declines or cannot install it can still use the plugin, but tell them plainly, once: the project will not receive Throughliner method updates and will fall behind the environment it runs in.
 
 **Then the two commands, in this order**, each pasted into the same terminal:
 

@@ -702,9 +702,8 @@ raise it at the next /plan  ->  if the user would rather mention it there
 ```
 
 When every `[user]` item has been walked through or deferred, tell the user the
-whole run is complete — Claude-work built, user steps addressed — and recommend
-running the rescan first, to catch anything decided but never written down, then
-/done.
+whole run is complete — Claude-work built, user steps addressed — and that the
+done command, named in words mid-sentence, records it and commits.
 
 **Copy discipline when the run is all `[user]` items.** Open with the item
 itself: say plainly that the next ready item is a step for the user to run, say

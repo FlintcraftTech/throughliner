@@ -257,7 +257,19 @@ def _log_decision(decision: str, branch: str) -> None:
         except OSError:
             lines = []
         lines.append(line)
+        dropped = lines[:-_DECISION_LOG_LINES]
         lines = lines[-_DECISION_LOG_LINES:]
+        if dropped:
+            # Rotation ([decision-log-retention-too-short-for-audits]): every
+            # line the prune drops is appended, in order, to a dated archive
+            # beside the live file — one per month, read from the clock at
+            # the prune — that nothing prunes. The live file stays the user's
+            # door; an audit reads the archive. The bound is the month, not a
+            # number.
+            month = datetime.datetime.now().strftime("%Y-%m")
+            archive = os.path.join(folder, "pre-tool-use-" + month + ".log")
+            with open(archive, "a", encoding="utf-8", newline="") as f:
+                f.write("".join(dropped))
         with open(path, "w", encoding="utf-8", newline="") as f:
             f.write("".join(lines))
     except OSError:
@@ -536,6 +548,31 @@ def has_computed_write_target(command: str) -> bool:
         return True
 
     return False
+
+
+def project_root(data: dict) -> str:
+    """The project root every path test runs against.
+
+    The hook payload's `cwd` follows Claude: after a shell `cd` into a nested
+    project's inner repository it is the inner folder, and every path test
+    then refuses the outer's own files ([scope-lock-root-follows-shell-cwd]).
+    `CLAUDE_PROJECT_DIR` is the folder the session started in, exported into
+    every hook's environment, so it is the root where it is set and holds
+    SPEC.md. The one exception: a `cwd` inside a `.claude/worktrees/` folder
+    is kept, since a linked-worktree session's started-in folder is the main
+    checkout and would be the wrong root there.
+
+    Copied into each hook rather than shared — the hooks run standalone from
+    a copied plugin cache and cannot import a module. Change one, change all.
+    """
+    cwd = data.get("cwd", "") or ""
+    env_root = os.environ.get("CLAUDE_PROJECT_DIR", "") or ""
+    if not env_root or not os.path.isfile(os.path.join(env_root, "SPEC.md")):
+        return cwd
+    norm_cwd = os.path.normcase(os.path.normpath(cwd)).replace("\\", "/")
+    if "/.claude/worktrees/" in norm_cwd + "/":
+        return cwd
+    return env_root
 
 
 def safe_session_id(session_id: str) -> str:
@@ -1322,6 +1359,20 @@ def _door_refused_earlier(filepath: str, cwd: str, session_id: str) -> bool:
 
 SETUP_MARKER_NAME = ".throughliner-setup-active"
 CLOSE_MARKER_NAME = ".throughliner-close-active"
+# Left where /setup used to delete its marker: "setup ran in this chat". While
+# it stands together with the /done marker, the /done run of that same chat
+# may write the files setup scaffolds ([setup-close-cannot-fix-setup-output]).
+# /done deletes it as its last action. On its own — a planning run before
+# /done — it opens nothing.
+SETUP_DONE_MARKER_NAME = ".throughliner-setup-done"
+
+# The files /setup scaffolds, which its own chat's close may correct. Relative
+# to the project root; SPEC.md matches at any depth (a part's spec), FAQ/ as a
+# folder. `.claude/settings.local.json` is where the brevity style is written.
+SETUP_SCAFFOLD_FILES = (
+    "CLAUDE.md", ".gitignore", ".throughliner-version",
+    ".throughliner-format-epoch", ".claude/settings.local.json",
+)
 
 # The method's own skills, all of which ship with model invocation disabled.
 # Lowercased, and compared against the part of a skill name after any plugin
@@ -1399,6 +1450,34 @@ def _scratchpad_marker_present(session_id: str, marker_name: str) -> bool:
         return bool(glob.glob(pattern))
     except Exception:
         return False
+
+
+def _is_setup_close_file(filepath: str, cwd: str, session_id: str) -> bool:
+    """True for a scaffolded file while this chat's close follows its setup.
+
+    Both markers must stand: `.throughliner-close-active` (this is a /done
+    run) and `.throughliner-setup-done` (setup ran earlier in this same chat).
+    The recorded instance: a consumer's first /done run found two corrections
+    to what setup had just written — a CLAUDE.md line, a .gitignore line — and
+    the standing list refused both, so the consumer's first queue opened with
+    a cleanup item for the method's own scaffolding.
+
+    Leaving the setup marker standing until the /done run was refused: a
+    planning run in between would inherit setup's whole write set.
+    """
+    if not _scratchpad_marker_present(session_id, CLOSE_MARKER_NAME):
+        return False
+    if not _scratchpad_marker_present(session_id, SETUP_DONE_MARKER_NAME):
+        return False
+    if not _is_inside(filepath, cwd):
+        return False
+    rel = os.path.relpath(os.path.normpath(filepath), os.path.normpath(cwd))
+    rel = os.path.normcase(rel).replace("\\", "/")
+    if rel in tuple(os.path.normcase(n) for n in SETUP_SCAFFOLD_FILES):
+        return True
+    if rel == os.path.normcase("SPEC.md") or rel.endswith("/" + os.path.normcase("SPEC.md")):
+        return True
+    return rel.startswith(os.path.normcase("FAQ") + "/")
 
 
 def _is_close_phase_file(filepath: str, cwd: str, session_id: str) -> bool:
@@ -1724,7 +1803,7 @@ def main() -> int:
     if not isinstance(data, dict):
         return 0
 
-    cwd = data.get("cwd", "")
+    cwd = project_root(data)
     tool_name = data.get("tool_name", "")
     tool_input = data.get("tool_input") or {}
 
@@ -2227,6 +2306,12 @@ def main() -> int:
         # prompt and no override.
         if _setup_marker_present(data.get("session_id", "")):
             return _allow("setup marker")
+
+        # The /done run of the chat setup ran in may correct what setup wrote
+        # ([setup-close-cannot-fix-setup-output]): both markers, and a
+        # scaffolded path.
+        if _is_setup_close_file(filepath, cwd, data.get("session_id", "")):
+            return _allow("setup-done close: scaffolded file")
 
         # Rule 4: no build working file, so this is a planning or freeform
         # session, and the scope-lock runs against the STANDING list instead of

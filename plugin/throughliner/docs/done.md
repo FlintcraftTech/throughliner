@@ -16,7 +16,10 @@ current session — record what happened, update docs, commit.
 
 **First action of every /done run: write an empty file named
 `.throughliner-close-active` into the session scratchpad directory, and delete it
-as the last action before /done finishes.** While it exists the scope-lock
+as the last action before /done finishes — together with
+`.throughliner-setup-done` where setup ran in this chat and left it.** While
+both stand, the scope-lock also permits the files setup scaffolds, so a
+correction to what setup just wrote lands here rather than as a queue item. While it exists the scope-lock
 permits the few files the method's own close obligations name — `README.md`
 today. Outside /done those paths are denied exactly as before, and a /done run
 that dies before removing the marker leaves it in the scratchpad, which clears
@@ -222,7 +225,9 @@ Advisory: not needed — <why>
 - complete /done only once the line is written;
 - file the advisory itself as a capture at the top of Unprocessed, worded as
   advice, where the Recommend-next step made a *concrete* recommendation — a
-  generic one files nothing, and the disposition line says which;
+  generic one files nothing, and the disposition line says which; any held
+  item the advisory names is read off the digest's held-item lines exactly as
+  the Recommend-next narration's subordinate line says;
 - **where this is a planning session's /done and its wind-down look-back filed one
   or more captures, the advisory names them by slug as what to open on**, in
   addition to any recommendation it carries — so the next planning session
@@ -596,9 +601,11 @@ edits from step 2)
 
 **Show the message itself, verbatim, and nothing else about it.**
 
-**4. Commit without a further ask.** The commit always happens at /done and its
-message was already approved, so there's nothing new to confirm. Only the push is
-optional.
+**4. Show the message as the record, and commit in the same turn, saying so.**
+Running /done is the consent: the message is shown as the record of what is
+being committed, the turn says it is committing, and the commit follows with
+no ask between — the user is never left between a shown message and an unmade
+ask. Only the push is optional.
 
 **Where the session held more than one person, the commit may add a
 `Co-authored-by:` trailer for a roster participant whose recorded consent
@@ -610,11 +617,12 @@ trailer.
 commit first (the safe, local action), THEN gate the outward push on consent:
     run one `git remote` check
         remote exists  ->  "Committed. Also push to the remote?"  (plain yes/no)
-        no remote      ->  say it's committed; offer no push
+        no remote      ->  say it's committed; push goes unmentioned
 ```
 
-A sub-doc may override to fit its session shape — done-plan.md commits and doesn't
-offer push — but these commit-first mechanics stay canonical.
+These commit-first mechanics are canonical for every /done shape — planning,
+setup, method-doc-only, handmade and completed-`[user]` alike; the remote test
+is the one rule, and no sub-doc overrides it.
 
 **5. Pass the message shell-agnostically.** Write it to a file in the session
 scratchpad (e.g. `COMMIT_MSG.tmp` there), commit with
@@ -629,8 +637,9 @@ running the commit. Where anything intended is missing, say plainly what did not
 stage and why, and **hold the commit** until the staging is fixed and re-checked,
 or the user decides.
 
-**6. Commit with `git commit -F`.** No fresh okay needed. Then offer push only
-when a remote exists, and push only if the user accepts.
+**6. Commit with `git commit -F`.** Then offer push wherever the repository
+has a remote, and push only if the user accepts; where it has none, the offer
+is omitted and push goes unmentioned.
 
 **In a nested project /done commits both repositories** — the product's
 changes as a commit in the inner repository (the product subfolder's own), and
@@ -644,8 +653,10 @@ wrote** — /done is the one moment the hash exists and the files are at
 hand, and it is one convention for tracked and untracked projects alike (an
 untracked log never appears in any commit, so nothing later can attribute it
 from git). Read the hash from the commit just made, replace each placeholder
-this session wrote, and stop there. In a tracked project the
-session-start backfill remains as the safety net for a fill this step missed.
+this session wrote, and stop there — say nothing about older placeholders.
+The session-start backfill is the safety net for a fill this step missed, in
+a tracked project from git's own record of the file and in an untracked one
+from each record's own time against the commit history.
 
 ## Recommend next  [BRIEF, PROMPT]
 
@@ -681,6 +692,10 @@ session would actually present, which is the same set plan.md's own pass-overs
 leave in play: a capture dated out, one bowed out behind an open blocker, and
 cycle-owned material are not waiting, and are not counted or described as
 available.
+  - any held item the narration names, and what it says holds it or lifts it,
+    is read off the digest's held-item lines — the state server's checkpoint
+    counts where the server is registered, `queue_digest.py` otherwise — run
+    after the session's last queue write, never from memory of the opening.
 
 **Overlap scan.** Before recommending, scan the still-unprocessed work for overlap
 with the top processed item — work that contradicts, invalidates, or would benefit
@@ -710,9 +725,9 @@ as a hedge.
            stated, the statement includes that a build runs best in a fresh
            session — information about that route, never the assumed next
            step. End the message on a statement that names each
-           continuation's command in words, mid-sentence — the plan command
-           for more planning, the next command for a build — with no command
-           string at its end
+           continuation's command in words, as the communication rule
+           defines it, mid-sentence — the plan command for more planning,
+           the next command for a build — with no command string at its end
 2b. Processed holds work but the cleared region is EMPTY (the marker is at
     the top)
        ->  say the next work still needs vetting, and that running the plan

@@ -154,8 +154,12 @@ def parse(lines):
         m = SECTION_RE.match(line)
         if m:
             heading_idx[m.group(1)] = i
-    # compute body ranges
-    all_h2 = [i for i, l in enumerate(lines) if l.startswith('## ')]
+    # compute body ranges. A section boundary is a line matching `## Processed`
+    # or `## Unprocessed` by NAME and nothing else: any other `## ` line — a
+    # document heading quoted inside an item, a `## Length` inside a fenced
+    # block — is item text ([queue-tool-splits-on-any-h2-line]). Splitting on
+    # every `## ` line stranded half an item past the section it sat in.
+    all_h2 = [i for i, l in enumerate(lines) if SECTION_RE.match(l)]
     for name, hi in heading_idx.items():
         nxt = min([h for h in all_h2 if h > hi], default=len(lines))
         sections[name] = (hi + 1, nxt)

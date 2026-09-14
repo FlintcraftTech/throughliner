@@ -77,6 +77,127 @@ CLEARED_MARKER = "--- Cleared to run above this line ---"
 STRUCTURAL_LINE = re.compile(r"^---\s.*---$")
 
 
+def project_root(data: dict) -> str:
+    """The project root every path test runs against.
+
+    The hook payload's `cwd` follows Claude: after a shell `cd` into a nested
+    project's inner repository it is the inner folder, and every path test
+    then refuses the outer's own files ([scope-lock-root-follows-shell-cwd]).
+    `CLAUDE_PROJECT_DIR` is the folder the session started in, exported into
+    every hook's environment, so it is the root where it is set and holds
+    SPEC.md. The one exception: a `cwd` inside a `.claude/worktrees/` folder
+    is kept, since a linked-worktree session's started-in folder is the main
+    checkout and would be the wrong root there.
+
+    Copied into each hook rather than shared — the hooks run standalone from
+    a copied plugin cache and cannot import a module. Change one, change all.
+    """
+    cwd = data.get("cwd", "") or ""
+    env_root = os.environ.get("CLAUDE_PROJECT_DIR", "") or ""
+    if not env_root or not os.path.isfile(os.path.join(env_root, "SPEC.md")):
+        return cwd
+    norm_cwd = os.path.normcase(os.path.normpath(cwd)).replace("\\", "/")
+    if "/.claude/worktrees/" in norm_cwd + "/":
+        return cwd
+    return env_root
+
+
+# --- Setup identity advisory ([setup-infers-identity-and-close-scrubs-the-owner]) ---
+#
+# /setup wrote the user's first name and a wrong pronoun into SPEC.md and
+# CLAUDE.md with nothing in the interview supplying either. setup.md already
+# says a personal fact is written only where the user supplied it, and names
+# the git user.name and the account as things that are not answers; the rule
+# did not fire. So: after a Write or Edit to the root SPEC.md or CLAUDE.md
+# while the setup marker stands in this session's scratchpad, the written
+# text is compared against those two machine names, and one line asks whether
+# the interview supplied it. Advisory, never blocking — the user may have.
+SETUP_MARKER_NAME = ".throughliner-setup-active"
+
+
+def _safe_session_id(session_id: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
+
+
+def _scratchpad_marker_present(session_id: str, marker_name: str) -> bool:
+    """True while THIS session's scratchpad carries `marker_name` — the same
+    path-shape match pre_tool_use.py uses, copied since the hooks cannot share
+    a module. Never raises."""
+    try:
+        import glob
+        import tempfile
+
+        safe_id = _safe_session_id(session_id)
+        if safe_id == "unknown":
+            return False
+        pattern = os.path.join(
+            tempfile.gettempdir(), "claude", "*", safe_id, "scratchpad",
+            marker_name,
+        )
+        return bool(glob.glob(pattern))
+    except Exception:
+        return False
+
+
+def _machine_names(cwd: str) -> list:
+    """The names the machine carries that look like the user: the git
+    user.name and the account name. Never raises; empty where unreadable."""
+    names = []
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            ["git", "config", "user.name"], cwd=cwd, capture_output=True,
+            text=True, encoding="utf-8", timeout=10,
+        )
+        git_name = (result.stdout or "").strip()
+        if git_name:
+            names.append(git_name)
+    except Exception:
+        pass
+    account = ""
+    try:
+        account = os.getlogin()
+    except Exception:
+        account = ""
+    account = account or os.environ.get("USERNAME", "") or os.environ.get("USER", "")
+    if account:
+        names.append(account)
+    return names
+
+
+def _setup_identity_advisory(filepath: str, cwd: str, session_id: str) -> str:
+    """One advisory line where a setup-marked write of SPEC.md or CLAUDE.md
+    carries a machine name; empty otherwise."""
+    if not _scratchpad_marker_present(session_id, SETUP_MARKER_NAME):
+        return ""
+    rel = os.path.relpath(os.path.normpath(filepath), os.path.normpath(cwd))
+    rel = os.path.normcase(rel).replace("\\", "/")
+    if rel not in (os.path.normcase("SPEC.md"), os.path.normcase("CLAUDE.md")):
+        return ""
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return ""
+    found = []
+    for name in _machine_names(cwd):
+        if len(name) < 3:
+            continue
+        if re.search(r"(?<!\w)" + re.escape(name) + r"(?!\w)", text, re.IGNORECASE):
+            found.append(name)
+    if not found:
+        return ""
+    return (
+        f"[Throughliner] Setup identity check (advisory): {os.path.basename(filepath)} "
+        f"now carries {', '.join(repr(n) for n in found)}, which is a name this "
+        "machine carries (the git user.name or the account). Did the interview "
+        "supply it? A personal fact — a name or a pronoun above all — is written "
+        "only where the user gave it in their own answers; where they did not, "
+        "take it out, and use \"they\" where no pronoun was supplied."
+    )
+
+
 def write_editing_marker(cwd: str, session_id: str, filepath: str, active: bool) -> None:
     """Clear the editing-state signal after a write. Never raises.
 
@@ -144,9 +265,15 @@ def _annotate(content: str):
     out = []
     for i, raw in enumerate(content.splitlines()):
         stripped = raw.strip()
-        is_heading = bool(re.match(r"#{1,6}\s", raw))
-        if raw.startswith("## ") and not raw.startswith("### "):
-            h2 = raw[3:].strip()
+        # A section boundary is `## Processed` or `## Unprocessed` by NAME;
+        # any other `## ` line is item text and changes no section, matching
+        # the queue tool ([queue-tool-splits-on-any-h2-line]). It is still a
+        # heading for the block test below.
+        section = re.match(r"^##\s+(Processed|Unprocessed)\s*$", raw)
+        is_heading = bool(re.match(r"#{1,6}\s", raw)) and not (
+            raw.startswith("## ") and not section)
+        if section:
+            h2 = section.group(1)
         out.append((i, stripped, h2, is_heading))
     return out
 
@@ -714,13 +841,38 @@ def _check_bolded_gate_label(annotated, warnings):
             )
 
 
+# The words the rule gate's heading carries in a project that HAS one — this
+# project's hand-written CLAUDE.md and the shipped self-hosting block alike. A
+# plain consumer's CLAUDE.md carries no gate, and the gate-line check below is
+# a demand for a line whose meaning they were never shown
+# ([rule-gate-lint-fires-in-consumer-projects]).
+RULE_GATE_HEADING = "The rule gate — run this before adding any rule"
+
+
+def _project_has_rule_gate(root: str) -> bool:
+    """True where the project root's CLAUDE.md carries the rule gate."""
+    if not root:
+        return False
+    try:
+        with open(os.path.join(root, "CLAUDE.md"), "r", encoding="utf-8",
+                  errors="replace") as f:
+            return RULE_GATE_HEADING in f.read()
+    except OSError:
+        return False
+
+
 def _check_cleared_gate_disposition(annotated, blocks, warnings):
     """Check 10: a cleared rule-touching item carries a gate disposition.
 
-    The gate's site is the keep-step, and /next only transcribes — so an item
-    that names a gate-trigger path and clears with no `Rule gate:` line sends a
-    build into a halt the keep-step should have prevented. Scoped to cleared
-    items only: held work and captures are not yet through the keep-step.
+    The gate's site is planning's decision step, and /next only transcribes —
+    so an item that names a gate-trigger path and clears with no `Rule gate:`
+    line sends a build into a halt the decision step should have prevented.
+    Scoped to cleared items only: held work and captures are not yet through
+    the decision step.
+
+    Runs only where the project's CLAUDE.md carries the rule gate (see
+    `lint`'s `gate_check`); the bold-label and duplicate-label checks on a line
+    somebody wrote stay unconditioned.
     """
     marker_idx = next(
         (i for i, line, _h2, _ih in annotated if line == CLEARED_MARKER), None
@@ -917,7 +1069,13 @@ def _check_until_built_on_work_item(annotated, warnings):
             )
 
 
-def lint(content: str) -> list[str]:
+def lint(content: str, gate_check: bool = True) -> list[str]:
+    """Every structure check over a queue's text.
+
+    `gate_check` is whether the cleared-item gate-disposition check runs —
+    `_lint_queue` passes what `_project_has_rule_gate` read off the project's
+    CLAUDE.md; a direct caller keeps the check on.
+    """
     annotated = _annotate(content)
     blocks = _workline_blocks(annotated)
     warnings = []
@@ -933,7 +1091,8 @@ def lint(content: str) -> list[str]:
     _check_quote_claim_without_quote(blocks, warnings)
     _check_duplicate_gate_lines(blocks, warnings)
     _check_bolded_gate_label(annotated, warnings)
-    _check_cleared_gate_disposition(annotated, blocks, warnings)
+    if gate_check:
+        _check_cleared_gate_disposition(annotated, blocks, warnings)
     _check_cleared_names_queue(annotated, blocks, warnings)
     return warnings
 
@@ -1301,6 +1460,33 @@ def _scan_secrets(path: str) -> list:
     return found[:10]
 
 
+# The Read tool's truncation note, as it prints in 1.22.0-test6 sessions:
+# `[Truncated: PARTIAL view — <path>: showing lines 1-N of M total (...).
+# Call Read with offset=N+1 limit=... for the next page, ...]`
+_PARTIAL_READ = re.compile(
+    r"\[Truncated: PARTIAL view[^\]]*?offset=(?P<offset>\d+)[^\]]*\]", re.DOTALL)
+
+
+def _partial_read_advisory(data: dict) -> int:
+    """One advisory line after a Read whose result is a partial view."""
+    response = data.get("tool_response")
+    if response is None:
+        return 0
+    try:
+        text = response if isinstance(response, str) else json.dumps(response)
+    except (TypeError, ValueError):
+        return 0
+    m = _PARTIAL_READ.search(text)
+    if not m:
+        return 0
+    filepath = (data.get("tool_input") or {}).get("file_path", "") or "the file"
+    return _emit(
+        f"[Throughliner] Partial read: {os.path.basename(filepath)} was read one "
+        f"page only. Call Read again on it with offset={m.group('offset')} — the "
+        "read is complete only when the tool reports no further page."
+    )
+
+
 def _emit(message: str) -> int:
     output = {
         "hookSpecificOutput": {
@@ -1335,10 +1521,11 @@ def _lint_queue(queue_path: str, with_growth: bool = True) -> int:
         return 0
 
     cwd = os.path.dirname(queue_path) or "."
+    gate_check = _project_has_rule_gate(cwd)
     baseline_content, baseline_kind = _baseline_queue(cwd)
 
     sections = []
-    warnings = lint(content)
+    warnings = lint(content, gate_check=gate_check)
     # The gone direction's baseline is the previous lint RUN, not the commit;
     # read before this run's bodies overwrite it.
     last_run = _read_lint_state(cwd)
@@ -1446,9 +1633,16 @@ def main() -> int:
     if not isinstance(data, dict):
         return 0
 
-    cwd = data.get("cwd", "")
+    cwd = project_root(data)
     tool_name = data.get("tool_name", "")
     tool_input = data.get("tool_input") or {}
+
+    # A Read whose result is a partial view ([over-cap-docs-read-one-page-in-
+    # consumer-session]): the tool prints a truncation note naming the offset
+    # to call again with, and a session took the first page as the read three
+    # times in one run. One advisory line, for any file, never blocking.
+    if tool_name == "Read":
+        return _partial_read_advisory(data)
 
     if tool_name not in ("Edit", "Write", "MultiEdit", "Bash", "PowerShell"):
         return 0
@@ -1504,12 +1698,18 @@ def main() -> int:
     if _normalise(filepath) == _normalise(os.path.join(cwd, "QUEUE.md")):
         return _lint_queue(filepath)
 
+    messages = []
+    identity = _setup_identity_advisory(filepath, cwd, data.get("session_id", ""))
+    if identity:
+        messages.append(identity)
+
     if _is_scannable_doc(filepath, cwd):
         secrets = _scan_secrets(filepath)
         if secrets:
-            return _emit(
-                _secret_message(os.path.basename(filepath), secrets)
-            )
+            messages.append(_secret_message(os.path.basename(filepath), secrets))
+
+    if messages:
+        return _emit("\n\n".join(messages))
 
     return 0
 

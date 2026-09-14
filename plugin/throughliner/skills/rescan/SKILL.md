@@ -7,7 +7,7 @@ user-invocable: true
 
 # /rescan
 
-The user wants the conversation checked for anything said but never written down.
+The user wants the conversation checked for anything said but never written down. Words typed after the command name name something to check in addition to the full scan, never instead of it — the whole scan runs first, then the named thing.
 
 Rules that apply whatever is running are at
 `${CLAUDE_PLUGIN_ROOT}/docs/skill-nonspecific-rules.md`, and they govern this

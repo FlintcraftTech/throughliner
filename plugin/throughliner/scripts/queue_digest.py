@@ -1266,7 +1266,12 @@ def offerable(items, root, skip=(), today=None):
         if any(_entry_holds(items, ref, shipped, item["until_built"])
                for ref in item["blocked_by"]):
             continue
-        if item["cycle"] and item["cycle"] in cycle_slugs:
+        # A capture whose own slug names a cycle definition is that cycle's
+        # due turn and ranks at rung 2 whatever field it carries — the tool's
+        # `cycle` field set on the due turn itself once hid it from every
+        # pick ([due-turn-capture-passed-over-by-cycle-field]).
+        if (item["cycle"] and item["cycle"] in cycle_slugs
+                and not (item["slug"] and item["slug"] in cycle_slugs)):
             continue
         pool.append(item)
     return pool

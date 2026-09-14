@@ -1,4 +1,12 @@
 import re,sys
+for _stream in (sys.stderr, sys.stdout):
+    try:
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+    except (AttributeError, ValueError, OSError):
+        # Python < 3.7, or a stream that cannot be reconfigured (redirected to
+        # a pipe or replaced by a test harness). Messages then behave as before
+        # — degraded, never fatal.
+        pass
 def syl(w):
     w=w.lower(); w=re.sub(r'[^a-z]','',w)
     if not w: return 0

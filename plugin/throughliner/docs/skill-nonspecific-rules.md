@@ -84,7 +84,10 @@ The work cycle. Every piece of work travels the same loop.
   rules below name.
 - **Name the method's own command in words and ask the user to type it** —
   `/setup`, `/plan`, `/next`, `/rescan` and `/done` are theirs to run, and the
-  scope-lock refuses an attempt to invoke one. Where a command the user typed
+  scope-lock refuses an attempt to invoke one. In words means the command's
+  own name without the leading slash — say done, not "the closing step" — never a
+  paraphrase or a descriptive phrase, and never inside a code fence, which
+  the app offers to run as a shell command. Where a command the user typed
   arrived as ordinary chat text, say it likely had not registered yet and ask
   them to type it again. **Where the app answered that the command is not
   available in this environment, ask them to retype it with the plugin's name in
@@ -222,11 +225,14 @@ The work cycle. Every piece of work travels the same loop.
 ```
 YES -> write it, then report      queue items and captures · LOG entries ·
                                   SPEC edits · ordinary file edits in a build
-NO  -> show it, then wait         a commit message · anything that LEAVES THE
-                                  MACHINE (the feedback report, an outbound
-                                  INBOX message to another project) · a
-                                  wholesale conversion of a document the user
-                                  already owns, where git does not yet hold it
+NO  -> show it, then wait         anything that LEAVES THE MACHINE (the
+                                  feedback report, an outbound INBOX message
+                                  to another project) · a wholesale conversion
+                                  of a document the user already owns, where
+                                  git does not yet hold it
+SHOWN, then committed in the      a commit message — shown as the record of
+  same turn                       what is committed, never as an approval;
+                                  running /done was the consent
 EXCEPTION                         a /done or /rescan candidate set —
                                   several ideas landing at once at the
                                   session's end — is shown as ONE numbered
@@ -334,6 +340,13 @@ trigger:   the user says they can't open it — on a phone, driving the session
            remotely, reading over someone's shoulder. Nothing else fires.
 effect:    doc-resident text comes inline — for this chat only
 floor:     pointing stays the default for every chat where nobody said so
+
+trigger:   the user says they are on remote control, AND the file sits in a
+           folder a cloud service syncs, AND a connector on record in
+           TOOLS.md can return that file's link. Nothing detects remote
+           control — the user says it.
+effect:    Claude offers the cloud link first, falling back to inline text
+           where no such link exists — for this chat only
 ```
 
 **Write, then verify, then point — in that order.** A pointer to content written
@@ -915,12 +928,14 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   - filing anything that depends on the outcome of that send as its own item
     before the hand-over closes this one;
   - where a step has the user edit text Claude drafted, writing that draft to a
-    `.txt` file in the session scratchpad — unless the item's Files line names
-    a project path for it — with the step handing it over as a link that
-    opens it, in the shape View-in-doc rendering gives — the short-name form
-    the harness may report (`~1` in a folder name) does not open — and
-    offering in the same breath to display it inline or send the file
-    instead, for a reader on a phone or driving the session remotely; then
+    `.txt` file in the project's `temp/` folder — gitignored, scaffolded by
+    setup and the top-up — unless the item's Files line names a project path
+    for it — with the step handing it over as a relative link that opens it,
+    in the shape View-in-doc rendering gives — an absolute path, and the
+    short-name form the harness may report (`~1` in a folder name), do not
+    open — and offering in the same breath to display it inline or send the
+    file instead, for a reader on a phone or driving the session remotely,
+    subject to the cloud-link arm of the spoken departure below; then
     reading it back only when they say to, asking whether there is anything else, and
     repeating until they say they are finished. Where the user says they cannot open or edit the
     file — said once, for the rest of the chat, with nothing detecting it —
@@ -956,9 +971,14 @@ definition.
 **When filing a capture, read what you're about to write against this list**
 (/plan runs it again at the decision step and /done when writing a LOG entry — each
 says so where it applies):
+  - applying to text that leaves the machine — a send, a post, an issue, a
+    report — and to a document in a repository that has a remote;
+  - in a project whose Visibility line in its own CLAUDE.md says the documents'
+    repository has no remote, third parties are recorded as they are.
 
 ```
-personal names (the user's collaborators, clients, anyone not in the room) —
+personal names (the user's collaborators, clients, anyone not in the room —
+    the project's own user is in the room, and their name is theirs to keep) —
     except that a third person is referred to by the identity they have
     published on GitHub: username, pronouns where supplied, first name only
     where they put it there. Anything they have not published is rewritten
@@ -1140,6 +1160,10 @@ nothing here is build-only.
 
 **Flagging, not fixing.** Name the risk and route it, leaving the decision with
 the user, however obvious the fix looks.
+  - a risk the user has accepted, recorded in SPEC, is not raised again in that
+    project — in the same session or a later one;
+  - a project folder syncing to a cloud account is setup's one-time note and no
+    later session's flag.
 
 **States and lifecycle:**
 

@@ -393,8 +393,8 @@ built (every Claude-work item ticked, any `[user]` item walked through):
 where a held item bounded the run and the run shipped its blocker, what of the
 intended change is not yet on screen, in product terms — "part of the change
 you asked for is not in the app yet", never "now unblocked". It ends on a
-statement, naming any command in words and keeping it clear of the sentence's
-end; the user reaches for /done themselves. It carries those things and
+statement, naming any command in words as the communication rule defines it
+and keeping it clear of the sentence's end; the user reaches for /done themselves. It carries those things and
 stops there.
 
 Tightening means refining done work; anything new routes through the existing
@@ -487,9 +487,8 @@ to reject one, which happens at /plan.
 ### Close  [BRIEF, PROMPT]
 
 When the audit item is done, next.md moves to the run's next item. When the whole
-run is done, tell the user how many findings were filed, and say: "We can run the
-rescan first to catch anything decided but never written down, then the done
-command to record this and commit — or keep reviewing."
+run is done, tell the user how many findings were filed, and say: "The done
+command records this and commits — or keep reviewing."
 
 Reviewing means re-examining what was already found — not raising new work.
 Anything new routes through the existing paths: a discovery outside the audit's

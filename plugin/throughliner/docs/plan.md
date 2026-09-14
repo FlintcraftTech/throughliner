@@ -182,6 +182,15 @@ Runs alone
 
 ## Step 1: Read state and entry question
 
+**Where the session opening's lines say a newer version is on the user's
+channel, offer the update here, once** [BRIEF, PROMPT].
+
+**What the update turn carries.** The version named and the one installed; that the update is
+the install guide's two commands — the marketplace refresh, then the plugin
+update — run by Claude in this chat on the user's yes, and a full restart of
+the app, which is theirs; and the one ask. Nothing runs without the yes, and a
+no is taken once, with the check returning at its own weekly rhythm.
+
 **Run the queue digest, then read QUEUE.md whole, then read SPEC.md.** Both, in
 that order — the digest for the facts only a script can compute, then the file
 for the reasoning it deliberately omits.
@@ -578,7 +587,11 @@ cycle with no chain is unchanged.
 ```
 cycle due, no open capture with its slug  ->  file ONE capture in Unprocessed
                                               under the cycle's slug, naming
-                                              the due step
+                                              the due step, and carrying no
+                                              `Cycle:` line — the slug is what
+                                              ranks it; the line marks
+                                              standing material the ladder
+                                              passes over
 cycle due, open capture already exists    ->  satisfied; file nothing
 cycle not due                             ->  file nothing
 no cycles doc                             ->  nothing, silently — a project
@@ -823,9 +836,10 @@ planning-throughput target, not a context-budget count.
 
 **State the four routes here, once, in the same breath** — *"I'll work through
 these one at a time; say skip, stop, or run the done command whenever you like."* This is the only place
-they are recited. **Close that same message checkpoint-shaped**: a pointer to the
-first item and one bold question taking the user into it. The per-item checkpoint
-then presents just the next item, in the same shape.
+they are recited. **Close that same message on the first item itself**: a pointer
+to it, its plain-English summary and its analysis, ending on the interview's own
+ask — the ordering answer was the yes, so no "start with this one?" is asked. The
+per-item checkpoint then presents just the next item.
 
 **Re-check the rung at every pick, and narrate in one clause only when it has
 changed.** A rung can change mid-session — a red flag arrives, the item holding
@@ -872,19 +886,20 @@ NAMES WHO RAISED IT           where the item came from anyone other than the
 ```
 
 ```
-first item        ->  the processing pass OPENS checkpoint-shaped: the order
-                      narration, a pointer to the first item, and "start with
-                      this one?" — then, on the yes, the summary and the
-                      analysis in the SAME message
+first item        ->  the processing pass OPENS on the ordering answer: the
+                      order narration and the floor line, the four routes, a
+                      pointer to the first item, its summary and its analysis,
+                      in ONE message ending on the interview's ask
 every item after  ->  its pointer was already sent at the prior item's
                       checkpoint — still open with the summary, then the
                       analysis, in the SAME message
 ```
 
-**First and later items therefore share one shape**, which is the point: an
-opening that delivered the pointer, the summary and the analysis together read as
-a bundle to the user, while every item after it got a turn of its own to say yes
-to.
+**What the first-item turn carries.** The order narration and the floor line,
+the four routes, the pointer to the first item, that item's summary and its
+analysis, and the interview's own ask at the end — whether the ordering answer
+was "the usual way" or the user's own named priorities, since either is an
+instruction to proceed.
 
 **As part of the interview, ask what would answer this item's open questions.**
 Where the answer is something outside what you can read — a current version,
@@ -919,7 +934,7 @@ process-now specimen's four-turn shape stands only while a question is open.
 **View-in-doc.** The item already exists in QUEUE.md, so pointing is the default:
 lead with a one-line pointer instead of the pasted quote.
 
-**The opening specimen — the same shape the checkpoint uses:**
+**The opening specimen — the first item folded into the ordering answer:**
 
 > Ordered to process the biggest unblockers first — three items are holding
 > other work up, so I'd recommend processing at least those three before your
@@ -927,10 +942,11 @@ lead with a one-line pointer instead of the pasted quote.
 > the done command whenever you like.
 >
 > First item — **[work-slug]** — is in [QUEUE.md](QUEUE.md) under Unprocessed.
+> It says <plain-English summary of the entry>. <The analysis: what would
+> change, and what is open.>
 >
-> **Start with this one?**
-
-The summary and the analysis come in the next message, on the yes.
+> **<The interview's own ask — the combined recommend-and-ask where nothing is
+> open, or the open question where one is.>**
 
 **2. Recommend**  [PROMPT]
 
@@ -1412,8 +1428,8 @@ sharpen it here.
 article — write the item's drafting steps in the co-authored-draft shape* (the
 `.txt` handed to the side panel, read back on their word — the walkthrough
 sub-rule in skill-nonspecific-rules.md, which stays canonical there), and have
-the draft step name where the draft lives: the session scratchpad by default,
-or a project path only where the item's Files line names one.
+the draft step name where the draft lives: the project's `temp/` folder by
+default, or a project path only where the item's Files line names one.
 
 **Run the THOROUGH capability check here — this is its site.** Restate the
 question as *what would answer this?* **before** searching, then name the tool
@@ -1689,10 +1705,10 @@ Unprocessed again.
 
 Skipping the last item leaves Unprocessed non-empty, which is fine. On the last
 item there's no next verbatim, so the message is just the off-ramps — worded
-**neutrally** — "we can run the rescan first to catch anything decided
-but never written down, then close the session and record it — or is there
-anything else to capture or discuss?" — balanced between the two, with the command named
-in words inside the sentence rather than at its end. An empty Unprocessed is a
+**neutrally** — the closing paragraph as the end-of-queue gate's specimen
+states it, then "or is there anything else to capture or discuss?" — balanced
+between the two, with each command named in words inside the sentence rather
+than at its end. An empty Unprocessed is a
 resting state. That is the end-of-queue gate's first firing, subject to the
 once-per-rest bound stated at the gate.
 
@@ -1862,18 +1878,20 @@ what was passed over and why** — how many entries wait for a cycle's turn, how
 many on other entries or on dates — naming any red-flagged capture outright
 with what it waits on, so a queue that came to rest by passing everything over
 is never reported as fully processed. Then ask one neutral question
-— "we can run the rescan first to catch anything decided but never written
-down, then close the session and record it — or is there anything else to
-capture or discuss?" — and wait. The command is named in words and does not end the
-sentence: the app lifts a trailing slash command into the composer, so an ask
-ending on one is a keystroke from being answered by accident.
+— the closing paragraph exactly as the specimen below has it, then "or is
+there anything else to capture or discuss?" — and wait. Each command is named
+in words and does not end the sentence: the app lifts a trailing slash command
+into the composer, so an ask ending on one is a keystroke from being answered
+by accident. **The specimen is the one statement of the closing paragraph;
+the other sites that offer it point here and copy it.**
 
 > Everything else in Unprocessed is set aside: four entries wait for a cycle's
 > turn, two wait on other entries — one of them the red-flagged repository
-> cleanup, which waits on the per-part specs — and one waits on a date. We can
-> run the rescan first to catch anything decided but never written down, then
-> close the session and record it — or is there anything else to capture or
-> discuss?
+> cleanup, which waits on the per-part specs — and one waits on a date. To
+> close: typing rescan first will catch anything decided in this conversation
+> that never made it into a file, and then done records the session and
+> commits. Either one on its own works too — done alone will still record
+> everything. Or is there anything else to capture or discuss?
 
 **Ask once per rest.** The gate fires when the queue first empties. If the user
 raises a further capture, file it and return to this same gate, but end plainly

@@ -313,6 +313,106 @@ def _log_is_tracked(cwd):
     return result.returncode != 0 or bool(result.stdout.strip())
 
 
+# A record's own date-and-time line, in the two shapes the records use:
+# `Date: 2026-09-12 21:16` and `Recorded 2026-09-12 21:16, read from the
+# clock`. Read by the untracked-log arm below, where git holds no record file
+# and the record's own time is the only thing that can find its commit.
+_RECORD_TIME = re.compile(
+    r"^(?:\*{0,2}Date:?\*{0,2}\s*|Recorded\s+)(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})",
+    re.MULTILINE,
+)
+
+
+def _record_time(content):
+    m = _RECORD_TIME.search(content)
+    return f"{m.group(1)} {m.group(2)}" if m else ""
+
+
+def _commits_between(cwd, since, until):
+    """Short hashes of commits after `since` and before `until` (either may be
+    empty), oldest first. Empty on any failure."""
+    args = ["git", "log", "--format=%h", "--reverse"]
+    if since:
+        args.append(f"--since={since}")
+    if until:
+        args.append(f"--until={until}")
+    try:
+        result = subprocess.run(args, cwd=cwd, capture_output=True, text=True,
+                                encoding="utf-8", timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if result.returncode != 0:
+        return []
+    return [h for h in result.stdout.split() if h]
+
+
+def _backfill_untracked(cwd, log_dir, names):
+    """The untracked-log arm ([untracked-log-hash-placeholders-never-fill]).
+
+    No record file appears in any commit, so `git log -S` has nothing to
+    find; the record's own date line does. A placeholder is filled with the
+    one commit that follows the record's time and precedes the next record's
+    time; where that window holds none or several, the placeholder stays and
+    the record is named once.
+    """
+    records = []
+    for name in names:
+        if not name.endswith(".md") or name.startswith("index") or name.startswith("log"):
+            continue
+        try:
+            with open(os.path.join(log_dir, name), "r", encoding="utf-8",
+                      newline="") as f:
+                content = f.read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        records.append((name, content, _record_time(content)))
+    timed = sorted((r for r in records if r[2]), key=lambda r: r[2])
+    next_time = {}
+    for i, (name, _c, t) in enumerate(timed):
+        next_time[name] = timed[i + 1][2] if i + 1 < len(timed) else ""
+    filled, touched, left = 0, [], []
+    for name, content, t in records:
+        lines = content.splitlines(keepends=True)
+        slot = next(((i, _placeholder_in_slot(l, False, False))
+                     for i, l in enumerate(lines)
+                     if _placeholder_in_slot(l, False, False)), None)
+        if slot is None:
+            continue
+        if not t:
+            left.append(name)
+            continue
+        commits = _commits_between(cwd, t, next_time.get(name, ""))
+        if len(commits) != 1:
+            left.append(name)
+            continue
+        i, match = slot
+        lines[i] = match.group("prefix") + commits[0] + match.group("sep") + lines[i][match.end():]
+        try:
+            with open(os.path.join(log_dir, name), "w", encoding="utf-8", newline="") as f:
+                f.write("".join(lines))
+        except OSError:
+            left.append(name)
+            continue
+        filled += 1
+        touched.append(name)
+    if not filled and not left:
+        return ""
+    parts = []
+    if filled:
+        parts.append(
+            f"filled {filled} commit-hash placeholder(s) in {', '.join(touched)} "
+            "from each record's own time against git log — the log is not "
+            "tracked, so this is the one route to the hash."
+        )
+    if left:
+        parts.append(
+            f"{len(left)} record(s) keep their placeholder ({', '.join(left)}): "
+            "the window between the record's time and the next record's holds "
+            "no commit or several, so no one commit can be named."
+        )
+    return "[Throughliner] Log housekeeping: " + " ".join(parts)
+
+
 def backfill_log_hashes(cwd):
     """Fill hash placeholders across LOG/*.md in place.
 
@@ -335,31 +435,7 @@ def backfill_log_hashes(cwd):
     except OSError:
         return ""
     if not _log_is_tracked(cwd):
-        stranded = []
-        for name in names:
-            if not name.endswith(".md"):
-                continue
-            try:
-                with open(os.path.join(log_dir, name), "r", encoding="utf-8",
-                          newline="") as f:
-                    content = f.read()
-            except (OSError, UnicodeDecodeError):
-                continue
-            if any(_placeholder_in_slot(line, name.startswith("index"),
-                                        name.startswith("log"))
-                   for line in content.splitlines()):
-                stranded.append(name)
-        if not stranded:
-            return ""
-        return (
-            f"[Throughliner] Log housekeeping: {len(stranded)} entry file(s) "
-            f"carry an unfilled hash placeholder ({', '.join(stranded)}), and "
-            "this project's log is not tracked by git — no record file appears "
-            "in any commit, so the automatic backfill cannot attribute them "
-            "and is not failing. The close writes the hash itself right after "
-            "each commit; fill these stranded ones from each record's own "
-            "dates checked against git log."
-        )
+        return _backfill_untracked(cwd, log_dir, names)
     filled = 0
     touched_files = []
     # Placeholders that stayed unresolved even though their entry file is
@@ -473,6 +549,119 @@ def backfill_log_hashes(cwd):
         f"[Throughliner] Log housekeeping: filled {filled} commit-hash "
         f"placeholder(s) in {', '.join(touched_files)}. This is an uncommitted "
         "working-tree edit — fold it into this session's commit." + anomaly
+    )
+
+
+# --- Weekly update check ([weekly-update-check-on-users-channel]) ---
+#
+# Once a week, where the GitHub CLI is installed and signed in, the opening
+# reads the newest version on the user's channel — the latest release for
+# stable, the beta branch's manifest for beta — and says in one line where a
+# newer one exists. Seven days is the release cycle's own cadence, which is
+# the derivation. The channel is read from TOOLS.md, which setup writes; a
+# project with no line is on stable, the default install. Silence where the
+# CLI is absent, not signed in, or the marker is fresh; nothing runs without
+# the CLI, by the user's decision — one prerequisite, one route.
+UPDATE_CHECK_MARKER = os.path.join(".throughliner", "update-check")
+UPDATE_CHECK_DAYS = 7
+UPDATE_REPO = "FlintcraftTech/throughliner"
+_CHANNEL_LINE = re.compile(r"^\s*-?\s*\**Throughliner channel:?\**\s*:?\s*(stable|beta)\b",
+                           re.IGNORECASE | re.MULTILINE)
+_VERSION_SHAPE = re.compile(r"v?(\d+)\.(\d+)\.(\d+)(?:-test(\d+))?")
+
+
+def _channel_from_tools(cwd):
+    """`stable` or `beta`, read from TOOLS.md's channel line; stable by default."""
+    try:
+        with open(os.path.join(cwd, "TOOLS.md"), "r", encoding="utf-8",
+                  errors="replace") as f:
+            m = _CHANNEL_LINE.search(f.read())
+    except OSError:
+        return "stable"
+    return m.group(1).lower() if m else "stable"
+
+
+def _version_key(version):
+    """A comparable key: numeric parts, then the -testN suffix, a bare
+    version ranking above every test build of the same number."""
+    m = _VERSION_SHAPE.search(version or "")
+    if not m:
+        return None
+    nums = tuple(int(x) for x in m.group(1, 2, 3))
+    suffix = int(m.group(4)) if m.group(4) else float("inf")
+    return nums + (suffix,)
+
+
+def _default_gh_runner(args):
+    """(returncode, stdout) for a `gh` command, never raising."""
+    try:
+        result = subprocess.run(["gh"] + list(args), capture_output=True,
+                                text=True, encoding="utf-8", timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return 1, ""
+    return result.returncode, result.stdout or ""
+
+
+def update_check(cwd, installed_version, now=None, run=None, which=None):
+    """One line naming a newer version on the user's channel, or "".
+
+    `run`, `which` and `now` exist for the suite; the hook passes nothing.
+    """
+    import shutil
+    which = which or shutil.which
+    run = run or _default_gh_runner
+    now = now or datetime.datetime.now()
+    marker = os.path.join(cwd, UPDATE_CHECK_MARKER)
+    try:
+        age = now - datetime.datetime.fromtimestamp(os.path.getmtime(marker))
+        if age < datetime.timedelta(days=UPDATE_CHECK_DAYS):
+            return ""
+    except OSError:
+        pass
+    if not which("gh"):
+        return ""
+    rc, _ = run(["auth", "status"])
+    if rc != 0:
+        return ""
+    channel = _channel_from_tools(cwd)
+    newest = ""
+    if channel == "beta":
+        rc, out = run(["api", "-H", "Accept: application/vnd.github.raw",
+                       f"repos/{UPDATE_REPO}/contents/plugin/throughliner/"
+                       ".claude-plugin/plugin.json?ref=beta"])
+        if rc == 0 and out.strip():
+            try:
+                newest = json.loads(out).get("version", "")
+            except (json.JSONDecodeError, AttributeError):
+                newest = ""
+    else:
+        rc, out = run(["release", "list", "-R", UPDATE_REPO, "--limit", "1",
+                       "--json", "tagName"])
+        if rc == 0 and out.strip():
+            try:
+                rows = json.loads(out)
+                newest = rows[0].get("tagName", "") if rows else ""
+            except (json.JSONDecodeError, AttributeError, IndexError, TypeError):
+                newest = ""
+    # The marker is written after a check that reached GitHub, whatever it
+    # found — a check that could not read the channel leaves the marker alone
+    # so the next opening tries again.
+    if newest:
+        try:
+            os.makedirs(os.path.dirname(marker), exist_ok=True)
+            with open(marker, "w", encoding="utf-8") as f:
+                f.write(now.strftime("%Y-%m-%d %H:%M") + "\n")
+            os.utime(marker, (now.timestamp(), now.timestamp()))
+        except OSError:
+            pass
+    have, got = _version_key(installed_version), _version_key(newest)
+    if not have or not got or got <= have:
+        return ""
+    return (
+        f"[Throughliner] A newer version is on the {channel} channel: "
+        f"{newest.lstrip('v')} (installed: {installed_version}). The next "
+        "planning session offers the update — two commands, then a full "
+        "restart of the app."
     )
 
 
@@ -1617,9 +1806,15 @@ def _behaviour_rules_directive(plugin_root):
     docs already carry, so it costs nothing and converts a silent
     wrong-file-opened failure into a loud one.
     """
-    if not plugin_root:
-        return ""
-    path = "${CLAUDE_PLUGIN_ROOT}/docs/skill-nonspecific-rules.md"
+    # The resolved path, never the shell variable: a plain chat cannot expand
+    # `${CLAUDE_PLUGIN_ROOT}`, and a session that ran the literal through a
+    # shell got an empty read and went hunting through the plugin cache
+    # ([rules-directive-names-unexpanded-plugin-root]). The literal is kept
+    # only where the environment lacks the variable.
+    if plugin_root:
+        path = plugin_root.replace("\\", "/").rstrip("/") + "/docs/skill-nonspecific-rules.md"
+    else:
+        path = "${CLAUDE_PLUGIN_ROOT}/docs/skill-nonspecific-rules.md"
     return (
         "=== RULES THAT APPLY WHATEVER IS RUNNING — READ THESE FIRST ===\n"
         "These rules govern every skill and every reply in this session. "
@@ -1717,13 +1912,40 @@ def _untracked_core_docs(cwd: str) -> list:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def project_root(data: dict) -> str:
+    """The project root every path test runs against.
+
+    The hook payload's `cwd` follows Claude: after a shell `cd` into a nested
+    project's inner repository it is the inner folder, and every path test
+    then refuses the outer's own files ([scope-lock-root-follows-shell-cwd]).
+    `CLAUDE_PROJECT_DIR` is the folder the session started in, exported into
+    every hook's environment, so it is the root where it is set and holds
+    SPEC.md. The one exception: a `cwd` inside a `.claude/worktrees/` folder
+    is kept, since a linked-worktree session's started-in folder is the main
+    checkout and would be the wrong root there. This hook fires before any
+    `cd`, so the change is harmless here and keeps the four hooks reading
+    one way.
+
+    Copied into each hook rather than shared — the hooks run standalone from
+    a copied plugin cache and cannot import a module. Change one, change all.
+    """
+    cwd = data.get("cwd", "") or ""
+    env_root = os.environ.get("CLAUDE_PROJECT_DIR", "") or ""
+    if not env_root or not os.path.isfile(os.path.join(env_root, "SPEC.md")):
+        return cwd
+    norm_cwd = os.path.normcase(os.path.normpath(cwd)).replace("\\", "/")
+    if "/.claude/worktrees/" in norm_cwd + "/":
+        return cwd
+    return env_root
+
+
 def main() -> int:
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, OSError, ValueError):
         return 0
 
-    cwd = data.get("cwd", "")
+    cwd = project_root(data)
     if not cwd or not os.path.isdir(cwd):
         return 0
 
@@ -1992,6 +2214,9 @@ def main() -> int:
         # project the deferred-test roll compares this against the target's stamp
         # (computed the same way over plugin/throughliner/); a consumer never has a
         # target to compare against, so this is informational there.
+        update_line = update_check(cwd, plugin_version)
+        if update_line:
+            context_parts.append(update_line)
         host_stamp = content_stamp(plugin_root)
         if host_stamp:
             context_parts.append(

@@ -62,9 +62,12 @@ Then wait for their answer, and do what they say.
 ## Step 0.5: Declare the run  [SILENT]
 
 Before writing anything, create an empty file named
-`.throughliner-setup-active` in this session's scratchpad directory. Delete it
-when the run ends — including on every path that ends early: the user declining
-above, a stop partway through, an error.
+`.throughliner-setup-active` in this session's scratchpad directory. When the
+run ends — including on every path that ends early: the user declining above,
+a stop partway through, an error — rename it to `.throughliner-setup-done`,
+which stays until this chat's /done run deletes it as its last action: while
+it stands beside that run's own marker, the safety check lets the /done run
+correct the files setup scaffolded.
 
 It is what tells the safety check that this session is a setup run rather than a
 planning one. Without it, every write /setup makes outside QUEUE.md, SPEC.md,
@@ -75,6 +78,46 @@ run finds missing.
 The scratchpad is used because it is writable in every session type — so the
 marker can always be created — and because it clears itself, so a run that dies
 partway leaves nothing to tidy up by hand.
+
+## Step 0.7: The GitHub CLI prerequisite  [SILENT] when both checks pass; [BRIEF, PROMPT] otherwise
+
+**What the prerequisite turn carries.** Which of the two checks failed and
+what it printed; the one offer that answers it — the install page, or the
+sign-in command — and what success looks like; and, on a refusal, the one
+plain sentence about what the project will not receive. One ask, at the end.
+
+After the Python check the wrapper names, confirm the GitHub CLI: run
+`gh --version` and `gh auth status`, and both must succeed. The CLI is how the
+project receives method updates — once a week the session opening reads the
+newest version on the user's channel through it — and it is the route for a
+problem report on the plugin's own repository.
+
+```
+both succeed          ->  nothing to say. Write the channel line to TOOLS.md
+                          (below) and carry on.
+gh missing            ->  offer the install: the CLI's own install page,
+                          https://cli.github.com, one command per operating
+                          system; then close and reopen the terminal and
+                          check again.
+not signed in         ->  offer `gh auth login`, a browser flow the user
+                          completes; then check again.
+the user declines,    ->  say plainly, once: this project will not receive
+  or cannot               Throughliner method updates, so it will fall behind
+                          the environment it runs in — at minimum, the plugin
+                          will not keep up with changes to Claude Code. Write
+                          that answer to TOOLS.md and carry on.
+```
+
+**Write one line to `TOOLS.md`** — created where the project has none —
+naming the channel the user installed from: `Throughliner channel: stable` or
+`Throughliner channel: beta`, read from the install command they ran
+(`#stable` or `#beta` on the marketplace line) or asked once where you cannot
+tell. The weekly check reads that line; a project with none is treated as
+stable.
+
+**Told once, here:** the session opening will call GitHub once a week to read
+the newest version on that channel, and what that tells GitHub is that this
+machine asked for the plugin's release list.
 
 ## Step 1: Detect folder state  [SILENT] while detecting; [BRIEF, PROMPT] when the project is already up to date
 
@@ -922,7 +965,8 @@ Once discovery reaches a buildable understanding (or the user says "build from w
 we have"), write the docs, then close in a sentence or two and **stop and wait**.
 
 **Write a personal fact into SPEC or any scaffolded document only where the user
-supplied it in the interview's own answers.** A name above all. The machine
+supplied it in the interview's own answers.** A name and pronouns above all —
+where no pronoun was supplied, the documents use "they". The machine
 carries plenty that looks like the user — the git `user.name`, the folder path,
 the account the session runs under — and none of it is an answer they gave. Where
 a personal fact would improve a document and nobody supplied it, leave it out;
@@ -934,8 +978,9 @@ where it is genuinely needed, ask for it as a question like any other.
     # the user's words, a [slug] at its end, a "captured by you" note.
     # Not multiple scoped entries.
 3.  show the user what was created (file list + one line each)
-4.  delete `.throughliner-setup-active` from the session scratchpad — the run
-    is over, so the declaration from Step 0.5 comes down with it
+4.  rename `.throughliner-setup-active` in the session scratchpad to
+    `.throughliner-setup-done` — the run is over, so the declaration from
+    Step 0.5 comes down, and the done-marker says setup ran in this chat
 5.  recommend /done to record this setup and commit the new files
 6.  teach the working rhythm (below)
 ```
