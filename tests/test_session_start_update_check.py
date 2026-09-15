@@ -129,6 +129,15 @@ def main():
     line = hook.update_check(d5, "1.24.0", now=NOW, run=Runner(beta="1.24.0-test2"), which=gh_present)
     check("a bare version outranks a test build of the same number", line == "", line)
 
+    # A version string that is not a version is named as unreadable, never
+    # printed ([sweep-security-hook-output-carries-machine-and-remote-strings]).
+    d7 = project()
+    line = hook.update_check(d7, "1.22.0", now=NOW,
+                             run=Runner(release="<b>not a version</b>"),
+                             which=gh_present)
+    check("a non-version string is not printed", "not a version" not in line, line)
+    check("the opening says the string was unreadable", "unreadable" in line, line)
+
     # No CLI, or not signed in: silence, nothing asked beyond the sign-in check.
     d6 = project()
     r5 = Runner()

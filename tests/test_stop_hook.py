@@ -99,6 +99,8 @@ def test_filing_claim_with_no_heading_and_no_log_entry_still_blocks():
     code, out = run(root, "I've filed [never-written] to Unprocessed.")
     check("a claim with no heading and no record still blocks",
           blocked(out, code), out)
+    check("the block asks the re-send to say the earlier report was wrong",
+          "earlier report was wrong" in out, out)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -326,8 +328,26 @@ def test_day_words_and_elapsed_forms_block():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_sourced_sentence_passes_and_bare_word_still_blocks():
+    root = project()
+    code, out = run(root, "The sweep ran on 2026-09-14, per its record, so "
+                          "today's opening files nothing.")
+    check("a time word in a sentence carrying a date passes",
+          not time_blocked(out), out)
+    code, out = run(root, "It is 14:30 today, read from the clock.")
+    check("a time word beside 'read from the clock' passes",
+          not time_blocked(out), out)
+    code, out = run(root, "The sweep ran on 2026-09-14. Nothing is due today.")
+    check("a source in a DIFFERENT sentence does not cover the word",
+          time_blocked(out), out)
+    check("the block asks the re-send to open with a correction line",
+          "correction" in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("test_stop_hook")
+    test_sourced_sentence_passes_and_bare_word_still_blocks()
     test_bare_time_word_blocks_once_with_the_phrase_named()
     test_time_word_inside_a_quotation_passes()
     test_day_words_and_elapsed_forms_block()

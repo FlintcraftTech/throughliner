@@ -124,6 +124,14 @@ def main():
     r = drive(d3, "Edit", q, {"old_string": "x",
                               "new_string": "Filed 2026-09-06 21:50, read from the clock."})
     check("a dated line with no phrase is allowed", decision(r) == "allow", repr(r))
+    r = drive(d3, "Edit", q, {"old_string": "x",
+                              "new_string": "Held since 2026-09-06, so today it lifts."})
+    check("a phrase in a sentence carrying a date is allowed",
+          decision(r) == "allow", repr(r))
+    r = drive(d3, "Edit", q, {"old_string": "x",
+                              "new_string": "Filed 2026-09-06. Lifted today."})
+    check("a phrase whose own sentence carries no source is still refused",
+          decision(r) == "deny", repr(r))
 
     # 4. [counted-up-clock-times-uncaught]: a clock time later than the clock
     # is refused once; a past time, a quoted time and a dated past time pass.

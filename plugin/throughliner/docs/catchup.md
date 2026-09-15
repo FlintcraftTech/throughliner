@@ -17,7 +17,9 @@ is chat only.
 ## What it reads  [SILENT]
 
 ```
-SPEC.md                    the feature set — every section under "How it
+SPEC.md                    the Goals section, where the project has one —
+                           each goal with its "reached when" line — and
+                           the feature set: every section under "How it
                            works", and the Parts where the project has them.
                            Each section heading is one feature.
 QUEUE.md, both sections    where each feature's work sits
@@ -53,9 +55,17 @@ Match a feature to queue entries and index lines by its heading's words and by
 any slug its SPEC section cites. A feature matched by more than one entry takes
 the highest stage in the list above.
 
+A goal gets one of two: **reached**, where its "reached when" line names
+something the record, the cycles doc's observable or the queue shows holding;
+**heading** otherwise.
+
 ## What the brief carries  [BRIEF]
 
-**What the catchup turn carries.** One line per feature, in SPEC's order:
+**What the catchup turn carries.** It opens on the first goal's line, with
+nothing before it — no line about what was read or reused. One line per goal
+first, in SPEC's order: the goal, reached or heading, and what its test shows
+now in plain words — "heading: the last release was on the second, and the
+cycle wants one every Wednesday". Then one line per feature, in SPEC's order:
 the feature's name, its stage, and one plain clause saying what that means
 for it — "shipped, the weekly update check went in on the twelfth", "waiting
 on the repository cleanup". Then three lines a returning user acts on:
@@ -70,7 +80,20 @@ what is held on a date       each dated item and its date — "nothing" where
 ```
 
 It ends on those three lines. No ask is manufactured: the user asked for a
-brief, and the brief is the answer.
+brief, and the brief is the answer. The shape, with a project that has one
+goal and two features:
+
+> **Weekly release every Wednesday** — heading: the last release was on the
+> second, and nothing has shipped on the two Wednesdays since.
+>
+> **Dark theme** — shipped, it went in on the twelfth.
+> **Search** — ready, the next build run starts on it.
+>
+> Next build: search across notes. Waiting on you: nothing. Held on a date:
+> the launch post, until the sixteenth.
+
+Where SPEC has no Goals section, the brief opens on the first feature line
+instead.
 
 **Out by rule:** slugs, rationale, counts beyond the three lines, the
 reasoning that led to any stage, and anything the user did not ask about. A

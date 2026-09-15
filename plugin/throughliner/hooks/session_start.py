@@ -655,11 +655,21 @@ def update_check(cwd, installed_version, now=None, run=None, which=None):
         except OSError:
             pass
     have, got = _version_key(installed_version), _version_key(newest)
+    if newest and not got:
+        # The string read from the channel is printed only where it has the
+        # version shape the compare uses; anything else is named as
+        # unreadable rather than echoed into the opening
+        # ([sweep-security-hook-output-carries-machine-and-remote-strings]).
+        return (
+            f"[Throughliner] The {channel} channel carries an unreadable "
+            "version string, so the update check could not compare it."
+        )
     if not have or not got or got <= have:
         return ""
+    shown = _VERSION_SHAPE.search(newest).group(0).lstrip("v")
     return (
         f"[Throughliner] A newer version is on the {channel} channel: "
-        f"{newest.lstrip('v')} (installed: {installed_version}). The next "
+        f"{shown} (installed: {installed_version}). The next "
         "planning session offers the update — two commands, then a full "
         "restart of the app."
     )
@@ -2480,14 +2490,23 @@ def main() -> int:
     # and this stays silent — the two-doors pattern, same as any other host-only
     # artifact. Never raises: the board is advisory and must not be able to
     # break a session opening.
-    board_script = os.path.join(
-        cwd, "workshop", "resources", "rule_signals.py")
+    # The script lives at `method/rule_signals.py` since the repository
+    # cleanup, run with `py` from the outer; the two older paths stay for a
+    # project that has not moved it ([hooks-name-old-workshop-paths]). The
+    # command printed below names whichever path exists.
+    board_script = os.path.join(cwd, "method", "rule_signals.py")
+    board_command = "py method/rule_signals.py ."
+    if not os.path.isfile(board_script):
+        board_script = os.path.join(
+            cwd, "workshop", "resources", "rule_signals.py")
+        board_command = "python workshop/resources/rule_signals.py ."
     if not os.path.isfile(board_script):
         # Migration-window fallback: a host project whose /setup has not yet
         # moved `resources/` into `workshop/` still keeps the board at the old
         # root. The board is advisory, so a silent dead board is the worse
         # failure here.
         board_script = os.path.join(cwd, "resources", "rule_signals.py")
+        board_command = "python resources/rule_signals.py ."
     if os.path.isfile(board_script):
         try:
             result = subprocess.run(
@@ -2515,9 +2534,8 @@ def main() -> int:
                         f"{len(firing)} signal(s) firing:\n{body}\n"
                         "  Each firing signal wants one capture in Unprocessed "
                         "under the slug it names, unless an open capture with "
-                        "that slug already exists. Run "
-                        "`python workshop/resources/rule_signals.py .` for the full "
-                        "board, including the slugs."
+                        f"that slug already exists. Run `{board_command}` "
+                        "for the full board, including the slugs."
                     )
         except (OSError, subprocess.SubprocessError, ValueError):
             pass

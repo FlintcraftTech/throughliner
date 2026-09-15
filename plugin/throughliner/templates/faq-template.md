@@ -181,9 +181,10 @@ is check for an overlap: did something built last week name a file, or a piece
 of work, that's about to come up today? If yes, you hear about it before you
 start deciding.
 
-You get one line either way — including when nothing overlaps. That's
-deliberate: a check that only speaks when it finds something is impossible to
-tell apart from a check that never ran.
+Where something overlaps, the opening says what was read and what it touched.
+Where nothing does, the read folds into the opening's one quiet clause with the
+other checks that found nothing — so the opening stays short enough to read,
+and you can still see the check ran.
 
 The window comes from your own records rather than a fixed number of sessions,
 so it stretches to cover however long it has been. It matters most if you plan

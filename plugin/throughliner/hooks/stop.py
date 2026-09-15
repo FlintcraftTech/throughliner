@@ -167,11 +167,29 @@ TIME_WORD_PATTERN = re.compile(
 )
 _QUOTED_SPAN = re.compile(r"`[^`\n]*`|\"[^\"\n]*\"|“[^”\n]*”")
 
+# A time word whose own sentence carries its source passes
+# ([time-word-check-blocks-planning-openings]): a date in YYYY-MM-DD form, or
+# one of the phrases the always-loaded rule names as a reading. The sentence
+# is the text between full stops around the word — a source three paragraphs
+# away is what a reader cannot check, so it does not count. A COPY sits in
+# pre_tool_use.py; change one, change both.
+TIME_SOURCE_PATTERN = re.compile(
+    r"\d{4}-\d{2}-\d{2}"
+    r"|read from the clock|by the session clock|per the [^.\n]*?record"
+    r"|the opening'?s clock line|the register",
+    re.IGNORECASE,
+)
+
 
 def _unfounded_time_words(message):
-    """Distinct time phrases in the reply outside quoted text, lowercased."""
+    """Distinct time phrases in the reply outside quoted text, lowercased —
+    leaving out any whose sentence also carries a source."""
     found = []
-    for match in TIME_WORD_PATTERN.finditer(_strip_quoted(message, spans=True)):
+    text = _strip_quoted(message, spans=True)
+    for match in TIME_WORD_PATTERN.finditer(text):
+        left, right = _sentence_span(text, match.start(), match.end())
+        if TIME_SOURCE_PATTERN.search(text, left, right):
+            continue
         phrase = " ".join(match.group(0).lower().split())
         if phrase not in found:
             found.append(phrase)
@@ -376,7 +394,9 @@ def main():
                 "Your last message says when something happened with no "
                 f"source: {listed}. Read the clock or the record and put the "
                 "source in the sentence, or drop the word — a wrong time in "
-                "chat proliferates into the records. This phrase is stopped "
+                "chat proliferates into the records. Open the re-send with one "
+                "line naming the corrected word, so the reader sees it as a "
+                "correction and need not re-read. This phrase is stopped "
                 "once; it passes on the next reply."
             ),
         }))
@@ -423,7 +443,9 @@ def main():
         "Your last message reported writing %s, but %s not in QUEUE.md as a "
         "work-item heading. Either the write did not happen, or it landed "
         "somewhere else. Tell the user plainly what actually happened — they "
-        "may already be acting on the report. If the item genuinely lives "
+        "may already be acting on the report. Open the re-send with one line "
+        "saying the earlier report was wrong and the capture is filed now, so "
+        "the reader sees a correction. If the item genuinely lives "
         "elsewhere (an archived message, another project's queue, a LOG "
         "entry), say so in one line and carry on."
         % (names, "it is" if len(missing) == 1 else "they are")

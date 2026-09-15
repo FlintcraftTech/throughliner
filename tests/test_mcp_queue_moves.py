@@ -362,6 +362,35 @@ check("tools/list advertises the three moves",
                                 "queue_delete")), repr(names))
 shutil.rmtree(d, ignore_errors=True)
 
+# --- an entry naming QUEUE.md is refused a cleared placement at the door ------
+# ([unbuildable-queue-instruction-cleared-at-planning])
+d = project()
+with open(os.path.join(d, "QUEUE.md"), "a", encoding="utf-8", newline="") as f:
+    f.write("\n#### Eta — edits queue prose [eta]\nRationale.\nFiles:\n"
+            "- `QUEUE.md` — add a clause to [alpha].\n")
+before = queue_text(d)
+text = call(d, "queue_move_section", {"slug": "eta", "from_section":
+                                      "Unprocessed", "to_section":
+                                      "Processed", "position": "AFTER",
+                                      "anchor": "beta", "marker_after": "eta"})
+check("queue_move_section: clearing an entry naming QUEUE.md is refused "
+      "at the door", text.startswith("Refused") and "planning work" in text,
+      repr(text))
+check("queue_move_section: that refusal wrote nothing", queue_text(d) == before)
+text = call(d, "queue_move_section", {"slug": "eta", "from_section":
+                                      "Unprocessed", "to_section":
+                                      "Processed", "position": "BOTTOM"})
+check("queue_move_section: the same entry moved below the line is allowed",
+      text.startswith("Moved [eta]"), repr(text))
+before = queue_text(d)
+text = call(d, "queue_move", {"section": "Processed", "slug": "eta",
+                              "position": "AFTER", "anchor": "beta",
+                              "marker_after": "eta"})
+check("queue_move: clearing an entry naming QUEUE.md is refused at the door",
+      text.startswith("Refused") and "planning work" in text, repr(text))
+check("queue_move: that refusal wrote nothing", queue_text(d) == before)
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

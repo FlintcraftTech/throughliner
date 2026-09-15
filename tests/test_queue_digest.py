@@ -143,6 +143,32 @@ def git_project():
 
 # --- a migration-written build block is surfaced until planning checks it -----
 
+def test_cleared_item_naming_queue_md_is_reported():
+    """A cleared item whose Files text names QUEUE.md is a placement
+    contradiction; a held one and a capture are not
+    ([unbuildable-queue-instruction-cleared-at-planning])."""
+    cleared = ("#### Edits queue prose [qedit]\nRationale.\nFiles:\n"
+               "- `QUEUE.md` — add a clause to another entry.\n\n")
+    plain = "#### Ordinary item [plain]\nRationale.\nFiles: `docs/a.md`\n\n"
+    held = ("#### Held queue edit [qheld]\nRationale.\nFiles: `QUEUE.md`\n"
+            "Blocked by: [plain]\n")
+    root = project(processed=cleared + plain, unprocessed="")
+    path = os.path.join(root, "QUEUE.md")
+    with open(path, "r", encoding="utf-8") as f:
+        text = f.read()
+    text = text.replace(MARKER + "\n", MARKER + "\n\n" + held)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    _, out = run(root)
+    shutil.rmtree(root, ignore_errors=True)
+    check("the cleared item naming QUEUE.md is reported",
+          "[qedit] is cleared but its Files text names QUEUE.md" in out, out)
+    check("the ordinary cleared item is not reported",
+          "[plain] is cleared but its Files text" not in out, out)
+    check("the held item naming QUEUE.md is not reported",
+          "[qheld] is cleared but" not in out, out)
+
+
 def test_migration_written_block_on_a_cleared_item_is_reported():
     """A block the format migration wrote under an existing item carries a line
     saying so; a cleared item still carrying it never passed the buildability
@@ -1326,6 +1352,7 @@ if __name__ == "__main__":
     test_built_into_is_not_a_do_not_build_phrase()
     test_do_not_build_still_fires()
     test_capture_naming_a_cleared_item_is_flagged()
+    test_cleared_item_naming_queue_md_is_reported()
     test_capture_naming_another_capture_is_not_flagged()
     test_no_build_block_report_survives()
     test_no_git_degrades_quietly()

@@ -58,7 +58,9 @@ gets built first — through discussion, not silently.
   **So the decision step asks, on every item: does this change what SPEC says?** If
   yes, write the sentence now, with the user present — into the part's own
   `SPEC.md` where the change concerns one part named in the project CLAUDE.md's
-  `## Parts` block, and into the root `SPEC.md` where it is whole-project.
+  `## Parts` block, and into the root `SPEC.md` where it is whole-project; and
+  a goal whose "reached when" test now holds is rewritten or removed in the
+  Goals section at the same turn.
 
   **Where this step misses one, the build files it rather than writing it.** The
   build records the sentence it thinks SPEC owes and leaves SPEC alone; the next
@@ -240,14 +242,14 @@ the order.**
 **The files-named block lists merge candidates** — two items naming the same file
 can often be settled together.
 
-**Name the held work in the opening narration: each held item, what it waits on,
-and how long it has been held — not a count — and a passed-over capture that
-other captures wait on, named with what it holds and how many wait on it.**
-"Held since
-the 14th, waiting on you" is what a reader acts on. The digest supplies all three
-fields per item, including the held-since date; where that date could not be
-attributed the digest prints none, and the narration says the item is held
-without claiming to know since when.
+**Name the held work in the opening narration as a count plus changes: each
+item whose hold changed since the most recent planning record — lifted,
+re-dated, newly held — with what cleared or holds it, and the rest as one
+count; and a passed-over capture that other captures wait on, named with what
+it holds and how many wait on it.** The digest supplies the hold fields per
+item, including the held-since date; where that date could not be attributed
+the digest prints none, and the narration says the item is held without
+claiming to know since when.
 
 This is separate from the below-the-line revisit further down, which stays silent
 while an item is still blocked: that silence is about whether the item may move,
@@ -303,10 +305,9 @@ current queue also names, and leave it out otherwise.** That is the whole test:
 an intersection between what just happened and what is about to be worked, which
 is checkable rather than a judgment about relevance.
 
-**Carry one line either way** — what was read and what it touched, or that
-nothing in the window bears on today's queue. That line rides
-the opening narration: **produce no separate output and no summary of the log
-for its own sake.**
+What was read and what it touched rides the opening narration, and where
+nothing in the window bears on today's queue the read joins the quiet clause:
+**produce no separate output and no summary of the log for its own sake.**
 
 Index lines, not the entries beneath them. This is the orientation read, never a
 replacement for opening the entry that matters.
@@ -352,8 +353,10 @@ without acting on the advisory.
 >
 > ---
 >
-> Seventeen items ready to build and four waiting to be processed; nothing is
-> held below the line.
+> Seventeen items ready to build and four waiting to be processed. Three are
+> held below the line, one of them lifted since the last planning record: its
+> blocker shipped on 2026-09-14, per its record. Mail, issues, replies, cycles
+> and the rule checks: nothing.
 >
 > **Anything you want to prioritise, or shall I order them the usual way?**
 
@@ -364,7 +367,12 @@ the problem.
 **Everything the step surfaces after the advisory folds into ONE opening
 narration** [BRIEF], beneath the rule — the digest, the recent log lines, the
 mail, the below-the-line revisit, the placement-contradiction flags, combined
-into one "here's what came up: …".
+into one "here's what came up: …", in this shape:
+  - a finding gets a sentence;
+  - every check that found nothing shares one clause ("mail, issues, replies,
+    cycles and the rule checks: nothing");
+  - the ask is the second line where nothing was found, the last line
+    otherwise.
 
 **The opening message ends on whichever ask fires first** — beat 1's droppable set
 when it fires, beat 2's ordering question when it doesn't. Beat 1 keeps its own
@@ -389,15 +397,13 @@ which every session may do. What /plan adds is the guarantee.
 
 **The same step also checks the issue channel, in three limbs**
 [SILENT] where `gh` is absent, or where there is neither an open outbound issue
-nor a repository that can receive them; [BRIEF] where the channel exists — one
-line either way, covering both directions, whether or not anything was filed
-("filed issues quiet, nothing incoming", or what was found).
+nor a repository that can receive them; [BRIEF] where the channel exists —
+what was found in either direction, or the quiet clause where nothing was.
 Read the outbound register's open issue lines and check each with `gh` for
 comments newer than the most recent planning session's record; and where this
 project has a repository that can receive issues, surface new incoming issues
 the same way mail is surfaced. File one capture per issue carrying something
-new, satisfied while an open capture already carries its slug. **Where the
-channel exists, say what was found either way.** Issues stay on GitHub — nothing is copied into
+new, satisfied while an open capture already carries its slug. Issues stay on GitHub — nothing is copied into
 `INBOX/`, and no state file records what was last seen; the anchor is computed
 from the record.
 
@@ -406,7 +412,7 @@ the ones that bear on the work and belong to nobody here, like a bug in the tool
 the method runs inside:
 
 ```
-gh search issues --involves @me --state open
+gh search issues --involves '@me' --state open
 ```
 
 Take those with activity since the same anchor, which turns a standing list into
@@ -571,15 +577,17 @@ whenever it has one. **The trigger is the session opening's cycles line**, which
 names the doc, each definition's slug and what its observable currently reads —
 so a project with cycles cannot reach this step without having been told they
 exist, and one without cycles gets no line and pays nothing. Where the line is
-there, read the doc and say in one line which cycles are due and which are not,
-whether or not anything is filed. Each definition names an artifact,
+there, read the doc and say which cycles are due, whether or not anything is
+filed. Each definition names an artifact,
 the steps of one turn, its due rule — time-based, a cadence, or
 condition-based, an observable read against a condition — and **the observable
 that marks a completed turn** — a release's date, a sent-record line. Compute each cycle's due-ness
 from its observable: read the observable's current state, and where a full
 cadence interval has passed since the last completed turn, the cycle is due.
 Where a cycle carries a chain, due-ness is per checklist: a checklist is due when
-its computed date — reported on the opening's cycles line — has arrived and no
+its computed date — reported on the opening's cycles line — has arrived, today's
+date read from the state server's `clock` tool where the server is registered
+and a shell clock command otherwise, and no
 completed turn of this cycle is recorded since the previous anchor, and the
 capture filed names that checklist in its heading, under the cycle's slug. A
 cycle with no chain is unchanged.
@@ -598,13 +606,20 @@ no cycles doc                             ->  nothing, silently — a project
                                               with no cycles pays nothing
 ```
 
-The one line covers every cycle either way — "weekly release: due, filed;
-posting rhythm: not due, last turn 2026-08-22" — so the user can see the check
-ran and disagree with what it read.
+A due cycle gets its sentence ("weekly release: due, filed"); cycles with
+nothing due join the opening's quiet clause.
 
 The capture then ranks by the ladder like any other work. The same check runs at
 /next's pre-flight and /done's wind-down, filing only — this is the one site
 that also processes what it files.
+
+**Goals check** [SILENT] when nothing fires; [BRIEF] when something does. Read
+each goal's "reached when" line in SPEC's Goals section against what it names —
+the record, the cycles doc's observable or the queue — and say one line only
+where a goal's test now holds, or where no entry in either queue section names
+the goal's words; quiet otherwise, folded into the opening's quiet clause. The
+limit: the check cannot tell that a goal is no longer wanted; that stays the
+user's read.
 
 ### The opening — two beats, drop then order
 
@@ -1437,7 +1452,9 @@ that would do the work, or would produce the item's starting point — the
 candidates include the method's own skills and flows and the tools on record in
 `TOOLS.md`, not only external tools, and whether such a feature exists is answered
 by reading the FAQ index, the record of what has been announced — and confirm
-it is absent or unauthenticated. Trying a tool
+it is absent or unauthenticated; and ask whether a permission or a rule, rather
+than incapability, keeps Claude out — where it does, the step's text opens
+with the say-so offer the always-loaded rule's third answer names. Trying a tool
 is allowed where trying is quick: the user is in the room, which is what makes
 this the heavy site. Where no tool plausibly exists, that is itself the answer.
 **Aim the check at the one job in hand.** An inventory sweep of everything
@@ -1706,9 +1723,8 @@ Unprocessed again.
 Skipping the last item leaves Unprocessed non-empty, which is fine. On the last
 item there's no next verbatim, so the message is just the off-ramps — worded
 **neutrally** — the closing paragraph as the end-of-queue gate's specimen
-states it, then "or is there anything else to capture or discuss?" — balanced
-between the two, with each command named in words inside the sentence rather
-than at its end. An empty Unprocessed is a
+states it, ending on its standalone bold ask, with each command named in words
+inside the sentence rather than at its end. An empty Unprocessed is a
 resting state. That is the end-of-queue gate's first firing, subject to the
 once-per-rest bound stated at the gate.
 
@@ -1877,21 +1893,24 @@ Unprocessed is a resting state, not a stop signal. **The ask says in one line
 what was passed over and why** — how many entries wait for a cycle's turn, how
 many on other entries or on dates — naming any red-flagged capture outright
 with what it waits on, so a queue that came to rest by passing everything over
-is never reported as fully processed. Then ask one neutral question
-— the closing paragraph exactly as the specimen below has it, then "or is
-there anything else to capture or discuss?" — and wait. Each command is named
-in words and does not end the sentence: the app lifts a trailing slash command
-into the composer, so an ask ending on one is a keystroke from being answered
-by accident. **The specimen is the one statement of the closing paragraph;
-the other sites that offer it point here and copy it.**
+is never reported as fully processed. Then the closing paragraph exactly as
+the specimen below has it, ending on its standalone bold ask — and wait. Each
+command is named in words and does not end the sentence: the app lifts a
+trailing slash command into the composer, so an ask ending on one is a
+keystroke from being answered by accident. **The specimen is the one statement
+of the closing paragraph; the other sites that offer it point here and copy
+it.**
 
-> Everything else in Unprocessed is set aside: four entries wait for a cycle's
-> turn, two wait on other entries — one of them the red-flagged repository
-> cleanup, which waits on the per-part specs — and one waits on a date. To
-> close: typing rescan first will catch anything decided in this conversation
-> that never made it into a file, and then done records the session and
-> commits. Either one on its own works too — done alone will still record
-> everything. Or is there anything else to capture or discuss?
+> Everything else is set aside: four entries wait for a cycle's turn, two wait
+> on other entries — one of them the red-flagged repository cleanup, which
+> waits on the per-part specs — and one waits on a date.
+>
+> Two commands close a session. Send the rescan command first if you want a
+> check that nothing said here was left out of the files. Then send the done
+> command, which records the session and commits it. Sending done on its own
+> runs the same check.
+>
+> **Is there anything else to capture or discuss first?**
 
 **Ask once per rest.** The gate fires when the queue first empties. If the user
 raises a further capture, file it and return to this same gate, but end plainly

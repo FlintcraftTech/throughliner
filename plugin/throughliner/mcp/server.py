@@ -344,6 +344,23 @@ def tool_host_currency(_arguments):
     return "\n".join(lines)
 
 
+def tool_clock(_arguments):
+    """The date, weekday, time and timezone in one line, read at the call.
+
+    Nothing is stored and nothing is derived from an earlier reading: a turn
+    that names a day, a date or a time calls this and reads the answer, so a
+    weekday word or a user's "release today" is checked against the clock
+    rather than against the opening's line, which is current at the opening
+    and no later.
+    """
+    now = datetime.datetime.now().astimezone()
+    zone = now.tzname() or "local time"
+    return "%s, %s, %s (%s)" % (now.strftime("%Y-%m-%d"),
+                                now.strftime("%A"),
+                                now.strftime("%H:%M"),
+                                zone)
+
+
 SLUG_SHAPE = re.compile(r'^[a-z0-9][a-z0-9-]*$')
 
 
@@ -823,6 +840,27 @@ def _crossing_problem(mover, before, before_anchor, after, after_anchor,
             % (", ".join("[%s]" % s for s in crossed), MARKER_TEXT))
 
 
+def _queue_files_problem(mover, queue, section, slug, order_after, pref):
+    """The script's own refusal of a placement that clears an item whose
+    Files text names QUEUE.md, printed at the door in the script's words
+    ([unbuildable-queue-instruction-cleared-at-planning]). `section` is
+    where the entry's block is read from before the move."""
+    with open(queue, "r", encoding="utf-8", newline="") as f:
+        lines = f.read().splitlines(keepends=True)
+    sections = mover.parse(lines)
+    if section not in sections:
+        return None
+    start, end = sections[section]
+    _pre, blocks, _after, _had = mover.split_blocks(lines[start:end])
+    block = dict(blocks).get(slug)
+    if block is None:
+        return None
+    if slug in mover.cleared_after(order_after, pref) and \
+            mover.files_text_names_queue(block):
+        return mover.QUEUE_FILES_MESSAGE % slug
+    return None
+
+
 def _in_process(call):
     """Run one of the script's functions under captured output, returning
     (ok, text). The script's refusals exit via die(); a SystemExit is caught
@@ -926,6 +964,9 @@ def tool_queue_move(arguments):
                                     [slug], marker_after)
         if problem:
             return _refused([problem])
+        problem = _queue_files_problem(mover, queue, section, slug, desired, pref)
+        if problem:
+            return _refused([problem])
 
     args = [queue, section, "--move", slug, position]
     if anchor is not None:
@@ -994,6 +1035,10 @@ def tool_queue_move_section(arguments):
         pref = marker_after if marker_after is not None else before_anchor
         problem = _crossing_problem(mover, t_have, before_anchor, t_after,
                                     pref, [slug], marker_after)
+        if problem:
+            return _refused([problem])
+        problem = _queue_files_problem(mover, queue, sec_from, slug, t_after,
+                                       pref)
         if problem:
             return _refused([problem])
 
@@ -1329,6 +1374,16 @@ TOOLS = [
             "whether they match. A match means host-side changes are live.",
         "inputSchema": {"type": "object", "properties": {}},
         "handler": tool_host_currency,
+    },
+    {
+        "name": "clock",
+        "description":
+            "The clock, read now: one line carrying the date (YYYY-MM-DD), "
+            "the weekday, the time to the minute and the machine's timezone. "
+            "Call it in any turn that names a day, a date or a time — the "
+            "user's statement included — before saying it.",
+        "inputSchema": {"type": "object", "properties": {}},
+        "handler": tool_clock,
     },
     {
         "name": "file_capture",

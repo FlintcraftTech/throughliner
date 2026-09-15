@@ -82,16 +82,16 @@ The work cycle. Every piece of work travels the same loop.
 - Say so where an approach is wrong, rather than agreeing.
 - Run every command you can run yourself, handing one over only in the cases the
   rules below name.
-- **Name the method's own command in words and ask the user to type it** —
+- **Name the method's own command in words and ask the user to send it** —
   `/setup`, `/plan`, `/next`, `/rescan` and `/done` are theirs to run, and the
   scope-lock refuses an attempt to invoke one. In words means the command's
   own name without the leading slash — say done, not "the closing step" — never a
   paraphrase or a descriptive phrase, and never inside a code fence, which
   the app offers to run as a shell command. Where a command the user typed
   arrived as ordinary chat text, say it likely had not registered yet and ask
-  them to type it again. **Where the app answered that the command is not
-  available in this environment, ask them to retype it with the plugin's name in
-  front** — `/throughliner:plan` and so on.
+  them to send it again. **Where the app answered that the command is not
+  available in this environment, ask them to send it again with the plugin's
+  name in front** — `/throughliner:plan` and so on.
 - **Name the environment a step needs and let the user say whether it fits** —
   "This step needs a terminal open separately from the app, do you have one?"
   rather than "Run this in your terminal:".
@@ -312,7 +312,9 @@ readable edit's post-write reveal ->  a plain link to the file, with the line
 
 **Link the file plainly and name the line in the prose.** A link that opens is
 a markdown link whose target is written relative to the project folder; an
-absolute path, and a bare path in backticks, both open nothing.
+absolute path, and a bare path in backticks, both open nothing — except that a
+`file:///` address with every space written as `%20` opens a file outside the
+project folder, the relative link to `temp/` staying the default for a draft.
 
 **How inline text is formed, whichever rule sent it there:**
 
@@ -535,9 +537,11 @@ filed-at stamp, a register line); the session opening's date-and-time line is
 one such reading, current at the opening and no later. A clock time written
 into a record is read from the clock at the moment of writing, by a command;
 the opening's line is never a base to count up from. The safety check refuses,
-once, a clock time written into a record, the queue or SPEC that is later than
-the clock reads at that moment; a time behind the clock is not reached, so this
-narrows the counted-up failure rather than closing it.
+once, a relative time word whose own sentence carries no source — a sentence
+carrying a date or a named reading passes — and, once, a clock time written
+into a record, the queue or SPEC that is later than the clock reads at that
+moment; a time behind the clock is not reached, so this narrows the counted-up
+failure rather than closing it.
 
 ```
 a source exists      ->  read it, and say the time
@@ -548,6 +552,12 @@ a non-date criterion ->  state the criterion and check the world against it.
                          "Today", "tomorrow", "later" are for a criterion that
                          is itself a date.
 ```
+
+  - a day-of-the-week word is read from the clock in the turn that says it,
+    like a relative time word — the state server's `clock` tool where the
+    server is registered, a shell clock command otherwise;
+  - where the user names a day, a date or a time that the clock read
+    contradicts, the turn says what the clock reads before going on.
 
 **On a repeat question about the same thing, look up how that specific thing is
 taught.** Work out first which part did not land, asking the user where it is not
@@ -682,7 +692,9 @@ not yet a work item: **"work item" names an entry in Processed only** — work
 becomes work when /plan has agreed it. Until then it is a capture, or an
 unprocessed entry. Capturing is how any chat puts a new idea, discovery
 or task into the queue without stopping to work it. Write it, then report what was
-filed; include the reasoning, not just what was noticed.
+filed — the report written from the filing tool's own return line, the state
+server's `file_capture` answer or the queue tool's, never composed ahead of it;
+include the reasoning, not just what was noticed.
 
 **A capture may be a single line whose only job is to release held work**, and
 its content may be no more than what must happen before that work can move. It
@@ -927,13 +939,20 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     ending at that send and carrying no steps after it;
   - filing anything that depends on the outcome of that send as its own item
     before the hand-over closes this one;
+  - where a step needs a file the user already has, ending at their attaching
+    it to the conversation — the naming, the copy into the folder the project's
+    Parts block names, or `workshop/` where there is none, and the index line
+    all Claude's, made in the same turn because the upload folder does not
+    persist — never handing over a storage path or a naming convention;
   - where a step has the user edit text Claude drafted, writing that draft to a
     `.txt` file in the project's `temp/` folder — gitignored, scaffolded by
     setup and the top-up — unless the item's Files line names a project path
     for it — with the step handing it over as a relative link that opens it,
     in the shape View-in-doc rendering gives — an absolute path, and the
     short-name form the harness may report (`~1` in a folder name), do not
-    open — and offering in the same breath to display it inline or send the
+    open, the one exception being a `file:///` address with every space
+    written as `%20`, which opens a file outside the project folder — and
+    offering in the same breath to display it inline or send the
     file instead, for a reader on a phone or driving the session remotely,
     subject to the cloud-link arm of the spoken departure below; then
     reading it back only when they say to, asking whether there is anything else, and
@@ -1121,6 +1140,9 @@ a principle that governs how work is done  ->  SPEC note, or CLAUDE.md rule
     ("always consider X when designing")
 a durable finding                          ->  workshop/resources/research, or LOG
 a forward recommendation                   ->  the advisory (transient)
+a goal — an outcome the project heads      ->  SPEC's Goals section, one sentence
+    for, with a test that says it arrived      plus a "reached when" line naming
+                                               something checkable
 ```
 
 Order within a section carries
@@ -1297,7 +1319,8 @@ Those are held by the approval rules and by nothing mechanical.
 - **Doc routing — four destinations, two confused lines:**
 
 ```
-SPEC.md      what the project is (what/who/how/why it exists)
+SPEC.md      what the project is (what/who/how/why it exists), and where it
+             is heading
 QUEUE.md     what to work on next
 LOG/         what happened
 CLAUDE.md    how Claude should work on THIS project

@@ -649,6 +649,19 @@ def _is_memory_dir(filepath: str) -> bool:
     return "memory" in parts[claude_idx + 1:]
 
 
+def _is_temp_dir(filepath: str, cwd: str) -> bool:
+    """The project's `temp/` folder — writable in every session, build,
+    planning or none, on the same ground as the scratchpad: it is gitignored
+    and disposable by definition, and the co-authoring rule sends every
+    draft there, so a build run reaching a draft step met a refusal
+    ([rezip-drafts-need-a-permitted-path-in-a-build]). The shell-write check
+    already let a `cp` into it through; permitting the editing tools makes
+    the two routes agree."""
+    norm = _normalise(filepath)
+    temp_dir = _normalise(os.path.join(cwd, "temp"))
+    return norm.startswith(temp_dir + os.sep)
+
+
 def _is_plans_dir(filepath: str, cwd: str) -> bool:
     """Check if a path is the harness's plan-mode plans directory.
 
@@ -698,10 +711,16 @@ def _is_research_dir(filepath: str, cwd: str) -> bool:
     is recognised by the `.git` on disk, never by a configured name.
     """
     norm = _normalise(filepath)
-    research_dir = _normalise(
-        os.path.join(cwd, "workshop", "resources", "research"))
-    if norm.startswith(research_dir + os.sep) or norm == research_dir:
-        return True
+    # Two forms: the workshop path every project gets, and `research/` at the
+    # project root, which is where a project whose Parts block names a research
+    # part keeps it ([hooks-name-old-workshop-paths]). A part named otherwise
+    # goes through the user's door.
+    for research_dir in (
+        _normalise(os.path.join(cwd, "workshop", "resources", "research")),
+        _normalise(os.path.join(cwd, "research")),
+    ):
+        if norm.startswith(research_dir + os.sep) or norm == research_dir:
+            return True
     if not _is_inside(filepath, cwd):
         return False
     rel = os.path.relpath(os.path.normpath(filepath), os.path.normpath(cwd))
@@ -1554,10 +1573,40 @@ def _strip_quoted_text(text: str) -> str:
     return "".join(out)
 
 
+# A time word whose own sentence carries its source passes
+# ([time-word-check-blocks-planning-openings]): a date in YYYY-MM-DD form, or
+# one of the phrases the always-loaded rule names as a reading. The sentence
+# is the text between full stops (or line breaks) around the word. A COPY of
+# stop.py's; change one, change both.
+TIME_SOURCE_PATTERN = re.compile(
+    r"\d{4}-\d{2}-\d{2}"
+    r"|read from the clock|by the session clock|per the [^.\n]*?record"
+    r"|the opening'?s clock line|the register",
+    re.IGNORECASE,
+)
+_TIME_SENTENCE_BREAK = re.compile(r"(?:[.!?](?=\s|$))|\n")
+
+
+def _time_sentence_span(text: str, start: int, end: int) -> tuple[int, int]:
+    left = 0
+    for match in _TIME_SENTENCE_BREAK.finditer(text, 0, start):
+        left = match.end()
+    right = len(text)
+    match = _TIME_SENTENCE_BREAK.search(text, end)
+    if match:
+        right = match.end()
+    return left, right
+
+
 def _unfounded_time_words(text: str) -> list[str]:
-    """Distinct time phrases in `text` outside quoted spans, lowercased."""
+    """Distinct time phrases in `text` outside quoted spans, lowercased —
+    leaving out any whose sentence also carries a source."""
     found = []
-    for match in TIME_WORD_PATTERN.finditer(_strip_quoted_text(text)):
+    stripped = _strip_quoted_text(text)
+    for match in TIME_WORD_PATTERN.finditer(stripped):
+        left, right = _time_sentence_span(stripped, match.start(), match.end())
+        if TIME_SOURCE_PATTERN.search(stripped, left, right):
+            continue
         phrase = " ".join(match.group(0).lower().split())
         if phrase not in found:
             found.append(phrase)
@@ -1771,7 +1820,11 @@ def _is_hook_suite_file(filepath: str, cwd: str, build_files: list[str]) -> bool
         return False
 
     norm = _normalise(filepath)
+    # `tests/` at the inner repository root is where the suites live since the
+    # repository cleanup; the two older testing paths stay for a project whose
+    # suites have not moved ([hooks-name-old-workshop-paths]).
     for testing_dir in (
+        os.path.join(cwd, "tests"),
         os.path.join(cwd, "workshop", "resources", "testing"),
         os.path.join(cwd, "resources", "testing"),
     ):
@@ -2241,6 +2294,7 @@ def main() -> int:
             ("research exemption", lambda: _is_research_dir(filepath, cwd)),
             ("retired-terms file", lambda: _is_retired_terms_file(filepath, cwd)),
             ("scratchpad", lambda: _is_scratchpad_dir(filepath, cwd)),
+            ("temp folder", lambda: _is_temp_dir(filepath, cwd)),
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
@@ -2273,7 +2327,26 @@ def main() -> int:
             looks_listed = any(
                 os.path.basename(filepath) in listed for listed in build_files
             )
-            if looks_listed:
+            # A folder line covers nothing beneath it: the match is exact, so
+            # a run that listed `tests` expecting the suites under it to be
+            # covered learns otherwise only here — name the file to add
+            # ([files-list-folder-line-covers-nothing]).
+            folder_lines = [
+                listed for listed in build_files
+                if _normalise(filepath).startswith(
+                    _normalise(os.path.join(cwd, listed)) + os.sep)
+            ]
+            if folder_lines:
+                rel_file = os.path.relpath(
+                    os.path.normpath(filepath), os.path.normpath(cwd)
+                ).replace("\\", "/")
+                diagnosis = (
+                    f"The Files: list names the folder '{folder_lines[0]}', "
+                    "and a folder line covers no file beneath it — the check "
+                    "matches each line as an exact path. Add the file itself: "
+                    f"{rel_file}"
+                )
+            elif looks_listed:
                 diagnosis = (
                     "Files: lines must be bare paths — one path per line, "
                     "nothing else on the line. A note or annotation on a line "
@@ -2324,6 +2397,7 @@ def main() -> int:
             ("memory dir", lambda: _is_memory_dir(filepath)),
             ("research exemption", lambda: _is_research_dir(filepath, cwd)),
             ("scratchpad", lambda: _is_scratchpad_dir(filepath, cwd)),
+            ("temp folder", lambda: _is_temp_dir(filepath, cwd)),
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
@@ -2350,7 +2424,10 @@ def main() -> int:
                 f"About to edit: {filepath}\n\n"
                 "A planning session may write QUEUE.md, any SPEC.md (the "
                 "root's or a part's), CYCLES.md, TOOLS.md, anything in "
-                "LOG/, research notes and its own scratch files — plus any "
+                "LOG/, research notes (under workshop/resources/research/ or "
+                "research/ at the project root — a research part named "
+                "otherwise goes through the user's door below), the temp/ "
+                "folder and its own scratch files — plus any "
                 "path a checklist definition in CYCLES.md declares its steps "
                 "write. Everything "
                 "else is work, and work gets queued and built rather than done "

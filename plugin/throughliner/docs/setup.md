@@ -293,6 +293,10 @@ no outputStyle set in the project's .claude/settings.local.json
                         ->  make the brevity-style offer from Step 2, exactly
                             as a fresh setup would — this project was set up
                             before the style shipped
+SPEC.md has no `## Goals` heading
+                        ->  ask the interview's goals question once (Step 3),
+                            in one line, and write the answer as the section,
+                            add-only; "none" writes nothing
 ```
 
 **Where the project has INBOX files already in git history, say so plainly.**
@@ -518,6 +522,10 @@ Create these files (empty structure; content comes from the interview),
 
 ## Principles
 [filled by Q3]
+
+## Goals
+[filled by the goals question: one sentence per goal, each with a "Reached
+when:" line naming something checkable]
 ````
 
 **QUEUE.md:**
@@ -917,8 +925,17 @@ principles or constraints               ->  Principles
 the project's moving parts, and which   ->  the parts block in CLAUDE.md, and
     of them are the product                 one folder per part (Step 2)
 the first thing to build today          ->  becomes the first capture
+where the project is heading, and how   ->  Goals — one sentence per goal,
+    the user would know it got there        each with a "Reached when:" line
+                                            naming something checkable; asked
+                                            after the five topics above
 anything else worth knowing
 ```
+
+  **The goals question is asked once in an existing project too:** the top-up,
+  meeting a SPEC with no `## Goals` heading, asks it in one line and writes the
+  answer as the section, add-only; a project that answers "none" gets no
+  section and is not asked again.
 
   **The parts question is asked roughly, and a rough answer is accepted.** Offer
   a guess like every other question — "I'd say this has two parts: the app,

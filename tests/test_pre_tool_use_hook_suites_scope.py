@@ -66,6 +66,20 @@ def test_a_hook_run_may_write_its_suites():
     shutil.rmtree(d, ignore_errors=True)
 
 
+def test_a_hook_run_may_write_the_inner_tests_folder():
+    """The suites live at tests/ since the repository cleanup
+    ([hooks-name-old-workshop-paths])."""
+    mod = load()
+    d = tempfile.mkdtemp(prefix="hook-suites-scope-")
+    check("a run listing a hook may write tests/test_x.py",
+          mod._is_build_file(os.path.join(d, "tests", "test_x.py"), d, HOOK_FILES),
+          "tests/ refused to a hook-touching run")
+    check("a run listing no hook is still refused tests/test_x.py",
+          not mod._is_build_file(os.path.join(d, "tests", "test_x.py"), d, DOC_FILES),
+          "tests/ permitted to a run touching no hook")
+    shutil.rmtree(d, ignore_errors=True)
+
+
 def test_a_run_with_no_hook_may_not():
     """The bound. Without this the rule is a general widening."""
     mod = load()
@@ -102,6 +116,7 @@ def test_listed_files_still_pass_normally():
 if __name__ == "__main__":
     print("test_pre_tool_use_hook_suites_scope")
     test_a_hook_run_may_write_its_suites()
+    test_a_hook_run_may_write_the_inner_tests_folder()
     test_a_run_with_no_hook_may_not()
     test_the_pairing_does_not_widen_beyond_the_testing_folder()
     test_listed_files_still_pass_normally()

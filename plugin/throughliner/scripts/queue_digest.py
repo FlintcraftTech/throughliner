@@ -673,6 +673,18 @@ def contradictions(items, root=""):
                     "check before a run builds it"
                 )
 
+            # A cleared item whose Files text names QUEUE.md tells a build to
+            # edit queue content, which the safety check refuses; the mover
+            # refuses to clear one, and this reaches one that got there by
+            # hand ([unbuildable-queue-instruction-cleared-at-planning]).
+            if item["cleared"] and "queue.md" in _files_text(item):
+                found.append(
+                    f"[{slug}] is cleared but its Files text names QUEUE.md — "
+                    "queue content is planning work, which a build cannot "
+                    "write; make the change at the decision step or hold "
+                    "the item"
+                )
+
             files_line = item["files_line"]
             if files_line is not None:
                 for phrase in NO_FILES_PHRASES:
@@ -723,6 +735,23 @@ def contradictions(items, root=""):
             )
 
     return found
+
+
+def _files_text(item):
+    """The item's Files line and the bullet lines beneath it, lowercased."""
+    out = []
+    in_files = False
+    for line in item["prose"]:
+        if FILES_LINE_RE.match(line):
+            in_files = True
+            out.append(line)
+            continue
+        if in_files:
+            if line.startswith("-"):
+                out.append(line)
+                continue
+            in_files = False
+    return " ".join(out)
 
 
 def _cites_cleared(item, items):

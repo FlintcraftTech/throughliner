@@ -376,6 +376,56 @@ def refuse_unnamed_crossings(unnamed, marker_pref):
         die(msg)
 
 
+# --- Queue content is planning work ([unbuildable-queue-instruction-cleared-at-planning]) ---
+#
+# A cleared item whose Files text names QUEUE.md tells a build to edit queue
+# prose, which the safety check refuses; the build then finds out by trying,
+# after planning agreed and cleared it. Two advisories existed and neither
+# held, so the move is refused at the door: an item naming QUEUE.md may be
+# moved below the line or within the held region, never above the marker.
+FILES_LINE_RE = re.compile(r'^\**Files\b[^:]*:\**', re.IGNORECASE)
+QUEUE_FILES_MESSAGE = (
+    "[%s] names QUEUE.md in its Files text, so clearing it would hand a "
+    "build an edit to queue content, which the safety check refuses. Queue "
+    "content is planning work: make the change now at the decision step, or "
+    "hold the item below the line. Nothing was written.")
+
+
+def files_text_names_queue(block):
+    """Whether an entry's Files text — its Files line and the bullet lines
+    beneath it — names QUEUE.md."""
+    in_files = False
+    for line in block:
+        stripped = line.strip()
+        if FILES_LINE_RE.match(stripped):
+            in_files = True
+            if 'queue.md' in stripped.lower():
+                return True
+            continue
+        if in_files:
+            if stripped.startswith('-') or line[:1] in (' ', '\t'):
+                if 'queue.md' in stripped.lower():
+                    return True
+                continue
+            in_files = False
+    return False
+
+
+def cleared_after(order, marker_pref):
+    """The slugs above the marker once it sits after `marker_pref`."""
+    if marker_pref == 'TOP':
+        return []
+    if marker_pref == 'BOTTOM' or marker_pref not in order:
+        return list(order)
+    return order[:order.index(marker_pref) + 1]
+
+
+def refuse_queue_files_cleared(slug, block, order, marker_pref):
+    """Refuse a placement that puts an item naming QUEUE.md above the marker."""
+    if slug in cleared_after(order, marker_pref) and files_text_names_queue(block):
+        die(QUEUE_FILES_MESSAGE % slug)
+
+
 # How long the write waits before its one retry, in seconds. A tunable
 # constant stated with no derivation — long enough for a sync client's
 # momentary hold on the file to pass, short enough not to feel like a hang.
@@ -855,6 +905,9 @@ def replace_in_item(queue_path, slug, old, new, section=None):
                      % (slug, sec, old, new))
 
 
+FLAVOUR_TAGS = ('[audit]', '[user]', '[freeform]', '[co-write]')
+
+
 def retitle_item(queue_path, slug, heading):
     """Rewrite one entry's heading line and nothing else.
 
@@ -873,10 +926,20 @@ def retitle_item(queue_path, slug, heading):
     heading = heading.strip()
     if not heading:
         die("--retitle: --heading must not be empty")
-    if '[' in heading or ']' in heading:
+    # One leading flavour tag from the fixed set is the one bracket a heading
+    # may carry ([retitle-refuses-flavour-tag]): the tag leads the heading by
+    # rule, and keeping a capture as an audit or a user step is routine.
+    rest = heading
+    for tag in FLAVOUR_TAGS:
+        if heading.startswith(tag + ' '):
+            rest = heading[len(tag):]
+            break
+    if '[' in rest or ']' in rest:
         die("--retitle: the new heading contains a bracket, which would read "
-            "as a second slug. Give the heading text alone; the slug [%s] is "
-            "kept by the tool." % slug)
+            "as a second slug. The one bracket allowed is a leading flavour "
+            "tag — %s — followed by a space. Give the heading text alone; "
+            "the slug [%s] is kept by the tool."
+            % (", ".join(FLAVOUR_TAGS), slug))
 
     with open(queue_path, 'r', encoding='utf-8', newline='') as f:
         lines = f.read().splitlines(keepends=True)
@@ -1018,6 +1081,7 @@ def move_section(queue_path, slug, sec_from, sec_to, position, anchor,
             [s for s, _ in t_new], t_pref, named=[slug],
         )
         refuse_unnamed_crossings(t_unnamed, t_pref)
+        refuse_queue_files_cleared(slug, moved, [s for s, _ in t_new], t_pref)
 
     f_out = assemble_section(f_pre, elements_with_marker(f_new, f_had, f_pref))
     t_out = assemble_section(t_pre, elements_with_marker(t_new, t_had, t_pref))
@@ -1385,6 +1449,8 @@ def main():
             named=[move_slug] if move_slug is not None else desired,
         )
         refuse_unnamed_crossings(unnamed, pref)
+        if move_slug is not None:
+            refuse_queue_files_cleared(move_slug, by_slug[move_slug], desired, pref)
 
     # Build the ordered element list and reassemble with canonical spacing —
     # shared with --move-section via the two helpers.

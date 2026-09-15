@@ -199,7 +199,10 @@ build scaffolding entirely and go straight to Step 3's walk-through branch.
 **Before handing any step of a `[user]` item over, run the LIGHT capability
 check — per step, not per item.** Name the tool that would do that step and
 confirm it is absent or unauthenticated (the over-tag guard,
-skill-nonspecific-rules.md). Perform the steps Claude can perform — where a
+skill-nonspecific-rules.md), and ask whether a permission or a rule, rather
+than incapability, keeps Claude out — where it does, the step opens with the
+say-so offer the always-loaded rule's third answer names, so a step written
+without the offer still gets it at the hand-over. Perform the steps Claude can perform — where a
 step's file is outside the run's list, offer the scope addition in the same
 message — and hand over only what needs the user's eyes, decision, or hands.
 This is the last line of defence
@@ -402,8 +405,9 @@ Changes:
 The `Files:` section feeds the scope-lock: pre_tool_use allows edits only to
 those files plus the method docs, and denies everything else. **Lines must be
 bare paths** — the hook matches each line as an exact path, so any annotation
-becomes part of the path and silently breaks the match. Make sure no other line
-in the file starts with `Files:`.
+becomes part of the path and silently breaks the match, and a folder line
+covers no file beneath it: every file the run writes is named. Make sure no
+other line in the file starts with `Files:`.
 
 **Rationale is not copied here.** Each item's reasoning stays in QUEUE.md, which
 is where the run reads it and where /done reads it back. Copying it into the

@@ -962,6 +962,90 @@ def test_retitle_refuses_a_bracketed_heading():
         check("the file is untouched", after == FIXTURE, "file changed")
 
 
+QUEUE_FILES_FIXTURE = """# QUEUE
+
+## Processed
+
+#### First cleared item [alpha]
+Rationale for alpha.
+
+--- Cleared to run above this line ---
+
+#### Item that edits queue prose [qedit]
+Rationale.
+Files:
+- `QUEUE.md` — add a clause to another entry.
+Blocked by: [alpha]
+
+#### A held item [gamma]
+Rationale for gamma.
+
+## Unprocessed
+
+#### A capture naming the queue [qcap]
+Rationale.
+Files: `QUEUE.md` and `docs/a.md`.
+"""
+
+
+def _run_on(fixture, *args):
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "QUEUE.md")
+        with open(path, "w", encoding="utf-8", newline="") as f:
+            f.write(fixture)
+        result = subprocess.run(
+            [sys.executable, SCRIPT, path] + list(args),
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+        with open(path, "r", encoding="utf-8", newline="") as f:
+            return result.returncode, result.stderr, f.read()
+
+
+def test_clearing_an_item_naming_queue_md_is_refused():
+    """A placement above the marker is refused where the item's Files text
+    names QUEUE.md ([unbuildable-queue-instruction-cleared-at-planning])."""
+    rc, err, after = _run_on(QUEUE_FILES_FIXTURE, "Processed", "--move",
+                             "qedit", "AFTER", "alpha", "--marker-after", "qedit")
+    check("clearing an item naming QUEUE.md is refused", rc != 0, err)
+    check("the refusal says queue content is planning work",
+          "planning work" in err and "[qedit]" in err, err)
+    check("the refused clearing wrote nothing", after == QUEUE_FILES_FIXTURE)
+    rc, err, after = _run_on(QUEUE_FILES_FIXTURE, "--move-section", "qcap",
+                             "Unprocessed", "Processed", "--position", "AFTER",
+                             "alpha", "--marker-after", "qcap")
+    check("keeping a capture naming QUEUE.md as cleared is refused", rc != 0, err)
+    check("that refusal wrote nothing", after == QUEUE_FILES_FIXTURE)
+
+
+def test_moving_an_item_naming_queue_md_below_the_line_is_allowed():
+    rc, err, after = _run_on(QUEUE_FILES_FIXTURE, "Processed", "--move",
+                             "qedit", "AFTER", "gamma")
+    check("a move within the held region is allowed", rc == 0, err)
+    check("the item sits below the marker",
+          order_of(after) == ["alpha", MARKER, "gamma", "qedit"],
+          repr(order_of(after)))
+    rc, err, after = _run_on(QUEUE_FILES_FIXTURE, "--move-section", "qcap",
+                             "Unprocessed", "Processed", "--position", "BOTTOM")
+    check("keeping a capture naming QUEUE.md below the line is allowed",
+          rc == 0, err)
+
+
+def test_retitle_admits_one_leading_flavour_tag():
+    """A heading opening with a flavour tag succeeds with the slug kept; any
+    other bracket is still refused ([retitle-refuses-flavour-tag])."""
+    rc, err, after = _run_on(FIXTURE, "--retitle", "gamma",
+                             "--heading", "[audit] Held item, reviewed")
+    check("a leading [audit] tag is admitted", rc == 0, err)
+    check("the slug is kept beside the tag",
+          "#### [audit] Held item, reviewed [gamma]" in after, after)
+    rc, err, after = _run_on(FIXTURE, "--retitle", "gamma",
+                             "--heading", "Held item [other] mid-line")
+    check("a bracket mid-line is still refused", rc != 0, err)
+    check("the refusal names the four tags",
+          "[co-write]" in err and "[freeform]" in err, err)
+    check("the mid-line refusal wrote nothing", after == FIXTURE)
+
+
 def test_write_verified_refuses_a_write_that_did_not_land():
     """The verification itself fails loudly when the re-read disagrees.
 
@@ -1114,6 +1198,9 @@ def main():
         test_delete_reports_only_what_landed,
         test_retitle_changes_the_heading_and_nothing_else,
         test_retitle_refuses_a_bracketed_heading,
+        test_retitle_admits_one_leading_flavour_tag,
+        test_clearing_an_item_naming_queue_md_is_refused,
+        test_moving_an_item_naming_queue_md_below_the_line_is_allowed,
         test_write_verified_refuses_a_write_that_did_not_land,
         test_move_section_refuses_an_unnamed_sweep,
         test_named_move_across_the_line_still_reports_and_succeeds,

@@ -188,10 +188,13 @@ def _setup_identity_advisory(filepath: str, cwd: str, session_id: str) -> str:
             found.append(name)
     if not found:
         return ""
+    # The matched name is not echoed: a hook that only needs to detect it has
+    # no reason to put the machine's account name into the session context
+    # ([sweep-security-hook-output-carries-machine-and-remote-strings]).
     return (
         f"[Throughliner] Setup identity check (advisory): {os.path.basename(filepath)} "
-        f"now carries {', '.join(repr(n) for n in found)}, which is a name this "
-        "machine carries (the git user.name or the account). Did the interview "
+        "now carries a name this machine carries (the git user.name or the "
+        "account) — read the file to see which. Did the interview "
         "supply it? A personal fact — a name or a pronoun above all — is written "
         "only where the user gave it in their own answers; where they did not, "
         "take it out, and use \"they\" where no pronoun was supplied."

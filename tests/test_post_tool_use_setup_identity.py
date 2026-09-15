@@ -86,8 +86,10 @@ def main():
     with open(marker, "w", encoding="utf-8") as f:
         f.write("")
     out = drive_write(d, spec)
-    check("marker present: the advisory names the file and the git name",
-          "Setup identity" in out and GIT_NAME in out and "SPEC.md" in out, out)
+    check("marker present: the advisory names the file",
+          "Setup identity" in out and "SPEC.md" in out, out)
+    check("the advisory does not echo the machine's name",
+          GIT_NAME not in out, out)
     check("the advisory is advisory — it asks, it does not block",
           "Did the interview supply it" in out, out)
 

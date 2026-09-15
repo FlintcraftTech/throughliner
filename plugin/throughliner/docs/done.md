@@ -667,7 +667,8 @@ planning session would present it, any cycle whose turn is due — named whether
 or not a capture was filed for it — and the continuations — more planning, or a
 build — as statements of fact, and where the run this /done run records stopped at
 a held item whose blocker it shipped, what of the intended change is
-not yet on screen, in product terms, and nothing else.** Neither continuation is
+not yet on screen, in product terms, and nothing else; the close names no
+rescan, its own look-back having just run.** Neither continuation is
 assumed or recommended over the other: a user may plan as many times as they
 want until enough is queued to justify a build, so which comes next is theirs,
 and this turn's job is to leave them holding the facts that decide it.
@@ -695,7 +696,16 @@ available.
   - any held item the narration names, and what it says holds it or lifts it,
     is read off the digest's held-item lines — the state server's checkpoint
     counts where the server is registered, `queue_digest.py` otherwise — run
-    after the session's last queue write, never from memory of the opening.
+    after the session's last queue write, never from memory of the opening;
+  - where a held item's every `Blocked by:` entry was built in this run and
+    its tick confirmed, this /done run states what the item rests on — its
+    rests-on line, or that it has none — proposes the lift in the closing
+    message, and
+    on the user's yes moves the item with the state server's `queue_move`, or
+    the mover, naming it as the last item that should stay cleared, drops its
+    `Blocked by:` line and writes what cleared it into its prose; a blocker
+    built but not confirmed is named and the item left held, per done-plan.md's
+    hold-back rule. The advisory's clearing is untouched.
 
 **Overlap scan.** Before recommending, scan the still-unprocessed work for overlap
 with the top processed item — work that contradicts, invalidates, or would benefit
@@ -785,13 +795,16 @@ It happened in one, and nothing says it only happens there. Siting the clause he
 covers the recorded instance and not the general case; a second instance occurring
 outside a tail is what would reopen this.
 
-**Announce a `[freeform]` item if Processed holds one.** /next halts on one rather
-than building it, so say plainly what the item is and that it needs a session
-where the work is done by hand rather than run from the queue.
+**Announce an item the next run must take alone, where Processed holds one —
+a `[freeform]` item, or the top cleared build marked `Runs alone`.** /next halts
+on a freeform item rather than building it, and builds a run-alone item by
+itself and nothing else, so say plainly what the item is and that it needs a
+session of its own.
 
-**Hand over the words to start it.** With the announcement, give this starter
-prompt verbatim in a fenced block — a paste target, rendered per the view-in-doc
-rules — substituting only the item's slug for `<slug>`:
+**Hand over the words to start it.** With the announcement, give the starter
+prompt for that case verbatim in a fenced block — a paste target, rendered per
+the view-in-doc rules — substituting only the item's slug for `<slug>` and,
+in the second, its heading for `<heading>`:
 
 ```
 We're doing the freeform work item [<slug>] by hand in this chat — it's work
@@ -799,6 +812,15 @@ done by hand rather than run from the queue. Its entry is in QUEUE.md (in this
 project's root folder), at the end of the cleared-to-run region of the
 Processed section; read that entry first — it says what the work is and where
 its recipe lives. When we're finished, the done command records and commits it.
+```
+
+```
+Run the next command. The top cleared item is "<heading>" [<slug>], marked
+Runs alone, so this run builds that item and nothing else — the run ends after
+it. Its entry is in QUEUE.md (in this project's root folder), at the top of the
+cleared-to-run region of the Processed section; read that entry first — it
+says what changes and where. When it is built, the done command records and
+commits it.
 ```
 
 Verbatim, not a template to adapt: fresh composition by an immersed session is
