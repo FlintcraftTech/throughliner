@@ -120,8 +120,45 @@ def test_uncovered_mailbox_is_refused():
     shutil.rmtree(base, ignore_errors=True)
 
 
+def _book(sender, text):
+    with open(os.path.join(sender, "INBOX", ".address-book.md"), "w",
+              encoding="utf-8") as f:
+        f.write(text)
+
+
+def test_both_shapes_resolve_and_neither_is_named():
+    """A table row, a bullet with an em dash and a bullet with a hyphen each
+    resolve the name; a non-empty book in neither shape says so and prints
+    the two shapes; a genuine miss keeps its message
+    ([address-book-format-unstated])."""
+    base, sender, recipient, msg = fixture()
+    for label, text in (
+        ("table row", "| Correspondent | Folder |\n| --- | --- |\n| Other Project | `%s` |\n" % recipient),
+        ("bullet, em dash", "# Address book\n\n- Other Project — `%s`\n" % recipient),
+        ("bullet, hyphen", "- Other Project - %s\n" % recipient),
+    ):
+        _book(sender, text)
+        r = run(sender, "--to", "Other Project", "--file", msg)
+        check("a %s resolves the correspondent" % label,
+              r.returncode == 0 and no_path(r, recipient), r.stderr)
+        for name in os.listdir(os.path.join(recipient, "INBOX")):
+            os.remove(os.path.join(recipient, "INBOX", name))
+    _book(sender, "# Address book\n\nOther Project: %s\n" % recipient)
+    r = run(sender, "--to", "Other Project", "--file", msg)
+    check("a non-empty book in neither shape is named as unreadable",
+          r.returncode != 0 and "shape could not be read" in r.stderr
+          and "table row" in r.stderr and "bullet" in r.stderr, r.stderr)
+    check("the unreadable-shape refusal names no path", no_path(r, recipient))
+    _book(sender, "| Correspondent | Folder |\n| --- | --- |\n| Someone Else | `%s` |\n" % recipient)
+    r = run(sender, "--to", "Other Project", "--file", msg)
+    check("a genuine miss keeps the missing-correspondent message",
+          r.returncode != 0 and "is not a correspondent" in r.stderr, r.stderr)
+    shutil.rmtree(base, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("test_inbox_send")
+    test_both_shapes_resolve_and_neither_is_named()
     test_delivers_byte_for_byte()
     test_unknown_name_is_refused()
     test_missing_mailbox_is_refused_then_created_on_the_flag()

@@ -15,20 +15,24 @@ current session — record what happened, update docs, commit.
 ## Declare /done  [SILENT]
 
 **First action of every /done run: write an empty file named
-`.throughliner-close-active` into the session scratchpad directory, and delete it
-as the last action before /done finishes — together with
-`.throughliner-setup-done` where setup ran in this chat and left it.** While
+`close-active-<session-id>` into the project's `.throughliner/` working
+folder, and delete it as the last action before /done finishes — together with
+`.throughliner-setup-done` in the session scratchpad where setup ran in this
+chat and left it.** While
 both stand, the scope-lock also permits the files setup scaffolds, so a
 correction to what setup just wrote lands here rather than as a queue item. While it exists the scope-lock
 permits the few files the method's own close obligations name — `README.md`
-today. Outside /done those paths are denied exactly as before, and a /done run
-that dies before removing the marker leaves it in the scratchpad, which clears
-itself.
+today. Outside /done those paths are denied exactly as before. A /done run
+that dies before removing the marker leaves it in the working folder, where
+the next session's opening names it as left by a /done run that did not
+finish and ignores it thereafter; it is never deleted by anything but a /done
+run.
 
 ## Route by session shape  [SILENT]
 
 **First arm: this chat has already closed** [BRIEF]. Where this conversation
-already holds its own /done run — the entry written and the commit made — a second
+already holds its own /done run — the entry written and the commit made, which
+the `session-closed-<session-id>` marker in `.throughliner/` records — a second
 `/done` is the post-close tail, not a second /done run: file what it finds through
 the three-way triage, append what happened to this session's existing entry as
 a marked tail, and commit nothing. The one line carries which files were
@@ -540,6 +544,10 @@ unless a stray slug is found.**
 the build working file Changes), method docs updated during the session or close-out (QUEUE.md,
 SPEC.md, LOG/), and the build working file's deletion where one was removed.
 
+**The safety check refuses the commit while any tracked file in the
+repository carries a git conflict marker, naming the file.** Resolve it first
+— two captures appended at the same spot are kept both — and commit again.
+
 **2. Detect out-of-scope dirty paths.** Run `git status --porcelain` and compare
 against the active build's file list. Any dirty path outside it is a user edit no
 build staged.
@@ -647,6 +655,12 @@ everything else, the method documents included, in the outer. Same message
 mechanics for each, the inner commit's message covering the product work
 alone. A session that touched only one side makes only that side's commit. A
 flat project — one repository — is unchanged by all of this.
+
+**Then leave the session-closed marker: write this session's record filename
+into `.throughliner/session-closed-<session-id>`.** It is what tells the
+second-done arm and the stop check that this chat has closed, and what the
+state server's `append_tail` tool reads to find the record; the working
+folder is gitignored, so nothing is committed by it.
 
 **Then write the commit hash into the headings and index lines this /done run just
 wrote** — /done is the one moment the hash exists and the files are at

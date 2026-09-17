@@ -582,14 +582,45 @@ def _channel_from_tools(cwd):
 
 
 def _version_key(version):
-    """A comparable key: numeric parts, then the -testN suffix, a bare
-    version ranking above every test build of the same number."""
+    """A comparable key: numeric parts, then the -testN suffix. A test build
+    ranks ABOVE the bare version it follows: this project's rezips cut
+    1.22.0-test8 after v1.22.0, so the bare version's suffix sorts below
+    every test number ([update-notice-unreachable-version])."""
     m = _VERSION_SHAPE.search(version or "")
     if not m:
         return None
     nums = tuple(int(x) for x in m.group(1, 2, 3))
-    suffix = int(m.group(4)) if m.group(4) else float("inf")
+    suffix = int(m.group(4)) if m.group(4) else -1
     return nums + (suffix,)
+
+
+KNOWN_MARKETPLACES = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
+                                  "known_marketplaces.json")
+
+
+def _install_source(plugin_root, registry_path=None):
+    """The source type of the marketplace this plugin was installed from —
+    "directory", "github", ... — or "" where it cannot be read.
+
+    The marketplace's name is the folder above the plugin's own folder in the
+    cache path (`.../cache/<marketplace>/<plugin>/<version>`), read against
+    `~/.claude/plugins/known_marketplaces.json`. Unreadable anywhere reads as
+    "", and the caller behaves as it did before the check existed.
+    """
+    if not plugin_root:
+        return ""
+    parts = os.path.normpath(plugin_root).replace("\\", "/").rstrip("/").split("/")
+    if len(parts) < 3:
+        return ""
+    marketplace = parts[-3]
+    try:
+        with open(registry_path or KNOWN_MARKETPLACES, "r",
+                  encoding="utf-8") as f:
+            registry = json.load(f)
+        return str((registry.get(marketplace) or {}).get("source", {})
+                   .get("source", "") or "")
+    except (OSError, ValueError, AttributeError):
+        return ""
 
 
 def _default_gh_runner(args):
@@ -602,10 +633,15 @@ def _default_gh_runner(args):
     return result.returncode, result.stdout or ""
 
 
-def update_check(cwd, installed_version, now=None, run=None, which=None):
+def update_check(cwd, installed_version, now=None, run=None, which=None,
+                 plugin_root=None, registry_path=None):
     """One line naming a newer version on the user's channel, or "".
 
-    `run`, `which` and `now` exist for the suite; the hook passes nothing.
+    `run`, `which`, `now` and `registry_path` exist for the suite; the hook
+    passes `plugin_root` and nothing else. Where the plugin was installed
+    from a marketplace whose source is a local directory, the line names the
+    newer version and says the install tracks a local folder, with no update
+    to run — the folder is the only version that install can reach.
     """
     import shutil
     which = which or shutil.which
@@ -667,6 +703,13 @@ def update_check(cwd, installed_version, now=None, run=None, which=None):
     if not have or not got or got <= have:
         return ""
     shown = _VERSION_SHAPE.search(newest).group(0).lstrip("v")
+    if _install_source(plugin_root, registry_path) == "directory":
+        return (
+            f"[Throughliner] A newer version is on the {channel} channel: "
+            f"{shown} (installed: {installed_version}). This install tracks "
+            "a local folder, so there is no update to run — the folder is "
+            "the only version it can reach."
+        )
     return (
         f"[Throughliner] A newer version is on the {channel} channel: "
         f"{shown} (installed: {installed_version}). The next "
@@ -1285,6 +1328,196 @@ def _queue_dependency_facts(queue_path):
     dead = [(h, b) for h, b in held_pairs if b not in known]
     return (cleared, held, blockers_in_unprocessed, waiting, dead,
             date_held, date_passed, len(unprocessed_slugs))
+
+
+def _log_session_opened(cwd, session_id, version):
+    """Write the version this session opened on into the safety check's
+    decision log, in its own line shape, so the check can later tell that
+    the plugin changed under the session
+    ([scratchpad-refused-after-resume-close-marker]). Never raises."""
+    if not cwd or not version:
+        return
+    safe_id = re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
+    if safe_id == "unknown":
+        return
+    folder = os.path.join(cwd, ".throughliner")
+    path = os.path.join(folder, "pre-tool-use.log")
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    line = "%s\tSessionStart\tallow\tsession opened\tversion %s\t%s\n" % (
+        stamp, version, safe_id)
+    try:
+        os.makedirs(folder, exist_ok=True)
+        with open(path, "a", encoding="utf-8", newline="") as f:
+            f.write(line)
+    except OSError:
+        pass
+
+
+def _stale_close_markers(cwd, session_id):
+    """Names of `close-active-<id>` markers in `.throughliner/` left by
+    sessions other than this one — a /done run that did not finish.
+    Reported, never deleted."""
+    safe_id = re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
+    folder = os.path.join(cwd, ".throughliner")
+    try:
+        names = sorted(os.listdir(folder))
+    except OSError:
+        return []
+    return [n for n in names
+            if n.startswith("close-active-") and n != "close-active-" + safe_id]
+
+
+SETUP_IGNORE_LINES = ("INBOX/", "temp/", ".throughliner/")
+
+
+def _missing_ignore_lines(cwd):
+    """The ignore lines setup writes that the project's `.gitignore` lacks
+    while the folder they cover is present — read where a `.gitignore`
+    exists, empty otherwise ([temp-folder-not-gitignored-in-existing-project]).
+    Reported; the top-up writes them."""
+    path = os.path.join(cwd, ".gitignore")
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            present = {line.strip().lstrip("/").rstrip("/")
+                       for line in f if line.strip()
+                       and not line.strip().startswith("#")}
+    except OSError:
+        return []
+    missing = []
+    for entry in SETUP_IGNORE_LINES:
+        if entry.rstrip("/") in present:
+            continue
+        if os.path.isdir(os.path.join(cwd, entry.rstrip("/"))):
+            missing.append(entry)
+    return missing
+
+
+ADDRESS_BOOK_ROW_RE = re.compile(r"^\|\s*[^|]+?\s*\|\s*`?[^|`]+?`?\s*\|\s*$")
+ADDRESS_BOOK_BULLET_RE = re.compile(r"^-\s+.+?\s+(?:—|–|-)\s+`?.+?`?\s*$")
+
+
+def _address_book_unreadable(cwd):
+    """True where `INBOX/.address-book.md` exists, has content, and no line
+    is in either shape the send script reads ([address-book-format-unstated]).
+    A header row and its rule line do not count as correspondents."""
+    path = os.path.join(cwd, "INBOX", ".address-book.md")
+    if not os.path.isfile(path):
+        return False
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            lines = [l.strip() for l in f]
+    except OSError:
+        return False
+    content = [l for l in lines if l and not l.startswith("#")]
+    if not content:
+        return False
+    for line in content:
+        if ADDRESS_BOOK_BULLET_RE.match(line):
+            return False
+        m = ADDRESS_BOOK_ROW_RE.match(line)
+        if m:
+            name = line.strip("|").split("|")[0].strip().lower()
+            if name not in ("correspondent", "---") and not set(name) <= set("-"):
+                return False
+    return True
+
+
+def _remote_ahead(repo_dir):
+    """(upstream name, commits the remote has that this checkout does not),
+    or None where there is no remote, no upstream, nothing ahead, or git
+    cannot answer. Fetches first, quietly; never pulls. Silent on any failure,
+    since a fetch can need credentials the hook does not have."""
+    try:
+        upstream = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+            cwd=repo_dir, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=15)
+        if upstream.returncode != 0 or not upstream.stdout.strip():
+            return None
+        upstream_name = upstream.stdout.strip()
+        subprocess.run(["git", "fetch", "--quiet"], cwd=repo_dir,
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", timeout=30)
+        count = subprocess.run(
+            ["git", "rev-list", "--count", "HEAD..@{u}"],
+            cwd=repo_dir, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=15)
+        if count.returncode != 0:
+            return None
+        n = int(count.stdout.strip() or "0")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+    return (upstream_name, n) if n > 0 else None
+
+
+def _remote_ahead_lines(cwd):
+    """One fact line per repository whose remote is ahead — the project's
+    own, and any git repository in an immediate subfolder (the nested
+    shape's inner). Empty where nothing is ahead."""
+    repos = [("", cwd)]
+    try:
+        for name in sorted(os.listdir(cwd)):
+            sub = os.path.join(cwd, name)
+            if name.startswith(".") or not os.path.isdir(sub):
+                continue
+            if os.path.exists(os.path.join(sub, ".git")):
+                repos.append((name + "/", sub))
+    except OSError:
+        pass
+    lines = []
+    for label, repo in repos:
+        if not os.path.exists(os.path.join(repo, ".git")):
+            continue
+        ahead = _remote_ahead(repo)
+        if ahead is None:
+            continue
+        upstream_name, n = ahead
+        where = f" (in {label})" if label else ""
+        lines.append(
+            f"[Throughliner] Remote ahead{where}: {upstream_name} has {n} "
+            f"commit{'' if n == 1 else 's'} this checkout does not — pull "
+            "before working the queue. Nothing here pulls."
+        )
+    return lines
+
+
+def _assignee_facts(queue_path):
+    """{name: count of open entries} for every `Assigned to:` line in the
+    queue, both sections; an empty dict where the field is not in use.
+
+    Facts only: which names carry work, and how much. Whose session this is,
+    and what that means for a run, is read by the skills and never here.
+    Never raises.
+    """
+    counts = {}
+    try:
+        with open(queue_path, "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return counts
+    assigned_re = re.compile(r"^Assigned to:\s*(.+?)\s*$", re.IGNORECASE)
+    in_entry = False
+    in_fence = False
+    for raw in lines:
+        stripped = raw.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if re.match(r"^####\s+\S", stripped):
+            in_entry = True
+            continue
+        if re.match(r"^#{1,3}\s", stripped):
+            in_entry = False
+            continue
+        if in_entry:
+            m = assigned_re.match(stripped)
+            if m:
+                counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+    return counts
 
 
 CYCLES_DOC = "CYCLES.md"
@@ -2224,7 +2457,8 @@ def main() -> int:
         # project the deferred-test roll compares this against the target's stamp
         # (computed the same way over plugin/throughliner/); a consumer never has a
         # target to compare against, so this is informational there.
-        update_line = update_check(cwd, plugin_version)
+        _log_session_opened(cwd, data.get("session_id", ""), plugin_version)
+        update_line = update_check(cwd, plugin_version, plugin_root=plugin_root)
         if update_line:
             context_parts.append(update_line)
         host_stamp = content_stamp(plugin_root)
@@ -2311,6 +2545,25 @@ def main() -> int:
                 "assuming its blocker would happen. Check LOG before lifting."
             )
         context_parts.append(facts)
+
+    # The remote ahead of this checkout, where a remote exists: one fact line
+    # per repository, so a collaborator's push is met at the opening rather
+    # than when this session's own push fails. Nothing pulls.
+    context_parts.extend(_remote_ahead_lines(cwd))
+
+    # Whose work the queue holds, only where the `Assigned to:` field is in
+    # use: one line naming each assignee with their open entries. A project
+    # of one person never sees it.
+    assignees = _assignee_facts(queue_path)
+    if assignees:
+        pairs = "; ".join(
+            f"{name}: {n} entr{'y' if n == 1 else 'ies'}"
+            for name, n in sorted(assignees.items()))
+        context_parts.append(
+            f"[Throughliner] Assigned work: {pairs}. Facts only — a build "
+            "with a name on it is built in that person's session, and a "
+            "run in anyone else's skips it and says so."
+        )
 
     # The cycles doc's definitions, in one line — the artifact that gives the
     # due-ness check something to key on. Without it the check had no trigger
@@ -2576,6 +2829,35 @@ def main() -> int:
             "without touching their existing work. State this as your own first message "
             "before doing anything else; don't bury it in other output or wait to be "
             "asked, because a note the user never reads leaves the project drifting."
+        )
+
+    # Ignore lines setup would have written, read against `.gitignore` where
+    # the folder they cover is present; a close-active marker another session
+    # left; an address book in neither shape the send script reads. Each is
+    # reported and nothing is written — the top-up writes the lines, and a
+    # marker is never deleted.
+    ignore_gaps = _missing_ignore_lines(cwd)
+    if ignore_gaps:
+        context_parts.append(
+            "[Throughliner] .gitignore is missing "
+            + ", ".join(f"`{g}`" for g in ignore_gaps)
+            + " — a line setup would have written for a folder that is "
+            "present. Run /setup, which adds it; nothing here writes."
+        )
+    stale_closes = _stale_close_markers(cwd, data.get("session_id", ""))
+    if stale_closes:
+        context_parts.append(
+            "[Throughliner] A /done run that did not finish left "
+            + ", ".join(f"`.throughliner/{n}`" for n in stale_closes)
+            + " behind. Left where it is; it belongs to another session and "
+            "unlocks nothing here."
+        )
+    if _address_book_unreadable(cwd):
+        context_parts.append(
+            "[Throughliner] INBOX/.address-book.md has content but no line in "
+            "a shape the send script reads — a table row `| name | path |` "
+            "or a bullet `- name — path`. Rewrite the entries in one of "
+            "those shapes before the next send; nothing here rewrites."
         )
 
     # Content-level top-up: a scaffolded file exists but is missing a setting the

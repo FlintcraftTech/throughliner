@@ -80,6 +80,28 @@ PUSH_FORCE = re.compile(r"\bgit\s+push\b.*(?:--force(?!-with-lease)\b|-f\b)")
 BLANKET_ADD = re.compile(r'\bgit\b.*\badd\b.*(?:\s-A\b|\s--all\b|\s\.(?=\s|$|[;&|"\')]))')
 # Commit boundaries: --amend and --allow-empty must not match -a / --all.
 COMMIT_ALL = re.compile(r"\bgit\b.*\bcommit\b.*\s(?:-a\b|-am\b|--all\b)")
+# Any commit, bare or `git -C <dir> commit`, for the conflict-marker refusal
+# below: the repository is the -C path where one is given, the cwd otherwise.
+GIT_COMMIT = re.compile(r"\bgit\b(?:\s+-C\s+(\"[^\"]+\"|'[^']+'|\S+))?\s+(?:\S+\s+)*?commit\b")
+
+
+def _conflicted_tracked_file(repo_dir: str):
+    """The first tracked file in `repo_dir` carrying a git conflict marker,
+    or None. Read with `git grep` over the working tree, so an unresolved
+    merge is found whether or not the file is staged; any failure — no git,
+    not a repository — reads as none, since the guard is a backstop."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "grep", "-l", "-e", "^<<<<<<< ", "-e", "^>>>>>>> ", "--", "."],
+            cwd=repo_dir, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    files = [f for f in result.stdout.splitlines() if f.strip()]
+    return files[0] if files else None
 
 # Shell control operators that separate independent command segments. The
 # git-safety patterns are applied to each segment alone (see _split_segments),
@@ -291,6 +313,9 @@ def _deny(reason: str, branch: str = "") -> int:
             "permissionDecisionReason": reason,
         }
     }
+    if _ctx.get("notice"):
+        output["systemMessage"] = _ctx["notice"]
+    _ctx["printed"] = True
     json.dump(output, sys.stdout)
     return 0
 
@@ -310,6 +335,9 @@ def _ask(reason: str, branch: str = "") -> int:
             "permissionDecisionReason": reason,
         }
     }
+    if _ctx.get("notice"):
+        output["systemMessage"] = _ctx["notice"]
+    _ctx["printed"] = True
     json.dump(output, sys.stdout)
     return 0
 
@@ -1292,11 +1320,22 @@ def _checklist_declared_paths(cwd: str) -> list[str]:
         return []
 
     declared = []
-    for line in lines:
-        match = CYCLE_WRITES_RE.match(line)
+    index = 0
+    while index < len(lines):
+        match = CYCLE_WRITES_RE.match(lines[index])
+        index += 1
         if not match:
             continue
-        for chunk in match.group(1).split(","):
+        # The field's own line, then its continuation lines: a field the
+        # editor wrapped keeps its tail on the lines beneath, up to the next
+        # blank line, heading or field ([writes-field-wrapped-paths-honoured]).
+        text = match.group(1)
+        while index < len(lines) and lines[index].lstrip().startswith("`"):
+            # A continuation line is one more run of backticked paths; prose
+            # or a blank line ends the field.
+            text += " " + lines[index].strip()
+            index += 1
+        for chunk in text.split(","):
             chunk = chunk.strip().strip("`").strip().replace("\\", "/")
             chunk = chunk.lstrip("./")
             # A declaration of the project root itself would permit everything,
@@ -1378,6 +1417,77 @@ def _door_refused_earlier(filepath: str, cwd: str, session_id: str) -> bool:
 
 SETUP_MARKER_NAME = ".throughliner-setup-active"
 CLOSE_MARKER_NAME = ".throughliner-close-active"
+# The /done marker's home since [scratchpad-refused-after-resume-close-marker]:
+# `.throughliner/close-active-<session-id>` in the project's own working
+# folder, which every session may write. The scratchpad was refused to a
+# session whose plugin had been swapped under it, and a marker the close
+# cannot write is the failure.
+CLOSE_MARKER_PREFIX = "close-active-"
+
+
+def _close_marker_present(cwd: str, session_id: str) -> bool:
+    """True while THIS session's close marker stands in `.throughliner/`."""
+    safe_id = safe_session_id(session_id)
+    if safe_id == "unknown" or not cwd:
+        return False
+    return os.path.isfile(os.path.join(cwd, ".throughliner",
+                                       CLOSE_MARKER_PREFIX + safe_id))
+
+
+# --- The plugin changed under a live session ---
+# ([scratchpad-refused-after-resume-close-marker], the sender's correction):
+# a session opened on one version and, after a gap, ran on another, with the
+# rules it read at its opening gone from the cache. The opening writes the
+# version it ran as into the decision log; this hook, on its first decision
+# in the session, compares that with the version it runs as and says once
+# where they differ. Facts only: nothing here changes a decision.
+OPENED_BRANCH = "session opened"
+
+
+def _plugin_version_running() -> str:
+    root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
+    if not root:
+        return ""
+    try:
+        with open(os.path.join(root, ".claude-plugin", "plugin.json"), "r",
+                  encoding="utf-8") as f:
+            return str(json.load(f).get("version", "") or "")
+    except (OSError, ValueError, AttributeError):
+        return ""
+
+
+def _session_opened_version(cwd: str, session_id: str) -> str:
+    """The version the opening logged for this session, or ""."""
+    safe_id = safe_session_id(session_id)
+    path = os.path.join(cwd, ".throughliner", _DECISION_LOG_NAME)
+    found = ""
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                cols = line.rstrip("\r\n").split("\t")
+                if len(cols) >= 6 and cols[3] == OPENED_BRANCH \
+                        and cols[5] == safe_id \
+                        and cols[4].startswith("version "):
+                    found = cols[4][len("version "):].strip()
+    except OSError:
+        return ""
+    return found
+
+
+def _version_change_notice(cwd: str, session_id: str) -> str:
+    """One notice, once per session, where the plugin under it changed."""
+    if not cwd or not _fire_once(cwd, session_id, "version-checked"):
+        return ""
+    opened = _session_opened_version(cwd, session_id)
+    running = _plugin_version_running()
+    if not opened or not running or opened == running:
+        return ""
+    return (
+        f"[Throughliner] The plugin under this session changed: it opened on "
+        f"{opened} and is now running {running}. The rules it read at its "
+        "opening may no longer be the installed ones; a fresh chat carries "
+        "the new version."
+    )
 # Left where /setup used to delete its marker: "setup ran in this chat". While
 # it stands together with the /done marker, the /done run of that same chat
 # may write the files setup scaffolds ([setup-close-cannot-fix-setup-output]).
@@ -1484,7 +1594,7 @@ def _is_setup_close_file(filepath: str, cwd: str, session_id: str) -> bool:
     Leaving the setup marker standing until the /done run was refused: a
     planning run in between would inherit setup's whole write set.
     """
-    if not _scratchpad_marker_present(session_id, CLOSE_MARKER_NAME):
+    if not _close_marker_present(cwd, session_id):
         return False
     if not _scratchpad_marker_present(session_id, SETUP_DONE_MARKER_NAME):
         return False
@@ -1514,7 +1624,7 @@ def _is_close_phase_file(filepath: str, cwd: str, session_id: str) -> bool:
     strictly narrower: /setup's marker permits everything, this one permits a
     fixed short list.
     """
-    if not _scratchpad_marker_present(session_id, CLOSE_MARKER_NAME):
+    if not _close_marker_present(cwd, session_id):
         return False
     rel = os.path.relpath(os.path.normpath(filepath), os.path.normpath(cwd))
     rel = os.path.normcase(rel).replace("\\", "/")
@@ -1868,6 +1978,8 @@ def main() -> int:
     _ctx["tool"] = tool_name if isinstance(tool_name, str) else ""
     _ctx["target"] = ""
     _ctx["sid"] = data.get("session_id", "") or ""
+    _ctx["notice"] = _version_change_notice(_ctx["cwd"], _ctx["sid"])
+    _ctx["printed"] = False
 
     # --- Subagent (Agent / Task): cost ask-gate ---
     # A subagent run burns tokens fast and a single run can exhaust the
@@ -2009,6 +2121,26 @@ def main() -> int:
                     + PATTERN_AS_DATA_NOTE,
                     branch="git safety: commit -a",
                 )
+
+            commit_match = GIT_COMMIT.search(segment)
+            if commit_match:
+                repo_dir = commit_match.group(1)
+                repo_dir = (repo_dir.strip("\"'") if repo_dir else "") or "."
+                if not os.path.isabs(repo_dir):
+                    repo_dir = os.path.join(cwd, repo_dir)
+                conflicted = _conflicted_tracked_file(repo_dir)
+                if conflicted:
+                    return _deny(
+                        "[Throughliner] BLOCKED: this commit would carry a "
+                        "git conflict marker. A tracked file in this "
+                        "repository is still mid-merge:\n\n"
+                        f"File: {conflicted}\n\n"
+                        "Resolve the conflict — for two captures appended "
+                        "at the same spot, keep both — remove the `<<<<<<<`, "
+                        "`=======` and `>>>>>>>` lines, then commit."
+                        + PATTERN_AS_DATA_NOTE,
+                        branch="git safety: conflict marker in a tracked file",
+                    )
 
         # --- Structured shell writes to project files ---
         #
@@ -2447,5 +2579,14 @@ def main() -> int:
     return 0
 
 
+def run() -> int:
+    """main, then the once-per-session version-change notice where main
+    printed no decision of its own — one JSON object on stdout either way."""
+    rc = main()
+    if _ctx.get("notice") and not _ctx.get("printed"):
+        json.dump({"systemMessage": _ctx["notice"]}, sys.stdout)
+    return rc
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run())

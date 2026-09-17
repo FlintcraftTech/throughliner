@@ -19,6 +19,7 @@ Contract:
   python reorder_queue.py <queue_path> --delete <slug> <Section>
   python reorder_queue.py <queue_path> --append <Section> --body <path>
   python reorder_queue.py <queue_path> --replace-in <slug> --old <literal> --new <literal> [--section <Section>]
+  python reorder_queue.py <queue_path> --assign <slug> <name>
 
   <section>  one of: Processed | Unprocessed
   <slug...>  the FULL desired order of that section's work-item slugs, top to
@@ -144,10 +145,42 @@ def heading_slug(line):
     return m.group(1) if m else None
 
 
+# Git's conflict-marker shapes: the two that open and close a conflicted
+# region. A queue mid-conflict holds both versions of a region with these
+# lines between, and each version's headings parse as real entries — so the
+# mover could move the wrong block and the digest report a queue that does
+# not exist. Every reader refuses the file before parsing it. The `=======`
+# separator is not matched on its own: it only appears between the two marker
+# lines, which are refused first, and a bare run of equals signs is ordinary
+# Markdown underlining.
+CONFLICT_MARKER_RE = re.compile(r"^(<<<<<<< |>>>>>>> )")
+
+
+def first_conflict_marker(lines):
+    """(1-based line number, the line) of the first conflict marker, or None.
+
+    Fenced blocks are read too: a marker inside a fence is still git's, since
+    git writes them wherever the conflict falls.
+    """
+    for i, line in enumerate(lines, start=1):
+        if CONFLICT_MARKER_RE.match(line):
+            return i, line.rstrip("\r\n")
+    return None
+
+
 def parse(lines):
     """Return (before_lines, section_name->(start,end)) index of section body
     line ranges. A section body runs from the line after its `## Name` heading
-    up to (not including) the next `## ` heading or EOF."""
+    up to (not including) the next `## ` heading or EOF.
+
+    Refuses a file carrying a git conflict marker before reading it as a
+    queue, naming the first marker's line."""
+    marker = first_conflict_marker(lines)
+    if marker is not None:
+        die("the queue carries a git conflict marker at line %d (%r) — it is "
+            "mid-merge, and both versions of that region would parse as real "
+            "entries. Resolve the conflict first; nothing was changed."
+            % marker)
     sections = {}
     heading_idx = {}
     for i, line in enumerate(lines):
@@ -391,23 +424,33 @@ QUEUE_FILES_MESSAGE = (
     "hold the item below the line. Nothing was written.")
 
 
+READS_LINE_RE = re.compile(r'^\**Reads(?:,\s*changes nothing)?\b[^:]*:\**',
+                           re.IGNORECASE)
+BACKTICKED_RE = re.compile(r'`([^`]+)`')
+
+
 def files_text_names_queue(block):
-    """Whether an entry's Files text — its Files line and the bullet lines
-    beneath it — names QUEUE.md."""
+    """Whether an entry's Files text names QUEUE.md as a file that CHANGES:
+    a backticked path on the Files line or the bullet lines beneath it, with
+    a "Reads, changes nothing" line and prose mentions ignored
+    ([queue-content-refusal-reads-changed-paths-only])."""
     in_files = False
     for line in block:
         stripped = line.strip()
+        if READS_LINE_RE.match(stripped):
+            in_files = False
+            continue
         if FILES_LINE_RE.match(stripped):
             in_files = True
-            if 'queue.md' in stripped.lower():
-                return True
+        elif in_files and not (stripped.startswith('-')
+                               or line[:1] in (' ', '\t')):
+            in_files = False
             continue
         if in_files:
-            if stripped.startswith('-') or line[:1] in (' ', '\t'):
-                if 'queue.md' in stripped.lower():
+            for path in BACKTICKED_RE.findall(stripped):
+                if path.strip().replace('\\', '/').split('/')[-1].lower() \
+                        == 'queue.md':
                     return True
-                continue
-            in_files = False
     return False
 
 
@@ -541,7 +584,8 @@ STAMP_RE = re.compile(r"^Filed \d{4}-\d{2}-\d{2} \d{2}:\d{2}, stamped by the "
 # The lines a capture may end on after its prose: the parsed fields. A stamp
 # goes before the first of them, so it stays the last prose line.
 FIELD_LINE_RE = re.compile(
-    r"^(Blocked by|Not before|Cycle|Red flag|Runs alone)\b")
+    r"^(Blocked by|Not before|Cycle|Red flag|Runs alone|Assigned to)\b")
+ASSIGNED_LINE_RE = re.compile(r"^Assigned to:.*$", re.IGNORECASE)
 
 
 def stamp_filed_at(body_lines):
@@ -821,6 +865,84 @@ def delete_item(queue_path, slug, section):
             "SHIPPED work is often correct as written, while a citation of "
             "dropped work may leave the citing item's premise wrong.\n"
             % (len(citing), slug, ', '.join('[%s]' % c for c in citing)))
+
+
+def assign_item(queue_path, slug, name):
+    """Write `Assigned to: <name>` onto one entry, replacing an existing line.
+
+    Whose an entry is to do, in a shared queue. One name: a value naming two
+    people or nobody is refused, since every reader of the field — the digest,
+    the lint, a walkthrough's hand-over — takes it as one person. The body is
+    otherwise carried byte-identical, through the same assembly the other
+    in-item edits use.
+    """
+    name = name.strip()
+    if not name:
+        die("--assign: the name must not be empty")
+    if "," in name or re.search(r"\band\b", name):
+        die("--assign: '%s' is not one name — the field names the one person "
+            "whose work this is to do." % name)
+
+    with open(queue_path, 'r', encoding='utf-8', newline='') as f:
+        lines = f.read().splitlines(keepends=True)
+    sections = parse(lines)
+    found = []
+    for sec in ('Processed', 'Unprocessed'):
+        if sec not in sections:
+            continue
+        start, end = sections[sec]
+        preamble, blocks, marker_after, had_marker = split_blocks(lines[start:end])
+        for s, blk in blocks:
+            if s == slug:
+                found.append((sec, start, end, preamble, blocks, marker_after,
+                              had_marker, blk))
+    if not found:
+        die("--assign slug '%s' is not an entry in either section. The script "
+            "refuses rather than guessing." % slug)
+    if len(found) > 1:
+        die("--assign slug '%s' matches %d entries. Two items sharing a slug "
+            "is itself a fault; fix the duplicate first." % (slug, len(found)))
+
+    sec, start, end, preamble, blocks, marker_after, had_marker, blk = found[0]
+    eol = '\r\n' if blk and blk[0].endswith('\r\n') else '\n'
+    new_line = "Assigned to: %s%s" % (name, eol)
+    new_blk = list(blk)
+    existing = [i for i, l in enumerate(new_blk)
+                if ASSIGNED_LINE_RE.match(l.strip())]
+    if existing:
+        new_blk[existing[0]] = new_line
+        for i in reversed(existing[1:]):
+            del new_blk[i]
+        action = "replaced"
+    else:
+        # Append after the block's last non-blank line, so trailing blank
+        # lines between entries stay where they were.
+        last = len(new_blk)
+        while last > 1 and not new_blk[last - 1].strip():
+            last -= 1
+        if last > 0 and not new_blk[last - 1].endswith('\n'):
+            new_blk[last - 1] = new_blk[last - 1] + eol
+        new_blk.insert(last, new_line)
+        action = "wrote"
+
+    new_blocks = [(s, new_blk if s == slug else b) for s, b in blocks]
+    pref = 'TOP' if marker_after is None else marker_after
+    out = assemble_section(preamble,
+                           elements_with_marker(new_blocks, had_marker, pref))
+    new_lines = lines[:start] + out + lines[end:]
+
+    out_text = ''.join(out)
+    for s, b in blocks:
+        if s != slug and ''.join(b) not in out_text:
+            die("self-check failed: block for [%s] changed content" % s)
+    if ''.join(new_blk) not in out_text:
+        die("self-check failed: the edited block did not land intact")
+    if had_marker != any(MARKER_RE.match(l) for l in out):
+        die("self-check failed: marker presence changed")
+
+    write_verified(queue_path, new_lines, present=[(slug, sec)])
+    sys.stderr.write("reorder_queue: %s Assigned to: %s on [%s] (%s)\n"
+                     % (action, name, slug, sec))
 
 
 def replace_in_item(queue_path, slug, old, new, section=None):
@@ -1213,6 +1335,18 @@ def main():
             die("usage: reorder_queue.py <queue_path> --retitle <slug> "
                 "--heading \"<new heading text>\"")
         retitle_item(rest[0], rt_slug, rt_heading)
+        return
+
+    if '--assign' in args:
+        k = args.index('--assign')
+        try:
+            as_slug, as_name = args[k + 1], args[k + 2]
+        except IndexError:
+            die("--assign needs two values: <slug> <name>")
+        rest = args[:k] + args[k + 3:]
+        if len(rest) != 1:
+            die("usage: reorder_queue.py <queue_path> --assign <slug> <name>")
+        assign_item(rest[0], as_slug, as_name)
         return
 
     if '--replace-in' in args:

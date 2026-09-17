@@ -26,3 +26,8 @@ A path is matched relative to the project root. A trailing slash means a folder.
 - `BUILD-VIEW.md` — the generated build view a run used to read instead of the
   queue, written by `scripts/generate_build_view.py`. Retired 2026-08-27 when
   builds went back to reading the queue whole.
+- `.mcp.json` — the per-project registration of the method's state server,
+  written by hand in the development project while the server was dogfooded
+  there. Retired 2026-09-17 when the plugin's own package began registering the
+  server, so every project gets the tools through the plugin; a project-level
+  copy now registers the server twice.

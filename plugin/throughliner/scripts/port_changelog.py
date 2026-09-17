@@ -388,6 +388,11 @@ def main(argv=None):
     parser.add_argument("--to", dest="until", default="HEAD",
                         help="this release's tag or commit (default: HEAD)")
     parser.add_argument(
+        "--as", dest="label", metavar="LABEL",
+        help="the name used for --to in the heading, where the tag does "
+             "not exist yet — a release generates the changelog before it "
+             "tags, so `--to HEAD --as v1.24.0` heads it with the tag")
+    parser.add_argument(
         "--catch-up", dest="catch_up", metavar="VERSION",
         help="everything since the version you last ported from, up to HEAD "
              "— for a porter picking up after a gap, possibly spanning "
@@ -426,7 +431,7 @@ def main(argv=None):
               % (args.since, args.until))
         return 0
 
-    span = "%s..%s" % (args.since, args.until)
+    span = "%s..%s" % (args.since, args.label or args.until)
     document = HEADER % span + "\n" + "\n".join(lines).rstrip() + "\n"
 
     if args.out:

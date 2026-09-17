@@ -289,6 +289,12 @@ Check each, and make it so if it isn't:
 INBOX/ present          ->  `.gitignore` carries an `INBOX/` line
 temp/ present           ->  `.gitignore` carries a `temp/` line
 .gitignore present      ->  it carries a `.throughliner/` line
+INBOX/.address-book.md  ->  it parses to at least one correspondent, in
+  present, with content     either shape the send script reads — a table
+                            row `| name | path |` or a bullet `- name — path`;
+                            a book that parses to none is reported in one
+                            line naming the two shapes, and nothing is
+                            rewritten
 no outputStyle set in the project's .claude/settings.local.json
                         ->  make the brevity-style offer from Step 2, exactly
                             as a fresh setup would — this project was set up
@@ -936,6 +942,14 @@ anything else worth knowing
   meeting a SPEC with no `## Goals` heading, asks it in one line and writes the
   answer as the section, add-only; a project that answers "none" gets no
   section and is not asked again.
+
+  **Where the interview, or the top-up on the user's word, learns the project
+  has more than one person, offer the default line once:** one line in the
+  user's own section of the project's CLAUDE.md, in exactly this shape —
+  `Unassigned work is <name>'s.` — naming whose an entry with no
+  `Assigned to:` line is. The queue lint reads that shape and no other, so
+  the offer shows the line as it will be written; a project of one person is
+  not asked.
 
   **The parts question is asked roughly, and a rough answer is accepted.** Offer
   a guess like every other question — "I'd say this has two parts: the app,

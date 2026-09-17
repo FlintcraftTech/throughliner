@@ -958,7 +958,7 @@ def _check_cleared_names_queue(annotated, blocks, warnings):
 # here; the bolded line-leading form, which this check tolerates for the other
 # markers, is the separate check below.
 MID_LINE_MARKERS = ("Red flag · State:", "Blocked by:", "Not before:",
-                    "Cycle:", "Rule gate:")
+                    "Cycle:", "Rule gate:", "Assigned to:")
 
 
 def _check_mid_line_markers(annotated, warnings):
@@ -1072,16 +1072,104 @@ def _check_until_built_on_work_item(annotated, warnings):
             )
 
 
-def lint(content: str, gate_check: bool = True) -> list[str]:
+# `Assigned to: <name>` — whose an entry is to do. One name; the shape is
+# what the digest prints, the mover carries and the walkthrough addresses, so
+# a line naming two people or nobody is reported here at the writing end.
+ASSIGNED_LINE = re.compile(r"^\*{0,2}Assigned to:?\*{0,2}\s*(.*?)\s*$",
+                           re.IGNORECASE)
+# The user-written default in the project's own CLAUDE.md, read in this shape
+# and no other: `Unassigned work is <name>'s.`
+UNASSIGNED_DEFAULT = re.compile(
+    r"^\s*Unassigned work is\s+(.+?)['’]s\.\s*$", re.IGNORECASE | re.MULTILINE)
+
+
+def _read_unassigned_default(root: str):
+    """The name the project's CLAUDE.md gives for unassigned work, or None."""
+    if not root:
+        return None
+    try:
+        with open(os.path.join(root, "CLAUDE.md"), "r", encoding="utf-8",
+                  errors="replace") as f:
+            m = UNASSIGNED_DEFAULT.search(f.read())
+    except OSError:
+        return None
+    return m.group(1).strip() if m else None
+
+
+CONFLICT_MARKER_RE = re.compile(r"^(<<<<<<< |>>>>>>> )")
+
+
+def _check_conflict_markers(content, warnings):
+    """A git conflict marker line in the queue is a finding: the file is
+    mid-merge, both versions of the region parse as entries, and every queue
+    tool refuses it until it is resolved. Read across fences too, since git
+    writes the markers wherever the conflict falls."""
+    for i, line in enumerate(content.splitlines(), start=1):
+        if CONFLICT_MARKER_RE.match(line):
+            warnings.append(
+                f"line {i}: {line.rstrip()!r} is a git conflict marker — the "
+                "queue is mid-merge, and both versions of that region parse "
+                "as real entries. The queue tools and the done command refuse "
+                "the file until the conflict is resolved; the common case, "
+                "two captures appended at the same spot, resolves as keep "
+                "both."
+            )
+            return
+
+
+def _check_assigned_to(blocks, warnings, unassigned_default):
+    """Check: every `Assigned to:` line names exactly one person, and where
+    the field is in use, entries without one have a readable default.
+
+    `unassigned_default` is the name read off the project's CLAUDE.md, or
+    None where no line in the fixed shape exists. The missing-default case
+    fires only where some entry carries the field — a project of one person
+    never sees it.
+    """
+    in_use = False
+    unassigned = []
+    for b in blocks:
+        assigned = None
+        for line in b["lines"][1:]:
+            m = ASSIGNED_LINE.match(line.strip())
+            if not m:
+                continue
+            in_use = True
+            name = m.group(1).strip()
+            if not name or "," in name or re.search(r"\band\b", name):
+                warnings.append(
+                    f"line {b['idx'] + 1}: {b['heading'][:60]!r} carries "
+                    f"'Assigned to: {name}', which is not one name — the "
+                    "field names the one person whose work this is to do; "
+                    "write one name, or drop the line."
+                )
+            assigned = name
+        if assigned is None:
+            unassigned.append(b)
+    if in_use and unassigned and unassigned_default is None:
+        warnings.append(
+            f"{len(unassigned)} entr{'y has' if len(unassigned) == 1 else 'ies have'} "
+            "no 'Assigned to:' line while other entries carry one, and the "
+            "project's CLAUDE.md has no readable default. Write one line in "
+            "exactly this shape in CLAUDE.md — Unassigned work is <name>'s. — "
+            "or assign each entry; the lint reads that shape and no other."
+        )
+
+
+def lint(content: str, gate_check: bool = True,
+         unassigned_default=None) -> list[str]:
     """Every structure check over a queue's text.
 
     `gate_check` is whether the cleared-item gate-disposition check runs —
     `_lint_queue` passes what `_project_has_rule_gate` read off the project's
-    CLAUDE.md; a direct caller keeps the check on.
+    CLAUDE.md; a direct caller keeps the check on. `unassigned_default` is
+    the name `_read_unassigned_default` read off the same file, or None.
     """
     annotated = _annotate(content)
     blocks = _workline_blocks(annotated)
     warnings = []
+    _check_conflict_markers(content, warnings)
+    _check_assigned_to(blocks, warnings, unassigned_default)
     _check_slugs(blocks, warnings)
     _check_heading_articles(blocks, warnings)
     _check_sections(annotated, warnings)
@@ -1528,7 +1616,8 @@ def _lint_queue(queue_path: str, with_growth: bool = True) -> int:
     baseline_content, baseline_kind = _baseline_queue(cwd)
 
     sections = []
-    warnings = lint(content, gate_check=gate_check)
+    warnings = lint(content, gate_check=gate_check,
+                    unassigned_default=_read_unassigned_default(cwd))
     # The gone direction's baseline is the previous lint RUN, not the commit;
     # read before this run's bodies overwrite it.
     last_run = _read_lint_state(cwd)

@@ -215,6 +215,24 @@ check("moving the marker's anchor leaves alpha cleared and beta held",
       repr(after))
 shutil.rmtree(d, ignore_errors=True)
 
+# --- assigned_to alone reassigns; with a hold it rides alongside -------------
+d = project()
+text = call(d, {"slug": "delta", "assigned_to": "Alex"})
+after = queue_text(d)
+check("assigned_to alone writes the line and moves nothing",
+      "Delta's rationale.\nAssigned to: Alex\n" in after
+      and "Wrote Assigned to: Alex" in text
+      and after.index("[delta]") < after.index("[epsilon]"), repr(text))
+text = call(d, {"slug": "delta", "assigned_to": "Sam", "blocked_by": ["alpha"]})
+after = queue_text(d)
+delta_block = after.split("[delta]")[1].split("#### Epsilon")[0]
+check("a hold with assigned_to writes both, replacing the old name",
+      delta_block.count("Assigned to:") == 1 and "Assigned to: Sam" in delta_block
+      and "Blocked by: [alpha]" in delta_block, repr(delta_block))
+shutil.rmtree(d, ignore_errors=True)
+refused("two names in assigned_to", {"slug": "delta", "assigned_to": "Alex and Sam"},
+        "not one name")
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

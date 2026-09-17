@@ -333,6 +333,90 @@ def _already_blocked(cwd, session_id, slug):
     return False
 
 
+# --- The post-close tail offer ([post-close-tail-offer-enforced-once]) ---
+#
+# After this chat's /done, the always-loaded rule says to offer once to append
+# later work to the session's record as a marked tail, at the end of a piece
+# of work where a file changed. It failed repeatedly in practice. /done leaves
+# `.throughliner/session-closed-<session-id>` carrying the record's filename;
+# where a project file outside LOG/ was written after it (read from the safety
+# check's decision log), a finished reply that carries neither the offer nor a
+# tail is fed back once. The check sees only a reply after a write, so a change
+# never reported in a reply is not reached, and it composes no tail.
+SESSION_CLOSED_PREFIX = "session-closed-"
+TAIL_MENTION = re.compile(r"\btail\b", re.IGNORECASE)
+WRITE_TOOLS = ("Edit", "Write", "MultiEdit")
+
+
+def _safe_id(session_id):
+    return re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
+
+
+def _session_closed_marker(cwd, session_id):
+    """The closed marker's path for this session, or None."""
+    safe = _safe_id(session_id)
+    if safe == "unknown":
+        return None
+    path = os.path.join(cwd, ".throughliner", SESSION_CLOSED_PREFIX + safe)
+    return path if os.path.isfile(path) else None
+
+
+def _project_write_since(cwd, session_id, since):
+    """True where the decision log shows an allowed edit-tool write by this
+    session, to a project file outside LOG/, stamped after `since`."""
+    safe = _safe_id(session_id)
+    path = os.path.join(cwd, ".throughliner", "pre-tool-use.log")
+    root = os.path.normcase(os.path.abspath(cwd)).replace("\\", "/")
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                cols = line.rstrip("\r\n").split("\t")
+                if len(cols) < 6 or cols[5] != safe:
+                    continue
+                if cols[1] not in WRITE_TOOLS or cols[2] != "allow":
+                    continue
+                if cols[0] <= since:
+                    continue
+                target = cols[4]
+                if os.path.isabs(target):
+                    norm = os.path.normcase(target).replace("\\", "/")
+                    if not norm.startswith(root + "/"):
+                        continue
+                    rel = norm[len(root) + 1:]
+                else:
+                    rel = os.path.normcase(target).replace("\\", "/")
+                if rel.startswith("log/") or "/log/" in "/" + rel:
+                    continue
+                return True
+    except OSError:
+        return False
+    return False
+
+
+def _post_close_tail_owed(cwd, session_id, message):
+    """The feedback reason where the tail offer is owed and absent, else ""."""
+    marker = _session_closed_marker(cwd, session_id)
+    if marker is None or TAIL_MENTION.search(message):
+        return ""
+    try:
+        import datetime
+        since = datetime.datetime.fromtimestamp(
+            os.path.getmtime(marker)).strftime("%Y-%m-%d %H:%M:%S")
+    except OSError:
+        return ""
+    if not _project_write_since(cwd, session_id, since):
+        return ""
+    if _already_blocked(cwd, session_id, "post-close-tail"):
+        return ""
+    return (
+        "This chat has already closed — its record is written and committed "
+        "— and a project file changed since. The offer to append that work "
+        "to this session's record as a marked tail is owed once: name both "
+        "routes, a yes here or running the done command again, which appends "
+        "the same tail. This is fed back once and passes on the next reply."
+    )
+
+
 def project_root(data: dict) -> str:
     """The project root every path test runs against.
 
@@ -400,6 +484,11 @@ def main():
                 "once; it passes on the next reply."
             ),
         }))
+        sys.exit(0)
+
+    owed = _post_close_tail_owed(cwd, session_id, message)
+    if owed:
+        print(json.dumps({"decision": "block", "reason": owed}))
         sys.exit(0)
 
     claimed = _claimed_slugs(message)

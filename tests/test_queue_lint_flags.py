@@ -633,8 +633,92 @@ def test_untracked_no_snapshot_yields_no_baseline():
               f"got kind={kind!r}, content={content!r}")
 
 
+ASSIGNED_QUEUE = """# QUEUE
+
+## Processed
+
+#### Work for one person [alpha]
+Rationale.
+Assigned to: Alex
+
+--- Cleared to run above this line ---
+
+## Unprocessed
+
+#### Work for nobody yet [beta]
+Rationale.
+"""
+
+
+def test_assigned_to_one_name_passes_the_shape_check():
+    """`Assigned to: Alex` is the field's shape; with a readable default on
+    file, an entry without the line is nobody's problem."""
+    lint = load_lint()
+    warnings = lint(ASSIGNED_QUEUE, unassigned_default="Alex")
+    hits = [w for w in warnings if "Assigned to" in w]
+    check("a one-name field with a default on file is silent", not hits,
+          repr(hits))
+
+
+def test_assigned_to_two_names_is_flagged():
+    """The field names one person; a line naming two is reported where it
+    is written, since every reader takes it as one."""
+    lint = load_lint()
+    warnings = lint(ASSIGNED_QUEUE.replace("Assigned to: Alex",
+                                           "Assigned to: Alex, Sam"),
+                    unassigned_default="Alex")
+    check("two names on the line are flagged",
+          any("not one name" in w for w in warnings), repr(warnings))
+
+
+def test_missing_default_is_reported_when_the_field_is_in_use():
+    """Entries without the field, other entries with it, and no readable
+    `Unassigned work is <name>'s.` line: one warning naming the shape."""
+    lint = load_lint()
+    warnings = lint(ASSIGNED_QUEUE, unassigned_default=None)
+    check("the missing default is reported with the line's shape",
+          any("Unassigned work is <name>'s." in w for w in warnings),
+          repr(warnings))
+    warnings = lint(ASSIGNED_QUEUE.replace("Assigned to: Alex\n", ""),
+                    unassigned_default=None)
+    check("a queue with no field in use is not asked for a default",
+          not any("Unassigned work" in w for w in warnings), repr(warnings))
+
+
+def test_conflict_marker_line_is_a_finding():
+    lint = load_lint()
+    text = ASSIGNED_QUEUE + ("<<<<<<< HEAD\n#### Mine [mine]\nR.\n=======\n"
+                             "#### Theirs [theirs]\nR.\n>>>>>>> origin/main\n")
+    warnings = lint(text, unassigned_default="Alex")
+    check("a conflict marker line is flagged with its line number",
+          any("git conflict marker" in w and "line " in w for w in warnings),
+          repr(warnings))
+    warnings = lint(ASSIGNED_QUEUE, unassigned_default="Alex")
+    check("a clean queue draws no marker finding",
+          not any("conflict marker" in w for w in warnings), repr(warnings))
+
+
+def test_unassigned_default_is_read_in_its_shape_only():
+    import tempfile
+    mod = _load_module()
+    with tempfile.TemporaryDirectory() as td:
+        with open(os.path.join(td, "CLAUDE.md"), "w", encoding="utf-8") as f:
+            f.write("# Project\n\nUnassigned work is Sam's.\n")
+        check("the default line is read", mod._read_unassigned_default(td) == "Sam",
+              repr(mod._read_unassigned_default(td)))
+        with open(os.path.join(td, "CLAUDE.md"), "w", encoding="utf-8") as f:
+            f.write("# Project\n\nAnything not assigned goes to Sam.\n")
+        check("a line in another shape is not read",
+              mod._read_unassigned_default(td) is None)
+
+
 if __name__ == "__main__":
     print("test_queue_lint_flags")
+    test_assigned_to_one_name_passes_the_shape_check()
+    test_assigned_to_two_names_is_flagged()
+    test_missing_default_is_reported_when_the_field_is_in_use()
+    test_unassigned_default_is_read_in_its_shape_only()
+    test_conflict_marker_line_is_a_finding()
     test_clean_queue_is_silent()
     test_mid_line_rule_gate_label_is_flagged()
     test_bolded_rule_gate_label_is_flagged_and_plain_is_not()

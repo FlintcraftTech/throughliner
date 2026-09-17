@@ -126,6 +126,10 @@ shutil.rmtree(d, ignore_errors=True)
 # absent and the tool used to refuse. A root with no CLAUDE.md exercises the
 # one-child-with-.git fallback rather than the Visibility-line read.
 d = tempfile.mkdtemp(prefix="mcp-host-currency-nested-")
+# A set-up project: the server starts only where SPEC.md or QUEUE.md exists
+# ([mcp-server-promotion]). No CLAUDE.md, so the one-child fallback still runs.
+with open(os.path.join(d, "SPEC.md"), "w", encoding="utf-8") as f:
+    f.write("# SPEC\n")
 inner_hooks = os.path.join(d, "product", "plugin", "throughliner", "hooks")
 os.makedirs(inner_hooks)
 os.makedirs(os.path.join(d, "product", ".git"))

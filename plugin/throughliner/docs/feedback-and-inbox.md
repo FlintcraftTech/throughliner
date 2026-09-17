@@ -299,7 +299,16 @@ guarantee, and the docs must not let it read as one.
 **The address book — `INBOX/.address-book.md`, correspondent name to absolute
 folder path.** Outbound needs a filesystem path and inbound needs none. Write an
 entry the first time the user supplies a path, so the cost is paid once per
-correspondent instead of once per reply.
+correspondent instead of once per reply. **An entry is written in one of two
+shapes, and the send script reads both:**
+
+```
+| Site project | `C:\Users\<you>\Projects\site` |        # a table row
+- Site project — `C:\Users\<you>\Projects\site`          # a bullet, em dash
+```
+
+A book with content in neither shape is refused at the send as unreadable,
+naming the two shapes, and the top-up reports one at a session opening.
 
 ```
 lives INSIDE INBOX/    ->  `.gitignore` ignores that folder and everything

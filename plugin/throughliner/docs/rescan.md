@@ -113,7 +113,9 @@ primes the user for the wrong interaction. In any other chat the offer is not
 made and this skill files only.
 
 **What already happened → this chat's LOG entry, as a marked tail.** Append rather
-than rewrite, under a heading that says what it is:
+than rewrite — with the state server's `append_tail` tool where the server is
+registered, which finds the record and stamps the time — under a heading that
+says what it is:
 
 ```
 ## After /done
@@ -159,7 +161,11 @@ it; and the resumed work's own pending question, put back in bold as the
 message's last line, so the message ends on the ask the user was in the middle
 of. Where nothing was running, or the run has finished and not closed — the hand-back to the /done step —
 the third part is running /done, named in words and clear of the sentence's
-end, in bold as the last line, since that step is the pending one.
+end, in bold as the last line, since that step is the pending one. Where the
+conversation carried an outcome-shaped statement of the user's that no goal in
+SPEC's Goals section names — a sentence about where the project should get to,
+or when it would count as arrived — the turn also proposes it as a goal in one
+line, in their words, and writes it only on their yes.
 
 **Recommend nothing else.** This skill exists partly because close machinery
 accumulating at the end of a chat pulls the whole chat toward ending. A /rescan

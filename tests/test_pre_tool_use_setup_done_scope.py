@@ -73,12 +73,16 @@ def main():
                            SESSION, "scratchpad")
     os.makedirs(scratch, exist_ok=True)
     done_marker = os.path.join(scratch, pre_tool_use.SETUP_DONE_MARKER_NAME)
-    close_marker = os.path.join(scratch, pre_tool_use.CLOSE_MARKER_NAME)
-    for m in (done_marker, close_marker):
-        if os.path.exists(m):
-            os.remove(m)
+    if os.path.exists(done_marker):
+        os.remove(done_marker)
 
     d = make_project()
+    # The close marker lives in the project's own working folder since
+    # [scratchpad-refused-after-resume-close-marker]; the setup-done marker
+    # stays in the scratchpad.
+    os.makedirs(os.path.join(d, ".throughliner"), exist_ok=True)
+    close_marker = os.path.join(d, ".throughliner",
+                                pre_tool_use.CLOSE_MARKER_PREFIX + SESSION)
     claude_md = os.path.join(d, "CLAUDE.md")
     gitignore = os.path.join(d, ".gitignore")
     part_spec = os.path.join(d, "part", "SPEC.md")

@@ -191,7 +191,9 @@ channel, offer the update here, once** [BRIEF, PROMPT].
 the install guide's two commands — the marketplace refresh, then the plugin
 update — run by Claude in this chat on the user's yes, and a full restart of
 the app, which is theirs; and the one ask. Nothing runs without the yes, and a
-no is taken once, with the check returning at its own weekly rhythm.
+no is taken once, with the check returning at its own weekly rhythm. Where the
+opening's line says the install tracks a local folder, the turn offers nothing
+and says so.
 
 **Run the queue digest, then read QUEUE.md whole, then read SPEC.md.** Both, in
 that order — the digest for the facts only a script can compute, then the file
@@ -617,7 +619,10 @@ that also processes what it files.
 each goal's "reached when" line in SPEC's Goals section against what it names —
 the record, the cycles doc's observable or the queue — and say one line only
 where a goal's test now holds, or where no entry in either queue section names
-the goal's words; quiet otherwise, folded into the opening's quiet clause. The
+the goal's words; and where a goal's "reached when" names something the record
+no longer has, or names work now cleared or built that would satisfy it, the
+check proposes a rewrite of that goal in one line, written on the user's yes at
+that turn; quiet otherwise, folded into the opening's quiet clause. The
 limit: the check cannot tell that a goal is no longer wanted; that stays the
 user's read.
 
@@ -850,8 +855,9 @@ processing at least those three before your next build run." It's a
 planning-throughput target, not a context-budget count.
 
 **State the four routes here, once, in the same breath** — *"I'll work through
-these one at a time; say skip, stop, or run the done command whenever you like."* This is the only place
-they are recited. **Close that same message on the first item itself**: a pointer
+these one at a time; say skip, stop, or run the done command whenever you like — or, where an item is someone else's to do, say whose."* This is the only place
+they are recited; the last route is spoken only where the project holds more
+than one person, and it rewrites the entry's `Assigned to:` line in one line. **Close that same message on the first item itself**: a pointer
 to it, its plain-English summary and its analysis, ending on the interview's own
 ask — the ordering answer was the yes, so no "start with this one?" is asked. The
 per-item checkpoint then presents just the next item.
@@ -1360,7 +1366,8 @@ audit findings are filed straight to Unprocessed with no approval on the way in,
 so this turn is the first time anyone has judged them.
 
 Part of moving an entry into Processed is settling who does it and how: Claude-work by default or
-`[user]`; and for Claude-work, its flavor — a capture asking for a check is a
+`[user]`; where the project holds more than one person, whose it is to do,
+written as the entry's `Assigned to:` line; and for Claude-work, its flavor — a capture asking for a check is a
 build where every hit has one fix and the search is written into the item, so
 the build derives its sites from it, and an `[audit]` otherwise. Claude places the item in Processed by
 relationship judgment and reports where it went.
@@ -1889,11 +1896,14 @@ being neutral and silently reclassifies everything still waiting as nothing left
 to do.
 
 When the queue empties, do **not** presume the session is over. An empty
-Unprocessed is a resting state, not a stop signal. **The ask says in one line
-what was passed over and why** — how many entries wait for a cycle's turn, how
+Unprocessed is a resting state, not a stop signal. **The ask opens with the
+ready work counted by kind, read from the digest — "N builds, N audits and N
+steps of yours are ready to build" — and then says in one line what was
+passed over and why** — how many entries wait for a cycle's turn, how
 many on other entries or on dates — naming any red-flagged capture outright
 with what it waits on, so a queue that came to rest by passing everything over
-is never reported as fully processed. Then the closing paragraph exactly as
+is never reported as fully processed. The count is the count, not the list:
+the done command's closing message is what lists the cleared items. Then the closing paragraph exactly as
 the specimen below has it, ending on its standalone bold ask — and wait. Each
 command is named in words and does not end the sentence: the app lifts a
 trailing slash command into the composer, so an ask ending on one is a
@@ -1901,6 +1911,7 @@ keystroke from being answered by accident. **The specimen is the one statement
 of the closing paragraph; the other sites that offer it point here and copy
 it.**
 
+> Eleven builds, one audit and three steps of yours are ready to build.
 > Everything else is set aside: four entries wait for a cycle's turn, two wait
 > on other entries — one of them the red-flagged repository cleanup, which
 > waits on the per-part specs — and one waits on a date.

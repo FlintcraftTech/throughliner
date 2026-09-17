@@ -127,7 +127,41 @@ def main():
     check("beta channel: same build installed, silence", line == "", line)
     d5 = project(channel="beta")
     line = hook.update_check(d5, "1.24.0", now=NOW, run=Runner(beta="1.24.0-test2"), which=gh_present)
-    check("a bare version outranks a test build of the same number", line == "", line)
+    check("a test build outranks the bare version it follows, so it is named",
+          "1.24.0-test2" in line, line)
+
+    # The key's order, pinned ([update-notice-unreachable-version]): a rezip
+    # is cut after the release it follows, so 1.22.0-test8 sits above 1.22.0,
+    # and 1.23.0 above both.
+    k = hook._version_key
+    check("1.22.0-test8 ranks above 1.22.0", k("1.22.0-test8") > k("1.22.0"))
+    check("1.23.0 ranks above both", k("1.23.0") > k("1.22.0-test8") > k("1.22.0"))
+
+    # A directory-source marketplace: the line names the version and says the
+    # install tracks a local folder, with no update to run.
+    d8 = project()
+    registry = os.path.join(d8, "known_marketplaces.json")
+    with open(registry, "w", encoding="utf-8") as f:
+        json.dump({"flintcraft": {"source": {"source": "directory",
+                                             "path": "C:/somewhere"}}}, f)
+    plugin_root = os.path.join(d8, "cache", "flintcraft", "throughliner", "1.22.0-test8")
+    line = hook.update_check(d8, "1.22.0", now=NOW, run=Runner(), which=gh_present,
+                             plugin_root=plugin_root, registry_path=registry)
+    check("a directory-source install names the version and the local folder",
+          "1.23.0" in line and "tracks a local folder" in line
+          and "planning session offers" not in line, line)
+    d9 = project()
+    with open(registry, "w", encoding="utf-8") as f:
+        json.dump({"flintcraft": {"source": {"source": "github",
+                                             "repo": "x/y"}}}, f)
+    line = hook.update_check(d9, "1.22.0", now=NOW, run=Runner(), which=gh_present,
+                             plugin_root=plugin_root, registry_path=registry)
+    check("a github-source install still gets the offer line",
+          "planning session offers" in line, line)
+    line = hook.update_check(project(), "1.22.0", now=NOW, run=Runner(), which=gh_present,
+                             plugin_root=plugin_root, registry_path=os.path.join(d9, "missing.json"))
+    check("an unreadable registry behaves as before",
+          "planning session offers" in line, line)
 
     # A version string that is not a version is named as unreadable, never
     # printed ([sweep-security-hook-output-carries-machine-and-remote-strings]).

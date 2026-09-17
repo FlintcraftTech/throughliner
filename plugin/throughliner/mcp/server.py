@@ -396,8 +396,15 @@ def tool_file_capture(arguments):
     blocked_by = [s.strip().strip("[]") for s in blocked_by]
     not_before = (arguments.get("not_before") or "").strip()
     cycle = (arguments.get("cycle") or "").strip().strip("[]")
+    assigned_to = (arguments.get("assigned_to") or "").strip()
 
     problems = []
+
+    if assigned_to and ("," in assigned_to
+                        or re.search(r"\band\b", assigned_to)):
+        problems.append("assigned_to %r is not one name — the field names "
+                        "the one person whose work this is to do."
+                        % assigned_to)
 
     if not heading:
         problems.append("heading is missing — the entry's one-line "
@@ -482,6 +489,8 @@ def tool_file_capture(arguments):
         entry.append("Not before: %s\n" % not_before)
     if cycle:
         entry.append("Cycle: [%s]\n" % cycle)
+    if assigned_to:
+        entry.append("Assigned to: %s\n" % assigned_to)
 
     # The append goes through the mover's own path. Its refusals call
     # sys.exit via die(), which must not kill the server — so the call runs
@@ -508,6 +517,61 @@ def tool_file_capture(arguments):
 
     return "Filed at the bottom of Unprocessed: #### %s [%s]" \
            % (heading, slug)
+
+
+SESSION_CLOSED_PREFIX = "session-closed-"
+TAIL_HEADING = "## After /done"
+
+
+def tool_append_tail(arguments):
+    """Append post-close work to this chat's record as a marked tail
+    ([post-close-tail-offer-enforced-once]). The chat's record is read from
+    the `session-closed-<id>` marker /done left in `.throughliner/`; the
+    heading is created once; the time is stamped from the clock. Refuses
+    where no marker exists — nothing has closed, so there is no tail."""
+    root = project_root()
+    prose = (arguments.get("prose") or "").strip()
+    session_id = (arguments.get("session_id") or "").strip()
+    if not prose:
+        return "Refused — nothing was written:\n- prose is missing."
+    folder = os.path.join(root, ".throughliner")
+    try:
+        markers = sorted(n for n in os.listdir(folder)
+                         if n.startswith(SESSION_CLOSED_PREFIX))
+    except OSError:
+        markers = []
+    if session_id:
+        safe = re.sub(r"[^A-Za-z0-9._-]", "_", session_id)
+        markers = [n for n in markers if n == SESSION_CLOSED_PREFIX + safe]
+    if not markers:
+        return ("Refused — nothing was written:\n- no session-closed marker "
+                "in .throughliner/, so no chat here has closed and there is "
+                "no record to append a tail to.")
+    if len(markers) > 1:
+        return ("Refused — nothing was written:\n- %d closed chats have "
+                "markers; pass session_id to name which record." % len(markers))
+    try:
+        with open(os.path.join(folder, markers[0]), "r", encoding="utf-8") as f:
+            record_name = f.read().strip().splitlines()[0].strip()
+    except (OSError, IndexError):
+        return ("Refused — nothing was written:\n- the marker %s names no "
+                "record." % markers[0])
+    record = os.path.join(root, "LOG", os.path.basename(record_name))
+    if not os.path.isfile(record):
+        return ("Refused — nothing was written:\n- the marker names %s, "
+                "which is not in LOG/." % record_name)
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    with open(record, "r", encoding="utf-8", newline="") as f:
+        text = f.read()
+    eol = "\r\n" if "\r\n" in text else "\n"
+    addition = ""
+    if TAIL_HEADING not in text:
+        addition += eol + TAIL_HEADING + eol
+    addition += eol + "**%s.** " % stamp + prose.replace("\n", eol) + eol
+    with open(record, "a", encoding="utf-8", newline="") as f:
+        f.write(addition)
+    return "Appended a tail to LOG/%s under %s, stamped %s." % (
+        os.path.basename(record), TAIL_HEADING, stamp)
 
 
 INTENTS = ("for completion", "for continuation")
@@ -624,6 +688,7 @@ def tool_hold_entry(arguments):
     blocked_by = [s.strip().strip("[]") for s in blocked_by if s.strip()]
     not_before = (arguments.get("not_before") or "").strip()
     until_built = bool(arguments.get("until_built"))
+    assigned_to = (arguments.get("assigned_to") or "").strip()
 
     problems = []
     if not slug:
@@ -631,9 +696,14 @@ def tool_hold_entry(arguments):
     if blocked_by and not_before:
         problems.append("both blocked_by and not_before were given — a hold "
                         "is one or the other.")
-    if not blocked_by and not not_before:
-        problems.append("neither blocked_by nor not_before was given — "
-                        "nothing to write.")
+    if not blocked_by and not not_before and not assigned_to:
+        problems.append("neither blocked_by nor not_before nor assigned_to "
+                        "was given — nothing to write.")
+    if assigned_to and ("," in assigned_to
+                        or re.search(r"\band\b", assigned_to)):
+        problems.append("assigned_to %r is not one name — the field names "
+                        "the one person whose work this is to do."
+                        % assigned_to)
     if until_built and not blocked_by:
         problems.append("until_built was given without blocked_by — the "
                         "words qualify a Blocked by: hold and nothing else.")
@@ -676,6 +746,22 @@ def tool_hold_entry(arguments):
     if problems:
         return "Refused — nothing was written:\n" + \
                "\n".join("- " + p for p in problems)
+
+    def _assign():
+        captured = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(captured), \
+                    contextlib.redirect_stdout(captured):
+                mover.assign_item(queue, slug, assigned_to)
+        except SystemExit:
+            return "Refused by the queue tool — nothing was written:\n" + \
+                   captured.getvalue().strip()
+        return "Wrote Assigned to: %s on [%s]." % (assigned_to, slug)
+
+    if not blocked_by and not not_before:
+        # A reassignment alone: the hold is untouched and the entry does not
+        # move, since whose an entry is to do is not a holding fact.
+        return _assign()
 
     item = by_slug[slug][0]
     section = item["section"]
@@ -764,8 +850,11 @@ def tool_hold_entry(arguments):
     else:
         where = "in Processed, below the line where it already sat"
 
-    return "%s the hold line on [%s] %s:\n%s%s" % (
+    report = "%s the hold line on [%s] %s:\n%s%s" % (
         action, slug, where, new_line, moved)
+    if assigned_to:
+        report += "\n" + _assign()
+    return report
 
 
 # --------------------------------------------------------------------------
@@ -1441,9 +1530,44 @@ TOOLS = [
                         "that capture is filed under the cycle's slug with "
                         "no cycle field, and the slug is what ranks it.",
                 },
+                "assigned_to": {
+                    "type": "string",
+                    "description":
+                        "One name: whose this work is to do, where the "
+                        "filer knows. Written as the entry's `Assigned "
+                        "to:` line. Says nothing about who may process it.",
+                },
             },
         },
         "handler": tool_file_capture,
+    },
+    {
+        "name": "append_tail",
+        "description":
+            "Append work done after this chat's /done to the chat's own "
+            "record as a marked tail under `## After /done`, created once, "
+            "with the time stamped from the clock. Finds the record from the "
+            "session-closed marker /done leaves; refuses where no chat here "
+            "has closed. The prose is Claude's — the tool composes nothing.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["prose"],
+            "properties": {
+                "prose": {
+                    "type": "string",
+                    "description":
+                        "What was done after the close, and why — the same "
+                        "authoring standard as the entry above it.",
+                },
+                "session_id": {
+                    "type": "string",
+                    "description":
+                        "This chat's session id, naming its marker; optional "
+                        "where exactly one closed chat has a marker.",
+                },
+            },
+        },
+        "handler": tool_append_tail,
     },
     {
         "name": "append_sent_line",
@@ -1539,6 +1663,14 @@ TOOLS = [
                         "until every named entry is BUILT, not merely "
                         "processed. Written as the trailing words `until "
                         "built` on the Blocked by: line.",
+                },
+                "assigned_to": {
+                    "type": "string",
+                    "description":
+                        "One name: whose this entry is to do. Written as "
+                        "the entry's `Assigned to:` line, replacing an "
+                        "existing one; may be given alone, with no hold, "
+                        "to reassign. Says nothing about who may process.",
                 },
             },
         },
@@ -1705,12 +1837,45 @@ TOOLS = [
     },
 ]
 
-HANDLERS = {tool["name"]: tool["handler"] for tool in TOOLS}
+# Tools that exist for the development project alone and are kept out of the
+# advertised set ([mcp-server-promotion]). Empty today: every tool that ships
+# serves a consumer project. A host-only tool built later — the Discord send
+# among them — is named here, and `_advertised_tools` leaves it out.
+HOST_ONLY_TOOLS = ()
+
+HANDLERS = {tool["name"]: tool["handler"] for tool in TOOLS
+            if tool["name"] not in HOST_ONLY_TOOLS}
+
+# Tools that never read the queue, so a conflicted queue does not stop them.
+QUEUE_FREE_TOOLS = ("clock", "host_currency", "cycles_state",
+                    "append_sent_line", "append_tail")
+CONFLICT_MARKER_RE = re.compile(r"^(<<<<<<< |>>>>>>> )")
+
+
+def _conflicted_queue(tool_name):
+    """The refusal text where the queue carries a git conflict marker, else
+    None. Every queue-reading tool is refused before parsing: a queue
+    mid-merge holds both versions of a region, and each parses as entries."""
+    if tool_name in QUEUE_FREE_TOOLS:
+        return None
+    try:
+        queue = _queue_path(project_root())
+        with open(queue, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f, start=1):
+                if CONFLICT_MARKER_RE.match(line):
+                    return ("Refused — nothing was written: QUEUE.md carries "
+                            "a git conflict marker at line %d (%r). It is "
+                            "mid-merge, and both versions of that region "
+                            "would parse as real entries. Resolve the "
+                            "conflict first." % (i, line.rstrip("\r\n")))
+    except OSError:
+        return None
+    return None
 
 
 def _advertised_tools():
     return [{k: v for k, v in tool.items() if k != "handler"}
-            for tool in TOOLS]
+            for tool in TOOLS if tool["name"] not in HOST_ONLY_TOOLS]
 
 
 def handle(message):
@@ -1748,7 +1913,7 @@ def handle(message):
                     "error": {"code": -32602,
                               "message": "No such tool: %r" % name}}
         try:
-            text = handler(arguments)
+            text = _conflicted_queue(name) or handler(arguments)
         except Exception as error:  # noqa: BLE001 — reported, never raised out
             return {"jsonrpc": "2.0", "id": request_id,
                     "result": {"isError": True,
@@ -1764,7 +1929,21 @@ def handle(message):
 
 
 def main():
-    """Read newline-delimited JSON-RPC from stdin, answer on stdout."""
+    """Read newline-delimited JSON-RPC from stdin, answer on stdout.
+
+    Refuses to start where the project is not set up: the plugin registers
+    this server for every project it is installed in, and a folder with
+    neither a QUEUE.md nor a SPEC.md is not one the method has set up, so
+    the tools would answer about nothing ([mcp-server-promotion]). The
+    queue-reading tools carry their own no-queue refusals."""
+    root = project_root()
+    if not (os.path.isfile(_queue_path(root))
+            or os.path.isfile(os.path.join(root, "SPEC.md"))):
+        sys.stderr.write(
+            "throughliner-state: not starting — %s has neither QUEUE.md nor "
+            "SPEC.md, so this is not a project the method has set up. Run "
+            "/setup there first.\n" % root)
+        return 1
     for line in sys.stdin:
         line = line.strip()
         if not line:

@@ -135,6 +135,41 @@ check(
 
 shutil.rmtree(d, ignore_errors=True)
 
+# --- assigned_to: one name lands as the entry's line; two names are refused --
+d = project()
+responses = call_file_capture(d, {
+    "heading": "Fixture capture with an assignee",
+    "slug": "fixture-assignee",
+    "body": "Filed by the suite.",
+    "assigned_to": "Alex",
+})
+text = ""
+for r in responses:
+    if r.get("id") == 2:
+        text = r.get("result", {}).get("content", [{}])[0].get("text", "")
+with open(os.path.join(d, "QUEUE.md"), "rb") as f:
+    queue_text = f.read().decode("utf-8")
+check("assigned_to writes the entry's Assigned to: line",
+      text.startswith("Filed") and "Assigned to: Alex" in queue_text,
+      f"tool answered: {text!r}; queue tail: {queue_text[-300:]!r}")
+before = queue_text
+responses = call_file_capture(d, {
+    "heading": "Fixture capture with two assignees",
+    "slug": "fixture-two-assignees",
+    "body": "Filed by the suite.",
+    "assigned_to": "Alex, Sam",
+})
+text = ""
+for r in responses:
+    if r.get("id") == 2:
+        text = r.get("result", {}).get("content", [{}])[0].get("text", "")
+with open(os.path.join(d, "QUEUE.md"), "rb") as f:
+    after = f.read().decode("utf-8")
+check("two names are refused and nothing is written",
+      text.startswith("Refused") and "not one name" in text and after == before,
+      f"tool answered: {text!r}")
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print(f"{len(failures)} failure(s):")

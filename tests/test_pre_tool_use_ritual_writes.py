@@ -103,6 +103,21 @@ check("an unlisted, undeclared path is still refused",
       decision(r) == "deny", repr(r))
 shutil.rmtree(d, ignore_errors=True)
 
+# 1c. A Writes: field wrapped onto a second line keeps its tail
+# ([writes-field-wrapped-paths-honoured]): the second-line path is permitted.
+d = project(cycles=True)
+with open(os.path.join(d, "CYCLES.md"), "w", encoding="utf-8") as f:
+    f.write("# CYCLES\n\n## Release [release]\n\n**Writes:** "
+            "`plugin/throughliner.zip`, `README.md`,\n"
+            "`INSTALL.md`, `porting/PORT-CHANGELOG.md`\n\nProse after.\n")
+r = drive(d, os.path.join(d, "porting", "PORT-CHANGELOG.md"))
+check("a path on the field's wrapped second line is allowed",
+      decision(r) == "allow", repr(r))
+r = drive(d, os.path.join(d, "Prose", "after.md"))
+check("the prose after the field is not read as paths",
+      decision(r) == "deny", repr(r))
+shutil.rmtree(d, ignore_errors=True)
+
 # 2. The same write with no cycles doc present is refused.
 d = project(cycles=False)
 r = drive(d, os.path.join(d, "plugin", "rezip-archive", "readme.md"))

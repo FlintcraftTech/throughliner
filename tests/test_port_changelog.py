@@ -196,6 +196,22 @@ def main():
         check("without --log-root the repository's own records are read",
               "The pre-flight said the run was unattended" in default, default)
 
+        # `--as` heads the document with the label while the range is still
+        # computed from the commit ([port-changelog-title-label]): a release
+        # generates the changelog before its tag exists.
+        out_path = os.path.join(repo, "changelog-out.md")
+        rc = changelog.main([repo, "--from", marks["base"], "--to",
+                             marks["bumped"], "--as", "v9.9.9",
+                             "--out", out_path])
+        with open(out_path, encoding="utf-8") as handle:
+            headed = handle.read()
+        check("--as puts the label in the heading",
+              rc == 0 and headed.startswith("# Port-facing changelog: %s..v9.9.9"
+                                            % marks["base"]),
+              headed[:120])
+        check("the range under --as is still the commit's",
+              "The pre-flight said the run was unattended" in headed, headed[:300])
+
     print()
     if _failures:
         print("FAILED: %d" % len(_failures))

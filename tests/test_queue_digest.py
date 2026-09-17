@@ -1325,8 +1325,69 @@ def test_unblock_potential_singular():
           "1 other entry cites it" in why, repr(why))
 
 
+def test_cleared_item_reading_the_queue_is_not_reported():
+    """The placement contradiction for a cleared item naming QUEUE.md reads
+    the paths named as changing: a reads-only line naming it is not one
+    ([queue-content-refusal-reads-changed-paths-only])."""
+    root = project(
+        processed=("#### Refuses a conflicted queue [alpha]\nR.\n"
+                   "Files:\n- `scripts/queue_digest.py` — refuse before parsing QUEUE.md\n"
+                   "Reads, changes nothing: `QUEUE.md`.\n" + BLOCK
+                   + "#### Rewords an entry [beta]\nR.\n"
+                   "Files:\n- `QUEUE.md` — the entry's wording\n" + BLOCK),
+    )
+    _, out = run(root)
+    shutil.rmtree(root, ignore_errors=True)
+    check("a reads-only mention is not a contradiction",
+          "[alpha] is cleared but its Files text names QUEUE.md" not in out, out)
+    check("a changed-files path still is",
+          "[beta] is cleared but its Files text names QUEUE.md" in out, out)
+
+
+def test_conflict_marker_refuses_the_parse():
+    """A queue mid-merge is refused before parsing, naming the first marker's
+    line — both versions of the region would otherwise parse as entries."""
+    root = project(
+        processed="#### Alpha [alpha]\nRationale.\n" + BLOCK,
+        unprocessed=("<<<<<<< HEAD\n#### Mine [mine]\nR.\n=======\n"
+                     "#### Theirs [theirs]\nR.\n>>>>>>> origin/main\n"),
+    )
+    try:
+        digest.parse(os.path.join(root, "QUEUE.md"))
+        check("a conflicted queue is refused", False, "parse returned")
+    except digest.ConflictedQueue as exc:
+        check("the refusal names the first marker's line",
+              "conflict marker at line" in str(exc) and "<<<<<<< HEAD" in str(exc),
+              str(exc))
+    proc = subprocess.run([sys.executable, SCRIPT, os.path.join(root, "QUEUE.md")],
+                          capture_output=True, text=True, encoding="utf-8")
+    check("the command line refuses too, non-zero",
+          proc.returncode != 0 and "refused" in proc.stderr, proc.stderr)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_assigned_to_prints_on_the_entry_line():
+    """`Assigned to: <name>` is read as a field and printed as a bare fact."""
+    root = project(
+        processed=("#### Work for one person [alpha]\nRationale.\n"
+                   "Assigned to: Alex\n" + BLOCK),
+        unprocessed="#### Work for nobody yet [beta]\nRationale.\n",
+    )
+    items, out = run(root)
+    shutil.rmtree(root, ignore_errors=True)
+    alpha = [i for i in items if i["slug"] == "alpha"][0]
+    check("the field is parsed", alpha["assigned_to"] == "Alex",
+          repr(alpha["assigned_to"]))
+    check("the digest line carries it", "| Assigned to: Alex" in out, out)
+    beta = [i for i in items if i["slug"] == "beta"][0]
+    check("an entry without the field reads None", beta["assigned_to"] is None)
+
+
 if __name__ == "__main__":
     print("test_queue_digest.py")
+    test_cleared_item_reading_the_queue_is_not_reported()
+    test_conflict_marker_refuses_the_parse()
+    test_assigned_to_prints_on_the_entry_line()
     test_unblock_potential_singular()
     test_migration_written_block_on_a_cleared_item_is_reported()
     test_marker_text_in_prose_does_not_move_the_line()

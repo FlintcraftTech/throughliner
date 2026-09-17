@@ -155,8 +155,27 @@ def test_qualified_blocked_by_line_still_parses():
           repr(facts))
 
 
+def test_assignee_facts_count_open_entries_per_name():
+    """`Assigned to:` lines are counted per name across both sections; a
+    queue with none yields an empty dict, so the opening prints nothing."""
+    d, path = queue_file(
+        processed=("#### Cleared [one]\nR.\nAssigned to: Alex\n"
+                   "#### Also cleared [two]\nR.\nAssigned to: Sam\n"),
+        unprocessed="#### Three [three]\nR.\nAssigned to: Alex\n",
+    )
+    counts = hook._assignee_facts(path)
+    shutil.rmtree(d, ignore_errors=True)
+    check("two for Alex, one for Sam", counts == {"Alex": 2, "Sam": 1},
+          repr(counts))
+    d, path = queue_file(processed="#### One [one]\nR.\n", unprocessed="")
+    counts = hook._assignee_facts(path)
+    shutil.rmtree(d, ignore_errors=True)
+    check("no field in use reads as empty", counts == {}, repr(counts))
+
+
 if __name__ == "__main__":
     print("test_session_start_queue_facts.py")
+    test_assignee_facts_count_open_entries_per_name()
     test_qualified_blocked_by_line_still_parses()
     test_marker_text_in_prose_does_not_move_the_line()
     test_the_real_marker_still_splits_the_section()

@@ -162,6 +162,12 @@ spec was read.
 
 Then read QUEUE.md's cleared region top-down, each item whole. That is the run.
 
+**A build carrying an `Assigned to:` line naming someone other than the person
+whose session this is** — the authenticated identity the channel supplies, or
+the named person's word, as the roster rule reads it — **is skipped, and the
+run says so in one clause.** A build runs on someone's machine with their
+tools, so a name on it is who builds it; the item stays in the queue untouched.
+
 ```
 early exits:
     Processed[top] == marker      ->  NOTHING_CLEARED
@@ -679,6 +685,12 @@ authored and the user is in the room.)
 **A step that names a file for a stated property has that file checked against
 the property before the step is given**; where the file no longer has it, the
 step goes out with the property and no file, and the user picks one.
+
+**Where the item carries an `Assigned to:` line, the hand-over names that person
+and takes "not mine, it is <name>'s" from anyone present** — the line is
+rewritten in one line with the queue tool's `--assign`, or the state server's
+`hold_entry` with its `assigned_to` field where the server is registered, and
+the run carries on as it does on a deferral.
 
 **Run the hand-over checkpoint before a step goes out** — the three-question
 read-back in skill-nonspecific-rules.md: the words, whether a tool could do it

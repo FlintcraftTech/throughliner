@@ -61,6 +61,10 @@ def call(cwd, method, params):
 
 
 d = tempfile.mkdtemp(prefix="mcp-clock-")
+# A set-up project: the server starts only where SPEC.md or QUEUE.md exists
+# ([mcp-server-promotion]).
+with open(os.path.join(d, "SPEC.md"), "w", encoding="utf-8") as f:
+    f.write("# SPEC\n")
 
 listed = call(d, "tools/list", {})
 names = [t["name"] for t in listed.get("result", {}).get("tools", [])]

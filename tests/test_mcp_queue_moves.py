@@ -391,6 +391,22 @@ check("queue_move: clearing an entry naming QUEUE.md is refused at the door",
 check("queue_move: that refusal wrote nothing", queue_text(d) == before)
 shutil.rmtree(d, ignore_errors=True)
 
+# --- a conflicted queue is refused at the door, before any tool parses it ----
+d = project()
+with open(os.path.join(d, "QUEUE.md"), "a", encoding="utf-8", newline="") as f:
+    f.write("<<<<<<< HEAD\n#### Mine [mine]\nR.\n=======\n"
+            "#### Theirs [theirs]\nR.\n>>>>>>> origin/main\n")
+before = queue_text(d)
+text = call(d, "queue_delete", {"slug": "alpha", "section": "Processed"})
+check("a queue carrying conflict markers refuses the move",
+      text.startswith("Refused") and "conflict marker at line" in text,
+      repr(text))
+check("the refusal wrote nothing", queue_text(d) == before)
+text = call(d, "clock", {})
+check("a tool that never reads the queue still answers",
+      not text.startswith("Refused") and text.strip() != "", repr(text))
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

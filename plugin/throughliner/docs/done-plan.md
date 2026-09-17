@@ -248,6 +248,8 @@ the item's block, whichever holds it:
 Blocked by: [slug]
 Blocked by: [slug], [slug]      # a group: lifts only when ALL resolve
 Not before: YYYY-MM-DD
+Assigned to: <name>             # whose it is to do — carried beside the
+                                # hold, and not itself a holding fact
 ```
 
 Every slug must resolve to a real work item in this queue, and a date must be a

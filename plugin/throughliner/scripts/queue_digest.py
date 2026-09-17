@@ -78,6 +78,9 @@ NOT_BEFORE_RE = re.compile(r"^Not before:\s*(\S+)\s*$", re.IGNORECASE)
 CYCLE_RE = re.compile(r"^Cycle:\s*\[?([a-z0-9][a-z0-9-]*)\]?\s*$",
                       re.IGNORECASE)
 FLAG_RE = re.compile(r"^Red flag\s*·\s*State:\s*(\w+)", re.IGNORECASE)
+# `Assigned to: <name>` — whose the entry is to do. Printed as a bare fact;
+# whose session a run is in decides what follows, and that is not read here.
+ASSIGNED_RE = re.compile(r"^Assigned to:\s*(.+?)\s*$", re.IGNORECASE)
 FLAVOR_RE = re.compile(r"^\[(audit|user|freeform|co-write)\]\s*", re.IGNORECASE)
 # "Runs alone" — the item is ready, but /next must not build it alongside other
 # work. Printed on the item's digest line because a solo item changes how much
@@ -188,10 +191,34 @@ RECORD_SUFFIX_RE = re.compile(r"-(?:plan|build|\d+)$")
 GIT_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
+CONFLICT_MARKER_RE = re.compile(r"^(<<<<<<< |>>>>>>> )")
+
+
+class ConflictedQueue(ValueError):
+    """The queue file carries a git conflict marker and cannot be read as a
+    queue: both versions of the conflicted region would parse as entries."""
+
+
+def first_conflict_marker(lines):
+    """(1-based line number, the line) of the first conflict marker, or None."""
+    for i, line in enumerate(lines, start=1):
+        if CONFLICT_MARKER_RE.match(line):
+            return i, line.rstrip("\r\n")
+    return None
+
+
 def parse(path):
-    """Read the queue into a list of item dicts. Raises OSError if unreadable."""
+    """Read the queue into a list of item dicts. Raises OSError if unreadable,
+    ConflictedQueue where the file carries a git conflict marker."""
     with open(path, "r", encoding="utf-8") as f:
         lines = f.read().splitlines()
+
+    marker = first_conflict_marker(lines)
+    if marker is not None:
+        raise ConflictedQueue(
+            "the queue carries a git conflict marker at line %d (%r) — it is "
+            "mid-merge, and both versions of that region would parse as real "
+            "entries. Resolve the conflict first." % marker)
 
     items = []
     section = None
@@ -241,6 +268,7 @@ def parse(path):
                 "not_before": None,
                 "flag": None,
                 "cycle": None,
+                "assigned_to": None,
                 "runs_alone": False,
                 # Lowercased prose, for the placement-contradiction checks. Not
                 # printed — the digest stays one line per item.
@@ -279,6 +307,9 @@ def parse(path):
             flag = FLAG_RE.match(stripped)
             if flag:
                 current["flag"] = flag.group(1).lower()
+            assigned = ASSIGNED_RE.match(stripped)
+            if assigned:
+                current["assigned_to"] = assigned.group(1)
             if RUNS_ALONE_RE.match(stripped):
                 current["runs_alone"] = True
             files = FILES_LINE_RE.match(stripped)
@@ -677,7 +708,7 @@ def contradictions(items, root=""):
             # edit queue content, which the safety check refuses; the mover
             # refuses to clear one, and this reaches one that got there by
             # hand ([unbuildable-queue-instruction-cleared-at-planning]).
-            if item["cleared"] and "queue.md" in _files_text(item):
+            if item["cleared"] and _files_changed_names_queue(item):
                 found.append(
                     f"[{slug}] is cleared but its Files text names QUEUE.md — "
                     "queue content is planning work, which a build cannot "
@@ -735,6 +766,32 @@ def contradictions(items, root=""):
             )
 
     return found
+
+
+READS_LINE_RE = re.compile(r"^\**reads(?:,\s*changes nothing)?\b[^:]*:\**")
+BACKTICKED_RE = re.compile(r"`([^`]+)`")
+
+
+def _files_changed_names_queue(item):
+    """Whether a backticked path in the item's Files text — its Files line
+    and the bullets beneath, a "Reads, changes nothing" line excluded — is
+    the queue file. Prose mentions of the file are not paths
+    ([queue-content-refusal-reads-changed-paths-only])."""
+    in_files = False
+    for line in item["prose"]:
+        if READS_LINE_RE.match(line):
+            in_files = False
+            continue
+        if FILES_LINE_RE.match(line):
+            in_files = True
+        elif in_files and not line.startswith("-"):
+            in_files = False
+            continue
+        if in_files:
+            for path in BACKTICKED_RE.findall(line):
+                if path.strip().replace("\\", "/").split("/")[-1] == "queue.md":
+                    return True
+    return False
 
 
 def _files_text(item):
@@ -992,6 +1049,8 @@ def render(items, root="", queue_path="QUEUE.md"):
                 line += f"  | Cycle: [{item['cycle']}]"
             if item["flag"]:
                 line += f"  | Red flag: {item['flag']}"
+            if item["assigned_to"]:
+                line += f"  | Assigned to: {item['assigned_to']}"
             if section == "Unprocessed" and item["slug"] and incoming.get(item["slug"]):
                 line += f"  | Cited by: {incoming[item['slug']]} other entr" + (
                     "y" if incoming[item["slug"]] == 1 else "ies")
@@ -1417,6 +1476,9 @@ def main(argv):
         items = parse(path)
     except OSError as exc:
         print(f"queue_digest: cannot read {path}: {exc}", file=sys.stderr)
+        return 1
+    except ConflictedQueue as exc:
+        print(f"queue_digest: refused — {exc}", file=sys.stderr)
         return 1
     # The project root is the queue file's own folder, so the research files an
     # item cites can be opened without asking for a second argument.

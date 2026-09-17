@@ -1187,9 +1187,76 @@ def test_append_leaves_a_stamped_capture_alone():
           out == body, repr(out))
 
 
+def test_queue_named_in_a_reads_line_still_clears():
+    """The queue-content refusal reads the paths an item names as changing:
+    a "Reads, changes nothing" line naming QUEUE.md, or prose mentioning it,
+    does not refuse; a backticked path in the Files list still does
+    ([queue-content-refusal-reads-changed-paths-only])."""
+    mod = _load_mover()
+    reads_only = ["#### Refuses a conflicted queue [alpha]\n",
+                  "Its scripts refuse before parsing QUEUE.md.\n",
+                  "Files:\n",
+                  "- `scripts/queue_digest.py` — refuse before parsing QUEUE.md\n",
+                  "Reads, changes nothing: `QUEUE.md`, the file it refuses.\n"]
+    check("a reads-only line naming the queue does not refuse",
+          not mod.files_text_names_queue(reads_only))
+    changed = ["#### Rewords an entry [beta]\n", "R.\n", "Files:\n",
+               "- `QUEUE.md` — the entry's wording\n"]
+    check("a backticked QUEUE.md in the changed list still refuses",
+          mod.files_text_names_queue(changed))
+    prose_only = ["#### Mentions the queue [gamma]\n", "R.\n",
+                  "Files: `docs/plan.md` — where QUEUE.md is described\n"]
+    check("a bare mention of QUEUE.md in Files prose is not a path",
+          not mod.files_text_names_queue(prose_only))
+
+
+def test_conflict_marker_refuses_every_write():
+    """A queue carrying a git conflict marker is refused before parsing,
+    naming the first marker's line, and the file is left byte-identical."""
+    text = build_queue(
+        "#### First [first]\nRationale one.\n\n" + MARKER + "\n",
+        unprocessed_body=("<<<<<<< HEAD\n#### Mine [mine]\nR.\n=======\n"
+                          "#### Theirs [theirs]\nR.\n>>>>>>> origin/main\n"))
+    rc, err, out = run(text, "--assign", "first", "Alex")
+    check("a conflicted queue refuses the write",
+          rc != 0 and "conflict marker at line" in err and out == text, err)
+    rc, err, out = run(text, "--delete", "first", "Processed")
+    check("a delete is refused the same way",
+          rc != 0 and "conflict marker" in err and out == text, err)
+
+
+def test_assign_writes_and_replaces_the_line():
+    """`--assign` writes `Assigned to: <name>` onto one entry, replaces an
+    existing line rather than doubling it, and leaves every other block
+    byte-identical."""
+    text = build_queue(
+        "#### First [first]\nRationale one.\n\n"
+        "#### Second [second]\nRationale two.\nBlocked by: [first]\n\n"
+        + MARKER + "\n")
+    rc, err, out = run(text, "--assign", "first", "Alex")
+    check("assign succeeds", rc == 0, err)
+    check("the line lands on the entry",
+          "#### First [first]\nRationale one.\nAssigned to: Alex\n" in out,
+          repr(out))
+    check("the other entry is untouched",
+          "#### Second [second]\nRationale two.\nBlocked by: [first]\n" in out)
+    rc, err, out2 = run(out, "--assign", "first", "Sam")
+    check("reassign replaces rather than doubles",
+          rc == 0 and out2.count("Assigned to:") == 1
+          and "Assigned to: Sam" in out2, repr(out2))
+    rc, err, out3 = run(out, "--assign", "first", "Alex and Sam")
+    check("two names are refused", rc != 0 and "not one name" in err
+          and out3 == out, err)
+    rc, err, _ = run(out, "--assign", "nope", "Alex")
+    check("an unknown slug is refused", rc != 0 and "not an entry" in err, err)
+
+
 def main():
     print("reorder_queue.py regression tests")
     for fn in (
+        test_queue_named_in_a_reads_line_still_clears,
+        test_conflict_marker_refuses_every_write,
+        test_assign_writes_and_replaces_the_line,
         test_side_of_marker_report,
         test_report_agrees_with_file,
         test_move_section_marker_after_the_moved_item_is_refused,

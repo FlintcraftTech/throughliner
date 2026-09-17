@@ -40,7 +40,13 @@ for _stream in (sys.stderr, sys.stdout):
 
 ADDRESS_BOOK = os.path.join("INBOX", ".address-book.md")
 ROW_RE = re.compile(r'^\|\s*(?P<name>[^|]+?)\s*\|\s*`?(?P<path>[^|`]+?)`?\s*\|\s*$')
+# The second shape the book may be written in ([address-book-format-unstated]):
+# a bullet — a hyphen, the name, an em dash (or an en dash, or a spaced
+# hyphen), the path, with or without backticks.
+BULLET_RE = re.compile(r'^-\s+(?P<name>.+?)\s+(?:—|–|-)\s+`?(?P<path>[^`]+?)`?\s*$')
 IGNORE_RE = re.compile(r'^/?INBOX(/|/\*\*|)$')
+SHAPES = ("a table row:  | <name> | <path> |\n"
+          "  or a bullet:  - <name> — <path>")
 
 
 def fail(msg):
@@ -57,14 +63,27 @@ def read_address_book(root):
     except OSError:
         fail("no address book at INBOX/.address-book.md in this project.")
     book = {}
+    content = 0
     for line in lines:
-        m = ROW_RE.match(line)
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        content += 1
+        m = ROW_RE.match(stripped) or BULLET_RE.match(stripped)
         if not m:
             continue
         name, folder = m.group("name").strip(), m.group("path").strip()
         if name.lower() in ("correspondent", "---") or set(name) <= set("-"):
             continue
         book[name.lower()] = (name, folder)
+    if content and not book:
+        # A non-empty book that parses to nothing is a shape fault, not a
+        # missing correspondent: the missing-name message's obvious remedy
+        # is a second unreadable entry.
+        fail("the address book's shape could not be read — none of its "
+             "lines is in a shape this script reads:\n  " + SHAPES +
+             "\nRewrite the entries in one of those shapes; nothing here "
+             "rewrites the file.")
     return book
 
 

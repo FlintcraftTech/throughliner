@@ -345,8 +345,53 @@ def test_sourced_sentence_passes_and_bare_word_still_blocks():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_post_close_tail_offer_is_fed_back_once():
+    """[post-close-tail-offer-enforced-once]: with the session-closed marker
+    standing and a project write outside LOG/ logged after it, a reply that
+    neither offers the tail nor carries one is fed back once; a reply that
+    mentions the tail passes, and so does the second reply."""
+    import time
+    root = project()
+    folder = os.path.join(root, ".throughliner")
+    os.makedirs(folder)
+    with open(os.path.join(folder, "session-closed-s1"), "w", encoding="utf-8") as f:
+        f.write("2026-09-17-fixture.md\n")
+    old = time.time() - 120
+    os.utime(os.path.join(folder, "session-closed-s1"), (old, old))
+    with open(os.path.join(folder, "pre-tool-use.log"), "w", encoding="utf-8", newline="") as f:
+        f.write("2099-01-01 00:00:00\tEdit\tallow\tplanning standing list\t"
+                + os.path.join(root, "SPEC.md") + "\ts1\n")
+    code, out = run(root, "Reworded the sentence in SPEC.")
+    check("a post-close reply with no tail offer is fed back",
+          "marked tail" in out, out)
+    code, out = run(root, "Reworded the sentence in SPEC.")
+    check("the second reply passes", "marked tail" not in out, out)
+    root2 = project()
+    shutil.copytree(folder, os.path.join(root2, ".throughliner"))
+    code, out = run(root2, "Reworded it. Want that appended to this session's record as a tail, or run done again?")
+    check("a reply carrying the offer passes", "marked tail" not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+    shutil.rmtree(root2, ignore_errors=True)
+
+
+def test_post_close_write_to_log_only_owes_nothing():
+    root = project()
+    folder = os.path.join(root, ".throughliner")
+    os.makedirs(folder)
+    with open(os.path.join(folder, "session-closed-s1"), "w", encoding="utf-8") as f:
+        f.write("2026-09-17-fixture.md\n")
+    with open(os.path.join(folder, "pre-tool-use.log"), "w", encoding="utf-8", newline="") as f:
+        f.write("2099-01-01 00:00:00\tEdit\tallow\tplanning standing list\t"
+                + os.path.join(root, "LOG", "x.md") + "\ts1\n")
+    code, out = run(root, "Appended the note.")
+    check("a write inside LOG/ alone owes no offer", "marked tail" not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("test_stop_hook")
+    test_post_close_tail_offer_is_fed_back_once()
+    test_post_close_write_to_log_only_owes_nothing()
     test_sourced_sentence_passes_and_bare_word_still_blocks()
     test_bare_time_word_blocks_once_with_the_phrase_named()
     test_time_word_inside_a_quotation_passes()

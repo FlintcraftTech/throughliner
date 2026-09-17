@@ -426,9 +426,11 @@ unannounced, and on flat projects exactly as it always has.
 
 ## Operate on the folder the chat opens in
 
-Work on the project folder the chat was opened in and no other, taking that
-folder as given rather than scanning outward for a different project or asking
-the user which one to work on. A user may keep several independent Throughliner
+A chat works — edits, files created, commits — in the project folder it was
+opened in and no other, taking that folder as given rather than asking the
+user which one to work on. A read of another project's files the user points
+at is not work and draws no warning; scanning outward for other projects
+unasked stays refused. A user may keep several independent Throughliner
 projects nested under one parent — that's the supported shape.
 
 ```
@@ -729,6 +731,13 @@ Cycle: [slug]                                  # the entry is that named cycle's
                                                # draw it and the planning ladder
                                                # passes over it. CAPTURES ONLY —
                                                # it has no meaning on a work item
+Assigned to: <name>                            # whose the work is to do — one
+                                               # name, written at /plan's
+                                               # decision step beside the
+                                               # flavour, or at filing where
+                                               # the filer knows. Any flavour;
+                                               # it says nothing about who may
+                                               # process — see below
 ```
 
 **A date holds an item on its own, with no blocker item standing in for it.**
@@ -826,7 +835,29 @@ a QUOTE claim     "your words", "in her own words", quotation marks
   read as such. **A session roster carries only details a participant has
   chosen to share**, and the scrub checklist reads it: a detail not on the
   roster is rewritten away like any other personal detail — the published-
-  identity arm for third parties on GitHub is unchanged.
+  identity arm for third parties on GitHub is unchanged. **Whose an item is to
+  do is its `Assigned to:` line**, written at /plan's decision step where
+  who-does-the-work is settled, or at filing where the filer knows:
+  - a walkthrough addresses the named person, and the hand-over of a `[user]`
+    step — in a run or at planning — names them;
+  - anyone present may reassign it at a hand-over — "not mine, it is
+    <name>'s" — and the line is rewritten in one line, the run carrying on as
+    it does on a deferral;
+  - a build with a name on it is built only in that person's session, and a
+    run in another person's session skips it and says so in one clause;
+  - an entry with no line is whose the project's own CLAUDE.md says in a line
+    the user wrote, `Unassigned work is <name>'s.` — read in that shape and no
+    other.
+  Processing is unchanged by the line: keep-or-delete, clearing a risk and
+  approving a send belong to the holder of execution authority whoever the
+  item is assigned to, and the line is never read to decide who may sit in it.
+  - a contested merge is a fate decision and the execution-authority
+    holder's; the common prose case — two captures appended at the same spot
+    — resolves as keep both;
+  - two people on one repository run the same plugin version, since the
+    hooks, the queue format and the scripts differ between versions, and a
+    format migration one side runs rewrites files the other's tooling does
+    not expect.
 - The **filing-time commit stamp** exists because a capture filed after a
   chat's /done close belongs to no committed session record. Plain prose, not
   a parsed field. It carries date and time, read from the clock at the moment
@@ -916,6 +947,10 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   keeps work out of a `[user]` item is genuine uncertainty that it is user-work
   at all, and that routes to Unprocessed as an ordinary capture, still tracked.
   Further requirements on the same walkthrough:
+  - where the item carries an `Assigned to:` line, addressing that person by
+    name rather than as "you";
+  - where a step sends the user outside the project, or asks them for a
+    value, saying in the same sentence what the answer is for;
   - where a step has the user run a terminal command, supplying as typed
     commands whatever must be true for it to work — the `cd` with its actual
     path first among them — or stating plainly that the command works from
@@ -1383,7 +1418,8 @@ premise is broken       ->  halt and course-correct
 - **After this chat's /done, offer once to append later work to this session's
   record as a marked tail — at the end of a piece of work, where a file
   changed.** The offer names both routes: a yes here, or running /done again,
-  which appends the same tail.
+  which appends the same tail — written with the state server's `append_tail`
+  tool where the server is registered.
 
 ```
 once per finished piece of work    ->  not after each reply

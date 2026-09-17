@@ -64,4 +64,7 @@ Language: English
 <!-- Add your own rules, conventions, and context below. This section is yours — the plugin won't touch it.
      If your project has specific ways of checking that things work — how to run its tests, what to look at,
      any setup needed first — add them here or point to where they live. Claude follows them as part of
-     building, and where a check is one only you can make, it becomes a step in your queue for you to run. -->
+     building, and where a check is one only you can make, it becomes a step in your queue for you to run.
+     With more than one person on the project, one line in exactly this shape says whose an unassigned
+     queue entry is — the queue lint reads this shape and no other:
+     Unassigned work is <name>'s. -->
