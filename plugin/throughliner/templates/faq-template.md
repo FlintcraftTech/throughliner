@@ -358,3 +358,33 @@ it, and the move is written into the session's record at /done. Two limits:
 Claude never guesses a move you did not ask for and never offers one mid-run —
 that waits for planning — and deleting an item is a separate decision a run
 will not make on the fly, so ask for a delete at planning instead.
+
+## What are my project's parts, and where does a new file go?
+
+Setup asks roughly what your project's moving parts are — the product, and
+whatever else you work on around it, such as research or writing — and which
+of them are the product. Each part gets a folder of its own and a small
+`SPEC.md` inside it; the root `SPEC.md` stays the whole-project layer and
+lists the parts. The list is written into your project's `CLAUDE.md` as a
+Parts block, and that block is what a session reads when it creates a file:
+it picks the part's folder and says where it put the file. A build reads only
+the spec of the part its files sit in, so a change to one part is checked
+against that part's truth. An existing project is offered the question once
+when setup runs again, and never forced. Two other folders arrive with this:
+`temp/`, ignored by git, for what the project does not keep — a draft you edit,
+a fetched transcript — and `workshop/`, for what it works with and keeps.
+
+## The safety check refused my edit — how do I get it through?
+
+In a session with no build running, the safety check lets Claude write only
+the planning documents, and refuses anything else with a message naming the
+path. That is deliberate: other files are work, and work is queued and built.
+Where you genuinely want the edit now, ask for the same change again in your
+own words. Claude then declares that one path in a small scope file, says so
+in one line, and makes the edit; the done command names it in the session's record.
+The door opens one path at a time, only after a refusal on that path in the
+same session, and it never widens what a planning session may write. The
+check also keeps a log of every decision — allowed and refused — in the
+project's `.throughliner/` folder, so a write that went through with no line
+there is a check that never ran, which is the first thing to look at before
+blaming a rule.

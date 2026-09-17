@@ -46,3 +46,9 @@ announced yet, not that questions aren't welcome: just ask in chat.
   the assumption holding. [faq.md](faq.md)
 - **Can I move a queue item while a build is running?** — what to say, what
   Claude does and says back, and the two things a run will not do. [faq.md](faq.md)
+- **What are my project's parts, and where does a new file go?** — the parts
+  question at setup, one folder and one small SPEC per part, the Parts block a
+  session reads when it creates a file, and the `temp/` folder. [faq.md](faq.md)
+- **The safety check refused my edit — how do I get it through?** — what the
+  refusal means, the one door through it (ask again in your own words), and the
+  decision log to read before blaming a rule. [faq.md](faq.md)
