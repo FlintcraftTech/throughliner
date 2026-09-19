@@ -820,6 +820,23 @@ def test_no_runs_alone_work_says_none():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_limits_print_once_at_the_end_one_line_each():
+    """[digest-limit-paragraphs-folded]: the five limits are one line each
+    under one heading at the end of the full print, and absent from --next."""
+    root = project(processed="#### Ordinary [a]\nProse.\n")
+    _, out = run(root)
+    block = out.split("## Limits")[1]
+    lines = [l for l in block.splitlines() if l.startswith("- ")]
+    check("the Limits block is the last heading", "\n## " not in block, block[:200])
+    check("five limit lines, one each", len(lines) == 5, repr(lines))
+    check("each still states its reach",
+          all(w in block for w in ("Placement flags", "NAMES", "Superseded-research",
+                                   "SNAPSHOT", "Cites research")), block[:600])
+    _, nxt = run(root, "--next")
+    check("the --next print carries no Limits block", "## Limits" not in nxt, nxt[:200])
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_whats_next_answers_only_the_pick():
     """The scoped mode prints the rung, the item, its line number and its text.
 

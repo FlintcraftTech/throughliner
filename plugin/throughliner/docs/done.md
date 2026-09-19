@@ -80,8 +80,8 @@ no queue item and no build working file. **Read the edits as the user's expected
 work, and split them across separate log entries by judgment where they cover
 several distinct changes.**
 
-A no-build /done run touches QUEUE.md, SPEC.md and LOG/ and nothing else, whichever
-of the three it is.
+A no-build /done run writes the method documents, the close-obligation files
+the Declare step permits, and its two markers.
 
 Detect a completed `[user]` item from what the session can already see. The
 detection rules and /done itself are in done-plan.md, which handles a
@@ -241,10 +241,12 @@ Advisory: not needed — <why>
   the spent note and file this /done run's own in the freed slot, with the new note
   saying it replaced one. The reserved slug must be unique — filing alongside a
   spent note stops the queue mover dead;
-- head the capture with the fixed, reserved slug, always that literal string:
+- head the capture with the fixed, reserved slug, always that literal string —
+  the heading is handed to the capture tool without the slug, which the tool
+  appends as `forward-advisory`:
 
 ```
-#### Last session advises processing <slug> next [forward-advisory]
+#### Last session advises processing <slug> next
 ```
 
 - state conditions in the prose beneath it, rather than counts.
@@ -517,7 +519,7 @@ untracked, or outside the repo               ->  NOT recoverable. Give a clear
 
 If nothing session-created looks throwaway, say so in one line and move on.
 
-## Commit core  [BRIEF, PROMPT]
+## Commit core  [BRIEF]
 
 Every sub-doc's Commit step points here.
 
@@ -646,8 +648,8 @@ stage and why, and **hold the commit** until the staging is fixed and re-checked
 or the user decides.
 
 **6. Commit with `git commit -F`.** Then offer push wherever the repository
-has a remote, and push only if the user accepts; where it has none, the offer
-is omitted and push goes unmentioned.
+has a remote [PROMPT], and push only if the user accepts; where it has none,
+the offer is omitted and push goes unmentioned.
 
 **In a nested project /done commits both repositories** — the product's
 changes as a commit in the inner repository (the product subfolder's own), and
@@ -717,7 +719,8 @@ available.
     message, and
     on the user's yes moves the item with the state server's `queue_move`, or
     the mover, naming it as the last item that should stay cleared, drops its
-    `Blocked by:` line and writes what cleared it into its prose; a blocker
+    `Blocked by:` line and rewrites it whole per plan.md's rewrite-whole rule,
+    saying what cleared it; a blocker
     built but not confirmed is named and the item left held, per done-plan.md's
     hold-back rule. The advisory's clearing is untouched.
 
@@ -762,11 +765,6 @@ as a hedge.
            more work comes from.
 ```
 
-**A build runs best in a fresh session — a fact about the build route, not the
-assumed next step.** What comes next is the user's decision, planning again as
-much as building, which is why rung 2 states both continuations rather than
-inviting either.
-
 **A session makes exactly one commit, and the tail makes none.** That is the
 whole shape, and everything below follows from it. /done commits; work
 arriving afterwards is written to the working tree and left there, to be carried
@@ -797,17 +795,6 @@ recognises the signature instead of investigating it.
 **Read tail-shaped dirt as the previous session's LOG entry, a capture at the
 bottom of Unprocessed, or a filled-in hash, and give anything else the full
 treatment** — which is what keeps /done's staging check its teeth.
-
-**In a tail, route an urge to run or drive testing or verification into a skill
-rather than doing it here** — a quick /plan to structure the work, or /next to
-hand over a `[user]` item that already exists. This fires hardest where the
-verification is *already* a `[user]` item, because then the work has a home and
-the tail is bypassing it.
-
-**The limit, stated rather than found later:** the urge is not confined to a tail.
-It happened in one, and nothing says it only happens there. Siting the clause here
-covers the recorded instance and not the general case; a second instance occurring
-outside a tail is what would reopen this.
 
 **Announce an item the next run must take alone, where Processed holds one —
 a `[freeform]` item, or the top cleared build marked `Runs alone`.** /next halts

@@ -75,5 +75,23 @@ check("an unlisted ordinary file stays refused under the marker",
       decision(d, os.path.join(d, "src", "other.py")) == "deny")
 shutil.rmtree(d, ignore_errors=True)
 
+# The two markers /done writes are permitted for the session's own id and
+# refused for another's, in a build session and a planning session alike
+# ([close-markers-refused-by-safety-check]).
+def marker_path(cwd, prefix, sid):
+    return os.path.join(cwd, ".throughliner", f"{prefix}-{sid}")
+
+
+for label, make in (("build", project), ("planning", None)):
+    d = project()
+    if make is None:
+        os.remove(os.path.join(d, f"_build-{SESSION}.md"))
+    for prefix in ("close-active", "session-closed"):
+        check(f"{label} session: own {prefix} marker is allowed",
+              decision(d, marker_path(d, prefix, SESSION)) == "allow")
+        check(f"{label} session: another session's {prefix} marker is refused",
+              decision(d, marker_path(d, prefix, "other-session")) == "deny")
+    shutil.rmtree(d, ignore_errors=True)
+
 print(f"\n{len(failures)} failure(s)" if failures else "\nall passed")
 sys.exit(1 if failures else 0)

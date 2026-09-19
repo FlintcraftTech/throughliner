@@ -99,8 +99,10 @@ def test_filing_claim_with_no_heading_and_no_log_entry_still_blocks():
     code, out = run(root, "I've filed [never-written] to Unprocessed.")
     check("a claim with no heading and no record still blocks",
           blocked(out, code), out)
-    check("the block asks the re-send to say the earlier report was wrong",
+    check("the block asks for a correction saying the earlier report was wrong",
           "earlier report was wrong" in out, out)
+    check("the block asks for the correction alone, nothing repeated",
+          "nothing" in out and "repeated" in out and "re-send" not in out, out)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -340,8 +342,24 @@ def test_sourced_sentence_passes_and_bare_word_still_blocks():
     code, out = run(root, "The sweep ran on 2026-09-14. Nothing is due today.")
     check("a source in a DIFFERENT sentence does not cover the word",
           time_blocked(out), out)
-    check("the block asks the re-send to open with a correction line",
+    check("the block asks for a correction line",
           "correction" in out, out)
+    check("the block asks for the correction alone, nothing repeated",
+          "nothing" in out and "repeated" in out and "re-send" not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_capitalised_name_mid_sentence_passes():
+    """[time-word-check-hits-product-nouns]: a capital mid-sentence is a
+    product's own page or feature; a capital opening the sentence is not."""
+    root = project()
+    code, out = run(root, "The test task added from Tomorrow appeared on Today "
+                          "straight away.")
+    check("capitalised page names mid-sentence pass", not time_blocked(out), out)
+    code, out = run(root, "Today the build ran.")
+    check("a sentence-initial capital still blocks", time_blocked(out), out)
+    check("the reason names the mid-sentence capital as passing",
+          "capital mid-sentence" in out, out)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -396,6 +414,7 @@ if __name__ == "__main__":
     test_bare_time_word_blocks_once_with_the_phrase_named()
     test_time_word_inside_a_quotation_passes()
     test_day_words_and_elapsed_forms_block()
+    test_capitalised_name_mid_sentence_passes()
     test_claim_inside_a_blockquote_does_not_block()
     test_claim_inside_a_fence_does_not_block()
     test_cited_shipped_slug_does_not_block()

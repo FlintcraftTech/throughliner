@@ -187,6 +187,33 @@ def main():
         repr(denied),
     )
 
+    # 7. [freeform-scope-paths-matched-literally]: a backticked bullet and an
+    # annotated bullet both match their path, and a refusal with a scope file
+    # that names nothing matching says so.
+    d6 = make_project(scope_files=["`plugin/docs/ticked.md`",
+                                   "plugin/docs/noted.md — the one the item names"])
+    ticked = os.path.join(d6, "plugin", "docs", "ticked.md")
+    noted = os.path.join(d6, "plugin", "docs", "noted.md")
+    drive_edit(d6, ticked)  # the door's first refusal
+    check(
+        "a backticked bullet matches its path",
+        decision(drive_edit(d6, ticked)) == "allow",
+        repr(drive_edit(d6, ticked)),
+    )
+    drive_edit(d6, noted)
+    check(
+        "an annotated bullet matches its path",
+        decision(drive_edit(d6, noted)) == "allow",
+        repr(drive_edit(d6, noted)),
+    )
+    unmatched = drive_edit(d6, os.path.join(d6, "plugin", "docs", "elsewhere.md"))
+    check(
+        "the refusal names the scope file when nothing in it matched",
+        decision(unmatched) == "deny"
+        and "nothing in its Files: list matched" in unmatched.get("permissionDecisionReason", ""),
+        repr(unmatched),
+    )
+
     # 6. The research exemption in a NESTED project: the workshop sits under
     # the product subfolder, an immediate child of the root holding its own
     # .git ([scope-lock-research-exemption-flat-path-only]). The same path

@@ -509,7 +509,8 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> Processed \
 exits with a usage message and writes nothing. **And `--marker-after` names the
 last item that should stay cleared.**
 
-Then drop the item's `Blocked by:` line and say in its prose what cleared it.
+Then drop the item's `Blocked by:` line and rewrite the entry whole, per the
+decision step's rewrite-whole rule, saying what cleared it.
 (Skip-to-defer needs no command at all — it moves nothing.)
 
 **This revisit and the throughput floor ask different questions**, and reading
@@ -715,7 +716,14 @@ cites it.
 **Read the ITEM AS IT STANDS, not the paragraph being added, and where the entry
 already carries a dated settlement or skip paragraph, rewrite the entry whole
 rather than appending to it** — carrying forward every defeated alternative with
-the reason it lost, and keeping a quotation claim over verbatim text only.
+the reason it lost, and keeping a quotation claim over verbatim text only. It
+fires at three moments:
+- the decision step, where an entry is kept;
+- a lift or re-hold at the opening's revisit of held work;
+- a skip that writes design progress, at the checkpoint or at this step's
+  skip-to-defer.
+Where history is relocated, it goes to the session's record and the entry cites
+the record by filename.
 
 **Process order.** Unprocessed top to bottom, then items raised in this session's
 own discussion. State the count upfront, counting both together ("5 items.
@@ -1063,7 +1071,8 @@ now, at this decision step, or file it as a capture for the next planning
 session — never clear it as a build, which would sit skipped by every run with
 nothing reporting why. An item that can't pass both limbs gets sharpened
 further in the interview, or skip-to-deferred with its design progress written
-into its prose. Those two are the only routes open to it. Where the item
+in by rewriting the entry whole, per the rewrite-whole rule above. Those two
+are the only routes open to it. Where the item
 carries the line `Build block written by the format migration on …, not yet
 checked at planning`, running this check on it removes that line, whichever
 way the check goes.
@@ -1342,9 +1351,17 @@ recurring-shaped   the same artifact worked repeatedly, a cadence visible
                    in the record            ->  offer a cycle
 procedure-shaped   the same multi-step sequence done on request more than
                    once, no cadence         ->  offer a checklist
+material-shaped    many entries of one kind arriving over time for a
+                   cycle's or checklist's turns
+                                            ->  offer a pool file, named in
+                                                the definition's material
+                                                paragraph and its `Writes:`
+                                                field, so the queue carries
+                                                only the due turn
 ```
 
-Creating either stays the user's call.
+Creating any of the three stays the user's call. The `Cycle:` field stays for a
+definition's few standing entries; the pool file is for the accumulating kind.
 
 **And where a checklist turns out to have a cadence, re-author it as a cycle** —
 the same steps gain the cadence and the observable that marks a completed turn.
@@ -1746,8 +1763,9 @@ reaching for a phantom "give it its own dedicated pass" container.
 Unprocessed, and:
 
 - treat that skip as the only defer there is; there is no dedicated-pass state;
-- capture whatever design progress was made into the item's prose, so the next
-  /plan starts further along;
+- write whatever design progress was made into the item by rewriting it whole,
+  per the decision step's rewrite-whole rule, so the next /plan starts further
+  along;
 - name what would settle the item and who owns that, where it was skipped for
   not designing out — a decision the user owns, a fact to be looked up, or a
   build that must ship first;

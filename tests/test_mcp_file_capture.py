@@ -170,6 +170,27 @@ check("two names are refused and nothing is written",
       f"tool answered: {text!r}")
 shutil.rmtree(d, ignore_errors=True)
 
+# --- a heading given with its own slug on the end lands once
+# ([advisory-heading-doubles-slug-through-file-capture]) --------------------
+d = project()
+responses = call_file_capture(d, {
+    "heading": "Last session advises processing [x] next [forward-advisory]",
+    "slug": "forward-advisory",
+    "body": "Filed by the suite.",
+})
+text = ""
+for r in responses:
+    if r.get("id") == 2:
+        text = r.get("result", {}).get("content", [{}])[0].get("text", "")
+with open(os.path.join(d, "QUEUE.md"), "rb") as f:
+    queue_text = f.read().decode("utf-8")
+check("a heading typed with its slug files the slug once",
+      text.startswith("Filed")
+      and "next [forward-advisory]" in queue_text
+      and "[forward-advisory] [forward-advisory]" not in queue_text,
+      f"tool answered: {text!r}; queue tail: {queue_text[-300:]!r}")
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print(f"{len(failures)} failure(s):")

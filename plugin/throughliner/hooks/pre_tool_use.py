@@ -358,6 +358,17 @@ def _split_segments(command: str) -> list[str]:
     return SEGMENT_SPLIT.split(command)
 
 
+def _bare_path(entry: str) -> str:
+    """A Files bullet's text reduced to its path: surrounding backticks
+    removed, and anything after a spaced dash dropped."""
+    entry = entry.strip()
+    for dash in (" — ", " - "):
+        cut = entry.find(dash)
+        if cut != -1:
+            entry = entry[:cut]
+    return entry.strip().strip("`").strip()
+
+
 def _parse_build_files(build_path: str) -> list[str] | None:
     """Extract file paths from the build working file's Files: section.
 
@@ -388,6 +399,14 @@ def _parse_build_files(build_path: str) -> list[str] | None:
     file carrying no `Files:` line at all. Over-collecting is safe: an extra
     path only widens the allow-list to a file the build named anyway, never
     grants access to an unrelated file.
+
+    Each bullet's path is taken with surrounding backticks removed and
+    anything after a spaced dash (` — ` or ` - `) dropped, for the build
+    working file and the freeform scope file alike
+    ([freeform-scope-paths-matched-literally]): paths are written as code
+    spans everywhere else in the method's documents, and a bullet copied in
+    that shape used to carry the backtick characters into the stored entry
+    and never match a real path.
     """
     files = []
     try:
@@ -418,13 +437,7 @@ def _parse_build_files(build_path: str) -> list[str] | None:
             continue
         if in_bullets:
             if stripped.startswith("- "):
-                # Entries are taken whole after the leading "- " marker.
-                # No annotation stripping: a Files: line is a bare path,
-                # nothing else, so any trailing text becomes part of the
-                # path and breaks the match — which is what the denial
-                # message teaches. A genuine path containing " - " is no
-                # longer truncated.
-                file_entry = stripped[2:].strip()
+                file_entry = _bare_path(stripped[2:])
                 if file_entry:
                     files.append(file_entry)
             elif stripped and not stripped.startswith("-"):
@@ -1434,6 +1447,28 @@ def _close_marker_present(cwd: str, session_id: str) -> bool:
                                        CLOSE_MARKER_PREFIX + safe_id))
 
 
+# The marker /done writes after its commit, read by the stop check's tail
+# offer ([post-close-tail-offer-enforced-once]).
+SESSION_CLOSED_MARKER_PREFIX = "session-closed-"
+
+
+def _is_own_close_marker(filepath: str, cwd: str, session_id: str) -> bool:
+    """True where `filepath` is one of THIS session's two close markers in
+    `.throughliner/` — `close-active-<id>` or `session-closed-<id>` — so the
+    editing tools may write them in every session type
+    ([close-markers-refused-by-safety-check]). The read side above resolves
+    the same name from the same id, so another session's id never matches.
+    """
+    safe_id = safe_session_id(session_id)
+    if safe_id == "unknown" or not cwd:
+        return False
+    norm = _normalise(filepath)
+    return any(
+        norm == _normalise(os.path.join(cwd, ".throughliner", prefix + safe_id))
+        for prefix in (CLOSE_MARKER_PREFIX, SESSION_CLOSED_MARKER_PREFIX)
+    )
+
+
 # --- The plugin changed under a live session ---
 # ([scratchpad-refused-after-resume-close-marker], the sender's correction):
 # a session opened on one version and, after a gap, ran on another, with the
@@ -1708,12 +1743,32 @@ def _time_sentence_span(text: str, start: int, end: int) -> tuple[int, int]:
     return left, right
 
 
+# What may stand between a sentence's start and its first word: whitespace,
+# quotation marks, opening brackets and markdown leaders. A COPY sits in
+# stop.py; change one, change both.
+_TIME_SENTENCE_LEAD = re.compile(r"^[\s\"'“‘(\[{#*>-]*$")
+
+
+def _is_name_mid_sentence(text: str, start: int, word: str) -> bool:
+    """True where the matched time word opens with a capital and is not the
+    first word of its sentence — a product's own page or feature written as a
+    name ([time-word-check-hits-product-nouns]). A capital at a sentence's
+    start says nothing, so that case still counts as a time word."""
+    if not word[:1].isupper():
+        return False
+    left, _ = _time_sentence_span(text, start, start)
+    return not _TIME_SENTENCE_LEAD.match(text[left:start])
+
+
 def _unfounded_time_words(text: str) -> list[str]:
     """Distinct time phrases in `text` outside quoted spans, lowercased —
-    leaving out any whose sentence also carries a source."""
+    leaving out any whose sentence also carries a source, and any written as
+    a name with a capital mid-sentence."""
     found = []
     stripped = _strip_quoted_text(text)
     for match in TIME_WORD_PATTERN.finditer(stripped):
+        if _is_name_mid_sentence(stripped, match.start(), match.group(0)):
+            continue
         left, right = _time_sentence_span(stripped, match.start(), match.end())
         if TIME_SOURCE_PATTERN.search(stripped, left, right):
             continue
@@ -2318,7 +2373,10 @@ def main() -> int:
                 "sentence (\"at 21:40, read from the clock\", \"per the "
                 "2026-09-06 record\"), or drop the word. A wrong time written "
                 "into a record reads exactly like a right one for as long as "
-                "it stands. The same phrase passes on the next attempt.",
+                "it stands. A name written with a capital mid-sentence — a "
+                "product's own page or feature — passes, so a refusal on one "
+                "is a false positive to reword or ignore. The same phrase "
+                "passes on the next attempt.",
                 branch="time word",
             )
 
@@ -2432,6 +2490,8 @@ def main() -> int:
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("close-phase file",
              lambda: _is_close_phase_file(filepath, cwd, sid)),
+            ("own close marker",
+             lambda: _is_own_close_marker(filepath, cwd, sid)),
         ):
             if hit():
                 return _allow(branch)
@@ -2535,6 +2595,8 @@ def main() -> int:
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("checklist Writes: field",
              lambda: _is_checklist_declared_path(filepath, cwd)),
+            ("own close marker",
+             lambda: _is_own_close_marker(filepath, cwd, sid)),
         ):
             if hit():
                 return _allow(branch)
@@ -2542,13 +2604,23 @@ def main() -> int:
         # only where this session's log already holds a refusal of that same
         # path — a door that opens cold is a one-write convention, not a lock.
         door_line = ""
-        if _is_build_file(filepath, cwd, _freeform_scope_files(cwd, sid)):
+        scope_files = _freeform_scope_files(cwd, sid)
+        if _is_build_file(filepath, cwd, scope_files):
             if _door_refused_earlier(filepath, cwd, sid):
                 return _allow("freeform scope file")
             door_line = (
                 "\n\nA scope file names this path, but the door opens only "
                 "after the safety check has refused the path earlier in this "
                 "same session — this refusal is that one.")
+        elif os.path.isfile(working_file(cwd, "freeform", sid)):
+            # A scope file exists and nothing in it matched: say so, so the
+            # refusal is not read as though no scope file existed
+            # ([freeform-scope-paths-matched-literally]).
+            door_line = (
+                "\n\nA scope file exists for this session "
+                f"({os.path.basename(working_file(cwd, 'freeform', sid))}) "
+                "and nothing in its Files: list matched this path — check "
+                "the path as written there against the one above.")
         if True:
             return _deny(
                 "[Throughliner] BLOCKED: planning sessions can only change a "

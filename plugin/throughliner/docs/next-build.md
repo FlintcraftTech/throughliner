@@ -162,12 +162,8 @@ together stays in a single file — splitting it would make the AI's job harder.
 
 Stay within the active run's described work. Growing past it needs approval first.
 
-**The item's `Changes:` entry is one of the four per-item completion writes**
-(next.md's per-item completion step) — written at the tick, never loosely along
-the way, so /done needn't re-explore. (A write belonging to the run rather
-than to any item — a mid-run capture, a live-opened record — goes to the
-working file's `Run-level:` section at the moment of the write instead;
-next.md carries that rule.) The Changes shape:
+**The item's `Changes:` entry is written at the tick, per next.md's per-item
+completion step.** The Changes shape:
 
 ```
 Changes:

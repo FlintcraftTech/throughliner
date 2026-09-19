@@ -1419,7 +1419,10 @@ premise is broken       ->  halt and course-correct
   record as a marked tail — at the end of a piece of work, where a file
   changed.** The offer names both routes: a yes here, or running /done again,
   which appends the same tail — written with the state server's `append_tail`
-  tool where the server is registered.
+  tool where the server is registered:
+  - routing an urge in the tail to run or drive testing or verification into
+    a skill — a planning turn to structure the work, or a build's hand-over of
+    a `[user]` item that already exists — rather than doing it in the tail.
 
 ```
 once per finished piece of work    ->  not after each reply

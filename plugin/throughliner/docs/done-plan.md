@@ -113,21 +113,13 @@ Write each entry's one-liner and rationale, then **report what landed.**
 
 **3. Stage the hand-edited files explicitly** at the commit step. The commit
 message is the approved entry; for several entries, the title names the
-handmade-work close and the body carries each entry's summary. Push is offered
-where a remote exists, as the commit core's one rule says.
+handmade-work close and the body carries each entry's summary. The push
+follows the commit core in done.md.
 
 ## Batch the human stops in Processed  [SILENT] when nothing moves; [BRIEF] when it does
 
 **One pass, over Processed only: put `[user]` and `[audit]` lines at the end,
 and a `[co-write]` line after them.** That is the whole of /done's reordering.
-
-**`Blocks:` / `Depends on:` headers stay retired.** The one dependency
-field that exists is `Blocked by:`, written on the item that is held and naming
-one or more slugs — the item lifts only when every one of them resolves — and
-it is lint-checked precisely so it can't go stale the way those headers did.
-Its sibling `Not before: YYYY-MM-DD` holds an item until a date rather than
-until another item, and is lint-checked the same way. Everything else stays
-prose slug-references.
 
 **Place `[user]` and `[audit]` lines end-preferred**, after contiguous blocks of
 build work. Both flavors force /next to stop for the user — a step they must run,
@@ -212,20 +204,6 @@ dependency BUILT and VERIFIED    ->  no hold; it may clear.
 There the hold is not written: the item clears, its walkthrough IS the
 verification, and its prose says so.
 
-The deadlock without it, from a consumer project that met it: a build produced a
-script whose first real run happens inside a `[user]` walkthrough, so the blocker
-could not resolve until the held item ran, and the held item could not run until
-the blocker resolved. Two mechanisms both reported it as fine by construction —
-the digest reads an absent-and-built blocker as resolved, and the loop check
-covers only blockers that are queue items, while this loop runs through a
-verification. It surfaced only because someone read the record behind the slug
-by hand.
-
-Restatement was attempted first and lost content: rewording the rule to hold only
-unattended work would also clear attended walkthroughs that do not verify their
-foundation, which is a hold the rule genuinely wants. A walkthrough is driven
-live with the user present, so a failure here is seen as it happens.
-
 Narrate it when it holds an item back — one line naming which item waits on
 which.
 
@@ -251,10 +229,6 @@ Not before: YYYY-MM-DD
 Assigned to: <name>             # whose it is to do — carried beside the
                                 # hold, and not itself a holding fact
 ```
-
-Every slug must resolve to a real work item in this queue, and a date must be a
-real `YYYY-MM-DD` — the queue lint checks both. Below the line means held by a named
-queue item or by a date, and nothing else.
 
 ```
 a date is what it waits for      ->  write the date. No blocker item: the date
@@ -357,24 +331,6 @@ hold them.
 Run the commit core in done.md. Staged paths are the changed method docs
 (QUEUE.md, SPEC.md, LOG/), plus the hand-edited files where this was a handmade
 close — planning sessions touch nothing else.
-
-**The push offer is the commit core's one rule for every shape that closes
-here:** offered where the repository has a remote, omitted and unmentioned
-where it has none.
-
-**An isolated session names its branch and warns about "remove"** [BRIEF].
-Fires only where session_start reported this session is in its own worktree; in
-a shared tree, say nothing. After committing, say plainly which branch the work
-is on and that **it is not merged back** — the harness never merges a session
-worktree, and choosing **remove** at exit deletes the worktree and the branch
-with all the work in them. Use that word, because it is the word the exit prompt
-uses and a user reads it as tidying up.
-
-**Leave the merge to a main-checkout session's start**, where session_start
-reports worktrees carrying unmerged commits — git refuses to update a branch
-checked out in another working tree. Say that too, so the user knows the work
-has somewhere to go. (The always-loaded rules carry this same instruction for
-every session shape, so a build or audit session's /done in a worktree is covered there.)
 
 ## 3. Recommend next  [BRIEF, PROMPT]
 

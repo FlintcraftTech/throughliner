@@ -133,6 +133,21 @@ def main():
     check("a phrase whose own sentence carries no source is still refused",
           decision(r) == "deny", repr(r))
 
+    # 3b. [time-word-check-hits-product-nouns]: a capital mid-sentence is a
+    # name and passes; a capital at the sentence's start is still a time word.
+    d3b = project()
+    q3b = os.path.join(d3b, "QUEUE.md")
+    r = drive(d3b, "Edit", q3b, {"old_string": "x",
+                                 "new_string": "The test task added from Tomorrow appeared on Today straight away."})
+    check("capitalised page names mid-sentence pass",
+          decision(r) == "allow", repr(r))
+    r = drive(d3b, "Edit", q3b, {"old_string": "x",
+                                 "new_string": "Today the build ran."})
+    check("a sentence-initial capital is still refused",
+          decision(r) == "deny"
+          and "capital mid-sentence" in r.get("permissionDecisionReason", ""),
+          repr(r))
+
     # 4. [counted-up-clock-times-uncaught]: a clock time later than the clock
     # is refused once; a past time, a quoted time and a dated past time pass.
     d4 = project()
@@ -178,7 +193,7 @@ def main():
     finally:
         del os.environ["THROUGHLINER_TEST_CLOCK"]
 
-    for folder in (d, d2, d3, d4):
+    for folder in (d, d2, d3, d3b, d4):
         shutil.rmtree(folder, ignore_errors=True)
 
     print(f"\n{len(failures)} failure(s)" if failures else "\nall passed")

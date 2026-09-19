@@ -181,12 +181,32 @@ TIME_SOURCE_PATTERN = re.compile(
 )
 
 
+# What may stand between a sentence's start and its first word: whitespace,
+# quotation marks, opening brackets and markdown leaders. A COPY of
+# pre_tool_use.py's; change one, change both.
+_TIME_SENTENCE_LEAD = re.compile(r"^[\s\"'“‘(\[{#*>-]*$")
+
+
+def _is_name_mid_sentence(text, start, word):
+    """True where the matched time word opens with a capital and is not the
+    first word of its sentence — a product's own page or feature written as a
+    name ([time-word-check-hits-product-nouns]). A capital at a sentence's
+    start says nothing, so that case still counts as a time word."""
+    if not word[:1].isupper():
+        return False
+    left, _ = _sentence_span(text, start, start)
+    return not _TIME_SENTENCE_LEAD.match(text[left:start])
+
+
 def _unfounded_time_words(message):
     """Distinct time phrases in the reply outside quoted text, lowercased —
-    leaving out any whose sentence also carries a source."""
+    leaving out any whose sentence also carries a source, and any written as
+    a name with a capital mid-sentence."""
     found = []
     text = _strip_quoted(message, spans=True)
     for match in TIME_WORD_PATTERN.finditer(text):
+        if _is_name_mid_sentence(text, match.start(), match.group(0)):
+            continue
         left, right = _sentence_span(text, match.start(), match.end())
         if TIME_SOURCE_PATTERN.search(text, left, right):
             continue
@@ -478,10 +498,14 @@ def main():
                 "Your last message says when something happened with no "
                 f"source: {listed}. Read the clock or the record and put the "
                 "source in the sentence, or drop the word — a wrong time in "
-                "chat proliferates into the records. Open the re-send with one "
-                "line naming the corrected word, so the reader sees it as a "
-                "correction and need not re-read. This phrase is stopped "
-                "once; it passes on the next reply."
+                "chat proliferates into the records. A name written with a "
+                "capital mid-sentence — a product's own page or feature — "
+                "passes, so a block on one is a false positive to reword or "
+                "ignore. Reply with the correction alone: one or two lines "
+                "carrying the corrected sentence, with nothing from the "
+                "earlier message repeated, since that message stays on "
+                "screen. This phrase is stopped once; it passes on the next "
+                "reply."
             ),
         }))
         sys.exit(0)
@@ -532,9 +556,10 @@ def main():
         "Your last message reported writing %s, but %s not in QUEUE.md as a "
         "work-item heading. Either the write did not happen, or it landed "
         "somewhere else. Tell the user plainly what actually happened — they "
-        "may already be acting on the report. Open the re-send with one line "
-        "saying the earlier report was wrong and the capture is filed now, so "
-        "the reader sees a correction. If the item genuinely lives "
+        "may already be acting on the report. Reply with the correction "
+        "alone: one or two lines saying the earlier report was wrong and "
+        "what is filed now, with nothing from the earlier message repeated, "
+        "since that message stays on screen. If the item genuinely lives "
         "elsewhere (an archived message, another project's queue, a LOG "
         "entry), say so in one line and carry on."
         % (names, "it is" if len(missing) == 1 else "they are")

@@ -389,6 +389,12 @@ def tool_file_capture(arguments):
 
     heading = (arguments.get("heading") or "").strip()
     slug = (arguments.get("slug") or "").strip()
+    # A heading typed with its own slug on the end — the way a specimen
+    # heading reads in the docs — lands once, not twice: the trailing
+    # `[<slug>]` is stripped where it equals the slug argument, and the tool
+    # appends its own below ([advisory-heading-doubles-slug-through-file-capture]).
+    if slug and heading.endswith("[%s]" % slug):
+        heading = heading[:-len("[%s]" % slug)].rstrip()
     body = (arguments.get("body") or "").strip()
     blocked_by = arguments.get("blocked_by") or []
     if isinstance(blocked_by, str):

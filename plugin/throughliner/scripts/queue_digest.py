@@ -1122,34 +1122,6 @@ def render(items, root="", queue_path="QUEUE.md"):
         )
     else:
         out.append("- none")
-    out.append(
-        "Placement flags match a fixed set of known phrases, so a clean result "
-        "means none of the phrases this check knows were found — not that no "
-        "contradiction exists. Partial coverage, not a clean bill."
-    )
-    out.append(
-        "Capture-bears-on-cleared flags reach a capture that NAMES the cleared "
-        "item's slug. A capture that invalidates cleared work without naming it "
-        "is not reached, and nothing here can tell whether a named one actually "
-        "invalidates anything — read it as a prompt to look, not as a verdict."
-    )
-    out.append(
-        "Superseded-research flags cover only items that NAME the research file "
-        "in their prose. An item scoped on a finding it never cites is not "
-        "reached by this check — read it as partial coverage, not a clean bill."
-    )
-    out.append(
-        "A SNAPSHOT flag says a cited finding is a copy another project owns. "
-        "It is permanent and says nothing about currency: nothing reads the "
-        "owning project, so whether the original has changed since the copy was "
-        "taken is unknown rather than checked."
-    )
-    out.append(
-        "The same limit binds `Cites research:`. It reports what an item names; "
-        "an item that restates a finding in its own words prints nothing, and "
-        "nothing detects that. A blank there means no citation was written, "
-        "never that the item rests on no research."
-    )
     out.append("")
 
     shared = files_named(items)
@@ -1185,6 +1157,38 @@ def render(items, root="", queue_path="QUEUE.md"):
             )
     else:
         out.append("- none")
+    out.append("")
+
+    # The limits of what this print reaches, one line each, printed once at
+    # the end ([digest-limit-paragraphs-folded]). Nothing softened: each line
+    # still states the reach of the check it names.
+    out.append("## Limits — what each check reaches, and no more")
+    out.append(
+        "- Placement flags match a fixed set of known phrases: a clean result "
+        "means none of those phrases were found, not that no contradiction "
+        "exists — partial coverage, not a clean bill."
+    )
+    out.append(
+        "- Capture-bears-on-cleared flags reach a capture that NAMES the cleared "
+        "item's slug; one that invalidates cleared work without naming it is not "
+        "reached, and nothing here tells whether a named one invalidates anything "
+        "— a prompt to look, not a verdict."
+    )
+    out.append(
+        "- Superseded-research flags reach only items that NAME the research file "
+        "in their prose; an item scoped on a finding it never cites is not "
+        "reached — partial coverage, not a clean bill."
+    )
+    out.append(
+        "- A SNAPSHOT flag says a cited finding is a copy another project owns; "
+        "it is permanent and says nothing about currency, since nothing reads "
+        "the owning project — unknown rather than checked."
+    )
+    out.append(
+        "- `Cites research:` reports what an item names; an item restating a "
+        "finding in its own words prints nothing, and a blank means no citation "
+        "was written, never that the item rests on no research."
+    )
     out.append("")
     return "\n".join(out)
 

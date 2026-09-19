@@ -24,11 +24,12 @@ SPEC.md                    the Goals section, where the project has one —
                            Each section heading is one feature.
 QUEUE.md, both sections    where each feature's work sits
 the record's window        LOG/index.md — and LOG/index-<previous month>.md
-                           too where fewer than seven days of the current
-                           month have passed, so the window never runs
-                           nearly empty at a month's start. The split by
-                           month is the derivation: the window is one or two
-                           index files, never the whole archive.
+                           too where the current month's index does not yet
+                           reach back to the most recent planning session's
+                           record, the same window a planning opening reads.
+                           The split by month is the derivation: the window
+                           is one or two index files, never the whole
+                           archive.
 ```
 
 Where a planning or build session has already opened in this chat, those
@@ -99,7 +100,3 @@ instead.
 reasoning that led to any stage, and anything the user did not ask about. A
 feature's line names the feature by its SPEC heading's words, never by a queue
 slug.
-
-**Every date in the brief is read from a record's own date field or an index
-line, never recalled** — the skill-nonspecific rule on time words governs
-here as everywhere.

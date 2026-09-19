@@ -489,8 +489,8 @@ item carries one, copy it across unchanged, keyed by slug like the depth field
 beside it:**
 
 ```
-Rule gate: <slug> — run, <what it decided>
-Rule gate: <slug> — not needed, <why>
+Rule gate: <slug> — run — <what it decided>
+Rule gate: <slug> — not needed — <why>
 ```
 
 Where
