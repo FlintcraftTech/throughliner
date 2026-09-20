@@ -30,30 +30,23 @@ gets built first — through discussion, not silently.
 - **A planning session is scope-locked to a standing list, and a write outside it
   is denied.** Writable: QUEUE.md, SPEC.md, CYCLES.md, `LOG/`, `FAQ/`,
   `workshop/resources/research/`, the scratchpad, the memory directory, and the
-  two FAQ templates (`faq-template.md`, `faq-index-template.md`) — the
-  templates are canonical for `FAQ/`, and the announcement-time FAQ rule
-  requires the entry written in the same turn as the sent-register line.
-  Everything
+  two FAQ templates (`faq-template.md`, `faq-index-template.md`). Everything
   else is work — including any other template, whose edit reaches every future
-  consumer — and work is
-  queued rather than done here, which is what this doc's opening already
-  requires. When the lock refuses a write, say in plain words what you were
-  about to change and file it as a capture.
+  consumer — and work is queued rather than done here. When the lock refuses a
+  write, say in plain words what you were about to change and file it as a
+  capture.
 - **A recommendation is not a decision.** Whether an item is kept or deleted is
   still the user's call, and a written line is not an agreed one — the user can
   reject what was written, and it is reverted.
 - **SPEC is a normal doc.** When a planning decision changes what SPEC says — a
   new capability, a scope change, a reworded rule (**the test: does any SPEC
   sentence go wrong or incomplete?**) — edit SPEC in that same /plan run, with
-  the user present and approving. The /plan-close spec-sync gate enforces the
-  same-commit atomicity between a behaviour change and its SPEC sentence, and it
-  is now the **only** sync gate — a build session's /done checks its work against SPEC instead of
-  editing SPEC to match. When a change touches no SPEC sentence, none of this
+  the user present and approving. When a change touches no SPEC sentence, none of this
   applies. One other route exists: a large SPEC rework is its own piece of work,
   naming SPEC.md among its files like any other build.
 
   **Product truth is written here, at planning time** — the sentence is written
-  ahead of the build, and the build-asks-and-edits-inline route is repealed.
+  ahead of the build.
 
   **So the decision step asks, on every item: does this change what SPEC says?** If
   yes, write the sentence now, with the user present — into the part's own
@@ -62,15 +55,8 @@ gets built first — through discussion, not silently.
   a goal whose "reached when" test now holds is rewritten or removed in the
   Goals section at the same turn.
 
-  **Where this step misses one, the build files it rather than writing it.** The
-  build records the sentence it thinks SPEC owes and leaves SPEC alone; the next
-  planning run writes it. The cost, stated: SPEC lags that one sentence until
-  then — visibly, as a queue item, rather than in silence.
-
-  **SPEC is read at build time, not only here.** /next reads it at run start, so
-  it is the truth each item is built against rather than a document only planning
-  consults. That is what a queued item's own text has to survive: write it so a
-  build reading SPEC alongside it finds the two in agreement.
+  **Write a queued item so that a build reading SPEC alongside it finds the two
+  in agreement.**
 
   **Three rules govern what a SPEC edit may write.**
 
@@ -88,10 +74,6 @@ gets built first — through discussion, not silently.
     it is corrected at the moment it is noticed rather than filed for later; and
     a sentence resting on a condition or an outside fact names it in its own
     words, per the always-loaded rule.
-
-  **No ceiling and no size measure, deliberately** — a true sentence about a
-  live feature cannot be evicted, so these rules are about what goes in
-  and whether it is still true, never about how long the document is.
 - **/plan resolves what it can in-session; capture is only for what it can't.**
 
 ```
@@ -110,9 +92,8 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
 
 ## Capture and processing discipline
 
-- **Two sections, one move between them.** The only move is Unprocessed →
-  Processed, made in /plan by discussing an entry and agreeing to move it there. No third
-  state, no parking.
+- **The one move, Unprocessed → Processed, is made here by discussing an entry
+  and agreeing to move it.**
 - **When placing an item into Processed — at the decision step, or when lifting one
   from below the line — keep `[user]` and `[audit]` lines end-preferred, as
   done-plan.md's reorder step requires.**
@@ -127,15 +108,10 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
   DESCRIBED walkthrough, settled here at the decision step — including that each step
   names the thing to click or type and the thing to look for, not just where to
   go. The requirement is stated in full in skill-nonspecific-rules.md; this is the
-  moment it is applied, because the walkthrough is authored here, with the user in
-  the room, and executed in an unattended run where the only thing that happens is
-  the run stops.
+  moment it is applied.
 
 - **`[freeform]` placement, for the uncommon case where one reaches the queue at
-  all.** Most freeform work is done by hand in a session of its own and never
-  passes through /plan — the tag's main job is telling /done what kind of
-  session it is looking at. What follows governs a freeform item that *is* filed.
-  Either the user or Claude may designate it,
+  all.** Either the user or Claude may designate it,
   typically as a stopgap or as the nuclear option for something too big to fix
   stepwise. **Place it at one end of the cleared
   region, clear of the Claude-work:** first when it is a prerequisite or
@@ -166,20 +142,12 @@ Runs alone
   binds /next and nothing else, so it does
   not stop the work being done alongside other work by hand.
 
-  This is not `[freeform]`. `[freeform]` marks work done **without the method
-  running it at all** — by hand, in a session of its own, because the work is
-  too large for a run or because running it inside one is the risk. `Runs alone`
-  marks work the method **does** build, in an isolated run of its own.
-
 - **Assign an uncommon execution marker only after re-reading its definition in
   that same turn, and name in the recommendation why this work matches it.**
   `[freeform]` and `Runs alone` are the two: rare enough that nothing keeps
   their difference fresh, close enough in shape to be reached for
-  interchangeably, and each carries a consequence the other does not. Re-reading
-  costs one look at the two entries above; getting it wrong costs the user a
-  correction at the moment ordering is being settled. The common markers — no
-  tag, `[audit]`, `[user]` — are exempt: they are assigned constantly, and a
-  re-read requirement on them would be friction with no failure behind it.
+  interchangeably, and each carries a consequence the other does not. The common
+  markers — no tag, `[audit]`, `[user]` — are exempt.
 
 
 ## Step 1: Read state and entry question
@@ -203,13 +171,6 @@ for the reasoning it deliberately omits.
 python <plugin-root>/scripts/queue_digest.py <QUEUE.md path>
 ```
 
-It prints one line per queue entry — section, side of the readiness marker, flavor,
-heading, slug, any `Blocked by:` with the blocker's resolved location, any
-red-flag state, any slug the item's prose cites that already has a LOG entry, and
-the date the item first appeared in the queue. It then prints three blocks: the
-placement contradictions, every file named by two or more items, and **how many
-cleared items sit ahead of each `Runs alone` item**. Those are the computed facts.
-
 **Read the runs-alone count as recession, not as staleness.** /next stops *before*
 such an item, so every planning run that adds ready work pushes it further
 back. It is a fact like every other digest line, and moving the item is the
@@ -220,9 +181,7 @@ instruction one item carries about another's ordering sits in that prose and
 appears on no digest line.
 
 **A cited slug that has a LOG entry means a record exists, and the record's KIND
-says whether that work was built or only agreed.** This is the always-loaded
-instruction "status is re-derived from LOG" performed rather than merely stated.
-The kinds print separately, and they carry different weight:
+says whether that work was built or only agreed.** The kinds print separately, and they carry different weight:
 
 ```
 Cites shipped:    the record is a build's — that work is done. The citing
@@ -233,10 +192,7 @@ record kind       an older-format record, carrying neither marker. Reported as
   unknown         found and unclassified rather than guessed at.
 ```
 
-**Tell the two apart by reading the record.** Both are named
-`<date>-<slug>.md`, so the filename cannot separate them, and reading
-agreed-but-unbuilt work as finished would release work whose dependency is still
-outstanding.
+**Tell the two apart by reading the record.**
 
 **Read a cited-shipped flag as a premise worth re-reading; the ladder still sets
 the order.**
@@ -253,10 +209,6 @@ item, including the held-since date; where that date could not be attributed
 the digest prints none, and the narration says the item is held without
 claiming to know since when.
 
-This is separate from the below-the-line revisit further down, which stays silent
-while an item is still blocked: that silence is about whether the item may move,
-this is about the user knowing the work exists.
-
 **Where this chat's own build working file still exists, say so plainly, once, in
 the opening narration:** this chat has a build that has not closed, so lifts and
 shipped-flags depending on that run's work will not resolve until /done runs. The
@@ -265,15 +217,11 @@ revisit still reads LOG and still skips silently — nothing else changes.
 **Each of these reports a fact, never a verdict.** Read them as inputs to your
 own judgment.
 
-**The digest satisfies the page-to-the-end rule for the fields it computes, and
-for nothing else** — the read of the file is what covers the prose. Where the
-digest fails to run, the read still happens and the computed facts are simply
-absent; say which of the two you have rather than reasoning from a partial view.
+**Where the digest fails to run, the read still happens and the computed facts
+are simply absent; say which of the two you have rather than reasoning from a
+partial view.**
 
-**Refresh it whenever the picture needs to be current.** `session_start`'s
-dependency facts fire once and describe the queue as it stood *before* the session
-touched it, so a /plan that has processed a dozen items is otherwise reasoning
-against a stale snapshot.
+**Refresh it whenever the picture needs to be current.**
 
 **Where what you need is the next pick, ask for that alone rather than
 re-printing the whole digest:**
@@ -284,28 +232,20 @@ python <plugin-root>/scripts/queue_digest.py <QUEUE.md path> --next \
 ```
 
 It answers only *what is next* — which rung the ladder fell to, that rung's top
-item, where in the file it starts, and its text. The full print is an order of
-magnitude larger and answers a question nobody asked at a pick. Pass `--skip`
-for the entries set aside this session and `--picked` for how many picks have
-been made, since the ladder alternates on that parity — both are session state
-the script cannot see, and without them it answers the wrong pick the moment
-anything is skipped. Pass `--medians` with the two medians the opening printed
-— the section's median entry length and median filing date — since without
-them the script recomputes both from the file as it now stands and the
-long-and-old group stops shrinking; the output names the medians it used and
+item, where in the file it starts, and its text. Pass `--skip` for the entries
+set aside this session and `--picked` for how many picks have been made. Pass
+`--medians` with the two medians the opening printed — the section's median
+entry length and median filing date; the output names the medians it used and
 whether they were passed in or recomputed. Re-print the whole digest when the
 whole picture is what you need.
 
 **Then read the `LOG/index.md` lines newer than the most recent planning
 session's record** — found by that record's body fields rather than its
-filename, the same way the dispositions window is found, since the per-entry
-split names planning records by slug. Where no planning record
-exists, read the current month's lines.
+filename, since the per-entry split names planning records by slug. Where no
+planning record exists, read the current month's lines.
 
 **Fold a line into the opening narration when it names a slug or a file the
-current queue also names, and leave it out otherwise.** That is the whole test:
-an intersection between what just happened and what is about to be worked, which
-is checkable rather than a judgment about relevance.
+current queue also names, and leave it out otherwise.**
 
 What was read and what it touched rides the opening narration, and where
 nothing in the window bears on today's queue the read joins the quiet clause:
@@ -346,8 +286,7 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> \
     --delete forward-advisory Unprocessed
 ```
 
-Narrate the clear in one line. The clear happens even where the session then ends
-without acting on the advisory.
+Narrate the clear in one line.
 
 **The specimen — this is the shape of the opening message:**
 
@@ -361,10 +300,6 @@ without acting on the advisory.
 > and the rule checks: nothing.
 >
 > **Anything you want to prioritise, or shall I order them the usual way?**
-
-**The limit, stated rather than implied: this makes the line harder to drop, not
-impossible.** Nothing will ever confirm it was said. Do not describe it as fixing
-the problem.
 
 **Everything the step surfaces after the advisory folds into ONE opening
 narration** [BRIEF], beneath the rule — the digest, the recent log lines, the
@@ -393,9 +328,6 @@ this is one of its stated triggers.
 opened its contents are ordinary captures and rank by the existing ladder;
 **mail gets no priority rung of its own.** A message arriving mid-chat waits for
 the next opening.
-
-Any session may open mail whenever the user asks; opening and routing is filing,
-which every session may do. What /plan adds is the guarantee.
 
 **The same step also checks the issue channel, in three limbs**
 [SILENT] where `gh` is absent, or where there is neither an open outbound issue
@@ -432,13 +364,8 @@ here has touched, on a repository nobody here has commented on, stays invisible.
 The widening is real and bounded; do not describe it as covering everything that
 could bear on the project.
 
-**A message arriving mid-chat waits for the next chat's opening**, because that
-is when the mailbox is scanned. Say so if it comes up rather than building a
-watcher — the INBOX design already promises no delivery guarantee.
-
 **Where the user mentions having done a `[user]` item**, close it at this
-session's /done: log it under its slug and remove it from Processed. The setting
-that used to toggle a completion sweep here is retired.
+session's /done: log it under its slug and remove it from Processed.
 
 **Below-the-line revisit** [SILENT] when nothing lifts; [BRIEF] when
 proposing a lift. Every below-line item names what holds it — `Blocked by:`
@@ -476,9 +403,7 @@ blocker absent from the
 
 **A turn proposing a lift says what the item's premise rests on, and whether
 anything has verified it since it was written** — read off the item's rests-on
-line where it has one, and said plainly where it has none. Held work is the work
-whose premise has had longest to go stale, and the lift is the one moment
-anybody looks at it.
+line where it has one, and said plainly where it has none.
 
 **Where an item's hold names work belonging to a subproject** — a project set
 up inside this one, which `session_start` detects and reports — check it by
@@ -512,22 +437,6 @@ last item that should stay cleared.**
 Then drop the item's `Blocked by:` line and rewrite the entry whole, per the
 decision step's rewrite-whole rule, saying what cleared it.
 (Skip-to-defer needs no command at all — it moves nothing.)
-
-**This revisit and the throughput floor ask different questions**, and reading
-either alone makes the other look wrong:
-
-```
-Two tests, different questions — they are not inconsistent.
-  the lift  asks "has this already SHIPPED?"  -> read off LOG
-  the floor asks "what can THIS run
-                  unblock?"                    -> counts blockers in
-                                                  Unprocessed only
-A blocker sitting in Processed needs a BUILD, not a planning run, so
-it is not the floor's business: /next builds it, it leaves the queue, and
-the next revisit lifts what it held.
-The case to watch is a blocker that is ITSELF held below the line — a
-chain. One that terminates is slow; one that loops never resolves.
-```
 
 **Then read the digest's placement-contradiction flags, across both regions.**
 
@@ -573,19 +482,11 @@ per-feature items** — the user's call. Output goes to **Unprocessed**, which i
 what keeps seeding from greenlighting a build. Write the items as ordinary
 captures, then report what was seeded.
 
-This step belongs to /plan alone; /setup stays scaffolding and interview.
-
 **Cycles due-ness check** [SILENT] when the project has no cycles doc; [BRIEF]
 whenever it has one. **The trigger is the session opening's cycles line**, which
-names the doc, each definition's slug and what its observable currently reads —
-so a project with cycles cannot reach this step without having been told they
-exist, and one without cycles gets no line and pays nothing. Where the line is
-there, read the doc and say which cycles are due, whether or not anything is
-filed. Each definition names an artifact,
-the steps of one turn, its due rule — time-based, a cadence, or
-condition-based, an observable read against a condition — and **the observable
-that marks a completed turn** — a release's date, a sent-record line. Compute each cycle's due-ness
-from its observable: read the observable's current state, and where a full
+names the doc, each definition's slug and what its observable currently reads.
+Where the line is there, read the doc and say which cycles are due, whether or
+not anything is filed. Compute each cycle's due-ness from its observable: read the observable's current state, and where a full
 cadence interval has passed since the last completed turn, the cycle is due.
 Where a cycle carries a chain, due-ness is per checklist: a checklist is due when
 its computed date — reported on the opening's cycles line — has arrived, today's
@@ -643,14 +544,11 @@ if the drop-reason needs ANY argument  ->  not bulk-droppable; leave it for the
                                            one-at-a-time loop
 ```
 
-**This pass only ever deletes; moving an entry into Processed stays one item at a time.** Sliding undesigned work
-into Processed unread is the exact failure this ceiling prevents. If nothing is
+**This pass only ever deletes; moving an entry into Processed stays one item at a time.** If nothing is
 obviously droppable this beat doesn't fire at all — say nothing and go to beat 2.
 
 **The ask recommends the drop explicitly and offers keeping as the exception, at
-any batch size.** A set of one loses the plural phrasing that carried the
-recommendation implicitly, and "drop this, or keep it?" hands the user a
-balanced choice where the pass has in fact reached a view. Say the view.
+any batch size.**
 
 > "Two look droppable — 1. **[old-slug]**: its premise is gone, the feature it
 > targeted was cut. 2. **[dupe-slug]**: duplicates **[other-slug]**. Drop both, or
@@ -662,12 +560,7 @@ balanced choice where the pass has in fact reached a view. Say the view.
 **Beat 2 — the ordering ask** [PROMPT]. One question: **"Anything you want to
 prioritise, or shall I order them the usual way?"** One question, not a menu —
 the only alternative offered is the user's own priorities. A user with something
-on their mind answers it here. **"The usual way" signals that a standard is being
-applied without naming which rung it falls to**, because the order used is often
-the fallback ladder rather than any nameable default; the one-line narration that
-follows the reorder names, in plain words, the order picked. Without that signal
-the ask reads as Claude improvising, and the user cannot tell that following the
-standard procedure is one of the options.
+on their mind answers it here.
 
 **Where an uncleared red flag tops the order, the ask is asymmetric instead:
 lead with the flag as what comes first unless the user names something
@@ -687,7 +580,7 @@ than a step that can be passed over.
 
 (If Unprocessed is empty there's nothing to order, so offer seeding from SPEC by
 name instead — the step above. If SPEC is thin too, it's an ordinary conversation
-about what they want next; **not** a new session type, mode, or container.)
+about what they want next.)
 
 If the user raises something to discuss, handle it via the Step 2 loop, then ask
 "anything else before we go through the queue?" — repeat until nothing more.
@@ -700,13 +593,11 @@ stop on the way to it.
 preview**, so the checkpoint below satisfies `[SEQUENCE]`.
 
 **/plan writes no working file.** Each item's disposition and reasoning go into
-that item's own rationale in QUEUE.md as it is processed, so /done recovers
-the session with `git diff HEAD -- QUEUE.md`. The queue is the only planning
-artifact; leave it that way.
+that item's own rationale in QUEUE.md as it is processed, and into the
+session's record, one entry per item.
 
 **Run the scrub checklist before writing a kept item's text**
-(skill-nonspecific-rules.md, Scrub before writing) — the last cheap moment to
-rewrite a real name or a case detail out of it.
+(skill-nonspecific-rules.md, Scrub before writing).
 
 **Read the same text against its shape's bound** (skill-nonspecific-rules.md,
 Authoring standard). An item long because it holds two pieces of work splits into
@@ -746,7 +637,7 @@ user nowhere.
 means hold this back until the date, so such an entry is not ranked, not
 presented and not counted toward the session's floor. Take it up in the ordinary
 way once the date has passed — the digest prints `Not before: <date> ->
-passed/ahead` on every entry, so this reads a computed field and needs no judgment.
+passed/ahead` on every entry.
 **The turn that takes such an entry up says what its premise rests on, and
 whether anything has verified it since it was written** — from its rests-on line
 where it has one, plainly where it has none. A dated capture waited on something
@@ -761,7 +652,7 @@ floor. It returns by itself once every named entry has been processed or built
 capture held on it returns in the session it is kept — except that a line
 ending `until built` passes the capture over until every named entry has a
 build record; the digest prints each named blocker's
-resolved state on the capture's own line, so this reads a computed field too.
+resolved state on the capture's own line.
 
 **Pass over any Unprocessed entry whose `Cycle:` names a definition in the
 project's cycles doc** [SILENT], on the same terms. The field says which cycle
@@ -769,8 +660,8 @@ owns the entry as its material, so that cycle's turns draw from it and the
 ranking does not: it is not ranked, not presented and not counted toward the
 session's floor. A `Cycle:` naming a definition that is not in the doc ranks
 normally, so deleting a cycle releases its material by itself — the same
-self-lifting shape as the two arms above, and the digest prints the field, so
-this reads a computed field too.
+self-lifting shape as the two arms above, and the digest prints the field. All
+three pass-overs read a field the digest prints, so none needs judgment.
 
 **The fallback ladder — internal, and applied rather than offered.** When nothing
 meaningfully unblocks anything else, work down it:
@@ -803,22 +694,6 @@ membership/order  length decides membership and the date filed decides
                   order, in rungs 4 and 5 alike
 ```
 
-**No figure is ever written into this text.** A bare number is a limit with no
-derivation; a proportion of the thing it governs is admissible, and both medians
-are proportions.
-
-**Rung 4 reaches the work that keeps coming back, not the best-designed work.**
-It depends on a capture being able to bow out — via `Not before:` where the wait
-is outside the project, or via `Blocked by:` where the queue itself holds it.
-
-**Rung 5 alternates, and that is what makes decay reachable at all.** Age-ordering
-within the long half never reaches a short old entry, and running the two concerns
-one after the other lets one key dominate while the other starves.
-
-**Rung 5 reads the date filed rather than file order**, because the queue can be
-reordered on request and a file-order rung would then rank by what was just
-overwritten.
-
 The ladder is surfaced through the one-line floor narration alone, which names
 whichever rung the order actually came from.
 
@@ -840,27 +715,18 @@ derivation.
 N = (blockers still in Unprocessed) + (1 if nothing is cleared to run)
 ```
 
-Each of those blockers is an item some other work is waiting on, so processing
-it is what releases something; the extra one covers a queue with no ready work
-at all, where the run must produce at least one buildable item or /next has
-nothing to pick up. If the facts say the number is zero and work is already
-cleared, say so — "nothing is waiting on other work, so process whatever is
-worth processing" — rather than reaching for a number.
+If the facts say the number is zero and work is already cleared, say so —
+"nothing is waiting on other work, so process whatever is worth processing" —
+rather than reaching for a number.
 
-State what it was derived from when you say it, because a bare number is a
-number nobody can check.
-
-The floor counts blockers in **Unprocessed only**, and that is not an
-inconsistency with the below-line revisit's shipped test — the two ask different
-questions, stated once at that revisit.
+State what it was derived from when you say it.
 
 **And say it out loud, always.** The floor narration fires every session,
 including when the derivation lands on zero.
 
 Word it as a recommendation, not a cap: "Ordered to process the biggest
 unblockers first — three items are holding other work up, so I'd recommend
-processing at least those three before your next build run." It's a
-planning-throughput target, not a context-budget count.
+processing at least those three before your next build run."
 
 **State the four routes here, once, in the same breath** — *"I'll work through
 these one at a time; say skip, stop, or run the done command whenever you like — or, where an item is someone else's to do, say whose."* This is the only place
@@ -876,24 +742,14 @@ everything up gets processed, or the long-and-old group empties into rung 5 —
 even though the bottom rung no longer runs out.
 
 **A rung can become live again rather than only run out, so re-check reads in
-both directions.** Filing a blocker into Unprocessed is the move that does it: a
-new entry other work cites is unblock-potential where there was none, which makes
-rung 3 live again after the session has already fallen past it. **Re-derive the
-throughput floor at the same moment.**
-
-Narrating on every item is explicitly not proposed.
-
-**The honest limit.** This reduces the reliance on noticing; it does not remove
-it. Nothing here makes the change detectable from outside.
+both directions.** **Re-derive the throughput floor at the same moment.**
 
 ### For each item
 
 **1. Present and interview**  [DISCUSS, PROMPT]
 
 **Every item's discussion — the first and every one after — opens with a
-plain-English summary of what the item says, inline, before any analysis.** The
-summary serves the user who isn't reading the file; the pointer to the file
-stays alongside for whoever is.
+plain-English summary of what the item says, inline, before any analysis.**
 
 **What the summary turn carries.** Two requirements, both about what the reader
 can resolve without the scrollback:
@@ -1019,9 +875,7 @@ AN OPTION      offered where the question is genuinely open, and accounting
 without reading the turn to locate it.
 
 **Write the ask as one fixed formula every time — "Do <the recommendation>?", or
-as near as grammar allows.** A varied ask makes the reader work out what is being
-asked before they can answer it; a constant one is recognised rather than parsed.
-Where the turn delivers alternatives, the ask is still single — the
+as near as grammar allows.** Where the turn delivers alternatives, the ask is still single — the
 asked-singly clause of the inversion rule in skill-nonspecific-rules.md
 governs, including the one fixed lead-in a genuine open choice takes.
 
@@ -1034,15 +888,12 @@ one item for `[SEQUENCE]`.
 
 **The ask names the act and never assigns authorship.** An ask framed "shall I
 write this in as your hypothesis?" records the user as author of the reasoning
-whatever they answer, since even "as you recommend" is a yes to that framing. Who
-authored which part is settled by the provenance rules' containment test and
+whatever they answer. Who authored which part is settled by the provenance rules' containment test and
 written into the item as mixed where it is mixed.
 
 **The question asks about the recommendation, never about the mechanics.** An ask
 that reads "move it into Processed, cleared to run?" asks about the filing, so a
-natural answer — "agreed", "as you recommend" — answers a question nobody put,
-and what the record then holds is consent to a write rather than a readable
-verdict on the substance.
+natural answer — "agreed", "as you recommend" — answers a question nobody put.
 
 **The recommendation is never the move itself.** It is the substance stated
 immediately before it; the move to the cleared section is what happens on the
@@ -1082,16 +933,11 @@ an external fact carrying no date it was last verified fails the check until
 that read is done here, at the decision step.** It reaches every kept item — a
 build as much as a walkthrough step. An
 item whose whole deliverable is such a fact is the read itself: it is done
-now and never queued. A genuinely volatile fact needs no exception: the read
-is performed once here, proving the source reachable and recording what it
-found, so a build-time or drive-time re-read refreshes a known answer rather
-than fetches an unknown one.
+now and never queued.
 
 **Third limb: where an item changes how a mechanism behaves, or repeals or
 rewords a specific sentence or value, grep the mechanism's or the sentence's
-distinctive words across the project before writing the Files line.** A
-repealed sentence is a literal string, so this needs no judgment — the item either
-grepped for it or did not.
+distinctive words across the project before writing the Files line.**
 
 ```
 the Files line is derived FROM the grep, not from the discussion
@@ -1113,8 +959,7 @@ no match
     -> nothing further
 ```
 
-**File the correction line rather than assuming one will be written.** The
-announcement went out under the user's own account, so only they can correct it.
+**File the correction line rather than assuming one will be written.**
 
 **Trace the ripple here rather than in the run.**
 
@@ -1128,9 +973,6 @@ something observable exists   ->  name it. A later session checks the world
 nothing observable exists     ->  say so, in the item. The item then waits
                                   until the user mentions it.
 ```
-
-**The second half carries as much weight as the first**, and is the part that gets
-left out: it is what tells a later run to ask rather than check.
 
 **Folding something into an existing item is two different operations. Say which
 one you are doing, because they want opposite treatments:**
@@ -1149,13 +991,7 @@ a SUPERSESSION   one account OVERTURNS the other
                      alternative and its reason to survive.
 ```
 
-**The test is binary and has an observable answer:** are these two accounts of one
-thing, or is one overturning the other?
-
 **A merge is expected to come out shorter.**
-
-**This types the EDIT being made, not the reason being carried** — the reasoning
-stays prose.
 
 **An item that passes both limbs carries its instructions in its own prose,
 written here.** Six things, one line each, in the item's text where the run
@@ -1173,9 +1009,8 @@ what the design RESTS ON, and when each was      # the external facts, one
 
 **The rests-on line names the external facts the design assumes — a tool's
 capability, what an outside surface permits, a version, a finding filed
-elsewhere — with the date each was last checked**, under the always-loaded
-rule that a sentence resting on an outside fact or a condition names it
-wherever it lives (skill-nonspecific-rules.md, Research and evidence filing).
+elsewhere — with the date each was last checked** (skill-nonspecific-rules.md,
+Research and evidence filing).
 **A rest without a date is what the buildability check's general limb reads**:
 it means the fact has not been checked, and the item does not clear until it is.
 
@@ -1189,33 +1024,22 @@ a `[user]` item most of all.
 
 **An observation reaches files of its own, routinely different ones — the test
 suite that has to pass, the sibling document an acceptance check greps — so name
-them among the files that change.** A build derives its file list from what an
-item says it changes, and meets the observation's files only when the safety
-check refuses them: it then has to stop and ask, which is the one thing a run
-nobody is watching should not need to do.
+them among the files that change.**
 
 **State what would be observed, not what would be asserted.** "The suite passes",
 "a grep for the old wording returns nothing", "the section's first step is the
 queue read" — each is something a build can check and either meets or does not.
 
-**Refusals travel with the item because a build that cannot see why an option
-was rejected proposes it again and stops to ask.** One line each is enough: the
-option, and what defeated it.
+**One line each is enough for a refusal: the option, and what defeated it.**
 
 **Name only files that change**, with a file the item has decided NOT to touch
-stated in its own sentence apart from them. The digest reads every backticked
-path where the changed files are named and cannot tell an excluded path from an
-included one, so an exclusion written among them returns as a false merge
-candidate.
+stated in its own sentence apart from them.
 
 **A Files entry whose content depends on a decision not yet made fails the second
-limb**, rather than partly passing it. "Any affordance the link-address question
-settles on" names a file and a purpose and supplies no decision, which is what
-the limb asks for. **Prose that schedules a design decision into the build fails
-the same way, however carefully phrased** — "to be settled at the start of the
-build rather than during it" reads as care about sequencing and does the
-opposite, because the start of the build is still the build. Two things the
-clause tells apart:
+limb**, rather than partly passing it. **Prose that schedules a design decision
+into the build fails the same way, however carefully phrased** — "to be settled
+at the start of the build rather than during it" reads as care about sequencing
+and does the opposite. Two things the clause tells apart:
 - a decision — anything where two reasonable sessions would produce different
   work — made at planning;
 - a tunable constant — a single value inside otherwise fully described work,
@@ -1226,8 +1050,7 @@ shape is a constant the build reads; one whose result could change the design
 is a decision.
 
 **The disposal is a split, not a refusal.** The open question becomes its own
-small item and the large one is held against it by slug. Most of such an item is
-usually finished, and rejecting it whole would discard that.
+small item and the large one is held against it by slug.
 
 **The second limb also asks whether this is work at all.** Ask what changes inside
 which files and get "nothing" back, and the item is a **finding**, not work — its
@@ -1275,19 +1098,18 @@ split          ->  buildable half   kept into Processed, passing both limbs
 
 The split's mechanics are the decomposition sub-step in sub-step 3's Into Processed.
 **A mixed item is designed out or split, and a failing limb is what decides
-which** — a condition at /done requiring the unbuilt half to be re-filed later is
-neither.
-
-This is where a design item is caught: an item whose build list is *the design's
-own output* fails the second limb by construction, so it never clears to run.
+which.**
 
 **Where the user asks to put work on a cycle, author the definition here, with
 them present.** Write it into the project's cycles doc (`CYCLES.md` at the
 project root, created on first use): the artifact, the steps of one turn, the
 cadence — declared by the user or derived from the record, and the definition
-says which — and **the observable that marks a completed turn**. The openings
-and closes then compute due-ness from that observable and file a capture when a
-turn is due; nothing stores a position.
+says which — and **the observable that marks a completed turn** — written with
+the state server's `cycle_define` tool where the server is registered, which
+refuses a taken slug, a cadence with no derivation and a chain naming an
+undefined checklist at the door, and with the editing tools otherwise. The
+openings and closes then compute due-ness from that observable and file a
+capture when a turn is due; nothing stores a position.
 
 **A definition's steps, criteria and observable pass the same test a kept item's
 instructions do** — the buildability check's design-decision clause, applied at
@@ -1306,20 +1128,10 @@ test reads for, subordinate to it:
     — each earlier checklist counted back from the anchor with its lead, "two
     days before, the day before, the day".
 
-It needs saying here because the check that catches this on a queue item runs at
-the decision step, while a definition is written straight into the cycles doc by
-the same pen — so a criteria paragraph reading "whatever would fail the
-discipline" passed unchecked, delegating the criteria-selection decision to the
-audit's own turn.
-
 **An observable read from the project's own `LOG/` must be distinguishable from
-the records planning itself writes.** A planning run writes one record per item
-it processes, named by that item's slug — including the record for authoring the
-cycle — so an observable reading "the most recent record under this cycle's slug"
-counts the authoring record as a completed turn and reports the cycle as run
-before it has ever run once. The cheap form, written into the definition: each
-turn's record opens by saying that it records a completed turn, and the
-observable reads only those records.
+the records planning itself writes.** The cheap form, written into the
+definition: each turn's record opens by saying that it records a completed
+turn, and the observable reads only those records.
 
 **And where the user asks for a named step list with no schedule, author it here
 as a checklist** — into the same cycles doc, carrying the artifact, the steps,
@@ -1338,10 +1150,8 @@ reads this field and permits exactly what it names:
 ```
 
 The cost is stated rather than hidden: a declared path is writable whenever the
-project is open, not only while its checklist runs. Nothing marks a checklist as
-running, and the one exception that already worked this way has never needed
-one. A checklist whose steps write nothing outside the standing list needs no field
-at all.
+project is open, not only while its checklist runs. A checklist whose steps
+write nothing outside the standing list needs no field at all.
 
 **And where work is either shape, offer once, in the message already discussing
 that item, never as a turn of its own:**
@@ -1371,16 +1181,11 @@ one definition rather than a second entry beside it.
 **And before recommending a disposition, read the cycles doc for a definition
 whose artifact this item touches; where one covers it, the recommendation names
 that cycle and shapes the work as part of its turn** — a template, a step, a
-material the turn reads — rather than as one-off work. An artifact that already
-has a cycle has a home, and work written as a one-off lands outside it and is
-done again next turn.
+material the turn reads — rather than as one-off work.
 
 **Where an entry's prose says it came from an audit and has not been reviewed,
 say so when you introduce it.** One clause: this came out of the such-and-such
-audit and nobody has weighed it yet. The user's single evaluation of it then
-happens knowingly, rather than on material they may assume was already vetted —
-audit findings are filed straight to Unprocessed with no approval on the way in,
-so this turn is the first time anyone has judged them.
+audit and nobody has weighed it yet.
 
 Part of moving an entry into Processed is settling who does it and how: Claude-work by default or
 `[user]`; where the project holds more than one person, whose it is to do,
@@ -1392,8 +1197,7 @@ relationship judgment and reports where it went.
 **Where an item's build produces a tool that measures or reports, file the
 `[audit]` that runs it in the same planning run, placed immediately after
 it.** The tool is the build; reading its output is the audit. Ordering works by
-placement and needs no `Blocked by:` line, because a dev tool run directly is
-live the moment it is written — one run can build the tool and then use it.
+placement and needs no `Blocked by:` line.
 
 Stop and wait. The user decides.
 
@@ -1414,23 +1218,11 @@ does not fold.
 Absent that, the recommendation stands alone and WAITS.
 ```
 
-**A design first shown in the offer message cannot fold.** The third condition
-is what says so: where the item's substance reaches the user for the first time
-in the same message that proposes its disposition, they have had no turn in
-which to disagree, and agreement given there is agreement to a thing just met.
-The disposition waits for its own agree / defer / something-else turn.
-
 The checkpoint's "continue" answers *which item comes next*, never a disposition
 of that item.
 
 **Content belonging to a not-yet-presented entry is carried to that entry's own
-turn and written then.** While processing one item it is natural to write the
-settled answer into a neighbouring entry that has not come up yet. Once that
-content is already written somewhere else, the only honest thing left to offer
-at its turn is a confirmation — so the recommend-and-wait turn has nowhere to
-stand, and the fold conditions above become easiest to skip at exactly the moment
-they matter. The recorded instance: a project's user caught it themselves, their
-words being *"you didn't make a recommendation."*
+turn and written then.**
 
 ```
 into Processed ->  CAN fold. The item is written and then reported, and the
@@ -1447,9 +1239,8 @@ is named once. Close the exposition on one combined bold ask that names what
 survives the delete — related entries that stay, content already living
 elsewhere, or "nothing else is affected": *"…my recommendation is to drop
 this — the three captures it came from stay; anything you'd change, or shall I
-delete it?"* That reply is the terminal
-approval delete requires, so merging loses no decision — it drops the empty middle
-turn. The standalone recommend-and-wait stays the path when the lean isn't clear.
+delete it?"* The standalone recommend-and-wait stays the path when the lean
+isn't clear.
 
 **3. Execute the outcome**
 
@@ -1481,10 +1272,7 @@ than incapability, keeps Claude out — where it does, the step's text opens
 with the say-so offer the always-loaded rule's third answer names. Trying a tool
 is allowed where trying is quick: the user is in the room, which is what makes
 this the heavy site. Where no tool plausibly exists, that is itself the answer.
-**Aim the check at the one job in hand.** An inventory sweep of everything
-available is expensive, stale by the next session, and was rejected. /next runs
-a light version of this at its pre-hand-off, but the user is not in the room
-there, so depth belongs here.
+**Aim the check at the one job in hand.**
 
 Two failures this catches. **Reason from what the task would actually take, not
 from what it sounds like.** **And judge the search by whether it named the right
@@ -1494,8 +1282,7 @@ tool, not by how thorough it was** — the reframe from *where is this stored* t
 **And check the index entry can be written.** If the candidate line for
 `LOG/index.md` — the artifact touched and the nature of the change — cannot be
 written yet because the work isn't specific enough, the item isn't ready for
-Processed. Keep discussing. Same test as the two-limb build check above,
-approached from the record's side.
+Processed. Keep discussing.
 
 *Decompose a mixed Claude-prep + user-step item.* When an item bundles work Claude
 can do with an irreducible user action, split it:
@@ -1569,11 +1356,7 @@ are exactly the kind a re-guess repeats.
 **Before clearing, apply done-plan.md's hold-back-unverified-work rule.** Where
 this item's prose names a slug that LOG records as built but not yet verified,
 place it into Processed **below** the line naming that slug as its blocker,
-rather than clearing it. The rule's statement stays in done-plan.md — this is a
-reference to it, not a second copy, so the two can't drift. The reason it is
-needed here as well as at /done: /next runs before /done, so an item cleared
-at a /plan opening can be built unattended the same day, on a foundation nobody
-has confirmed.
+rather than clearing it.
 
 **An item with no Unprocessed entry is appended to Unprocessed first, then
 moved** — write it to the bottom of Unprocessed like any capture, then move it
@@ -1590,10 +1373,7 @@ If the raw capture had no slug, give it one now. Report "moved to Processed as
 Three edits in this order, all in the same turn: MARK the original by renaming
 its heading to a unique placeholder (`#### MOVING-<slug> [<slug>]`), ADD the
 item to Processed at the chosen placement, then DELETE the placeholder-marked
-block. Destination-first, so an interruption leaves the item in Processed rather
-than in neither section; the marking edit exists because after the add the file
-holds two near-identical copies and the natural text to reach for matches both.
-Re-run the digest afterwards either way.
+block. Re-run the digest afterwards either way.
 
 *Split out a buried user-only prerequisite before moving the entry into Processed.* Scan the item's
 rationale for a gating action that is both user-only and gates this or other work.
@@ -1602,12 +1382,9 @@ and reference that slug from the original.
 
 *Where the item's walkthrough is authored here, confirm the step can
 actually produce the observation the item names* — where running the command is
-harmless, run it. Trying is the smallest observation that settles the claim; a
-try that produces the item's own deliverable has become the build, and stops —
-the two-limb check asks for a description of the build, never a demonstration.
-This is a different question from the capability check above:
-that one asks whether Claude could do the *work*, this asks whether the *user's
-step* yields the *evidence*. /plan is the only site where trying is free.
+harmless, run it. A try that produces the item's own deliverable has become the
+build, and stops — the two-limb check asks for a description of the build,
+never a demonstration.
 
 **Report the outcome as what the user would see** — where nothing is visible,
 as what it means for their step — and never as the code or command read to
@@ -1637,17 +1414,13 @@ not worth doing                  ->  explicit approval, as a fate decision
                                      elsewhere, or "nothing else is affected"
 ```
 
-**Relocate before removing when the
-content belongs elsewhere.** Delete means "not worth doing," so routing a fold
-through a plain delete risks dropping content the user wanted kept. When the
+**Relocate before removing when the content belongs elsewhere.** When the
 content belongs in another home — a SPEC sentence, a LOG entry, another item's
 rationale — edit the target first with approval, then remove the standalone item.
-Still a delete, just after its worth-keeping content has been carried across.
 
 **Where an instruction spawns further tool calls beyond its own write, say in
 one clause what that work still belongs to** — "still finishing the delete —
-repairing two references it broke". Without it, follow-on work reads as the next
-item starting, and the user loses track of where the run is.
+repairing two references it broke".
 
 **4. Checkpoint**  [PROMPT]
 
@@ -1680,15 +1453,15 @@ message order:
        after the interview
     4. two numbers, on one line — how much work is READY to build (the size
        of the cleared region), and how many entries are still TO PROCESS,
-       excluding anything dated out and anything skipped this session.
+       which is the `Offerable after this pick` line the next-pick tool
+       prints, and is never counted by hand.
        Specimen: `20 ready to build · 9 left to process`
     5. nothing else. No menu of routes, no disposition tally.
 ```
 
 **The pointer states the item's filed date when — and only when — the order in
 play ranks by age.** That is the long-and-old rung and the alternating rung.
-Under any other rung the pointer says nothing about age, because age is not why
-this item came up and stating it would suggest otherwise.
+Under any other rung the pointer says nothing about age.
 
 ```
 ordering by age    ->  the pointer carries the date, read from the digest's
@@ -1696,38 +1469,11 @@ ordering by age    ->  the pointer carries the date, read from the digest's
 any other rung     ->  no age in the pointer
 ```
 
-Read the date rather than working it out: the digest computes First seen, and a
-date derived any other way is the unfounded time statement the rules forbid.
-
-**Four parts, and no fifth.** The date rides part 2's pointer.
-
-**Both numbers are forward-looking, which is why both are here.** How much is
-left to process tells the user whether to carry on now; how much is ready to
-build tells them whether there is anything to run when they stop. Neither is a
-record of what has been done.
-
-**The banned tally is the retrospective one** — so many kept, so many deleted,
-so many skipped — which is clutter at a moment the user is deciding about one
-item. That ban stands and is untouched. It reaches a count of what this session
-got through, and it never reached the size of the cleared region.
-
-**The question is what the user answers; the recital is what was removed.** What
-is banned here is the four-route recital ending in a named /done step — an ordinary
-question about the item in hand is not that.
-
 **If the rung has changed since the last pick, say so here in one clause**
 (see the floor narration above). Only when it changed.
 
-**This does not touch the end-of-queue gate**, which fires when the queue empties
-and is deliberately worded not to lean toward closing. Leave it alone.
-
-The verbatim here is that next item's own presentation, not a forbidden
-look-ahead — the user acts on it immediately, so it's no [SEQUENCE] violation.
-
 **Skip-to-defer.** Skipping is one of the four routes named at the start of
-processing, and it is taken whenever the user says the word — a separate "dig in
-or skip?" gate before every item would re-create the over-asking the method
-removed.
+processing, and it is taken whenever the user says the word.
 
 ```
 on skip:
@@ -1735,14 +1481,8 @@ on skip:
     LEAVE THE FILE ALONE — no move, no edit to QUEUE.md
 ```
 
-**Skipping moves nothing and records nothing.** File position tells a human when
-things landed.
-
-**What that gives up:** a skipped item returns to the top next session and is
-offered again. **Skipping stays unrecorded.**
-
-A skipped item is not deleted and not processed. Next session it's ordinary
-Unprocessed again.
+A skipped item is neither deleted nor processed, and returns as ordinary
+Unprocessed next session.
 
 Skipping the last item leaves Unprocessed non-empty, which is fine. On the last
 item there's no next verbatim, so the message is just the off-ramps — worded
@@ -1756,13 +1496,11 @@ once-per-rest bound stated at the gate.
 [DISCUSS, PROMPT].
 Skip isn't only the user's to pick. When you can't yet describe what an item's
 build would change, or the design keeps opening more questions than it closes,
-propose sharpening what you can and then skipping it to the bottom — rather than
-reaching for a phantom "give it its own dedicated pass" container.
+propose sharpening what you can and then skipping it to the bottom.
 
 **What a skip must do — one subject, five provisions.** Skip to the bottom of
 Unprocessed, and:
 
-- treat that skip as the only defer there is; there is no dedicated-pass state;
 - write whatever design progress was made into the item by rewriting it whole,
   per the decision step's rewrite-whole rule, so the next /plan starts further
   along;
@@ -1780,10 +1518,6 @@ Unprocessed, and:
   the line and refuses a dangling slug or a spent date at the door — and with
   the editing tools only in a project with no server registered.
 
-Naming the blocker-in-kind turns an open item into an answerable one. **The ask is
-the load-bearing provision:** enrichment substituting for a decision that was
-available for the asking is the failure this fixes.
-
 **The `Blocked by:` blocker on a capture** [SILENT]. The trigger is that
 something already in the queue has to be settled first — a decision another
 entry carries, a build this one is scoped against. Write the field naming that
@@ -1794,8 +1528,7 @@ is written bare and returns when that entry is kept; one waiting on the build
 ends its line `until built` and returns when the entry has a build record.
 
 **Where nothing in the queue blocks it yet, file the blocker as a capture first,
-then write the field.** A slug that resolves to nothing is a lint failure and a
-hold nothing can lift — the same order the held region already requires.
+then write the field.**
 
 **The `Not before:` date** [PROMPT]. This is the one place a capture gains one.
 The trigger is that nothing in the queue can do what the item waits for — another
@@ -1808,9 +1541,7 @@ news, and say plainly it will not be offered again before then
     user declines   ->  ordinary skip; it returns next session
 ```
 
-**Write a date only on the user's approval, asked for in the moment.** A date on
-a capture is the one hold that removes an item from view without anything
-resolving, so the user decides how long they are content not to see it. Waiting
+**Write a date only on the user's approval, asked for in the moment.** Waiting
 on someone's attention is not this — that is an ordinary skip.
 
 **View-in-doc applies here too** — lead with a one-line pointer to the
@@ -1836,31 +1567,18 @@ carry on         ->  write the capture; it waits in Unprocessed for its turn
 (either way: anything else to add first?)
 ```
 
-**Asking first is what saves the write.** A capture answered "process it now" is
-immediately rewritten as a work item, so filing it first spends a write that is
-thrown away — and by the user's own estimate that is the common answer.
-
-**Lead with the recommendation rather than a flat menu.** The user's words:
-*Claude should always recommend processing it now — it's just good context use.*
-
 **What stays the user's:** whether to process it at all, and whether there is
 appetite to carry on.
 
 **The "anything else to add first?" clause is not optional**, and it belongs to
-this branch only — it is what stops a user's idea being closed off before they
-have finished the thought.
+this branch only.
 
 **When *Claude* raises something mid-/plan that may be work, ask once, at the
 moment it is raised, before any write and before any analysis, design, or other
 work on it: file it for later, or work it with you now — and
 recommend working it now.** **The offer says "with you"** — processing is done
-together, and an offer that reads as something Claude goes away and does primes
-the user for the wrong interaction. An applied correction that may be method work still
-gets the offer. The reason is identical on both branches: the capture
-exists because this session's context produced it. **Recommend the route and
-nothing else** — no clause inviting anything further, since this branch is barred
-from soliciting further captures and a recommendation is the easiest place for
-that bar to leak.
+together. An applied correction that may be method work still gets the offer.
+**Recommend the route and nothing else.**
 Work-it-now runs the ordinary present-and-interview loop and, if kept, places the
 item straight into Processed.
 
@@ -1894,10 +1612,7 @@ Claude   [recommendation turn: what would be written, in plain words, then
 user     [agrees, or doesn't]
 ```
 
-Four turns and two separate asks. The failure this prevents is real and recorded:
-a single "yes" to the timing question was read as approval for the disposition
-too, and two items were written and cleared to run with no recommend-and-wait
-turn between them.
+Four turns and two separate asks.
 
 ### After all items
 
@@ -1909,10 +1624,6 @@ Unprocessed holds nothing but items skipped this session.** Anything else and th
 gate is unavailable — with a full queue the only thing left to reach for is the
 checkpoint, which presents the next item, and that is the correct behaviour.
 
-**The precondition is the whole fix:** applied to a full queue this gate stops
-being neutral and silently reclassifies everything still waiting as nothing left
-to do.
-
 When the queue empties, do **not** presume the session is over. An empty
 Unprocessed is a resting state, not a stop signal. **The ask opens with the
 ready work counted by kind, read from the digest — "N builds, N audits and N
@@ -1923,9 +1634,7 @@ with what it waits on, so a queue that came to rest by passing everything over
 is never reported as fully processed. The count is the count, not the list:
 the done command's closing message is what lists the cleared items. Then the closing paragraph exactly as
 the specimen below has it, ending on its standalone bold ask — and wait. Each
-command is named in words and does not end the sentence: the app lifts a
-trailing slash command into the composer, so an ask ending on one is a
-keystroke from being answered by accident. **The specimen is the one statement
+command is named in words and does not end the sentence. **The specimen is the one statement
 of the closing paragraph; the other sites that offer it point here and copy
 it.**
 
@@ -1957,13 +1666,5 @@ wrap-up ask is silenced for the rest of the chat**, refills included. Held in
 the conversation; nothing is stored. It silences this gate only — /done runs
 when it is invoked, so there is nothing there to silence.
 
-The bound is held in the conversation; nothing is stored, which is all a
-per-stretch bound needs.
-
 New items from conversation follow the same loop — check QUEUE.md for overlap
 first. If you notice a gap: "I notice [X] — want to hear a suggestion?"
-
-/plan's close-out phase is retired and no longer exists. /plan plans; /done records and commits, and it
-runs the wind-down re-scan at every /done run whatever the session type. The user's
-exit is `/done`, named in the work cycle in the always-loaded rules and available
-at every checkpoint.

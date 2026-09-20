@@ -196,7 +196,7 @@ whatever the run's size — a twelve-item run can still contain the session's mo
 contested decision.
 
 **Read each item's rule-gate disposition from the working file by its slug too**
-— `Rule gate: <slug> — run, …` — for the same reason and in the same pass. The
+— `Rule gate: <slug> — run — …` — for the same reason and in the same pass. The
 line /done then writes into the session's LOG entry stays slugless: it
 describes the session rather than one item, which is the form
 `workshop/resources/rule_signals.py` reads.

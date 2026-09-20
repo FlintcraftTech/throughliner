@@ -864,6 +864,263 @@ def tool_hold_entry(arguments):
 
 
 # --------------------------------------------------------------------------
+# Slice seven: a cycle or checklist definition written from fields
+# ([mcp-cycle-define-tool]). The session-start hook reads a definition with
+# fixed field patterns — the heading with its [slug], Cadence:, Observable:,
+# Trigger:, Anchor:, Chain: — so a misspelt field or a malformed slug drops the
+# definition from the opening's cycles line with nothing reporting why.
+# Composing the block here from fields makes the shape right by construction,
+# and the round-trip read after the write is the hook's own parser, so what
+# this tool wrote is what the opening will read. The cadence and the
+# observable stay the user's declaration: the tool composes on their word, as
+# hold_entry does for a date, and decides nothing.
+# --------------------------------------------------------------------------
+
+DEFINITION_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+DERIVATION_RE = re.compile(r"\b(declared|derived)\b", re.IGNORECASE)
+CYCLES_PREAMBLE = (
+    "# CYCLES\n"
+    "\n"
+    "Recurring work this project has put on a cycle, and the checklists it "
+    "runs on request. A cycle names the artifact, the steps of one turn, its "
+    "cadence — declared by the user or derived from the record, and the "
+    "definition says which — and the observable that marks a completed turn; "
+    "the openings and closes of /plan and /next read this file, compute each "
+    "cycle's due-ness from its observable, and file one capture per due step. "
+    "A checklist carries the word that fires it in place of a cadence and an "
+    "observable, and runs when the user says that word. A chained cycle "
+    "lists its checklists in order under Chain:, each with its lead counted "
+    "back from the anchor.\n"
+)
+STEPS_SENTENCE = ("**Steps of one turn.** Each step fires on the one before "
+                  "it and is Claude's unless the step says otherwise.")
+
+
+def _text_list(value):
+    """A list of non-empty strings from a list, or from one string."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, (list, tuple)):
+        return [str(v).strip() for v in value
+                if v is not None and str(v).strip()]
+    return [str(value).strip()]
+
+
+def _lead_days(item):
+    """(days, problem): the lead an item names — an int, 0 for the anchor,
+    or None with the reason where neither is stated."""
+    if not isinstance(item, dict):
+        return None, "chain item %r is not an object with slug and lead_days." \
+                     % (item,)
+    lead = item.get("lead_days")
+    if lead is None and item.get("anchor") is True:
+        lead = 0
+    if lead is None:
+        return None, "chain item [%s] names no lead_days — a number of days " \
+                     "before the anchor, or 0 for the anchor itself." \
+                     % item.get("slug")
+    try:
+        days = int(lead)
+    except (TypeError, ValueError):
+        return None, "chain item [%s] has lead_days %r, which is not a whole " \
+                     "number." % (item.get("slug"), lead)
+    if days < 0:
+        return None, "chain item [%s] has a negative lead." % item.get("slug")
+    return days, None
+
+
+def tool_cycle_define(arguments):
+    """Write one cycle or checklist definition into the cycles doc from
+    fields, refusing at the door what the hook would otherwise drop silently.
+
+    The block takes the shape the existing definitions use, appended at the
+    end of the doc, with the doc created around a one-paragraph preamble
+    where none exists. After the write the doc is parsed back with the hook's
+    own parser, and the report says what it read.
+    """
+    root = project_root()
+    hook = _session_start()
+    if hook is None:
+        return "Cannot write: session_start.py is not where this server " \
+               "expects it (%s)." % PLUGIN_ROOT
+    path = os.path.join(root, hook.CYCLES_DOC)
+
+    heading = (arguments.get("heading") or "").strip()
+    slug = (arguments.get("slug") or "").strip().strip("[]")
+    artifact = (arguments.get("artifact") or "").strip()
+    cadence = (arguments.get("cadence") or "").strip()
+    trigger = (arguments.get("trigger") or "").strip()
+    observable = (arguments.get("observable") or "").strip()
+    due_rule = (arguments.get("due_rule") or "").strip()
+    anchor = (arguments.get("anchor") or "").strip()
+    chain = arguments.get("chain") or []
+    writes = _text_list(arguments.get("writes"))
+    material = (arguments.get("material") or "").strip()
+    steps = _text_list(arguments.get("steps"))
+
+    problems = []
+    if not heading:
+        problems.append("heading is missing — the definition's one-line name.")
+    if not slug:
+        problems.append("slug is missing.")
+    elif not DEFINITION_SLUG_RE.match(slug):
+        problems.append("slug %r is malformed — kebab-case: lowercase "
+                        "letters, digits and hyphens, starting with a letter "
+                        "or digit." % slug)
+    if not artifact:
+        problems.append("artifact is missing — what the definition works on.")
+    if cadence and trigger:
+        problems.append("both cadence and trigger were given — a cycle has a "
+                        "cadence, a checklist has a trigger, never both.")
+    if not cadence and not trigger:
+        problems.append("neither cadence nor trigger was given — a cycle "
+                        "needs a cadence, a checklist the word that fires it.")
+    if cadence and not observable:
+        problems.append("a cadence was given with no observable — a cycle "
+                        "names what marks a completed turn.")
+    if cadence and not DERIVATION_RE.search(cadence):
+        problems.append("the cadence names no derivation — it says "
+                        "\"declared\" by whom and when, or \"derived\" from "
+                        "what.")
+    if not steps:
+        problems.append("steps is empty — a definition carries the steps of "
+                        "one turn.")
+
+    existing = hook._parse_cycles_doc(root) or []
+    defined = {entry["slug"] for entry in existing}
+    if slug and slug in defined:
+        problems.append("slug %r is already defined in %s — a rewrite is "
+                        "an edit of the one definition, not a second entry "
+                        "beside it." % (slug, hook.CYCLES_DOC))
+
+    if isinstance(chain, (str, dict)):
+        chain = [chain]
+    chain_rows = []
+    anchors = 0
+    for item in chain:
+        days, problem = _lead_days(item)
+        if problem:
+            problems.append(problem)
+            continue
+        item_slug = str(item.get("slug") or "").strip().strip("[]")
+        if not item_slug or not DEFINITION_SLUG_RE.match(item_slug):
+            problems.append("chain item slug %r is missing or malformed."
+                            % item_slug)
+            continue
+        if item_slug not in defined:
+            problems.append("chain names [%s], which is not defined in %s — "
+                            "define the checklist first, then chain it."
+                            % (item_slug, hook.CYCLES_DOC))
+        if days == 0:
+            anchors += 1
+        chain_rows.append((item_slug, days))
+    if anchors > 1:
+        problems.append("the chain names the anchor twice — one item is the "
+                        "anchor, the rest count back from it.")
+    if chain_rows and not anchor:
+        problems.append("a chain was given with no anchor — the weekday the "
+                        "leads count back from.")
+
+    real_root = os.path.realpath(root)
+    for p in writes:
+        if os.path.isabs(p) or p.startswith("~") or re.match(r"^[A-Za-z]:",
+                                                             p):
+            problems.append("writes path %r is absolute — paths are relative "
+                            "to the project root." % p)
+            continue
+        target = os.path.realpath(os.path.join(root, p))
+        if target != real_root and not target.startswith(
+                real_root + os.sep):
+            problems.append("writes path %r resolves outside the project."
+                            % p)
+    if problems:
+        return _refused(problems)
+
+    block = ["## %s [%s]" % (heading, slug), "",
+             "**Artifact:** %s" % artifact, ""]
+    if cadence:
+        block += ["**Cadence:** %s" % cadence, ""]
+    else:
+        block += ["**Trigger:** %s" % trigger, ""]
+    if due_rule:
+        block += ["**Due rule:** %s" % due_rule, ""]
+    if observable:
+        block += ["**Observable:** %s" % observable, ""]
+    if anchor:
+        block += ["**Anchor:** %s" % anchor, ""]
+    if chain_rows:
+        block.append("**Chain:** the close calendar of one turn, in order, "
+                     "each checklist with its lead counted back from the "
+                     "anchor:")
+        for n, (item_slug, days) in enumerate(chain_rows, start=1):
+            if days == 0:
+                lead = "the anchor"
+            else:
+                lead = "%d day%s before the anchor" % (days,
+                                                      "" if days == 1 else "s")
+            block.append("%d. [%s] — %s" % (n, item_slug, lead))
+        block.append("")
+    if writes:
+        block += ["**Writes:** %s" % ", ".join("`%s`" % p for p in writes),
+                  ""]
+    if material:
+        block += ["**Material.** %s" % material, ""]
+    block.append(STEPS_SENTENCE)
+    for n, step in enumerate(steps, start=1):
+        block.append("%d. %s" % (n, step))
+    text = "\n".join(block) + "\n"
+
+    created = not os.path.isfile(path)
+    if created:
+        payload = CYCLES_PREAMBLE + "\n" + text
+        mode = "w"
+    else:
+        with open(path, "r", encoding="utf-8", newline="") as f:
+            current = f.read()
+        eol = "\r\n" if "\r\n" in current else "\n"
+        text = text.replace("\n", eol)
+        lead_in = "" if current.endswith(eol) else eol
+        if current.strip():
+            lead_in += eol
+        payload = lead_in + text
+        mode = "a"
+    try:
+        with open(path, mode, encoding="utf-8", newline="") as f:
+            f.write(payload)
+    except OSError as error:
+        return "Cannot write %s: %s" % (path, error)
+
+    # Round trip: the hook's own parser is what the opening reads with.
+    parsed = [e for e in (hook._parse_cycles_doc(root) or [])
+              if e["slug"] == slug]
+    if len(parsed) != 1:
+        return ("Wrote [%s] to %s, but the session-start parser does not "
+                "read it back as one definition (%d found) — the doc needs "
+                "a look." % (slug, hook.CYCLES_DOC, len(parsed)))
+    entry = parsed[0]
+    kind = "checklist" if hook._is_checklist(entry) else "cycle"
+    lines = ["%s [%s] as a %s%s." % (
+        "Created %s and wrote" % hook.CYCLES_DOC if created
+        else "Appended to %s:" % hook.CYCLES_DOC,
+        slug, kind, ", chaining %d checklist(s)" % len(chain_rows)
+        if chain_rows else "")]
+    lines.append("Read back by the session-start parser: cadence %s; "
+                 "observable %s; trigger %s; anchor %s; chain %s."
+                 % (repr(entry["cadence"]), repr(entry["observable"]),
+                    repr(entry["trigger"]), repr(entry["anchor"]),
+                    "present" if entry["chain"] else "none"))
+    if kind == "cycle":
+        lines.append("The cadence and the observable are recorded as "
+                     "declared; nothing here computes due-ness.")
+    else:
+        lines.append("A checklist runs when the user says its word and at "
+                     "no other time; nothing computes due-ness for it.")
+    return "\n".join(lines)
+
+
+# --------------------------------------------------------------------------
 # Slice five: the queue tool's three moves, checked at the door
 # ([mcp-queue-move-tools]). Each wraps reorder_queue.py's own move — the
 # within-section --move (which lives in the script's main, so it runs as a
@@ -1681,6 +1938,115 @@ TOOLS = [
             },
         },
         "handler": tool_hold_entry,
+    },
+    {
+        "name": "cycle_define",
+        "description":
+            "Write one cycle or checklist definition into the project's "
+            "cycles doc (CYCLES.md, created with a short preamble where none "
+            "exists) from fields, in the shape the session-start hook reads, "
+            "appended at the end of the doc. A cycle carries a cadence and "
+            "an observable; a checklist carries a trigger — the word that "
+            "fires it — and neither. Refuses at the door, echoing the "
+            "reason: a missing, malformed or already-defined slug; both "
+            "cadence and trigger, or neither; a cadence with no observable, "
+            "or one naming no derivation (\"declared\" or \"derived\"); a "
+            "chain item naming a checklist not defined in the doc, or "
+            "naming the anchor twice, or a chain with no anchor; a writes "
+            "path that is absolute or resolves outside the project; an "
+            "empty steps list. The cadence and the observable are the "
+            "user's declaration, written as given — the tool composes and "
+            "decides nothing. After writing it parses the doc back with the "
+            "hook's own parser and reports what it read.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["heading", "slug", "artifact", "steps"],
+            "properties": {
+                "heading": {
+                    "type": "string",
+                    "description": "The definition's one-line name, without "
+                                   "the [slug] — the tool appends it.",
+                },
+                "slug": {
+                    "type": "string",
+                    "description": "Kebab-case slug, unique in the doc.",
+                },
+                "artifact": {
+                    "type": "string",
+                    "description": "What the definition works on — the "
+                                   "Artifact: field.",
+                },
+                "cadence": {
+                    "type": "string",
+                    "description": "A cycle's cadence, as the user declared "
+                                   "it or as derived from the record, saying "
+                                   "which and when — e.g. \"weekly on "
+                                   "Wednesday, declared by the user "
+                                   "2026-08-22\". Not with trigger.",
+                },
+                "trigger": {
+                    "type": "string",
+                    "description": "A checklist's firing word — e.g. \"the "
+                                   "user says \\\"rezip\\\"\". Not with "
+                                   "cadence.",
+                },
+                "observable": {
+                    "type": "string",
+                    "description": "What marks a completed turn, read from "
+                                   "the world — required with a cadence.",
+                },
+                "due_rule": {
+                    "type": "string",
+                    "description": "Optional: time-based or condition-based, "
+                                   "and what closes a turn.",
+                },
+                "anchor": {
+                    "type": "string",
+                    "description": "Optional, required with a chain: the "
+                                   "weekday the leads count back from.",
+                },
+                "chain": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "slug": {"type": "string"},
+                            "lead_days": {
+                                "type": "integer",
+                                "description": "Days before the anchor; 0 "
+                                               "marks the anchor itself.",
+                            },
+                        },
+                        "required": ["slug", "lead_days"],
+                    },
+                    "description": "Optional: the checklists of one turn in "
+                                   "order, each a checklist already defined "
+                                   "in the doc with its lead in days; "
+                                   "exactly one item at lead 0 is the anchor.",
+                },
+                "writes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional: project-relative paths the "
+                                   "steps write outside the standing list, "
+                                   "which the safety check then permits.",
+                },
+                "material": {
+                    "type": "string",
+                    "description": "Optional: the Material paragraph — a "
+                                   "pool file or standing entries the turns "
+                                   "draw from.",
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "The steps of one turn, in order; each "
+                                   "fires on the one before it and is "
+                                   "Claude's unless it says otherwise.",
+                },
+            },
+        },
+        "handler": tool_cycle_define,
     },
     {
         "name": "queue_move",

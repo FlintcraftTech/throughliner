@@ -1421,8 +1421,18 @@ def render_whats_next(items, root, queue_path, skip=(), picked=0,
         med_age if med_age else "no date", source)
     rung, why, item = whats_next(items, root, queue_path, skip, picked,
                                  medians=(med_lines, med_age))
+    # The checkpoint's "left to process" figure: every Unprocessed entry the
+    # ladder could still offer this session once this pick is taken — the
+    # pass-overs applied by `offerable`, the session's skips removed, and the
+    # pick itself subtracted. Printed so the count is read off a computed
+    # line rather than judged from the section's size
+    # ([checkpoint-count-from-next-pick-tool]).
+    remaining = len(offerable(items, root, skip=skip))
+    offerable_line = "Offerable after this pick: %d" % max(
+        remaining - (1 if item is not None else 0), 0)
     if item is None:
-        return "Next: nothing — %s.\n%s" % (why, medians_line)
+        return "Next: nothing — %s.\n%s\n%s" % (why, offerable_line,
+                                              medians_line)
 
     try:
         with open(queue_path, "r", encoding="utf-8") as handle:
@@ -1435,6 +1445,7 @@ def render_whats_next(items, root, queue_path, skip=(), picked=0,
         "Rung %d: %s" % (rung, why),
         "Next: [%s] — %s" % (item["slug"] or "NO-SLUG", item["heading"]),
         "Starts at line %d of %s" % (item["first_line"], queue_path),
+        offerable_line,
         medians_line,
         "",
         text,
