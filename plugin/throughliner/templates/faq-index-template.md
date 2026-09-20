@@ -52,3 +52,6 @@ announced yet, not that questions aren't welcome: just ask in chat.
 - **The safety check refused my edit — how do I get it through?** — what the
   refusal means, the one door through it (ask again in your own words), and the
   decision log to read before blaming a rule. [faq.md](faq.md)
+- **A command says the plugin's checks aren't running — what do I check?** —
+  the opening lines every command looks for, the Python check that explains
+  their absence, and what tells you the fix took. [faq.md](faq.md)

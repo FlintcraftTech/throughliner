@@ -388,3 +388,20 @@ check also keeps a log of every decision — allowed and refused — in the
 project's `.throughliner/` folder, so a write that went through with no line
 there is a check that never ran, which is the first thing to look at before
 blaming a rule.
+
+## A command says the plugin's checks aren't running — what do I check?
+
+A chat in a set-up project normally opens with a few lines starting
+`[Throughliner]`: the project is set up, the date, the version installed, what
+the queue holds. Every command looks for those lines before doing anything
+else. Where they are missing, the plugin's small scripts never ran, and Claude
+says so, names the usual cause and carries on with the command — the procedure
+still governs, but the safety checks and the opening's facts are absent. The
+usual cause is Python: it is missing from the machine, or Windows has put a
+placeholder in its place. In a terminal, `python --version` must print a
+version number; the placeholder prints "Python was not found" instead. Install
+Python from python.org with "Add python.exe to PATH" ticked, close the
+terminal, then close and reopen the desktop app. A new chat then shows the
+`[Throughliner]` lines again. Without Python the plugin fails silently and
+reports success anyway, which is why the commands look for the lines rather
+than trusting that the checks ran.
