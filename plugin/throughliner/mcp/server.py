@@ -119,7 +119,7 @@ def _queue_path(root):
 # --------------------------------------------------------------------------
 
 def tool_queue_checkpoint_counts(_arguments):
-    """How much work is ready to build, and how much is left to process."""
+    """How much work is cleared to run, and how much is left to process."""
     root = project_root()
     digest = _digest()
     if digest is None:
@@ -142,8 +142,7 @@ def tool_queue_checkpoint_counts(_arguments):
     presentable = digest.offerable(items, root)
 
     return "\n".join([
-        "Ready to build (Processed, above the cleared-to-run line): %d"
-        % len(ready),
+        "Cleared to run (Processed, above the line): %d" % len(ready),
         "Held below the line: %d" % len(held),
         "captures waiting: %d (raw) · left to process: %d (presentable — "
         "minus those dated out, owned by a cycle, or held behind an open "
@@ -1659,11 +1658,185 @@ def tool_build_tick(arguments):
     return "%s\nRemoved [%s] from Processed.\n%s" % (written, slug, report)
 
 
+# The decision log the safety check keeps, read here for the freeform door
+# ([mcp-build-open-tool]): tab-separated, column three the decision, column
+# five the path, column six the session id — the hook's own
+# `_door_refused_earlier` read, reproduced because the hooks run standalone
+# and cannot be imported for one function.
+_DECISION_LOG = os.path.join(".throughliner", "pre-tool-use.log")
+_PATH_TRAILING_RE = re.compile(r"\s")
+
+
+def _safe_session_id(session_id):
+    """The hooks' own sanitiser: filename-safe characters only."""
+    return re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
+
+
+def _door_refused_earlier(root, path, session_id):
+    """True where the safety check's log holds a deny of this path under
+    this session's id."""
+    log = os.path.join(root, _DECISION_LOG)
+    if not os.path.isfile(log):
+        return False
+    sid = _safe_session_id(session_id)
+    want = os.path.normcase(os.path.normpath(os.path.join(root, path)))
+    try:
+        with open(log, "r", encoding="utf-8", errors="replace") as f:
+            for raw in f:
+                parts = raw.rstrip("\r\n").split("\t")
+                if len(parts) < 6 or parts[2] != "deny" or parts[5] != sid:
+                    continue
+                if os.path.normcase(os.path.normpath(parts[4])) == want:
+                    return True
+    except OSError:
+        return False
+    return False
+
+
+def _path_problems(root, files):
+    """Every reason a Files line would fail the safety check's exact match:
+    backticks, trailing text after a spaced dash, anything after the path,
+    an existing folder, a path outside the project root, a duplicate."""
+    problems = []
+    seen = set()
+    real_root = os.path.normcase(os.path.realpath(root))
+    for path in files:
+        if "`" in path:
+            problems.append("path %r carries backticks — write it bare."
+                            % path)
+            continue
+        if " — " in path or " - " in path:
+            problems.append("path %r carries text after a spaced dash — the "
+                            "check matches the whole line as the path." % path)
+            continue
+        if _PATH_TRAILING_RE.search(path):
+            problems.append("path %r carries a space or trailing text — one "
+                            "bare path per line, nothing else." % path)
+            continue
+        full = os.path.realpath(os.path.join(root, path))
+        if not (os.path.normcase(full) == real_root
+                or os.path.normcase(full).startswith(real_root + os.sep)):
+            problems.append("path %r resolves outside the project root."
+                            % path)
+            continue
+        if os.path.isdir(full):
+            problems.append("path %r is an existing folder, and a folder "
+                            "line covers no file beneath it — name each file."
+                            % path)
+            continue
+        key = os.path.normcase(os.path.normpath(path))
+        if key in seen:
+            problems.append("path %r is listed twice." % path)
+            continue
+        seen.add(key)
+    return problems
+
+
+def tool_build_open(arguments):
+    """Open a build run's working file, or a freeform session's scope file,
+    from fields — every path checked at the door before anything exists."""
+    root = project_root()
+    queue = _queue_path(root)
+    digest = _digest()
+    if digest is None:
+        return "Cannot write: queue_digest.py is not where this server " \
+               "expects it (%s)." % PLUGIN_ROOT
+
+    session_id = (arguments.get("session_id") or "").strip()
+    kind = (arguments.get("kind") or "").strip().lower()
+    items = [s.strip().strip("[]") for s in _text_list(arguments.get("items"))]
+    files = _text_list(arguments.get("files"))
+
+    problems = []
+    if not session_id:
+        problems.append("session_id is missing — no file exists yet, so the "
+                        "server cannot take the one present as the session's; "
+                        "read it off the session's scratchpad path.")
+    if kind not in ("build", "freeform"):
+        problems.append("kind must be `build` or `freeform`.")
+    safe = _safe_session_id(session_id)
+    name = "_%s-%s.md" % (kind if kind in ("build", "freeform") else "build",
+                          safe)
+    path = os.path.join(root, name)
+    if session_id and kind in ("build", "freeform") and os.path.exists(path):
+        problems.append("%s already exists — a working file of that kind is "
+                        "already open for this session." % name)
+
+    entries = []
+    if kind == "build":
+        if not os.path.isfile(queue):
+            problems.append("no QUEUE.md at %s." % queue)
+        else:
+            parsed = digest.parse(queue)
+            by_slug = {}
+            for i in parsed:
+                by_slug.setdefault(i["slug"], []).append(i)
+            for slug in items:
+                matches = [i for i in by_slug.get(slug, [])
+                           if i["section"] == "Processed"]
+                if not matches:
+                    problems.append("[%s] is not a work item in Processed."
+                                    % slug)
+                    continue
+                item = matches[0]
+                if not item["cleared"]:
+                    problems.append("[%s] sits below the cleared-to-run line."
+                                    % slug)
+                    continue
+                if item["flavor"] in ("user", "freeform", "co-write"):
+                    problems.append("[%s] is a `[%s]` item, which a run walks "
+                                    "or halts on and never builds."
+                                    % (slug, item["flavor"]))
+                    continue
+                entries.append(item)
+            if len(set(items)) != len(items):
+                problems.append("a slug is listed twice in items.")
+    elif kind == "freeform":
+        if items:
+            problems.append("items belong to a build; a freeform scope file "
+                            "carries paths alone.")
+        if not files:
+            problems.append("files is empty — a freeform scope file names the "
+                            "one path or more the door admits.")
+    problems.extend(_path_problems(root, files))
+    if kind == "freeform" and session_id:
+        for f in files:
+            if "`" in f or " — " in f or " - " in f:
+                continue
+            if not _door_refused_earlier(root, f, session_id):
+                problems.append("path %r has no refusal under this session's "
+                                "id in %s — the door opens only after the "
+                                "safety check has refused that path earlier "
+                                "in the same session." % (f, _DECISION_LOG))
+    if problems:
+        return "Refused — nothing was written:\n" + \
+               "\n".join("- " + p for p in problems)
+
+    file_lines = ["- " + f for f in files]
+    if kind == "freeform":
+        lines = ["# Freeform scope", "", "Files:"] + file_lines + [""]
+    else:
+        run_line = ", ".join("%s %s" % (i["flavor"], i["slug"])
+                             for i in entries)
+        entry_lines = ["- %s — %s — %s" % (i["flavor"], i["slug"],
+                                           i["heading"]) for i in entries]
+        lines = (["# Active Build", "", "Run: " + run_line, "", "Entries:"]
+                 + entry_lines
+                 + ["", "Index entry candidates:", "", "Run-level:", "",
+                    "Files:"] + file_lines
+                 + ["", "Progress:", "", "Changes:", ""])
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines))
+    admitted = ", ".join(files) if files else \
+        "none — the run is locked to the method docs"
+    return "Wrote %s.\nPaths admitted: %s" % (name, admitted)
+
+
 TOOLS = [
     {
         "name": "queue_checkpoint_counts",
         "description":
-            "How many queue items are ready to build, held below the "
+            "How many queue items are cleared to run, held below the "
             "cleared-to-run line, and still waiting to be processed. Counts "
             "only — never a recommendation about what to do with them.",
         "inputSchema": {"type": "object", "properties": {}},
@@ -2206,6 +2379,52 @@ TOOLS = [
             },
         },
         "handler": tool_build_tick,
+    },
+    {
+        "name": "build_open",
+        "description":
+            "Open a build run's working file (`_build-<session-id>.md`) or a "
+            "freeform session's scope file (`_freeform-<session-id>.md`) from "
+            "fields, in the exact shape next.md's specimen shows, with every "
+            "path checked at the door before anything exists. Refuses, "
+            "echoing why: a working file of that kind already open for the "
+            "session; for a build, a slug not in Processed, below the "
+            "cleared-to-run line, or carrying [user], [freeform] or "
+            "[co-write]; a path carrying backticks, text after a spaced dash "
+            "or anything after the path; a path that is an existing folder, "
+            "resolves outside the project root, or is listed twice; for a "
+            "freeform file, a path the safety check has not refused earlier "
+            "in this session. An empty files list on a build writes an empty "
+            "Files: section, which locks the run to the method docs.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["session_id", "kind"],
+            "properties": {
+                "session_id": {
+                    "type": "string",
+                    "description": "This session's id, read off its "
+                                   "scratchpad path — required, since no "
+                                   "file exists yet to infer it from.",
+                },
+                "kind": {
+                    "type": "string", "enum": ["build", "freeform"],
+                    "description": "build writes the run's working file; "
+                                   "freeform writes the scope file.",
+                },
+                "items": {
+                    "type": "array", "items": {"type": "string"},
+                    "description": "Build only: the slugs of the Claude-work "
+                                   "items the run will build, top-down.",
+                },
+                "files": {
+                    "type": "array", "items": {"type": "string"},
+                    "description": "The bare paths the run or session may "
+                                   "write, relative to the project root, one "
+                                   "file each. May be empty for a build.",
+                },
+            },
+        },
+        "handler": tool_build_open,
     },
 ]
 

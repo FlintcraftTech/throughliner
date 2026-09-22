@@ -363,6 +363,117 @@ def test_capitalised_name_mid_sentence_passes():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_denoted_date_anywhere_in_the_reply_sources_the_word():
+    """[time-word-check-passes-denoted-date]: a day word passes where the
+    reply names the date it denotes, before or after the word; a bare one is
+    still blocked, with the kept-word fix first and the sentence quoted; a
+    sentence listing the check's own phrases is a mention and passes."""
+    root = project()
+    os.environ["THROUGHLINER_TEST_CLOCK"] = "2026-09-21 01:16"
+    try:
+        code, out = run(root, "Look for mail arriving since yesterday (2026-09-20).")
+        check("'since yesterday (2026-09-20)' passes", not time_blocked(out), out)
+        code, out = run(root, "The sign-ups ran on 2026-09-20.\n\nLook for mail "
+                              "arriving since yesterday.")
+        check("'yesterday' passes with the date on another line",
+              not time_blocked(out), out)
+        code, out = run(root, "Look for mail arriving since yesterday.",
+                        session_id="s2")
+        check("a bare 'yesterday' is still blocked", time_blocked(out), out)
+        check("the kept-word fix comes before the drop-the-word fallback",
+              out.find("Keep the word") != -1
+              and out.find("Keep the word") < out.find("drop the word"), out)
+        check("the block quotes the matched word's whole sentence",
+              '\\"yesterday\\" in: Look for mail arriving since yesterday.' in out
+              or '"yesterday" in: Look for mail arriving since yesterday.' in out,
+              out)
+        code, out = run(root, "The check knows yesterday, tomorrow, last week "
+                              "and tonight.", session_id="s3")
+        check("a sentence listing four of the check's own phrases passes",
+              not time_blocked(out), out)
+    finally:
+        del os.environ["THROUGHLINER_TEST_CLOCK"]
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def run_with(root, message, session_id="s1", transcript=None):
+    payload = {"last_assistant_message": message, "cwd": root,
+               "session_id": session_id}
+    if transcript:
+        payload["transcript_path"] = transcript
+    r = subprocess.run([sys.executable, HOOK], input=json.dumps(payload),
+                       capture_output=True, encoding="utf-8", errors="replace")
+    return r.returncode, (r.stdout or "") + (r.stderr or "")
+
+
+def test_process_now_offer_is_enforced_once_in_a_planning_chat():
+    """[process-now-offer-fixed-and-enforced]: a planning-shaped reply that
+    reports a filing with no offer in reach is blocked once; the formula in
+    the reply, or in a previous assistant turn of the transcript, passes; a
+    build working file present passes regardless."""
+    root = project()
+    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+                               "Unprocessed. Anything else?")
+    check("a filing report with no formula anywhere is blocked",
+          "Process this with you now" in out and '"decision": "block"' in out,
+          out)
+    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+                               "Unprocessed. Anything else?")
+    check("the same check does not block twice in a session",
+          '"decision": "block"' not in out, out)
+
+    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+                               "Unprocessed. Process this with you now, or "
+                               "file it for later? I'd take it now.",
+                         session_id="s2")
+    check("the formula in the reply passes", '"decision": "block"' not in out, out)
+
+    transcript = os.path.join(root, "transcript.jsonl")
+    with open(transcript, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"type": "user", "message": {"content": "hi"}}) + "\n")
+        f.write(json.dumps({"type": "assistant", "message": {"content": [
+            {"type": "text", "text": "Process this with you now, or file it "
+                                     "for later? I'd take it now."}]}}) + "\n")
+        f.write(json.dumps({"type": "user", "message": {"content": "file it"}}) + "\n")
+    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+                               "Unprocessed.", session_id="s3",
+                         transcript=transcript)
+    check("the formula in the previous assistant turn of the transcript passes",
+          '"decision": "block"' not in out, out)
+
+    with open(os.path.join(root, "_build-s4.md"), "w", encoding="utf-8") as f:
+        f.write("# Active Build\n\nRun: build still-queued\n\nFiles:\n")
+    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+                               "Unprocessed.", session_id="s4")
+    check("a build working file present passes regardless",
+          '"decision": "block"' not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_checkpoint_with_clock_or_stop_offer_is_blocked_once():
+    """[checkpoint-narrates-clock-and-offers-to-stop]: a checkpoint reply
+    carrying a clock narration or a stop offer is blocked once, the reason
+    naming the counts; the same checkpoint without them passes; a
+    non-checkpoint reply carrying 'stop here' passes."""
+    root = project()
+    checkpoint = ("Deleted. Next up:\n\n**#### Something [some-slug]**\n\n"
+                  "**Take this one next?**\n\n20 cleared to run · 14 left to "
+                  "process.")
+    code, out = run_with(root, "The clock reads 17:29, and the session opened "
+                               "at 13:36. Shall I carry on, or stop here?\n\n"
+                               + checkpoint)
+    check("a checkpoint carrying the clock and a stop offer is blocked",
+          '"decision": "block"' in out and "the two counts" in out, out)
+    code, out = run_with(root, checkpoint, session_id="s2")
+    check("the same checkpoint without them passes",
+          '"decision": "block"' not in out, out)
+    code, out = run_with(root, "I could stop here, or carry on with the build.",
+                         session_id="s3")
+    check("a non-checkpoint reply carrying 'stop here' passes",
+          '"decision": "block"' not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_post_close_tail_offer_is_fed_back_once():
     """[post-close-tail-offer-enforced-once]: with the session-closed marker
     standing and a project write outside LOG/ logged after it, a reply that
@@ -408,6 +519,9 @@ def test_post_close_write_to_log_only_owes_nothing():
 
 if __name__ == "__main__":
     print("test_stop_hook")
+    test_denoted_date_anywhere_in_the_reply_sources_the_word()
+    test_process_now_offer_is_enforced_once_in_a_planning_chat()
+    test_checkpoint_with_clock_or_stop_offer_is_blocked_once()
     test_post_close_tail_offer_is_fed_back_once()
     test_post_close_write_to_log_only_owes_nothing()
     test_sourced_sentence_passes_and_bare_word_still_blocks()

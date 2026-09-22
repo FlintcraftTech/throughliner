@@ -756,8 +756,14 @@ def _is_research_dir(filepath: str, cwd: str) -> bool:
     # project root, which is where a project whose Parts block names a research
     # part keeps it ([hooks-name-old-workshop-paths]). A part named otherwise
     # goes through the user's door.
+    # `workshop/resources/supplied/` rides the same exemption
+    # ([user-material-permanent-home-at-planning]): text the user wrote or
+    # attached, written unchanged, needs a committed home a planning session
+    # may write, and the user's door cost a refusal and a second ask nobody
+    # knew to give.
     for research_dir in (
         _normalise(os.path.join(cwd, "workshop", "resources", "research")),
+        _normalise(os.path.join(cwd, "workshop", "resources", "supplied")),
         _normalise(os.path.join(cwd, "research")),
     ):
         if norm.startswith(research_dir + os.sep) or norm == research_dir:
@@ -771,9 +777,13 @@ def _is_research_dir(filepath: str, cwd: str) -> bool:
     child = os.path.join(cwd, parts[0])
     if not os.path.exists(os.path.join(child, ".git")):
         return False
-    nested_dir = _normalise(
-        os.path.join(child, "workshop", "resources", "research"))
-    return norm.startswith(nested_dir + os.sep) or norm == nested_dir
+    for nested_dir in (
+        _normalise(os.path.join(child, "workshop", "resources", "research")),
+        _normalise(os.path.join(child, "workshop", "resources", "supplied")),
+    ):
+        if norm.startswith(nested_dir + os.sep) or norm == nested_dir:
+            return True
+    return False
 
 
 def _is_retired_terms_file(filepath: str, cwd: str) -> bool:
@@ -1760,10 +1770,41 @@ def _is_name_mid_sentence(text: str, start: int, word: str) -> bool:
     return not _TIME_SENTENCE_LEAD.match(text[left:start])
 
 
-def _unfounded_time_words(text: str) -> list[str]:
-    """Distinct time phrases in `text` outside quoted spans, lowercased —
-    leaving out any whose sentence also carries a source, and any written as
-    a name with a capital mid-sentence."""
+# A day word denotes a date computable from the clock
+# ([time-word-check-passes-denoted-date]): where that date appears anywhere
+# in the text — before or after the word, in brackets or not — the word is
+# sourced and passes. Words with no computable date keep the sentence-source
+# rule. A COPY sits in stop.py; change one, change both.
+_DENOTED_OFFSETS = {
+    "yesterday": -1, "today": 0, "tonight": 0, "this morning": 0,
+    "this afternoon": 0, "this evening": 0, "earlier today": 0, "tomorrow": 1,
+}
+# A sentence carrying this many distinct phrases from the check's own list is
+# read as a list of the words — mentioned, not used — and is not refused. A
+# tunable heuristic derived from the one instance (a planning chat quoting the
+# list), stated here as such.
+_MENTIONED_LIST_MIN = 3
+
+
+def _denoted_date(phrase: str) -> "str | None":
+    offset = _DENOTED_OFFSETS.get(phrase)
+    if offset is None:
+        return None
+    import datetime as _dt
+    today, _ = _clock_now()
+    try:
+        day = _dt.date.fromisoformat(today)
+    except ValueError:
+        return None
+    return (day + _dt.timedelta(days=offset)).isoformat()
+
+
+def _unfounded_time_phrases(text: str) -> list:
+    """(phrase, sentence) pairs for each distinct time phrase in `text`
+    outside quoted spans, lowercased — leaving out any whose sentence also
+    carries a source, any written as a name with a capital mid-sentence, any
+    whose denoted date the text names anywhere, and any in a sentence that
+    lists three or more of the check's own phrases."""
     found = []
     stripped = _strip_quoted_text(text)
     for match in TIME_WORD_PATTERN.finditer(stripped):
@@ -1772,10 +1813,23 @@ def _unfounded_time_words(text: str) -> list[str]:
         left, right = _time_sentence_span(stripped, match.start(), match.end())
         if TIME_SOURCE_PATTERN.search(stripped, left, right):
             continue
+        sentence = stripped[left:right]
+        distinct = {" ".join(m.group(0).lower().split())
+                    for m in TIME_WORD_PATTERN.finditer(sentence)}
+        if len(distinct) >= _MENTIONED_LIST_MIN:
+            continue
         phrase = " ".join(match.group(0).lower().split())
-        if phrase not in found:
-            found.append(phrase)
+        denoted = _denoted_date(phrase)
+        if denoted and denoted in text:
+            continue
+        if phrase not in [p for p, _ in found]:
+            found.append((phrase, " ".join(sentence.split())))
     return found
+
+
+def _unfounded_time_words(text: str) -> list[str]:
+    """The phrases alone, for callers that key on them."""
+    return [phrase for phrase, _ in _unfounded_time_phrases(text)]
 
 
 def _is_time_word_guarded_path(filepath: str, cwd: str) -> bool:
@@ -1806,6 +1860,16 @@ def _is_time_word_guarded_path(filepath: str, cwd: str) -> bool:
 _CLOCK_TIME_PATTERN = re.compile(
     r"(?:(?P<date>\d{4}-\d{2}-\d{2})[ T]?)?\b(?P<h>[01]?\d|2[0-3]):(?P<m>[0-5]\d)\b"
 )
+# A sentence carrying one of these words is timing something — a video's
+# runtime, an excerpt's bounds — and its MM:SS is not a clock time
+# ([clock-check-fires-on-video-timestamps]). Derived from the one report's
+# examples and nothing else: a tunable constant, revisable once seen. The
+# pair "from … to" bracketing the match is checked separately.
+_DURATION_WORDS = re.compile(
+    r"\b(?:runtimes?|runs|running|duration|excerpt|clip|timestamps?|video)\b",
+    re.IGNORECASE,
+)
+_FROM_TO_AROUND = re.compile(r"\bfrom\b[^.\n]*?\bto\b", re.IGNORECASE)
 
 
 def _clock_now() -> "tuple[str, str]":
@@ -1826,15 +1890,98 @@ def _future_clock_times(text: str) -> list[str]:
     is left alone; one carrying a date after today is reported."""
     today, now_hhmm = _clock_now()
     found = []
-    for match in _CLOCK_TIME_PATTERN.finditer(_strip_quoted_text(text)):
+    stripped = _strip_quoted_text(text)
+    for match in _CLOCK_TIME_PATTERN.finditer(stripped):
         hhmm = "%02d:%s" % (int(match.group("h")), match.group("m"))
         date = match.group("date")
         if date and date < today:
+            continue
+        left, right = _time_sentence_span(stripped, match.start(), match.end())
+        sentence = stripped[left:right]
+        if _DURATION_WORDS.search(sentence):
+            continue
+        if any(m.start() <= match.start() - left and
+               m.end() >= match.end() - left
+               for m in _FROM_TO_AROUND.finditer(sentence)):
             continue
         if (date and date > today) or hhmm > now_hhmm:
             if hhmm not in found:
                 found.append(hhmm)
     return found
+
+
+# The cycles doc's definition shape, as session_start.py reads it — copied
+# rather than imported, since the hooks run standalone from a copied plugin
+# cache ([malformed-cycle-definition-named-and-refused]). A definition carrying
+# neither field is one the opening cannot compute from and no word fires.
+_CYCLE_HEADING_RE = re.compile(r"^#{2,4}\s+(.*?)\s*\[([a-z0-9][a-z0-9-]*)\]\s*$")
+_CYCLE_CADENCE_RE = re.compile(r"^\s*\*{0,2}Cadence\s*:\*{0,2}\s*(.+?)\s*$",
+                               re.IGNORECASE)
+_CYCLE_TRIGGER_RE = re.compile(r"^\s*\*{0,2}Trigger\s*:\*{0,2}\s*(.+?)\s*$",
+                               re.IGNORECASE)
+
+
+def _cycle_blocks(text: str) -> dict:
+    """Each definition's block — its heading through the line before the next
+    heading — keyed by slug."""
+    blocks = {}
+    slug = None
+    for line in text.splitlines():
+        heading = _CYCLE_HEADING_RE.match(line)
+        if heading:
+            slug = heading.group(2)
+            blocks[slug] = []
+            continue
+        if slug is not None:
+            blocks[slug].append(line)
+    # Trailing blank lines are dropped so that appending a definition after
+    # an untouched one does not read as a change to it.
+    return {s: "\n".join(lines).rstrip() for s, lines in blocks.items()}
+
+
+def _block_is_malformed(block: str) -> bool:
+    return not any(_CYCLE_CADENCE_RE.match(l) or _CYCLE_TRIGGER_RE.match(l)
+                   for l in block.splitlines())
+
+
+def _content_after_write(tool_name: str, tool_input: dict, filepath: str):
+    """The text the file would hold after this call, or None where it cannot
+    be worked out (an Edit whose old text is not in the file)."""
+    if tool_name == "Write":
+        return tool_input.get("content") or ""
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        text = ""
+    edits = [tool_input] if tool_name == "Edit" else \
+        [e or {} for e in (tool_input.get("edits") or [])]
+    for edit in edits:
+        old = edit.get("old_string") or ""
+        new = edit.get("new_string") or ""
+        if old not in text:
+            return None
+        text = text.replace(old, new) if edit.get("replace_all") \
+            else text.replace(old, new, 1)
+    return text
+
+
+def _malformed_cycle_definitions_written(tool_name: str, tool_input: dict,
+                                         filepath: str) -> list:
+    """Slugs of definitions this call would leave in the cycles doc carrying
+    neither `Cadence:` nor `Trigger:` — only those the call writes or
+    changes, so a malformed definition already there and untouched is not
+    refused for it."""
+    after = _content_after_write(tool_name, tool_input, filepath)
+    if after is None:
+        return []
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            before = _cycle_blocks(f.read())
+    except OSError:
+        before = {}
+    return [slug for slug, block in _cycle_blocks(after).items()
+            if _block_is_malformed(block) and before.get(slug) != block]
 
 
 def _written_text(tool_name: str, tool_input: dict) -> str:
@@ -2356,24 +2503,51 @@ def main() -> int:
             branch="overwrite guard: sent register",
         )
 
+    # A cycles-doc definition the opening cannot read — neither a Cadence: nor
+    # a Trigger: line — is refused at the write, naming the slug and the tool
+    # that writes the field the hook reads. Reaches the definition this call
+    # writes or changes; one already there and untouched passes.
+    if _normalise(filepath) == _normalise(os.path.join(cwd, CYCLES_DOC)):
+        malformed = _malformed_cycle_definitions_written(
+            tool_name, tool_input, filepath)
+        if malformed:
+            named = ", ".join("[%s]" % s for s in malformed)
+            return _deny(
+                "[Throughliner] BLOCKED: this would write a definition into "
+                f"CYCLES.md that the session opening cannot read — {named} "
+                "carries neither a `Cadence:` line nor a `Trigger:` line.\n\n"
+                "A cycle carries `Cadence:` and a checklist carries "
+                "`Trigger:` (the word that fires it); a firing word written "
+                "under any other label parses as a cycle with no cadence, so "
+                "the word fires nothing and the opening reports an empty "
+                "cycle. Write the definition with the state server's "
+                "cycle_define tool where the server is registered — it writes "
+                "the fields the opening reads — or add the missing line and "
+                "try again.",
+                branch="cycles doc: malformed definition",
+            )
+
     # A relative time word with no source, written into a record, the queue or
     # SPEC. Refused once per distinct phrase per session, then allowed.
     if _is_time_word_guarded_path(filepath, cwd):
         sid = data.get("session_id", "")
         fresh = [
-            p for p in _unfounded_time_words(_written_text(tool_name, tool_input))
+            (p, s) for p, s in
+            _unfounded_time_phrases(_written_text(tool_name, tool_input))
             if _fire_once(cwd, sid, "time-word-" + re.sub(r"[^a-z0-9]+", "-", p))
         ]
         if fresh:
-            listed = ", ".join('"%s"' % p for p in fresh)
+            listed = "; ".join('"%s" in: %s' % (p, s) for p, s in fresh)
             return _deny(
                 "[Throughliner] BLOCKED once: this text says when something "
-                f"happened with no source — {listed}.\n\n"
-                "Read the clock or the record and put the source in the "
-                "sentence (\"at 21:40, read from the clock\", \"per the "
-                "2026-09-06 record\"), or drop the word. A wrong time written "
-                "into a record reads exactly like a right one for as long as "
-                "it stands. A name written with a capital mid-sentence — a "
+                f"happened with no source — {listed}\n\n"
+                "Keep the word and put the date it means beside it in the "
+                "same sentence — \"since yesterday (2026-09-20)\" — read from "
+                "the clock or the record; drop the word only where no date "
+                "exists. Reply with the corrected sentence alone, with no "
+                "account of what the clock reads. A wrong time written into a "
+                "record reads exactly like a right one for as long as it "
+                "stands. A name written with a capital mid-sentence — a "
                 "product's own page or feature — passes, so a refusal on one "
                 "is a false positive to reword or ignore. The same phrase "
                 "passes on the next attempt.",
@@ -2396,8 +2570,10 @@ def main() -> int:
                 "A time counted up from an earlier reading overshoots. Read "
                 "the clock by a command at the moment of writing and write "
                 "what it says; where the time is a real past one, put its "
-                "date in front of it. The same time passes on the next "
-                "attempt.",
+                "date in front of it. A video runtime or an excerpt bound "
+                "written MM:SS is a false positive too — write it as minutes "
+                "and seconds, or say what it times in the same sentence. The "
+                "same time passes on the next attempt.",
                 branch="future clock time",
             )
 
@@ -2528,7 +2704,17 @@ def main() -> int:
                 if _normalise(filepath).startswith(
                     _normalise(os.path.join(cwd, listed)) + os.sep)
             ]
-            if folder_lines:
+            if os.path.basename(filepath) == "SPEC.md":
+                # A sentence in the item's prose about SPEC is not the line
+                # the check reads ([spec-rework-files-line-checked]).
+                diagnosis = (
+                    "SPEC.md is editable only by a run whose working file "
+                    "lists it in its Files: section; a sentence in the item's "
+                    "prose about SPEC is not that line. Halt and, with the "
+                    "user's approval, add the path to the working file's "
+                    "Files: section."
+                )
+            elif folder_lines:
                 rel_file = os.path.relpath(
                     os.path.normpath(filepath), os.path.normpath(cwd)
                 ).replace("\\", "/")
@@ -2630,7 +2816,9 @@ def main() -> int:
                 "root's or a part's), CYCLES.md, TOOLS.md, anything in "
                 "LOG/, research notes (under workshop/resources/research/ or "
                 "research/ at the project root — a research part named "
-                "otherwise goes through the user's door below), the temp/ "
+                "otherwise goes through the user's door below), supplied "
+                "material the user wrote or attached (under "
+                "workshop/resources/supplied/), the temp/ "
                 "folder and its own scratch files — plus any "
                 "path a checklist definition in CYCLES.md declares its steps "
                 "write. Everything "

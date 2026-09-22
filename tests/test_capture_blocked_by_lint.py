@@ -68,9 +68,11 @@ Acceptance: the suite passes.
 
 #### Capture waiting on queued work [beta]
 Filed by Claude. Rationale for beta.
+Filed 2026-09-01 10:00, stamped by the capture tool.
 {beta_hold}
 #### Capture nothing is waiting on [gamma]
 Filed by Claude. Rationale for gamma.
+Filed 2026-09-01 10:01, stamped by the capture tool.
 """
 
 

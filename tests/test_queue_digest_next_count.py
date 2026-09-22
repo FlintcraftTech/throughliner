@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for queue_digest.py's `Offerable after this pick` line.
+"""Regression tests for queue_digest.py's `Left to process, this one included` line.
 
 Host-only dev artifact — not shipped in the plugin package.
 
@@ -99,7 +99,7 @@ def run_digest(d, *extra):
 
 def offerable_line(text):
     for line in text.splitlines():
-        if line.startswith("Offerable after this pick:"):
+        if line.startswith("Left to process, this one included:"):
             return line
     return None
 
@@ -132,15 +132,15 @@ d = project()
 
 # Three plain captures are offerable; one, two and three are passed over.
 text = run_digest(d)
-check("with nothing skipped, the pick leaves two offerable",
-      offerable_line(text) == "Offerable after this pick: 2", repr(text))
+check("with nothing skipped, three are left with the pick counted in",
+      offerable_line(text) == "Left to process, this one included: 3", repr(text))
 check("the line sits above the medians line",
-      text.index("Offerable after this pick") < text.index("medians:"))
+      text.index("Left to process, this one included") < text.index("medians:"))
 
-# One plain capture skipped: the pick takes another, leaving one.
+# One plain capture skipped: the pick takes another; two left, it included.
 text = run_digest(d, "--skip", "four")
-check("one skipped and one picked leaves one offerable",
-      offerable_line(text) == "Offerable after this pick: 1", repr(text))
+check("one skipped leaves two, the pick counted in",
+      offerable_line(text) == "Left to process, this one included: 2", repr(text))
 check("the three passed-over kinds are never counted",
       "[one]" not in text.split("\n\n", 1)[0]
       and "[two]" not in text.split("\n\n", 1)[0])
@@ -149,16 +149,16 @@ check("the three passed-over kinds are never counted",
 text = run_digest(d, "--skip", "four,five,six")
 check("at rest the count prints as 0 beside the nothing line",
       text.startswith("Next: nothing")
-      and offerable_line(text) == "Offerable after this pick: 0", repr(text))
+      and offerable_line(text) == "Left to process, this one included: 0", repr(text))
 
 # The state server passes the line through as the script printed it.
 server_text = call_server(d, {"skip": ["four"]})
 check("queue_next_pick carries the same line",
-      offerable_line(server_text) == "Offerable after this pick: 1",
+      offerable_line(server_text) == "Left to process, this one included: 2",
       repr(server_text))
 server_text = call_server(d, {"skip": ["four", "five", "six"]})
 check("queue_next_pick carries the 0 at rest",
-      offerable_line(server_text) == "Offerable after this pick: 0",
+      offerable_line(server_text) == "Left to process, this one included: 0",
       repr(server_text))
 
 shutil.rmtree(d, ignore_errors=True)

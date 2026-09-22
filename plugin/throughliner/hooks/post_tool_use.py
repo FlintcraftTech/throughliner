@@ -357,6 +357,35 @@ def _check_heading_articles(blocks, warnings):
             )
 
 
+FILED_STAMP_RE = re.compile(r"^Filed \d{4}-\d{2}-\d{2}\b")
+
+
+def _check_filed_stamp(blocks, warnings):
+    """Advisory: a capture in Unprocessed with no `Filed <date>` line.
+
+    The filing tools — the state server's file_capture and the queue tool's
+    append — write the stamp the ordering ladder reads to age an entry; a
+    capture written into the file with the editing tools carries none, and
+    nothing mechanical told the two routes apart
+    ([done-captures-filed-by-edit-without-server]). Unprocessed only: a work
+    item carries its history in prose. New-entry scoping comes from the
+    lint's existing split against HEAD.
+    """
+    for b in blocks:
+        if b["section"] != "Unprocessed":
+            continue
+        if any(FILED_STAMP_RE.match(line.strip()) for line in b["lines"]):
+            continue
+        warnings.append(
+            f"line {b['idx'] + 1}: capture {b['heading'][:60]!r} carries no "
+            "`Filed <date>` line. A capture is filed through the state "
+            "server's file_capture tool, or reorder_queue.py --append "
+            "Unprocessed --body <file>, either of which writes the stamp the "
+            "ordering reads; a hand-added entry gains one by a line reading "
+            "`Filed <YYYY-MM-DD> <HH:MM>, read from the clock`. Advisory."
+        )
+
+
 def _check_sections(annotated, warnings):
     """Check 2: both ## Processed and ## Unprocessed headings are present."""
     present = {h2 for _i, _l, h2, _ih in annotated if h2}
@@ -1172,6 +1201,7 @@ def lint(content: str, gate_check: bool = True,
     _check_assigned_to(blocks, warnings, unassigned_default)
     _check_slugs(blocks, warnings)
     _check_heading_articles(blocks, warnings)
+    _check_filed_stamp(blocks, warnings)
     _check_sections(annotated, warnings)
     _check_red_flag_states(annotated, warnings)
     _check_mid_line_markers(annotated, warnings)

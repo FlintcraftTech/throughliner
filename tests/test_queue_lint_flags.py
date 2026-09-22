@@ -67,6 +67,7 @@ Acceptance: the suite passes.
 
 #### Another ordinary work item [beta]
 Filed by Claude. Rationale for beta.
+Filed 2026-09-01 10:00, stamped by the capture tool.
 """
 
 
@@ -647,6 +648,7 @@ Assigned to: Alex
 
 #### Work for nobody yet [beta]
 Rationale.
+Filed 2026-09-01 10:00, stamped by the capture tool.
 """
 
 

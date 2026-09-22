@@ -190,8 +190,63 @@ def main():
                   {"content": "Seen at 18:00.\n"})
         check("a future time in a research file is allowed",
               decision(r) == "allow", repr(r))
+
+        # 5. [clock-check-fires-on-video-timestamps]: a runtime or an excerpt
+        # bound written MM:SS passes where its sentence says what it times.
+        d5 = project()
+        q5 = os.path.join(d5, "QUEUE.md")
+        r = drive(d5, "Edit", q5, {"old_string": "x",
+                                   "new_string": "The first video's runtime is 23:14, against 14:46 for the second."})
+        check("a runtime in a sentence carrying a duration word passes",
+              decision(r) == "allow", repr(r))
+        r = drive(d5, "Edit", q5, {"old_string": "x",
+                                   "new_string": "Show the excerpt from 15:35 to 17:58 in class."})
+        check("an excerpt bound bracketed by from … to passes",
+              decision(r) == "allow", repr(r))
+        r = drive(d5, "Edit", q5, {"old_string": "x",
+                                   "new_string": "The candidate runs 23:14 in all."})
+        check("the report's 'runs 23:14' passes", decision(r) == "allow", repr(r))
+        r = drive(d5, "Edit", q5, {"old_string": "x",
+                                   "new_string": "Filed at 23:14, stamped by the queue tool."})
+        check("a bare future time with none of the words is still refused",
+              decision(r) == "deny", repr(r))
+        check("the refusal names the runtime shape as a false positive",
+              "video runtime or an excerpt bound" in r.get("permissionDecisionReason", ""),
+              repr(r))
+        shutil.rmtree(d5, ignore_errors=True)
     finally:
         del os.environ["THROUGHLINER_TEST_CLOCK"]
+
+    # 6. [time-word-check-passes-denoted-date]: a day word passes where the
+    # message names the date it denotes, wherever that date sits.
+    d6 = project()
+    q6 = os.path.join(d6, "QUEUE.md")
+    os.environ["THROUGHLINER_TEST_CLOCK"] = "2026-09-21 01:16"
+    try:
+        r = drive(d6, "Edit", q6, {"old_string": "x",
+                                   "new_string": "Look for mail arriving since yesterday (2026-09-20)."})
+        check("'since yesterday (2026-09-20)' passes with the clock on 2026-09-21",
+              decision(r) == "allow", repr(r))
+        r = drive(d6, "Edit", q6, {"old_string": "x",
+                                   "new_string": "The sign-ups ran on 2026-09-20.\n\nLook for mail arriving since yesterday."})
+        check("'yesterday' passes with the date on another line of the message",
+              decision(r) == "allow", repr(r))
+        r = drive(d6, "Edit", q6, {"old_string": "x",
+                                   "new_string": "Look for mail arriving since yesterday."})
+        reason = r.get("permissionDecisionReason", "")
+        check("'yesterday' with no such date is refused", decision(r) == "deny", repr(r))
+        check("the refusal's first fix sentence is the kept-word one",
+              reason.find("Keep the word") != -1
+              and reason.find("Keep the word") < reason.find("drop the word"), reason)
+        check("the refusal carries the matched word's whole sentence",
+              '"yesterday" in: Look for mail arriving since yesterday.' in reason, reason)
+        r = drive(d6, "Edit", q6, {"old_string": "x",
+                                   "new_string": "The check knows yesterday, tomorrow, last week and tonight."})
+        check("a sentence listing four of the check's own phrases passes",
+              decision(r) == "allow", repr(r))
+    finally:
+        del os.environ["THROUGHLINER_TEST_CLOCK"]
+    shutil.rmtree(d6, ignore_errors=True)
 
     for folder in (d, d2, d3, d3b, d4):
         shutil.rmtree(folder, ignore_errors=True)

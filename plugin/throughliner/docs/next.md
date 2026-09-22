@@ -378,7 +378,9 @@ surface it. Noticing the *hooks* also carry the old term when the item didn't
 list them → adjacent-work discovery, capture it and continue.
 
 **2. Create this session's build working file** — `_build-<session-id>.md`, in
-the project root:
+the project root, written with the state server's `build_open` tool where the
+server is registered, from the item slugs and the file list; the specimen
+below is what a project without the server writes by hand:
 
 ````markdown
 # Active Build

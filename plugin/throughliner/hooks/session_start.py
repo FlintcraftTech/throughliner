@@ -1225,9 +1225,8 @@ def _queue_dependency_facts(queue_path):
     fact. This runs as a second pass over a file the red-flag scan has already
     read, so the marginal cost is negligible.
 
-    The counts are facts only. /plan derives the throughput floor from them,
-    because the floor is a /plan concept and this hook runs for every session —
-    a hook telling a /next run to process at least N would be narrating
+    The counts are facts only. /plan reads them and this hook runs for every
+    session — a hook telling a /next run what to process would be narrating
     something that does not apply to it.
 
     Never raises: any error returns None and the caller stays silent.
@@ -1666,6 +1665,25 @@ def _is_checklist(entry):
     return entry["trigger"] is not None and entry["cadence"] is None
 
 
+def _is_malformed(entry):
+    """A definition carrying neither a cadence nor a trigger — a cycle the
+    due-ness check cannot compute from, or a checklist no word fires. Named
+    at the opening rather than dropped ([malformed-cycle-definition-named-and-refused]):
+    a hand-written checklist carrying its firing word under a label the
+    parser does not read used to come back as a cycle with no cadence, and
+    "prep" and "income" fired nothing with nobody told why."""
+    return entry["trigger"] is None and entry["cadence"] is None
+
+
+def malformed_definitions(cwd):
+    """The slug of every definition in the cycles doc that carries neither
+    `Cadence:` nor `Trigger:`. None where the project has no cycles doc."""
+    entries = _parse_cycles_doc(cwd)
+    if entries is None:
+        return None
+    return [entry["slug"] for entry in entries if _is_malformed(entry)]
+
+
 def cycles_facts(cwd):
     """Each CYCLE definition's slug, cadence and observable, as written.
 
@@ -1680,7 +1698,7 @@ def cycles_facts(cwd):
         return None
     out = []
     for entry in entries:
-        if _is_checklist(entry):
+        if _is_checklist(entry) or _is_malformed(entry):
             continue
         observable = entry["observable"]
         dates = ISO_DATE_IN_TEXT_RE.findall(observable or "")
@@ -2504,7 +2522,7 @@ def main() -> int:
     # The queue's dependency facts, in one line. Emitted even when every number
     # is zero: "nothing is waiting on you" is useful, and silence is ambiguous —
     # a computed zero and a check that never ran look identical from the outside.
-    # Facts only; /plan turns them into a throughput floor.
+    # Facts only; /plan reads them and other skills ignore them.
     dependency_facts = _queue_dependency_facts(queue_path)
     if dependency_facts is not None:
         (cleared, held, blockers_unprocessed, waiting, dead,
@@ -2514,9 +2532,8 @@ def main() -> int:
             f"{'' if cleared == 1 else 's'} cleared to run, {held} held below the "
             f"line, {blockers_unprocessed} of those blockers still sitting in "
             f"Unprocessed, {to_plan} capture{'' if to_plan == 1 else 's'} "
-            "waiting to be planned. Facts, not instructions — /plan derives the "
-            "session's throughput floor from the first three and says the "
-            "number out loud; other skills can ignore them."
+            "waiting to be planned. Facts, not instructions — /plan reads "
+            "them; other skills can ignore them."
         )
         # Name the resolved pairs, not just the counts. The graph is already
         # built above; discarding it made every reader rebuild it by hand.
@@ -2612,6 +2629,19 @@ def main() -> int:
                 "the observable and file one capture per due step."
                 % (len(cycles), "; ".join(described))
             )
+
+    # A definition carrying neither field is named, never silently dropped:
+    # report only, nothing edited or filed.
+    malformed = malformed_definitions(cwd)
+    if malformed:
+        context_parts.append(
+            "[Throughliner] Cycles: %d definition(s) in CYCLES.md carry neither "
+            "a Cadence: line nor a Trigger: line, so nothing is computed from "
+            "them and no word fires them — %s. A checklist carries `Trigger:` "
+            "and a cycle carries `Cadence:`, written by the state server's "
+            "cycle_define tool where the server is registered."
+            % (len(malformed), ", ".join("[%s]" % s for s in malformed))
+        )
 
     # Checklists ride the same doc and are reported by name and trigger word only.
     # No due-ness is computed for one and no capture is ever filed: a checklist has

@@ -110,7 +110,13 @@ process the surfaced items with you now, one at a time** — entering plan.md's
 ordinary present-and-interview loop on the user's yes. The offer says "with
 you": processing is done together, and wording it as something Claude does alone
 primes the user for the wrong interaction. In any other chat the offer is not
-made and this skill files only.
+made and this skill files only. In that same message, after the bulk ask,
+name by slug the candidates worth processing before the next build run, one
+clause each saying why — a capture that would change what a cleared build
+does, or that blocks one — or say that none bears on the cleared work; read
+off the digest's capture-bears-on-cleared flags and the cleared region, with
+the limit that a flag reaches a capture naming the cleared slug, and one that
+bears without naming is this turn's own judgment.
 
 **What already happened → this chat's LOG entry, as a marked tail.** Append rather
 than rewrite — with the state server's `append_tail` tool where the server is
@@ -160,8 +166,9 @@ filed, named; that running /done — named in words — is what records and comm
 it; and the resumed work's own pending question, put back in bold as the
 message's last line, so the message ends on the ask the user was in the middle
 of. Where nothing was running, or the run has finished and not closed — the hand-back to the /done step —
-the third part is running /done, named in words and clear of the sentence's
-end, in bold as the last line, since that step is the pending one. Where the
+the third part is the closing paragraph's one-command arm from plan.md's
+end-of-queue gate — running /done, named in words and clear of the sentence's
+end — in bold as the last line, since that step is the pending one. Where the
 conversation carried an outcome-shaped statement of the user's that no goal in
 SPEC's Goals section names — a sentence about where the project should get to,
 or when it would count as arrived — the turn also proposes it as a goal in one

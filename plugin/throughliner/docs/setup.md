@@ -79,21 +79,24 @@ The scratchpad is used because it is writable in every session type — so the
 marker can always be created — and because it clears itself, so a run that dies
 partway leaves nothing to tidy up by hand.
 
-## Step 0.7: The GitHub CLI prerequisite  [SILENT] when both checks pass; [BRIEF, PROMPT] otherwise
+## Step 0.7: The GitHub CLI and git prerequisites  [SILENT] when every check passes; [BRIEF, PROMPT] otherwise
 
-**What the prerequisite turn carries.** Which of the two checks failed and
+**What the prerequisite turn carries.** Which of the checks — the two CLI
+checks, or the git check — failed and
 what it printed; the one offer that answers it — the install page, or the
 sign-in command — and what success looks like; and, on a refusal, the one
 plain sentence about what the project will not receive. One ask, at the end.
 
-After the Python check the wrapper names, confirm the GitHub CLI: run
-`gh --version` and `gh auth status`, and both must succeed. The CLI is how the
+After the Python check the wrapper names, confirm the GitHub CLI and git: run
+`gh --version`, `gh auth status` and `git --version`, and all three must
+succeed. The CLI is how the
 project receives method updates — once a week the session opening reads the
 newest version on the user's channel through it — and it is the route for a
-problem report on the plugin's own repository.
+problem report on the plugin's own repository. Git is what every session
+close commits with.
 
 ```
-both succeed          ->  nothing to say. Write the channel line to TOOLS.md
+all succeed           ->  nothing to say. Write the channel line to TOOLS.md
                           (below) and carry on.
 gh missing            ->  offer the install: the CLI's own install page,
                           https://cli.github.com, one command per operating
@@ -106,6 +109,15 @@ the user declines,    ->  say plainly, once: this project will not receive
                           the environment it runs in — at minimum, the plugin
                           will not keep up with changes to Claude Code. Write
                           that answer to TOOLS.md and carry on.
+git missing           ->  offer the install, one route per operating system
+                          as INSTALL.md gives them — Git for Windows, which
+                          also supplies Bash; `xcode-select --install` or
+                          Homebrew on a Mac; the package manager on Linux;
+                          then close and reopen the terminal and check again.
+the user declines,    ->  say plainly, once: every session ends with a
+  or cannot (git)         commit and cannot make one without git, so every
+                          session's ending will fail until it is installed.
+                          Write that answer to TOOLS.md and carry on.
 ```
 
 **Write one line to `TOOLS.md`** — created where the project has none —
@@ -584,12 +596,15 @@ FAQ/faq.md    <-  ${CLAUDE_PLUGIN_ROOT}/templates/faq-template.md
 FAQ/index.md  <-  ${CLAUDE_PLUGIN_ROOT}/templates/faq-index-template.md
 ```
 
-**workshop/ folder, with `workshop/resources/research/` inside it** — create them
-empty. `workshop/` is where the project's working material lives — what it works
+**workshop/ folder, with `workshop/resources/research/` and
+`workshop/resources/supplied/` inside it** — create them
+empty, and the top-up adds them to an existing project. `workshop/` is where the project's working material lives — what it works
 with rather than what it ships — so someone landing on the repository sees the
 product and the method's own documents first, and everything they merely refer to
 sits in one folder that can be skipped. `workshop/resources/research/` is the home
-for research notes (`workshop/resources/research/<topic>.md`), and
+for research notes (`workshop/resources/research/<topic>.md`),
+`workshop/resources/supplied/` is the home for material the user wrote or
+attached, written unchanged, and
 `workshop/resources/testing/` is the home for re-read-later testing evidence,
 created when there is something to put in it. Creating the research folder at setup
 means research notes have a place from day one rather than the folder being
@@ -707,7 +722,10 @@ protection if the project is ever published.           # one sentence of why
 ```
 
 In a nested project the first line says instead that they are tracked in the
-outer repository, which never gets a remote. Nothing else goes in that message:
+outer repository, which never gets a remote, and the second says that an outer
+repository that never gets a remote
+keeps them out of anything published while keeping their history.
+Nothing else goes in that message:
 not the per-document combinations, not what the choice keeps and changes, not
 the mailbox. Those are HELD below — what Claude reads to answer, and what it
 says after the yes.
@@ -989,6 +1007,38 @@ Discovery ends where it ends; there is no settings round after it.
 The editor and working-mode questions that used to sit here are **gone**,
 replaced by one default: point at the doc, with a plain-English summary inline
 where a discussion needs one.
+
+## Step 3.5: The project's own tools  [BRIEF, PROMPT] for the ask; [SILENT] for the probe
+
+**What the tools turn carries.** The command-line tools the project's work
+plausibly needs, named from the interview's answers, in one line; the one
+ask, whether any are missing; then, with no further asks, the result of each
+tool's own version check written to `TOOLS.md`.
+
+From the interview's answers, name the command-line tools the project's work
+plausibly needs. The kind of thing the work produces decides them: a website
+wants a static-site builder and its host's command-line tool; documents want
+a converter; data wants the interpreter and its libraries. Say the list in one
+line and ask whether any are missing, then stop and wait.
+
+On the answer, run each tool's own version check, and write one line per
+tool to `TOOLS.md` — created where the project has none — in the file's
+existing shape: the tool, present with its version or absent, and the date
+checked, read from the clock.
+
+```
+a tool is absent, and the first piece of  ->  offer the install, in the
+  work captured at the interview needs it     shape of Step 0.7's offers;
+                                              a decline is written as the
+                                              fact it is
+a tool is absent, and nothing captured    ->  the absent line alone; no
+  yet needs it                                offer
+the project's work needs no               ->  write nothing, and say so in
+  command-line tool                           one clause
+```
+
+Every later session reads `TOOLS.md` before handing over a manual walkthrough,
+so the answers land here before any work item exists to need them.
 
 ## Step 4: Write the docs  [BRIEF, PROMPT]
 

@@ -26,7 +26,10 @@ establishes that PreToolUse can read the transcript and deny. That is the wrong
 surface here: a false report is text with NO tool call attached, so a hook gated
 on tool calls never fires on it. `Stop` fires when Claude finishes responding and
 receives `last_assistant_message` — the complete final response text, handed over
-directly, so no transcript parsing is needed. Returning
+directly, so no transcript parsing is needed. One check reads the transcript's
+tail on purpose ([process-now-offer-fixed-and-enforced]): the process-now offer
+is ordinarily made a turn before the filing it governs, and only the transcript
+shows that turn. Returning
 `{"decision": "block", "reason": "..."}` does not end the turn: it feeds the
 reason back and the conversation continues, so the write can be made and the
 correction can reach the user before they act on the false report.
@@ -198,10 +201,49 @@ def _is_name_mid_sentence(text, start, word):
     return not _TIME_SENTENCE_LEAD.match(text[left:start])
 
 
-def _unfounded_time_words(message):
-    """Distinct time phrases in the reply outside quoted text, lowercased —
-    leaving out any whose sentence also carries a source, and any written as
-    a name with a capital mid-sentence."""
+# A day word denotes a date computable from the clock
+# ([time-word-check-passes-denoted-date]): where that date appears anywhere
+# in the reply — before or after the word, in brackets or not — the word is
+# sourced and passes. Words with no computable date keep the sentence-source
+# rule. A COPY of pre_tool_use.py's; change one, change both.
+_DENOTED_OFFSETS = {
+    "yesterday": -1, "today": 0, "tonight": 0, "this morning": 0,
+    "this afternoon": 0, "this evening": 0, "earlier today": 0, "tomorrow": 1,
+}
+# A sentence carrying this many distinct phrases from the check's own list is
+# read as a list of the words — mentioned, not used — and is not refused. A
+# tunable heuristic derived from the one instance (a planning chat quoting the
+# list), stated here as such.
+_MENTIONED_LIST_MIN = 3
+
+
+def _clock_today():
+    """Today as YYYY-MM-DD; the suites pin it with THROUGHLINER_TEST_CLOCK."""
+    import datetime as _dt
+    pinned = os.environ.get("THROUGHLINER_TEST_CLOCK", "")
+    if pinned:
+        return pinned.partition(" ")[0]
+    return _dt.date.today().isoformat()
+
+
+def _denoted_date(phrase):
+    offset = _DENOTED_OFFSETS.get(phrase)
+    if offset is None:
+        return None
+    import datetime as _dt
+    try:
+        day = _dt.date.fromisoformat(_clock_today())
+    except ValueError:
+        return None
+    return (day + _dt.timedelta(days=offset)).isoformat()
+
+
+def _unfounded_time_phrases(message):
+    """(phrase, sentence) pairs for each distinct time phrase in the reply
+    outside quoted text, lowercased — leaving out any whose sentence also
+    carries a source, any written as a name with a capital mid-sentence, any
+    whose denoted date the reply names anywhere, and any in a sentence that
+    lists three or more of the check's own phrases."""
     found = []
     text = _strip_quoted(message, spans=True)
     for match in TIME_WORD_PATTERN.finditer(text):
@@ -210,10 +252,23 @@ def _unfounded_time_words(message):
         left, right = _sentence_span(text, match.start(), match.end())
         if TIME_SOURCE_PATTERN.search(text, left, right):
             continue
+        sentence = text[left:right]
+        distinct = {" ".join(m.group(0).lower().split())
+                    for m in TIME_WORD_PATTERN.finditer(sentence)}
+        if len(distinct) >= _MENTIONED_LIST_MIN:
+            continue
         phrase = " ".join(match.group(0).lower().split())
-        if phrase not in found:
-            found.append(phrase)
+        denoted = _denoted_date(phrase)
+        if denoted and denoted in message:
+            continue
+        if phrase not in [p for p, _ in found]:
+            found.append((phrase, " ".join(sentence.split())))
     return found
+
+
+def _unfounded_time_words(message):
+    """The phrases alone, for callers that key on them."""
+    return [phrase for phrase, _ in _unfounded_time_phrases(message)]
 
 
 def _claimed_slugs(message):
@@ -437,6 +492,119 @@ def _post_close_tail_owed(cwd, session_id, message):
     )
 
 
+# --- The process-now offer ([process-now-offer-fixed-and-enforced]) ---
+#
+# In a planning chat — no build working file — a reply reporting a capture
+# filed must have made the fixed offer, "Process this with you now, or file it
+# for later? I'd take it now.", in this reply or one of the two assistant
+# replies before it. The rule was present in plan.md and not reached for, so
+# this is a mechanism. The limits, stated: it reaches a filing reported in a
+# recognisable line, so one reported in other words passes; it cannot tell a
+# recommendation to file from one to process now, so the direction stays
+# wording; and a "file it" answered more than two assistant turns after the
+# offer is a false block, bounded to one wasted turn by the once-per-session
+# gate.
+PROCESS_NOW_FORMULA = "process this with you now"
+FILED_LINE = re.compile(r"Filed at the bottom of Unprocessed", re.IGNORECASE)
+
+
+def _build_working_file_present(cwd, session_id):
+    safe = _safe_id(session_id)
+    return safe != "unknown" and os.path.isfile(
+        os.path.join(cwd, "_build-%s.md" % safe))
+
+
+def _recent_assistant_texts(transcript_path, count):
+    """The text of the last `count` assistant entries in the transcript,
+    oldest first. Empty where the path is missing or unreadable."""
+    if not transcript_path:
+        return []
+    texts = []
+    try:
+        with open(transcript_path, "r", encoding="utf-8", errors="replace") as f:
+            for raw in f:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    entry = json.loads(raw)
+                except ValueError:
+                    continue
+                if entry.get("type") != "assistant":
+                    continue
+                content = (entry.get("message") or {}).get("content")
+                if isinstance(content, str):
+                    texts.append(content)
+                elif isinstance(content, list):
+                    texts.append("\n".join(
+                        block.get("text", "") for block in content
+                        if isinstance(block, dict) and block.get("type") == "text"))
+    except OSError:
+        return []
+    return texts[-count:]
+
+
+def _process_now_offer_owed(cwd, session_id, message, transcript_path):
+    """The block reason where a planning chat's reply reports a filing with
+    no process-now offer in reach, else None."""
+    if _build_working_file_present(cwd, session_id):
+        return None
+    if not (_claimed_slugs(message) or FILED_LINE.search(message)):
+        return None
+    in_reach = [message] + _recent_assistant_texts(transcript_path, 3)
+    if any(PROCESS_NOW_FORMULA in text.lower() for text in in_reach):
+        return None
+    if _already_blocked(cwd, session_id, "process-now-offer"):
+        return None
+    return (
+        "Your last message reports a capture filed, and neither it nor the "
+        "two replies before it made the offer that comes before a filing in "
+        "a planning chat: \"Process this with you now, or file it for later? "
+        "I'd take it now.\" Make the offer in those words — the report of "
+        "what landed, then the offer — and let the user answer. Saying the "
+        "same phrase passes on the next reply; this is stopped once."
+    )
+
+
+# --- The checkpoint carries no clock and no stop offer
+# ([checkpoint-narrates-clock-and-offers-to-stop]) ---
+#
+# A planning checkpoint carries the finished entry's outcome, a pointer to the
+# next item, one bold question and the two counts — nothing else. Sessions
+# were reading the clock into it and offering to end the session, neither of
+# which anything asks for. The phrase lists match phrases only, so a rephrased
+# narration or offer passes.
+CHECKPOINT_MARKS = re.compile(r"Take this one next\?|left to process",
+                              re.IGNORECASE)
+CLOCK_NARRATION = re.compile(
+    r"the clock reads|the session opened at|\bopened at \d{1,2}:\d{2}",
+    re.IGNORECASE)
+STOP_OFFER = re.compile(
+    r"stop here|carry on, or stop|end the session|end here", re.IGNORECASE)
+
+
+def _checkpoint_clock_or_stop_owed(cwd, session_id, message):
+    """The block reason where a checkpoint reply narrates the clock or offers
+    to stop, else None."""
+    if _build_working_file_present(cwd, session_id):
+        return None
+    text = _strip_quoted(message, spans=True)
+    if not CHECKPOINT_MARKS.search(text):
+        return None
+    if not (CLOCK_NARRATION.search(text) or STOP_OFFER.search(text)):
+        return None
+    if _already_blocked(cwd, session_id, "checkpoint-clock-or-stop"):
+        return None
+    return (
+        "Your last message is a checkpoint, and it carries a clock reading "
+        "or an offer to stop. A checkpoint carries four things: the outcome "
+        "of the finished entry, the pointer to the next item, one bold "
+        "question inviting the user into it, and the two counts — cleared "
+        "to run, and left to process. Reply with the checkpoint again "
+        "without the time and without the offer; this is stopped once."
+    )
+
+
 def project_root(data: dict) -> str:
     """The project root every path test runs against.
 
@@ -487,25 +655,26 @@ def main():
     # distinct phrase per session; a phrase already blocked passes silently,
     # since the reply is then expected to carry its source in the sentence.
     fresh = [
-        p for p in _unfounded_time_words(message)
+        (p, s) for p, s in _unfounded_time_phrases(message)
         if not _already_blocked(cwd, session_id, "time-" + p.replace(" ", "-"))
     ]
     if fresh:
-        listed = ", ".join('"%s"' % p for p in fresh)
+        listed = "; ".join('"%s" in: %s' % (p, s) for p, s in fresh)
         print(json.dumps({
             "decision": "block",
             "reason": (
                 "Your last message says when something happened with no "
-                f"source: {listed}. Read the clock or the record and put the "
-                "source in the sentence, or drop the word — a wrong time in "
-                "chat proliferates into the records. A name written with a "
-                "capital mid-sentence — a product's own page or feature — "
-                "passes, so a block on one is a false positive to reword or "
-                "ignore. Reply with the correction alone: one or two lines "
-                "carrying the corrected sentence, with nothing from the "
-                "earlier message repeated, since that message stays on "
-                "screen. This phrase is stopped once; it passes on the next "
-                "reply."
+                f"source: {listed}. Keep the word and put the date it means "
+                "beside it in the same sentence — \"since yesterday "
+                "(2026-09-20)\" — read from the clock or the record; drop the "
+                "word only where no date exists. Reply with the correction "
+                "alone: one or two lines carrying the corrected sentence, "
+                "with nothing from the earlier message repeated, since that "
+                "message stays on screen, and no account of what the clock "
+                "reads. A name written with a capital mid-sentence — a "
+                "product's own page or feature — passes, so a block on one "
+                "is a false positive to reword or ignore. This phrase is "
+                "stopped once; it passes on the next reply."
             ),
         }))
         sys.exit(0)
@@ -515,9 +684,20 @@ def main():
         print(json.dumps({"decision": "block", "reason": owed}))
         sys.exit(0)
 
+    owed = _checkpoint_clock_or_stop_owed(cwd, session_id, message)
+    if owed:
+        print(json.dumps({"decision": "block", "reason": owed}))
+        sys.exit(0)
+
     claimed = _claimed_slugs(message)
     if not claimed:
-        # The overwhelming majority of turns. No work done.
+        # The overwhelming majority of turns. No work done — unless the reply
+        # carries the capture tool's own filed line, which the offer check
+        # below still reads.
+        owed = _process_now_offer_owed(cwd, session_id, message,
+                                       payload.get("transcript_path") or "")
+        if owed:
+            print(json.dumps({"decision": "block", "reason": owed}))
         sys.exit(0)
 
     # A slug absent from the queue but present in LOG/ names recorded work, so
@@ -538,6 +718,11 @@ def main():
         and slug not in ticked
     )
     if not missing:
+        # The filing is real. In a planning chat it still owes the offer.
+        owed = _process_now_offer_owed(cwd, session_id, message,
+                                       payload.get("transcript_path") or "")
+        if owed:
+            print(json.dumps({"decision": "block", "reason": owed}))
         sys.exit(0)
 
     names = ", ".join("[%s]" % slug for slug in missing)

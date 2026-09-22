@@ -783,6 +783,69 @@ def test_age_prints_in_a_git_repository():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def stamped_git_project():
+    """A repository whose first commit holds an unstamped entry, one stamped
+    earlier than the commit, and one stamped on the commit's own day; a
+    second commit adds a held item written already held."""
+    d = tempfile.mkdtemp(prefix="digest-stamped-")
+    git(d, "init", "-q")
+    git(d, "config", "user.email", "suite@example.invalid")
+    git(d, "config", "user.name", "suite")
+    path = os.path.join(d, "QUEUE.md")
+    first = ("#### Unstamped item [alpha]\nRationale.\n" + BLOCK
+             + "\n#### Stamped before the repository [beta]\nRationale.\n"
+             "Filed 2025-12-01 10:00, stamped by the capture tool.\n" + BLOCK
+             + "\n#### Stamped on the first day [gamma]\nRationale.\n"
+             "Filed 2026-01-05 09:00, stamped by the capture tool.\n" + BLOCK)
+
+    def write(processed, held=""):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("# QUEUE\n\n## Processed\n\n" + processed + "\n" + MARKER
+                    + "\n\n" + held + "## Unprocessed\n\n")
+
+    write(first)
+    git(d, "add", "QUEUE.md")
+    git(d, "commit", "-q", "-m", "first", "--date", "2026-01-05T12:00:00")
+    write(first, "#### A held item [delta]\nRationale.\nBlocked by: [alpha]\n\n")
+    git(d, "add", "QUEUE.md")
+    git(d, "commit", "-q", "-m", "second", "--date", "2026-02-01T12:00:00")
+    return d
+
+
+def test_filed_stamp_is_read_over_git_and_horizon_prints_by():
+    """[digest-dates-flattened-to-history-horizon]: the entry's own stamp
+    dates it; an unstamped entry first seen in the file's first commit prints
+    `by` that date; a stamped entry in the first commit prints its stamp
+    with no `by`; a hold first seen in a later commit prints its date bare."""
+    root = stamped_git_project()
+    queue = os.path.join(root, "QUEUE.md")
+    horizon = {}
+    dates = digest.first_seen(root, queue, None, horizon)
+    if "alpha" not in dates:
+        print("  skip filed stamps (git unavailable on this machine)")
+        shutil.rmtree(root, ignore_errors=True)
+        return
+    check("a stamp earlier than the first commit is read over git's date",
+          dates.get("beta") == "2025-12-01", repr(dates))
+    check("the unstamped entry keeps git's date",
+          dates.get("alpha") == "2026-01-05", repr(dates))
+    check("only the unstamped first-commit entry is a horizon sighting",
+          horizon.get("seen") == {"alpha"}, repr(horizon))
+    out = digest.render(digest.parse(queue), root, queue)
+    text = "\n".join(out) if isinstance(out, list) else out
+    check("the unstamped first-commit entry prints `by` its date",
+          "First seen: by 2026-01-05" in text, text[:600])
+    check("the stamped first-commit entry prints its stamp with no `by`",
+          "First seen: 2026-01-05" in text and "by 2026-01-05  |" not in
+          text.split("[gamma]")[1].split("\n")[0], text[:900])
+    check("a hold first seen in a later commit prints its date bare",
+          "Held since: 2026-02-01" in text and "Held since: by" not in text,
+          text[:900])
+    check("the medians line still reads a bare date",
+          "median first seen: 2026-01-05" in text, text[:400])
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_runs_alone_reports_what_is_ahead_of_it():
     """A correctly placed `Runs alone` item recedes as the queue is worked.
 
@@ -1435,6 +1498,7 @@ if __name__ == "__main__":
     test_no_build_block_report_survives()
     test_no_git_degrades_quietly()
     test_age_prints_in_a_git_repository()
+    test_filed_stamp_is_read_over_git_and_horizon_prints_by()
     test_runs_alone_reports_what_is_ahead_of_it()
     test_no_runs_alone_work_says_none()
     test_whats_next_answers_only_the_pick()

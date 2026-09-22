@@ -100,6 +100,35 @@ def main():
           "folder line covers no file" in reason and "src/x.py" in reason,
           reason)
 
+    # [spec-rework-files-line-checked]: a build whose Files list lacks SPEC.md
+    # editing SPEC.md is refused with the SPEC diagnosis; another unlisted
+    # file keeps the existing one.
+    d5 = make_project(build_files=["plugin/throughliner/docs/plan.md"])
+    r = drive_write(d5, os.path.join(d5, "SPEC.md"))
+    reason = r.get("permissionDecisionReason", "")
+    check("a build not listing SPEC.md is refused SPEC.md with the SPEC diagnosis",
+          decision(r) == "deny"
+          and "a sentence in the item's prose about SPEC is not that line" in reason,
+          reason)
+    r = drive_write(d5, os.path.join(d5, "docs", "other.md"))
+    check("another unlisted file keeps the existing diagnosis",
+          decision(r) == "deny"
+          and "not in the list at all" in r.get("permissionDecisionReason", ""),
+          repr(r))
+    shutil.rmtree(d5, ignore_errors=True)
+
+    # [user-material-permanent-home-at-planning]: a planning session may write
+    # supplied material under workshop/resources/supplied/, and nothing else
+    # new under workshop/resources/.
+    d6 = make_project()
+    r = drive_write(d6, os.path.join(d6, "workshop", "resources", "supplied", "notes.md"))
+    check("a planning session may write workshop/resources/supplied/notes.md",
+          decision(r) == "allow", repr(r))
+    r = drive_write(d6, os.path.join(d6, "workshop", "resources", "other", "notes.md"))
+    check("a planning session is refused workshop/resources/other/ as before",
+          decision(r) == "deny", repr(r))
+    shutil.rmtree(d6, ignore_errors=True)
+
     # A planning session writes temp/ and research/ at the project root.
     d4 = make_project()
     r = drive_write(d4, os.path.join(d4, "temp", "draft.txt"))

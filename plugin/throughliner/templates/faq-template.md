@@ -30,7 +30,9 @@ setting up a paid plan, installing the plugin, and a quick test that it worked.
 No terminal experience is needed.
 
 You do need a paid Claude plan — Pro is enough. Claude Code does not run on the
-free tier.
+free tier. And you need git installed: every session ends with a commit, so
+the guide checks `git --version` alongside Python and the GitHub tool, and
+tells you where to get it for your system.
 
 ## What happens in my first session?
 
@@ -46,7 +48,11 @@ The interview asks what you're building and who for, whether to keep Claude's
 replies short and decision-led, whether the repository is public or private
 (and if public, about a licence), and whether to keep your planning documents
 out of version control — those documents hold your reasoning, which is worth
-keeping private if the repository isn't.
+keeping private if the repository isn't. From your answers Claude then names
+the command-line tools your project's work will need, asks whether any are
+missing, checks each on your machine and writes what it found into
+`TOOLS.md`, so a later session never assumes a tool is absent that you
+already have.
 
 **If your project has several distinct parts**, start with one project in the
 parent folder. When a part outgrows that queue, open its subfolder and run
@@ -142,8 +148,18 @@ your queue.
 The order matters: **`/done` before `/clear`, always.** Clear first and the
 session's thinking is gone before it was written down.
 
-`/done` also tells you what the next work is and then stops. It won't invite you
-into another build in the same chat.
+Typing `/done` is the yes: the commit message appears on screen as the record
+of what is being committed, and the commit follows with no question in
+between. Where your repository has a remote, one plain question follows about
+pushing; where it has none, push is never mentioned. What tells you it
+committed is the commit hash written into the session record's heading.
+
+`/done` also tells you what the next work is and then stops, naming the
+command that starts it in words, mid-sentence — the plan command for more
+planning, the build command for building — so nothing runs by accident. It
+won't invite you into another build in the same chat. Where a build run ended
+at work still held, the closing message says in plain terms what part of your
+change is not in the product yet.
 
 ## What is `/rescan` for?
 
@@ -203,11 +219,24 @@ it, because plugins load when the app launches; a new chat is not enough. On
 Windows, check the process has actually exited, since a normal close can leave
 it running.
 
-A new version existing will never nag you. Your project hears about the plugin
+Once a week, where GitHub's `gh` tool is installed and signed in, a session's
+opening lines say when a newer version is on your channel, naming it beside
+the one installed. The next planning session opens by offering the update:
+say yes and Claude runs the two commands, then asks you to fully quit and
+reopen the app. What tells you it took is the opening's installed-version
+line in the next chat. Without `gh` the opening says nothing and the project
+falls behind, which setup tells you once.
+
+Beyond that, a new version existing will never nag you. Your project hears about the plugin
 only when something actually needs your attention: a document your project is
 missing, a newer setting it hasn't been offered, or a change to the document
 format that needs migrating. Each of those says so plainly at the start of a
-session and tells you what to run. Silence means there is nothing to do.
+session and tells you what to run. Silence means there is nothing to do. A
+format change is the strongest of the three: the session opens by saying the
+documents are on an older format and points you at `/setup`, which migrates
+them in place rather than replacing them, and never overwrites anything you
+wrote. The format number is deliberately separate from the version number,
+so it cannot cry wolf at every release.
 
 If you want to know when a new version lands, the plugin's GitHub page has a
 **Watch** button: choose Custom, tick Releases, and you get an email each time.
@@ -372,6 +401,10 @@ against that part's truth. An existing project is offered the question once
 when setup runs again, and never forced. Two other folders arrive with this:
 `temp/`, ignored by git, for what the project does not keep — a draft you edit,
 a fetched transcript — and `workshop/`, for what it works with and keeps.
+Inside `workshop/resources/`, `supplied/` is the committed home for text you
+wrote or a file you attached: a planning session may write it there
+unchanged, with a line naming who supplied it and when, so your own material
+never has to be pasted into a queue entry to survive.
 
 ## The safety check refused my edit — how do I get it through?
 
@@ -404,3 +437,304 @@ terminal, then close and reopen the desktop app. A new chat then shows the
 `[Throughliner]` lines again. Without Python the plugin fails silently and
 reports success anyway, which is why the commands look for the lines rather
 than trusting that the checks ran.
+
+## How do I hold work back until something else happens?
+
+In a planning session, say what the work is waiting for. Claude writes it on
+the item itself, one of two ways: `Blocked by:` naming another queue item, or
+`Not before:` naming a date. The item then sits below the
+`--- Cleared to run above this line ---` line, where a build run never
+reaches it. Where the thing it waits for isn't in the queue yet — a reply, a
+site going live — Claude files that as its own item first and holds yours on
+it, so the wait is a piece of work someone can see rather than a sentence
+buried inside another item.
+
+You never have to remember any of it. Every planning session opens by
+checking each held item: has its blocker shipped, has its date passed? Where
+yes, Claude proposes lifting it and moves it on your word. A date lifts by
+itself. When several become ready at once, they are cleared one move each,
+and what you see is the queue tool's line naming each item as cleared and
+nothing else crossing the line.
+
+## What happens at planning when a cycle's turn is due?
+
+Recurring work — a weekly release, a posting rhythm, a maintenance pass —
+can be put on a cycle: defined once in your cycles doc with its steps, its
+cadence and the observable that marks a completed turn. From then on the
+openings of `/plan` and `/next` compute whether a turn is due and file it
+into your queue as an ordinary item.
+
+At the planning opening, due cycle work is presented first, ahead of
+everything else — timing work loses its value waiting in the pack. Nothing is
+stored between sessions: each opening recomputes from the observable, so
+skipping a week drifts nothing. What tells you it worked is the opening's
+line naming the due cycle, and the item for its turn at the top of what
+Claude presents. A project with no cycles has no doc and pays nothing.
+
+## What is TOOLS.md for?
+
+A file at your project root holding facts about your machine that are
+expensive to learn twice — a tool installed at a known path, a command that
+fails from Claude's shell but runs from your terminal, which channel you
+installed the plugin from. Setup writes the first lines; any session adds a
+fact the moment it learns one.
+
+Where it matters: before Claude hands you a manual walkthrough because it
+assumes a tool is missing, it reads this file. The failure it fixes is one you
+feel directly — being talked through by hand something your project had
+already proved works. Open the file to see what Claude currently believes
+about your machine, and correct a line if it is wrong.
+
+## Can Claude turn my spec into queue items?
+
+Yes. Ask in a planning session to seed the queue from the spec, and Claude
+reads your SPEC for features that exist on paper but not in the queue,
+proposes how coarse to cut them — a few milestones or one item per feature —
+and writes them into Unprocessed as ordinary captures. Claude offers this
+itself only when your queue is nearly empty while SPEC still describes
+unbuilt features. Nothing goes straight into ready work: each capture is
+weighed like any other, so seeding never green-lights a build. What tells
+you it worked is the new captures at the bottom of Unprocessed, each naming
+the spec sentence it came from.
+
+## Why does Claude write to my files before asking, and how do I get it to show me first?
+
+Because the previous version is recoverable without you. Queue items,
+captures, session records, spec edits and ordinary build edits are written
+first and then reported in one line naming what landed and where, with a
+link to open it. Three things are always shown before they happen: a commit
+message, anything that leaves the machine — a report, a post, a message to
+another project — and a wholesale conversion of a document git doesn't hold
+yet. The trade is stated plainly: a file briefly holds text you haven't agreed
+to, which is cheap in a repository, and the real risk is not noticing — so
+the report names the artifact precisely enough to open.
+
+To get the opposite, say so: ask to be shown text before it is written, and
+Claude does that for the rest of the chat. The switch only ever moves toward
+more showing, and nothing is stored — a fresh chat starts at the default.
+
+## Does Throughliner scrub my documents, and are they safe to publish?
+
+Two things run, and neither promises what people hope. A check scans your
+queue, spec and session records for things shaped like credentials — keys,
+tokens, email addresses. And Claude reads what it is about to write against a
+checklist — personal names, case details, third-party data, identifying
+paths — at the moments text enters a committed document.
+
+The limit is the point: no pattern can tell whether a sentence quietly
+identifies a real person, so Throughliner never tells you your documents are
+scrubbed or safe to publish. For a repository that will be public, the only
+complete protection is not publishing these documents at all, which is what
+setup's keep-private question is for.
+
+In a project whose documents live in a repository with no remote — the
+default for a new nested project, read from the Visibility line in your
+CLAUDE.md — people are recorded as they are: a collaborator's name stays in
+a capture, and a risk you have accepted in your spec is not raised again. The
+scrub still runs on anything leaving the machine.
+
+## What is the "Last session advises" note at the top of my queue?
+
+Advice, not work. When `/done` closes a session with a concrete
+recommendation for what to do next, it writes that as a note at the top of
+Unprocessed. The next `/plan` reads it aloud in its opening and deletes it in
+the same breath — surfacing it is what consumes it. It never moves into
+Processed and never becomes an item. If you see one, the last session had a
+view; if it is gone, a planning session has already read it.
+
+## How do my projects send each other mail?
+
+Each project set up with Throughliner has an `INBOX/` folder, kept out of
+git. To send, tell a session what to say to your other project. Claude checks
+the recipient has a mailbox and that its ignore rule covers it, shows you the
+exact text, and on your yes copies it byte for byte into that project's
+INBOX, printing one line and no path. The first time, it asks for the other
+project's folder and remembers it inside your INBOX, so you never retype it.
+
+What you see on the other side: the next session there opens with a line
+naming the waiting message. A planning or build session reads it in full and
+files what it asks for as a capture in that project's own queue — one project
+never edits another's files. Your own project's `INBOX/sent.md` keeps a line
+per message sent, which is how a later change can be checked against what
+was said.
+
+## What does a build run do with my spec?
+
+It reads SPEC.md once at the start of the run, and checks each item it
+builds against it. Where the work would contradict a sentence in your spec,
+the run halts and names the sentence in plain words, and you decide which is
+wrong — the build or the spec. A build never rewrites your spec: where it
+finds the spec owes a sentence for something new, it files that sentence as a
+capture and carries on, so the spec lags visibly, as a queue item, until the
+next planning session writes it with you there.
+
+## Which command do I run now?
+
+Every piece of work travels one loop. Anything noticed, by you or by Claude,
+in any chat, becomes a capture in Unprocessed. `/plan` turns captures into
+agreed work and clears it to run. `/next` builds the cleared work, top down.
+`/done` records what happened and commits. Then a fresh chat, which learns
+what happened from the record rather than from memory.
+
+Two things come back to the start. An audit edits nothing: what it finds
+becomes captures, weighed at the next `/plan`. A build that discovers
+something files a capture and keeps building. And a step that is yours
+leaves the loop only when you have done it — a run walks you through it and
+then leaves it in the queue until you say it is done.
+
+## Why did an old queue item come up before a newer one?
+
+Because planning works through Unprocessed in a fixed order rather than the
+order things were filed, and the order is built so nothing gets skipped
+forever. A risk to your data comes first. Then the turn of a cycle that has
+fallen due. Then whatever the most other entries are waiting on. Then the
+entries that are both long and old, oldest first. Then everything else,
+oldest first, alternating so the long ones keep their turn. Where an item
+keeps being presented before things you filed later, that is the order doing
+its job. Name the items you want first at the opening's question and they
+come first; naming three sets the order, not the length of the session.
+
+## Why are my queue items in the order they are?
+
+Because file order records when things landed, and that is more useful than
+a ranking that goes stale. The planning close makes exactly one pass over the
+ready section: it moves the steps that are yours and the audits to the end,
+so the moments needing you sit together after the builds. A step of yours
+that names builds depending on it stays ahead of them, so a run walks you
+through it before building them. Everything else reads in the order it was
+agreed. Open QUEUE.md and you will see the builds first, then the human
+stops grouped at the bottom.
+
+## Why does my project have two repositories?
+
+A new project is set up nested: the product sits in a subfolder with a clean
+repository of its own — the one that goes public when you ask — and the
+folder around it holds your planning documents in a private repository that
+never gets a remote. Someone landing on the published repository sees the
+product, not your reasoning. `/done` commits both.
+
+An existing flat project is never forced across. Setup offers the conversion,
+and offers it again at the moment the project goes public, telling the two
+shapes apart by whether your repository already has a remote. Where it does,
+the wrap keeps that repository whole as the inner one and creates the outer
+around it, moving the planning documents up and changing nothing that points
+at the published repository. What tells you it worked is the Visibility line
+in your project's CLAUDE.md naming both repositories.
+
+## I typed /done twice — what did the second one do?
+
+A session makes one commit, at its close. Work you do after that rides the
+next session's commit. So a second `/done` in the same chat files anything it
+finds, appends what happened to the session's record under an `## After
+/done` heading, commits nothing, and says so in one line. Where you want a
+real second commit now, open a fresh chat and run `/done` there.
+
+The same idea covers a change you make after closing: change a file after
+`/done` and Claude offers, once, to add what happened to the session's record
+as that marked tail. Say yes or ignore it — nothing is committed either way,
+and the tail rides the next close.
+
+## A step of mine says other items are waiting on it — what does that mean?
+
+When a build run or a planning session hands you a step that is yours, it
+says how many other queue items are blocked on it, read off their
+`Blocked by:` lines, and names them only where you need to know. Where
+nothing waits, it says nothing. The count is there so you can weigh the step
+without holding a list in your head. A step that hands work to another of
+your projects for completion ends at the send, with anything depending on the
+outcome filed as its own item first.
+
+## The safety check refused a time from the future — what do I do?
+
+The check refuses, once, a clock time written into a record, the queue or the
+spec that is later than the clock reads right now. That is the shape a time
+takes when it was counted up from an earlier reading instead of read. The
+message names the time and what the clock reads. What Claude should do is
+read the clock by a command and write what it says; a real past time carries
+its date in front of it, and a video runtime or an excerpt bound written the
+same way passes when the sentence says what it times. The same time passes on
+the next attempt, so it costs one turn. The limit, plainly: a wrong time
+behind the clock is not caught.
+
+## What do the numbers after a queue edit mean?
+
+After every edit to QUEUE.md a note prints one line per item that grew or
+shrank, like `+119 words, now 916; work items median 525`. The first number
+is the change, the second the item's total, the third the median of its
+section as the queue stands now. It is a fact, not a threshold: an item well
+above the middle has usually accumulated history that belongs in the session
+record, leaving the item with its instructions. Nothing is enforced.
+
+## A note says a heading is wrong — how is it fixed?
+
+The queue lint warns when a heading starts with The, A or An, because the
+outline view truncates headings and the distinguishing words need to come
+first. Ask for the new heading in words and Claude rewrites it with the queue
+tool's retitle, keeping the slug and touching nothing in the body. What tells
+you it worked is the item in QUEUE.md under its new heading with the same
+`[slug]` at the end.
+
+## What does /catchup show me?
+
+A brief for coming back after time away. Type the catchup command in a chat
+that has opened, and you get one line per goal in your spec's Goals section
+— reached, or still the direction, with what the test shows now — then one
+line per feature with its stage: shipped, cleared to run, waiting, still an
+idea, or untouched. Then three lines: what a build run would do next, what is
+waiting on you, and what is held on a date. Nothing is written and nothing
+moves. Setup asks for the goals — where the project is heading and how you
+would know it got there — and an existing project is asked once by the
+top-up.
+
+## A draft I'm asked to edit — where is it and how do I hand it back?
+
+Where a step has you edit something Claude drafted — a post, an article, a
+message — the draft is written to a `.txt` file in your project's `temp/`
+folder, which git ignores, and handed to you as a link. Clicking it opens the
+file in the desktop app's side panel with a save button. Edit, save, and say
+done; Claude reads it back only then, asks whether there is anything else,
+and repeats until you say you are finished. On a phone or over remote control
+the link does not open, so say so and Claude shows the text inline instead.
+
+## Why is the planning opening so short?
+
+Because a long opening was not getting read. A planning session's first
+message is a finding sentence or two: how much work is cleared to run and
+waiting to be processed, held work as a count plus only the items whose hold
+changed, and one clause — "mail, issues, replies, cycles and the rule checks:
+nothing" — for every check that found nothing, so you can see the checks ran
+without reading a list. The one question follows on its own line. The limit:
+a session that skipped a check could write the same clause.
+
+## Two of us share one queue — whose is what?
+
+Anyone present may file captures. An entry names whose it is to do in an
+`Assigned to:` line; a line you write in your project's CLAUDE.md,
+`Unassigned work is <name>'s.`, says whose the rest is. When a step is handed
+over, Claude names who it is for, and whoever is present can say "not mine,
+it's hers" — the line is rewritten and the session carries on. A build with
+someone else's name on it is skipped in one clause in your session. The
+decisions the method gives "the user" — keeping or deleting work, clearing a
+risk, approving a send — belong to the one person holding authority.
+
+Two more things you will see. When a teammate has pushed while you were
+away, your opening carries a line saying the remote has commits this
+checkout does not, and asks you to pull before working the queue — nothing
+pulls for you. And where a pull leaves conflict markers in the queue, every
+queue tool and the done command refuse the file and name the marker's line;
+two captures appended at the same spot are kept both.
+
+## Claude refused to put my work on a cycle — why?
+
+Because the definition would not have been readable. A cycle or a checklist
+is written into your cycles doc with fixed fields, and the session opening
+reads them back; a definition with a field wrong would be silently dropped
+from every later opening. So the write is checked at the door: a name already
+defined, a cadence that does not say who declared it or what it was derived
+from, a chain naming a checklist that does not exist. The refusal says which
+field and why. Answer its one question and the definition is written. What
+tells you it worked is the next chat's opening listing the new cycle with
+what its observable reads. The same check guards the file itself: a
+definition written by hand with the firing word under the wrong label is
+refused at the edit, and one already there is named at the opening as
+carrying neither a cadence nor a trigger, so it never fires nothing silently.

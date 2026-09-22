@@ -532,8 +532,51 @@ def shipped_slugs(root, wanted=None):
     return kinds
 
 
-def first_seen(root, queue_path, held_dates=None):
+# The stamp the filing tools write beneath a capture — `Filed YYYY-MM-DD
+# HH:MM, stamped by the capture tool.` Read in preference to git's first
+# sighting ([digest-dates-flattened-to-history-horizon]): a queue older than
+# its repository showed the repository's first commit as every older entry's
+# date, which flattened the ordering rungs' age for the whole section.
+FILED_STAMP_RE = re.compile(r"^Filed (\d{4}-\d{2}-\d{2})\b")
+
+
+def _filed_stamps(queue_path):
+    """{slug: date} for every entry carrying a `Filed <date>` line, read from
+    the queue file itself."""
+    stamps = {}
+    try:
+        with open(queue_path, "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return {}
+    slug = None
+    for raw in lines:
+        stripped = raw.strip()
+        if ITEM_RE.match(stripped):
+            match = SLUG_RE.search(stripped)
+            slug = match.group(1) if match else None
+            continue
+        if slug and slug not in stamps:
+            match = FILED_STAMP_RE.match(stripped)
+            if match:
+                stamps[slug] = match.group(1)
+    return stamps
+
+
+def first_seen(root, queue_path, held_dates=None, horizon=None):
     """First date each slug's heading appears in QUEUE.md, as {slug: date}.
+
+    An entry's own `Filed <date>` stamp, where it carries one, is taken over
+    git's first sighting — the stamp is when the entry was written, and git
+    can only say when the file was first committed with it. Git's date stands
+    where no stamp exists.
+
+    When `horizon` is passed a dict, its "seen" and "held" sets are filled
+    with the slugs whose git sighting — of the heading, or of the hold line —
+    falls in the file's FIRST commit in the reverse log. That is the history
+    horizon: the entry may be older than the repository, and the date is a
+    "by" rather than an "on". A stamped entry is never a horizon sighting,
+    since its date is its own.
 
     When `held_dates` is passed a dict, it is filled with {slug: date} for the
     first date that slug's item was seen carrying a hold — a `Blocked by:` or
@@ -558,8 +601,12 @@ def first_seen(root, queue_path, held_dates=None):
     have no git on PATH, or may have a QUEUE.md that was never committed. Any of
     those returns {} — no date on any line, no error, no noise.
     """
+    stamps = _filed_stamps(queue_path)
+    if horizon is not None:
+        horizon.setdefault("seen", set())
+        horizon.setdefault("held", set())
     if not root:
-        return {}
+        return dict(stamps)
     try:
         proc = subprocess.run(
             ["git", "log", "--reverse", "--format=%as", "-U0", "-p", "--",
@@ -572,12 +619,13 @@ def first_seen(root, queue_path, held_dates=None):
             timeout=30,
         )
     except (OSError, subprocess.SubprocessError):
-        return {}
+        return dict(stamps)
     if proc.returncode != 0 or not proc.stdout:
-        return {}
+        return dict(stamps)
 
     dates = {}
     date = None
+    commits_seen = 0
     # The slug of the item whose heading was added in the run of added lines
     # currently being read. Reset by anything that ends that run, so a hold
     # line is only ever attributed to a heading added beside it.
@@ -585,6 +633,7 @@ def first_seen(root, queue_path, held_dates=None):
     for line in proc.stdout.splitlines():
         if GIT_DATE_RE.match(line):
             date = line
+            commits_seen += 1
             pending_slug = None
             continue
         if not line.startswith("+"):
@@ -593,13 +642,22 @@ def first_seen(root, queue_path, held_dates=None):
         if line.startswith("+####"):
             match = SLUG_RE.search(line.rstrip())
             pending_slug = match.group(1) if match else None
-            if match and date:
-                dates.setdefault(match.group(1), date)
+            if match and date and match.group(1) not in dates:
+                dates[match.group(1)] = date
+                if horizon is not None and commits_seen == 1:
+                    horizon["seen"].add(match.group(1))
             continue
         if held_dates is not None and pending_slug and date:
             body = line[1:].strip()
-            if BLOCKED_RE.match(body) or NOT_BEFORE_RE.match(body):
-                held_dates.setdefault(pending_slug, date)
+            if (BLOCKED_RE.match(body) or NOT_BEFORE_RE.match(body)) \
+                    and pending_slug not in held_dates:
+                held_dates[pending_slug] = date
+                if horizon is not None and commits_seen == 1:
+                    horizon["held"].add(pending_slug)
+    for slug, stamp in stamps.items():
+        dates[slug] = stamp
+        if horizon is not None:
+            horizon["seen"].discard(slug)
     return dates
 
 
@@ -996,7 +1054,11 @@ def render(items, root="", queue_path="QUEUE.md"):
         wanted.update(item["blocked_by"])
     shipped = shipped_slugs(root, wanted)
     held_dates = {}
-    ages = first_seen(root, queue_path, held_dates)
+    # Which sightings fall at the history horizon — the file's first commit —
+    # so the print says "by <date>" rather than claiming the entry, or its
+    # hold, was written that day.
+    horizon = {"seen": set(), "held": set()}
+    ages = first_seen(root, queue_path, held_dates, horizon)
     # How many other entries name each capture — the count the planning
     # opening reads to name a passed-over capture that other captures wait
     # on. Computed by the same function rung 2 of the ladder reads.
@@ -1096,7 +1158,8 @@ def render(items, root="", queue_path="QUEUE.md"):
             if med is not None and span >= med:
                 line += " (at/above median)"
             if item["slug"] and item["slug"] in ages:
-                line += f"  | First seen: {ages[item['slug']]}"
+                by = "by " if item["slug"] in horizon["seen"] else ""
+                line += f"  | First seen: {by}{ages[item['slug']]}"
                 # Tagged the same way the line count is, so rung 3 reads two
                 # computed flags rather than comparing dates by hand. "At/above
                 # median age" means filed on or before the median date — older,
@@ -1108,7 +1171,8 @@ def render(items, root="", queue_path="QUEUE.md"):
             # a date is what makes a stuck item visible as stuck.
             if (section == "Processed" and not item["cleared"]
                     and item["slug"] in held_dates):
-                line += f"  | Held since: {held_dates[item['slug']]}"
+                by = "by " if item["slug"] in horizon["held"] else ""
+                line += f"  | Held since: {by}{held_dates[item['slug']]}"
             out.append(line)
         out.append("")
 
@@ -1422,14 +1486,15 @@ def render_whats_next(items, root, queue_path, skip=(), picked=0,
     rung, why, item = whats_next(items, root, queue_path, skip, picked,
                                  medians=(med_lines, med_age))
     # The checkpoint's "left to process" figure: every Unprocessed entry the
-    # ladder could still offer this session once this pick is taken — the
-    # pass-overs applied by `offerable`, the session's skips removed, and the
-    # pick itself subtracted. Printed so the count is read off a computed
-    # line rather than judged from the section's size
-    # ([checkpoint-count-from-next-pick-tool]).
+    # ladder could still offer this session, the pick itself counted in — the
+    # pass-overs applied by `offerable` and the session's skips removed.
+    # Printed so the count is read off a computed line rather than judged
+    # from the section's size ([checkpoint-count-from-next-pick-tool]); the
+    # presented item counts, so a last item reads 1 rather than 0
+    # ([mixed-kind-counts-say-cleared-to-run]).
     remaining = len(offerable(items, root, skip=skip))
-    offerable_line = "Offerable after this pick: %d" % max(
-        remaining - (1 if item is not None else 0), 0)
+    offerable_line = "Left to process, this one included: %d" % (
+        remaining if item is not None else 0)
     if item is None:
         return "Next: nothing — %s.\n%s\n%s" % (why, offerable_line,
                                               medians_line)

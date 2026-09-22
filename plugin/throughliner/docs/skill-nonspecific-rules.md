@@ -203,7 +203,8 @@ The work cycle. Every piece of work travels the same loop.
   ask "anything else?" before resuming. Claude noticed it → confirm and resume,
   naming what you filed ("I noticed X, filed it, resuming"), and carry straight
   on. The /plan-time offer for an un-agreed idea lives in plan.md's process-now
-  section.
+  section, and in a planning session the one-line report of a filing ends on
+  that section's fixed formula.
   **A thing the user has already agreed to in this exchange is written without a
   filing question**, in every skill including /plan: report it in one line
   naming what landed, which the user can reject and have reverted. Delete asks, send asks and the process-now offer are untouched:
@@ -540,7 +541,8 @@ one such reading, current at the opening and no later. A clock time written
 into a record is read from the clock at the moment of writing, by a command;
 the opening's line is never a base to count up from. The safety check refuses,
 once, a relative time word whose own sentence carries no source — a sentence
-carrying a date or a named reading passes — and, once, a clock time written
+carrying a date or a named reading passes, or whose message names the date
+the word denotes — and, once, a clock time written
 into a record, the queue or SPEC that is later than the clock reads at that
 moment; a time behind the clock is not reached, so this narrows the counted-up
 failure rather than closing it.
@@ -602,9 +604,13 @@ evidence a future chat must           ->  a durable file under
 ```
 
 **`workshop/` is where a project's working material lives** — what the project
-works with rather than what it ships. `workshop/resources/` holds two things
-only: research findings at `workshop/resources/research/<topic>.md`, and
-re-read-later testing evidence under `workshop/resources/testing/`. The default
+works with rather than what it ships. `workshop/resources/` holds three things
+only: research findings at `workshop/resources/research/<topic>.md`,
+re-read-later testing evidence under `workshop/resources/testing/`, and
+**supplied material at `workshop/resources/supplied/<name>.md`** — text that
+arrived whole from the user, or a file they attached, written unchanged with a
+one-line header naming who supplied it and the date, never text Claude
+composed. The default
 answer to "should this be a durable file?" is **no** unless the
 verbatim-re-read test is met.
 
@@ -976,14 +982,19 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     before the hand-over closes this one;
   - where a step needs a file the user already has, ending at their attaching
     it to the conversation — the naming, the copy into the folder the project's
-    Parts block names, or `workshop/` where there is none, and the index line
+    Parts block names, or `workshop/resources/supplied/` where there is none,
+    and the index line
     all Claude's, made in the same turn because the upload folder does not
     persist — never handing over a storage path or a naming convention;
   - where a step has the user edit text Claude drafted, writing that draft to a
     `.txt` file in the project's `temp/` folder — gitignored, scaffolded by
     setup and the top-up — unless the item's Files line names a project path
     for it — with the step handing it over as a relative link that opens it,
-    in the shape View-in-doc rendering gives — an absolute path, and the
+    in the shape View-in-doc rendering gives, and saying, at a chat's first
+    hand-over, that it is a `.txt` because that is the only file type the
+    side panel edits and saves, and that the user's word switches the chat to
+    `.md` for editing in whatever they open markdown with — spoken for that
+    chat, nothing stored — an absolute path, and the
     short-name form the harness may report (`~1` in a folder name), do not
     open, the one exception being a `file:///` address with every space
     written as `%20`, which opens a file outside the project folder — and
@@ -998,13 +1009,17 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     the file and reads back, repeating until they say they are finished;
     deferring the step stays their option. A `[co-write]` item's whole
     walkthrough is this loop, run on the one file the item names — the file
-    as it stands where the text already exists, a fresh draft otherwise.
+    as it stands where the text already exists, a fresh draft otherwise — and
+    in the user-led case the loop runs the other way: the user writes, Claude
+    reads it back and responds on their word, and a draft of Claude's own goes
+    only where they ask for one.
 
 The `[freeform]` tag names **work done by hand rather than by /next** — because it
 is large, or because it characteristically cannot run inside a run. **Before its first
 edit, a freeform session working a queued item writes a scope file —
 `_freeform-<session-id>.md` in the project root, with a `Files:` section
-listing paths — and reports it in one line.** The list comes from the item's
+listing paths, written with the state server's `build_open` tool where the
+server is registered — and reports it in one line.** The list comes from the item's
 instructions, or from the user's repeated direction in any no-build session,
 one path at a time. The safety check reads that file and permits the listed
 paths for this session; without it, edits outside the standing planning

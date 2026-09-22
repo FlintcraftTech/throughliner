@@ -23,10 +23,7 @@ both stand, the scope-lock also permits the files setup scaffolds, so a
 correction to what setup just wrote lands here rather than as a queue item. While it exists the scope-lock
 permits the few files the method's own close obligations name — `README.md`
 today. Outside /done those paths are denied exactly as before. A /done run
-that dies before removing the marker leaves it in the working folder, where
-the next session's opening names it as left by a /done run that did not
-finish and ignores it thereafter; it is never deleted by anything but a /done
-run.
+that dies before removing the marker leaves it in the working folder.
 
 ## Route by session shape  [SILENT]
 
@@ -548,7 +545,7 @@ SPEC.md, LOG/), and the build working file's deletion where one was removed.
 
 **The safety check refuses the commit while any tracked file in the
 repository carries a git conflict marker, naming the file.** Resolve it first
-— two captures appended at the same spot are kept both — and commit again.
+and commit again.
 
 **2. Detect out-of-scope dirty paths.** Run `git status --porcelain` and compare
 against the active build's file list. Any dirty path outside it is a user edit no
@@ -647,9 +644,9 @@ running the commit. Where anything intended is missing, say plainly what did not
 stage and why, and **hold the commit** until the staging is fixed and re-checked,
 or the user decides.
 
-**6. Commit with `git commit -F`.** Then offer push wherever the repository
-has a remote [PROMPT], and push only if the user accepts; where it has none,
-the offer is omitted and push goes unmentioned.
+**6. Commit with `git commit -F`, then offer push** [PROMPT] where the
+repository has a remote; [SILENT] where it has none. Push only if the user
+accepts; with no remote, the offer is omitted and push goes unmentioned.
 
 **In a nested project /done commits both repositories** — the product's
 changes as a commit in the inner repository (the product subfolder's own), and
@@ -659,10 +656,7 @@ alone. A session that touched only one side makes only that side's commit. A
 flat project — one repository — is unchanged by all of this.
 
 **Then leave the session-closed marker: write this session's record filename
-into `.throughliner/session-closed-<session-id>`.** It is what tells the
-second-done arm and the stop check that this chat has closed, and what the
-state server's `append_tail` tool reads to find the record; the working
-folder is gitignored, so nothing is committed by it.
+into `.throughliner/session-closed-<session-id>`.**
 
 **Then write the commit hash into the headings and index lines this /done run just
 wrote** — /done is the one moment the hash exists and the files are at

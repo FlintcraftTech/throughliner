@@ -38,7 +38,7 @@ Fully restart Claude Code to load the plugin. To update later, run `claude plugi
 
 The plugin splits your project into a structured build queue managed by six main commands:
 
-- **`/setup`** — interviews you about your project, scaffolds text documents (`SPEC.md`, `QUEUE.md`, etc.), and sets a brevity style for Claude's replies.
+- **`/setup`** — interviews you about your project, scaffolds text documents (`SPEC.md`, `QUEUE.md`, etc.), checks your machine for the command-line tools your project's work will need and records what it finds in `TOOLS.md`, and sets a brevity style for Claude's replies.
 - **`/plan`** — organizes the queue, captures new ideas, and resolves design questions.
 - **`/next`** — builds the next piece of ready work, staying locked to relevant files.
 - **`/rescan`** — reviews past conversation history to capture unrecorded decisions or notes into the queue.
