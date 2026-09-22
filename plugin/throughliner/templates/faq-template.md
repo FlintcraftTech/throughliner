@@ -85,9 +85,8 @@ passed yet.
 A `/plan` run opens by checking the queue for problems — work marked ready that
 contradicts its own notes, items that name no files to change, work waiting on
 itself in a loop — and reports what it finds. Then it asks one question: is
-there anything you want to prioritise, or shall Claude order them the usual way?
-"The usual way" means the standard order the method applies when nothing is
-prioritised — you get told in one line which order was used.
+there anything you want to process first? Otherwise say go, and Claude takes
+them in the method's order, starting on the first item.
 
 You don't have to process everything in one sitting. `/plan`, `/done`, fresh
 chat, `/plan` again is a normal rhythm.
