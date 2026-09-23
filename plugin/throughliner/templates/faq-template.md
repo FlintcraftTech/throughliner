@@ -476,8 +476,13 @@ Claude presents. A project with no cycles has no doc and pays nothing.
 A file at your project root holding facts about your machine that are
 expensive to learn twice — a tool installed at a known path, a command that
 fails from Claude's shell but runs from your terminal, which channel you
-installed the plugin from. Setup writes the first lines; any session adds a
-fact the moment it learns one.
+installed the plugin from. Setup writes the first lines: after the interview
+it names the command-line tools your project's work plausibly needs, asks
+once whether any are missing, runs each tool's own version check and writes
+one line per tool — present with its version or absent, and the date. Where
+a tool is absent and the first piece of work you described needs it, setup
+offers the install then; otherwise the absent line stands. Any session adds
+a fact the moment it learns one.
 
 Where it matters: before Claude hands you a manual walkthrough because it
 assumes a tool is missing, it reads this file. The failure it fixes is one you
