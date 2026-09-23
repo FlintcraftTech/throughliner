@@ -28,8 +28,10 @@ CLAUDE.md's scripting constraints: `python` on this machine resolves to an
 application's bundled interpreter that has no pytest, and its error names that
 application, which sends a session chasing the wrong cause.
 
-Exits non-zero on the first failing suite, so the checklists that call it stop
-rather than warn.
+Runs every suite even after one fails, names each failing suite in the closing
+summary, and exits non-zero where any failed, so the checklists that call it
+stop rather than warn — and a change that breaks several suites reports them
+all in one run instead of one per run.
 """
 
 import os
@@ -145,12 +147,12 @@ def main():
         else:
             print(f"--- {name}: FAILED (exit {proc.returncode})\n")
             failed.append(name)
-            break
 
     print("=" * 60)
     if failed:
-        print(f"run_all: STOPPED at {failed[0]} — it failed. "
-              "Nothing after it was run.")
+        for name in failed:
+            print(f"run_all: FAILED — {name}")
+        print(f"run_all: {len(failed)} of {len(suites)} suite(s) FAILED")
         return 1
     print(f"run_all: all {len(suites)} suite(s) passed.")
     return 0
