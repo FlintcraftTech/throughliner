@@ -732,10 +732,18 @@ both directions.**
 **Every item's discussion — the first and every one after — opens with a
 plain-English summary of what the item says, inline, before any analysis.**
 
-**What the summary turn carries.** Two requirements, both about what the reader
-can resolve without the scrollback:
+**What the summary turn carries.** Four requirements, about what the turn
+carries and what the reader can resolve without the scrollback:
 
 ```
+CARRIES                       what the item is and what is open, and nothing
+                              else. A defeated alternative, a not-blocking
+                              note and the reasoning behind the entry stay in
+                              the entry for a later session and come out on
+                              request.
+ONE PER LINE                  where the summary names more than two things,
+                              they are written one item per line, never bold
+                              fragments inside a paragraph.
 NAMES ITS SUBJECTS OUTRIGHT   every subject is named, never pointed at by a
                               referring expression that only this conversation
                               or the entry's own text can resolve — "the
@@ -928,7 +936,10 @@ now and never queued.
 **Third limb: where an item changes how a mechanism behaves, or repeals or
 rewords a specific sentence or value, grep the mechanism's or the sentence's
 distinctive words across the project before writing the Files line, and
-across the `LOG/index*.md` files, opening any matching entry.**
+across the `LOG/index*.md` files, opening any matching entry — and open
+`LOG/backlinks.md` at the mechanism's key and the item's cited slugs, where
+the file exists, reading the records it lists; a record naming the mechanism
+by neither its slug nor its package name is still missed.**
 
 ```
 the Files line is derived FROM the grep, not from the discussion
@@ -1401,8 +1412,13 @@ mover's `--delete <slug> Unprocessed`.
 
 ```
 every part of the item's content has already been
-  relocated in THIS exchange     ->  narrate the removal in one line, naming
-                                     where each part went. Revertible on
+  relocated in THIS exchange     ->  report it as the outcome word followed by
+                                     a link to each file a part went to —
+                                     "Deleted — [QUEUE.md](QUEUE.md),
+                                     [SPEC.md](SPEC.md)." — an entry's slug
+                                     after a link only where the destination
+                                     needs telling apart, and no sentence
+                                     describing the relocation. Revertible on
                                      objection; no ask.
 not worth doing                  ->  explicit approval, as a fate decision
                                      the user owns; the ask names what

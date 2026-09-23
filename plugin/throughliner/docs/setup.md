@@ -614,7 +614,10 @@ conjured on first use.
 `INBOX/` line. It is where a session puts what the project does not keep: a
 fetched transcript, a file downloaded to read once, a draft that never became a
 deliverable. Everything in it is disposable by definition, so nothing records
-when it should be deleted.
+when it should be deleted. Adding it is where the top-up says the "Markdown
+reader, said once" note from scaffolding, once: a markdown reader is
+recommended for editing the drafts Claude hands over outside the app, and the
+side panel's `.txt` is the fallback.
 
 **INBOX/ folder** — create it empty, with an `INBOX/archive/` inside it. It's this
 project's mailbox: another project you run can drop a message file in here, and
@@ -825,6 +828,13 @@ rather than stream them on demand reduces the collision without removing it.
 The path alone is the check — no environment variable is read — and the step
 says nothing where no name matches. Scaffolding only; the top-up does not carry
 it to existing projects.
+
+**Markdown reader, said once**  [BRIEF]. Say in one sentence that a markdown
+reader is recommended for editing the drafts Claude hands over outside the
+app, and that the side panel's `.txt`, the one file type it edits and saves,
+is the fallback. A note, not a rule: it asks nothing and stores nothing. Said
+once here at scaffolding, and once by the top-up step that adds `workshop/`
+and `temp/` to an existing project.
 
 **Whichever arm the fork lands in, the proposed configuration is what a user
 who says nothing about it ends up with — private via the ignore in a flat
@@ -1038,7 +1048,9 @@ the project's work needs no               ->  write nothing, and say so in
 ```
 
 Every later session reads `TOOLS.md` before handing over a manual walkthrough,
-so the answers land here before any work item exists to need them.
+so the answers land here before any work item exists to need them. The top-up
+does not carry this step: an existing project's `TOOLS.md` fills as sessions
+learn facts, any of which may write one the moment it is learned.
 
 ## Step 4: Write the docs  [BRIEF, PROMPT]
 

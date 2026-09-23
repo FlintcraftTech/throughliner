@@ -118,15 +118,19 @@ follows the commit core in done.md.
 
 ## Batch the human stops in Processed  [SILENT] when nothing moves; [BRIEF] when it does
 
-**One pass, over Processed only: put `[user]` and `[audit]` lines at the end,
-and a `[co-write]` line after them.** That is the whole of /done's reordering.
+**One pass, over Processed only: put `[user]` and `[audit]` lines at the end
+of the cleared region but before any item carrying `Runs alone`, which stays
+last, and a `[co-write]` line after them.** That is the whole of /done's
+reordering.
 
 **Place `[user]` and `[audit]` lines end-preferred**, after contiguous blocks of
-build work. Both flavors force /next to stop for the user — a step they must run,
-an audit whose findings they must approve — so one sitting *inside* a contiguous
-build run interrupts a sequence that would otherwise never stop to ask. Position
-them at the **end** of the block so the stops that need the user batch together.
-A `[co-write]` line goes after both, unless a build is held on it by slug.
+build work and ahead of any item carrying `Runs alone`. Both flavors force
+/next to stop for the user — a step they must run, an audit whose findings they
+must approve — so one sitting *inside* a contiguous build run interrupts a
+sequence that would otherwise never stop to ask. Position them at the **end**
+of the block so the stops that need the user batch together, and never past a
+`Runs alone` item, which ends a run where it sits. A `[co-write]` line goes
+after both, unless a build is held on it by slug.
 
 **Two exceptions, and the default holds everywhere else:**
 

@@ -117,3 +117,9 @@ announced yet, not that questions aren't welcome: just ask in chat.
 - **Claude refused to put my work on a cycle — why?** — the fields checked at
   the door, what the refusal names, and what tells you it was written.
   [faq.md](faq.md)
+- **Claude's reply was sent back for being too long — what happened?** — the
+  stop check's word bound, the bold-in-a-sentence check, once per chat.
+  [faq.md](faq.md)
+- **What is LOG/backlinks.md, and should I edit it?** — a generated map from
+  every slug and plugin name to the records naming it, rebuilt at each close.
+  [faq.md](faq.md)

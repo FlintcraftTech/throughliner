@@ -700,6 +700,10 @@ file in the desktop app's side panel with a save button. Edit, save, and say
 done; Claude reads it back only then, asks whether there is anything else,
 and repeats until you say you are finished. On a phone or over remote control
 the link does not open, so say so and Claude shows the text inline instead.
+A markdown reader such as Obsidian is recommended for editing drafts outside
+the app — say the word and the chat hands over `.md` files instead — and the
+side panel's `.txt` is the fallback, since it is the one file type the panel
+edits and saves.
 
 ## Why is the planning opening so short?
 
@@ -743,3 +747,29 @@ what its observable reads. The same check guards the file itself: a
 definition written by hand with the firing word under the wrong label is
 refused at the edit, and one already there is named at the opening as
 carrying neither a cadence nor a trigger, so it never fires nothing silently.
+
+## Claude's reply was sent back for being too long — what happened?
+
+You read a reply and, a moment later, a shorter one arrives saying the same
+thing. That is the stop check: it counts the prose in a finished reply — list
+lines, code blocks, quotes and headings left out — and where it runs past 175
+words it sends the reply back once with the count and the fix, and Claude
+answers again shorter. The same check sends back, once, a reply with bold
+inside a sentence, since bold is meant to lead a line or a list item. Each
+fires once per chat and then stays quiet, so a second long reply passes; the
+figure came from measuring the project's own chats, the 90th percentile of
+reply length, and is a constant in the hook rather than anything you set.
+Nothing to do on your side: read the shorter reply, which is the one that
+stands.
+
+## What is LOG/backlinks.md, and should I edit it?
+
+No — it is generated. Every session close rebuilds it from your records: one
+heading per queue slug and per plugin name (a hook, a skill, a server tool),
+and under each, one line per record that names it, with the record's filename
+and the opening words of its index line. Claude opens it at the planning
+decision step before recommending, at the slug or the name in hand, so an
+earlier decision about the same thing is found even when it was written up in
+other words. What it cannot reach is a record that names a thing by neither
+its slug nor its plugin name. Its first line says it is generated and never
+edited by hand; an edit would be overwritten at the next close.

@@ -649,6 +649,150 @@ def tool_append_sent_line(arguments):
         "Created INBOX/sent.md and wrote" if created else "Appended", line)
 
 
+def _inbox_send_module():
+    return _load("throughliner_inbox_send",
+                 os.path.join(PLUGIN_ROOT, "scripts", "inbox_send.py"))
+
+
+def tool_inbox_send(arguments):
+    """Compose one outbound INBOX message from a header and named files,
+    place it in the recipient's mailbox, and append its register line — in
+    one call, with every check made before anything is written.
+
+    The checks are the send script's own (the address-book lookup, the
+    mailbox check, the gitignore check, the same-name refusal, the
+    byte-for-byte copy) and the register line goes through the register
+    tool's own path. The answer names the correspondent and the filename and
+    never the path. Nothing here can see whether the user's explicit yes to
+    the exact text happened — the procedure's send gate is that guard.
+    """
+    root = project_root()
+    script = _inbox_send_module()
+    if script is None:
+        return ("Refused — nothing was written: the send script "
+                "scripts/inbox_send.py is missing from the plugin.")
+
+    fields = {}
+    for name in ("to", "filename", "header", "intent", "claim", "pointer"):
+        value = arguments.get(name)
+        fields[name] = value.strip() if isinstance(value, str) else ""
+    files = arguments.get("files") or []
+    create = bool(arguments.get("create_mailbox"))
+    send_uncovered = bool(arguments.get("send_uncovered"))
+
+    problems = []
+    for name in ("to", "filename", "header", "intent", "claim"):
+        if not fields[name]:
+            problems.append("%s is missing." % name)
+    if not fields["pointer"]:
+        fields["pointer"] = fields["filename"]
+    if fields["intent"] and fields["intent"] not in INTENTS:
+        problems.append("intent must be exactly 'for completion' or "
+                        "'for continuation', not %r." % fields["intent"])
+    for name in ("intent", "claim", "pointer"):
+        if "\n" in fields[name] or "\r" in fields[name]:
+            problems.append("%s contains a line break — a register line is "
+                            "one line." % name)
+    if fields["filename"] and (os.path.basename(fields["filename"])
+                               != fields["filename"]):
+        problems.append("filename must be a bare name, not a path.")
+    if not isinstance(files, list) or any(not isinstance(p, str)
+                                          for p in files):
+        problems.append("files must be a list of paths.")
+        files = []
+    bodies = []
+    for rel in files:
+        full = os.path.abspath(os.path.join(root, rel))
+        if not (full == root or full.startswith(root + os.sep)):
+            problems.append("%s sits outside the project." % rel)
+            continue
+        if not os.path.isfile(full):
+            problems.append("%s does not exist." % rel)
+            continue
+        with open(full, "rb") as f:
+            bodies.append(f.read())
+    if not os.path.isdir(os.path.join(root, "INBOX")):
+        problems.append("this project has no INBOX/ folder — the mailbox is "
+                        "not scaffolded, so there is no register to append to.")
+
+    book = {}
+    if fields["to"] and not problems:
+        try:
+            book = script.read_address_book(root)
+        except SystemExit:
+            problems.append("the address book at INBOX/.address-book.md "
+                            "could not be read — it is missing, or none of "
+                            "its lines is in a shape the send script reads.")
+    entry = book.get(fields["to"].lower()) if book else None
+    if fields["to"] and book and entry is None:
+        problems.append("%r is not a correspondent in this project's "
+                        "address book. Record the folder the user supplies "
+                        "first; nothing here scans for projects."
+                        % fields["to"])
+    if entry is not None:
+        name, folder = entry
+        if not os.path.isdir(folder):
+            problems.append("%s: the recorded folder does not exist on this "
+                            "machine." % name)
+        else:
+            mailbox = os.path.join(folder, "INBOX")
+            if not os.path.isdir(mailbox) and not create:
+                problems.append("%s has no INBOX/ folder; one would have to "
+                                "be created, which is the user's call — "
+                                "pass create_mailbox on their say-so." % name)
+            if not script.gitignore_covers_inbox(folder) and not send_uncovered:
+                problems.append("%s: that project's .gitignore does not cover "
+                                "INBOX/, so a message would be committed "
+                                "there — pass send_uncovered on the user's "
+                                "say-so." % name)
+            if os.path.exists(os.path.join(mailbox, fields["filename"])):
+                problems.append("%s: a message named %s is already in the "
+                                "mailbox." % (name, fields["filename"]))
+
+    if problems:
+        return "Refused — nothing was written:\n" + \
+               "\n".join("- " + p for p in problems)
+
+    name, folder = entry
+    mailbox = os.path.join(folder, "INBOX")
+    created_mailbox = False
+    if not os.path.isdir(mailbox):
+        os.makedirs(mailbox)
+        created_mailbox = True
+    message = fields["header"].encode("utf-8")
+    for body in bodies:
+        message += b"\n\n" + body
+    if not message.endswith(b"\n"):
+        message += b"\n"
+    dest = os.path.join(mailbox, fields["filename"])
+    with open(dest, "wb") as f:
+        f.write(message)
+    with open(dest, "rb") as f:
+        if f.read() != message:
+            os.remove(dest)
+            return ("Refused: the message did not land byte-for-byte in %s's "
+                    "mailbox; removed." % name)
+
+    register = tool_append_sent_line({
+        "destination": "INBOX mail to %s" % name,
+        "intent": fields["intent"],
+        "claim": fields["claim"],
+        "pointer": fields["pointer"],
+    })
+    if register.startswith("Refused"):
+        os.remove(dest)
+        return ("Refused — the message was removed again, since its "
+                "register line could not be written:\n" + register)
+    notes = []
+    if created_mailbox:
+        notes.append("mailbox created on the user's say-so")
+    if not script.gitignore_covers_inbox(folder):
+        notes.append("sent to an uncovered mailbox on the user's say-so")
+    return "%s: %s delivered%s.\n%s" % (
+        name, fields["filename"],
+        " (" + "; ".join(notes) + ")" if notes else "", register)
+
+
 HOLD_LINE_RE = re.compile(r"^(Blocked by|Not before):.*$", re.MULTILINE)
 
 
@@ -2055,6 +2199,85 @@ TOOLS = [
         "handler": tool_append_sent_line,
     },
     {
+        "name": "inbox_send",
+        "description":
+            "Send one outbound INBOX message to a correspondent project in "
+            "one call: composes the message from a header and named files "
+            "appended verbatim, runs the send script's checks — the "
+            "correspondent is in the address book, the recipient has a "
+            "gitignored mailbox, no same-named message sits there — places "
+            "the file in that mailbox byte-for-byte, and appends the "
+            "register line to INBOX/sent.md through the register tool's own "
+            "path. Refuses at the door, echoing the reason, and on a "
+            "refusal nothing is written on either side. The answer names "
+            "the correspondent and the filename, never the path. Call it "
+            "only after the user has seen the exact text and said yes — "
+            "nothing here can check that.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["to", "filename", "header", "intent", "claim"],
+            "properties": {
+                "to": {
+                    "type": "string",
+                    "description":
+                        "The correspondent's name as the address book "
+                        "records it.",
+                },
+                "filename": {
+                    "type": "string",
+                    "description":
+                        "The message file's bare name in the recipient's "
+                        "mailbox.",
+                },
+                "header": {
+                    "type": "string",
+                    "description":
+                        "The text written first: the subject line, the "
+                        "From line and the return path.",
+                },
+                "files": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description":
+                        "Paths under this project appended verbatim after "
+                        "the header, in order, each after a blank line.",
+                },
+                "intent": {
+                    "type": "string",
+                    "enum": ["for completion", "for continuation"],
+                    "description":
+                        "Whether the item is handed over for completion "
+                        "(which can close it) or for continuation.",
+                },
+                "claim": {
+                    "type": "string",
+                    "description":
+                        "What the message claimed, in one clause, read off "
+                        "the approved text as it stands.",
+                },
+                "pointer": {
+                    "type": "string",
+                    "description":
+                        "Where the text lives; defaults to the message "
+                        "file's own name.",
+                },
+                "create_mailbox": {
+                    "type": "boolean",
+                    "description":
+                        "Create the recipient's INBOX/ where it has none — "
+                        "on the user's say-so only.",
+                },
+                "send_uncovered": {
+                    "type": "boolean",
+                    "description":
+                        "Send although the recipient's .gitignore does not "
+                        "cover INBOX/ — on the user's say-so only.",
+                },
+            },
+        },
+        "handler": tool_inbox_send,
+    },
+    {
         "name": "hold_entry",
         "description":
             "Write a hold onto one queue entry: a `Blocked by:` line naming "
@@ -2439,7 +2662,7 @@ HANDLERS = {tool["name"]: tool["handler"] for tool in TOOLS
 
 # Tools that never read the queue, so a conflicted queue does not stop them.
 QUEUE_FREE_TOOLS = ("clock", "host_currency", "cycles_state",
-                    "append_sent_line", "append_tail")
+                    "append_sent_line", "inbox_send", "append_tail")
 CONFLICT_MARKER_RE = re.compile(r"^(<<<<<<< |>>>>>>> )")
 
 

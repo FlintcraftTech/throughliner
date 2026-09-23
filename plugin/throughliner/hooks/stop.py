@@ -315,6 +315,29 @@ def _slugs_in_queue(queue_path):
     return slugs
 
 
+def _slugs_in_section(queue_path, section):
+    """The slugs under one `## <section>` heading of QUEUE.md — a sibling of
+    `_slugs_in_queue` that keeps the section. Empty where the file is
+    unreadable or the section absent."""
+    try:
+        with open(queue_path, "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return set()
+    slugs = set()
+    inside = False
+    for raw in lines:
+        stripped = raw.strip()
+        if stripped.startswith("## "):
+            inside = stripped[3:].strip() == section
+            continue
+        if inside and stripped.startswith("#### "):
+            match = re.search(r"\[([a-z0-9][a-z0-9-]*)\]\s*$", stripped)
+            if match:
+                slugs.add(match.group(1))
+    return slugs
+
+
 def _slugs_with_a_log_entry(cwd):
     """Every slug that names recorded work, read off LOG/ filenames.
 
@@ -406,6 +429,104 @@ def _already_blocked(cwd, session_id, slug):
     except OSError:
         return False
     return False
+
+
+# --- Turn length, and bold mid-sentence ([turn-length-check-in-stop-hook]) ---
+#
+# Every written shape is bounded against a measured median, and nothing
+# bounded a chat turn — the one text the user reads every turn. The bound is
+# 175 prose words: the 90th percentile of Claude's replies of fifteen words or
+# more across this project's three latest planning transcripts on 2026-09-23
+# (171 turns; median 66, 75th percentile 115, 90th 173, longest 288), rounded.
+# A median would send back half of all turns. Re-derived by
+# method/measure_chat_turns.py in the development project; a tunable
+# constant, revisable once seen. Prose means lines outside fenced blocks that
+# do not open with a list marker, a numbered-list marker, `>` or `#` — the
+# same exemption for structured content that [BRIEF] carries. Each check
+# blocks once per session, then passes.
+#
+# The second trigger, from [item-summary-content-line-and-list-shape]: a bold
+# run that starts anywhere but at the head of a line or of a list item gives
+# a reader no scan path; the register rule says bold leads the line and a
+# list carries one item per line.
+TURN_PROSE_BOUND = 175
+_LIST_OR_STRUCTURE_LEAD = re.compile(r"^\s*(?:[-*+]\s|\d+[.)]\s|>|#)")
+_LIST_HEAD = re.compile(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)?")
+_BOLD_RUN = re.compile(r"\*\*[^*\n]+?\*\*")
+
+
+def _prose_lines(message):
+    """The reply's prose lines: outside fenced blocks, not opening with a
+    list marker, a numbered-list marker, `>` or `#`."""
+    lines = []
+    in_fence = False
+    for line in message.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence or _LIST_OR_STRUCTURE_LEAD.match(line):
+            continue
+        lines.append(line)
+    return lines
+
+
+def _prose_word_count(message):
+    return sum(len(line.split()) for line in _prose_lines(message))
+
+
+def _bold_runs_mid_line(message):
+    """How many bold runs start anywhere but at the head of a line or of a
+    list item, outside fenced blocks and blockquotes."""
+    count = 0
+    in_fence = False
+    for line in message.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence or stripped.startswith(">"):
+            continue
+        head = _LIST_HEAD.match(line).end()
+        for match in _BOLD_RUN.finditer(line):
+            if match.start() != head:
+                count += 1
+    return count
+
+
+def _turn_length_owed(cwd, session_id, message):
+    """The block reason where the reply's prose runs past the bound, else
+    None. Once per session."""
+    words = _prose_word_count(message)
+    if words <= TURN_PROSE_BOUND:
+        return None
+    if _already_blocked(cwd, session_id, "turn-length"):
+        return None
+    return (
+        "[Throughliner] This reply runs %d words of prose against a bound of "
+        "%d. Lead with the decision; where more than two things are named, "
+        "one item per line; reasoning on request, not front-loaded. Reply "
+        "with a shorter correction of the same content, never a repeat. This "
+        "is fed back once and passes on the next reply." % (
+            words, TURN_PROSE_BOUND)
+    )
+
+
+def _bold_mid_line_owed(cwd, session_id, message):
+    """The block reason where the reply carries bold runs mid-line, else
+    None. Once per session."""
+    count = _bold_runs_mid_line(message)
+    if not count:
+        return None
+    if _already_blocked(cwd, session_id, "bold-mid-line"):
+        return None
+    return (
+        "[Throughliner] This reply carries %d bold run%s inside a sentence. "
+        "Bold leads the line or the list item, and a list carries one item "
+        "per line — so where the bold marks separate things, write them one "
+        "per line. Reply with the correction, never a repeat. This is fed "
+        "back once and passes on the next reply." % (
+            count, "" if count == 1 else "s")
+    )
 
 
 # --- The post-close tail offer ([post-close-tail-offer-enforced-once]) ---
@@ -503,7 +624,12 @@ def _post_close_tail_owed(cwd, session_id, message):
 # recommendation to file from one to process now, so the direction stays
 # wording; and a "file it" answered more than two assistant turns after the
 # offer is a false block, bounded to one wasted turn by the once-per-session
-# gate.
+# gate. A reply whose every claimed slug sits in Processed owes no offer
+# ([process-now-offer-skips-processed-slugs]): an entry the user already
+# agreed to is written without a filing question, and its place in Processed
+# is what says so; a slug in Unprocessed, or in neither section, keeps the
+# check. The limit: a reply naming no slug and reporting the filing in other
+# words is still not reached.
 PROCESS_NOW_FORMULA = "process this with you now"
 FILED_LINE = re.compile(r"Filed at the bottom of Unprocessed", re.IGNORECASE)
 
@@ -549,8 +675,14 @@ def _process_now_offer_owed(cwd, session_id, message, transcript_path):
     no process-now offer in reach, else None."""
     if _build_working_file_present(cwd, session_id):
         return None
-    if not (_claimed_slugs(message) or FILED_LINE.search(message)):
+    claimed = _claimed_slugs(message)
+    if not (claimed or FILED_LINE.search(message)):
         return None
+    if claimed:
+        processed = _slugs_in_section(os.path.join(cwd, "QUEUE.md"),
+                                      "Processed")
+        if all(slug in processed for slug in claimed):
+            return None
     in_reach = [message] + _recent_assistant_texts(transcript_path, 3)
     if any(PROCESS_NOW_FORMULA in text.lower() for text in in_reach):
         return None
@@ -603,6 +735,18 @@ def _checkpoint_clock_or_stop_owed(cwd, session_id, message):
         "to run, and left to process. Reply with the checkpoint again "
         "without the time and without the offer; this is stopped once."
     )
+
+
+def _finish_with_shape_checks(cwd, session_id, message):
+    """The last two checks on a reply every other check has passed: its
+    prose length, then bold mid-line. They sit last so a reply that owes a
+    correction of substance — a filing that never happened, a missing offer
+    — is sent back for that and not for its shape. Always exits."""
+    owed = _turn_length_owed(cwd, session_id, message) or \
+        _bold_mid_line_owed(cwd, session_id, message)
+    if owed:
+        print(json.dumps({"decision": "block", "reason": owed}))
+    sys.exit(0)
 
 
 def project_root(data: dict) -> str:
@@ -698,7 +842,8 @@ def main():
                                        payload.get("transcript_path") or "")
         if owed:
             print(json.dumps({"decision": "block", "reason": owed}))
-        sys.exit(0)
+            sys.exit(0)
+        _finish_with_shape_checks(cwd, session_id, message)
 
     # A slug absent from the queue but present in LOG/ names recorded work, so
     # the message is citing something that shipped rather than reporting a
@@ -723,7 +868,8 @@ def main():
                                        payload.get("transcript_path") or "")
         if owed:
             print(json.dumps({"decision": "block", "reason": owed}))
-        sys.exit(0)
+            sys.exit(0)
+        _finish_with_shape_checks(cwd, session_id, message)
 
     names = ", ".join("[%s]" % slug for slug in missing)
     downgraded = all(_already_blocked(cwd, session_id, slug) for slug in missing)

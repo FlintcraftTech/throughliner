@@ -272,6 +272,11 @@ python <plugin-root>/scripts/inbox_send.py <project root> \
 # Prints the name and the filename, never the path.
 ```
 
+With the state server's `inbox_send` tool where the server is registered, which
+composes the message from named files, runs the same checks and writes the
+register line in one call; the script stays the route for a project with no
+server.
+
 A project whose installed method predates INBOX scaffolding
 has nothing at its session start that surfaces waiting mail, so a message
 delivered into a folder this project just made can sit unread indefinitely with

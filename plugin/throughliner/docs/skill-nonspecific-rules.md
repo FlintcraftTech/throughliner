@@ -990,11 +990,10 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     `.txt` file in the project's `temp/` folder — gitignored, scaffolded by
     setup and the top-up — unless the item's Files line names a project path
     for it — with the step handing it over as a relative link that opens it,
-    in the shape View-in-doc rendering gives, and saying, at a chat's first
-    hand-over, that it is a `.txt` because that is the only file type the
-    side panel edits and saves, and that the user's word switches the chat to
-    `.md` for editing in whatever they open markdown with — spoken for that
-    chat, nothing stored — an absolute path, and the
+    in the shape View-in-doc rendering gives — a `.txt` because that is the
+    only file type the side panel edits and saves, and the user's word
+    switches the chat to `.md` for editing in whatever they open markdown
+    with, spoken for that chat, nothing stored — an absolute path, and the
     short-name form the harness may report (`~1` in a folder name), do not
     open, the one exception being a `file:///` address with every space
     written as `%20`, which opens a file outside the project folder — and

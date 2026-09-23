@@ -319,6 +319,11 @@ Retrieval searches `LOG/index*.md`, so nothing is lost to the move; the main
 index stays the short file a planning opening reads from, back as far as the
 most recent planning session's record.
 
+**Then regenerate `LOG/backlinks.md`** with `python
+<plugin-root>/scripts/log_backlinks.py <project root>`, after the record and
+its index line are written, and stage it with them — the file is computed from
+the records every time and never edited by hand.
+
 **Each entry is its own file under `LOG/`, date-prefixed** so the folder sorts
 newest-first on a name sort, each in its own file rather than a shared log:
 
@@ -443,9 +448,12 @@ be built as it stands.
 [PROMPT], **opening by naming itself as /done's standing look-back over the
 conversation** — in the user's words, before what it found — so the step reads
 as the rule it is rather than as an improvised idea.
-**End the message with what each answer does: "Say go to file them all, or
-contest by number."** Numbering explains contesting on its own; "go" explains
-nothing unless the sentence says it files the whole set. The writes then land,
+**End the message with what each answer does, and the ask names what it
+counts:** one candidate, "Say go to file it, or say no" with no numbering; two,
+"Say go to file both, or contest by number"; three or more, "Say go to file them
+all, or contest by number." Numbering explains contesting on its own for the
+two-or-more arms; "go" explains nothing unless the sentence says it files the
+whole set. The writes then land,
 and a contested item is dropped or reworked one at a time. The set
 holds writes only — captures and record edits — and a candidate deletion is
 presented after it as its own ask, under the session-file cleanup step's own

@@ -88,8 +88,10 @@ files.
 
 **Work still to do → Unprocessed** [PROMPT]. Show the candidate set as ONE
 numbered message before anything is written, and wait. **End it with what each
-answer does: "Say go to file them all, or contest by number."** A contested item
-is then dropped or reworked one at a time.
+answer does, and the ask names what it counts:** one candidate, "Say go to file
+it, or say no" with no numbering; two, "Say go to file both, or contest by
+number"; three or more, "Say go to file them all, or contest by number." A
+contested item is then dropped or reworked one at a time.
 **What happens then depends on the answer:**
 
 ```

@@ -107,8 +107,10 @@ marker on an item whose observable check finds ALL of it already satisfied
 ```
 
 Say plainly why the run stopped: this item must not be built alongside other
-work, so it gets a run of its own — then recommend /done. Mechanical, no
-judgment. It composes with the cleared-to-run line rather than replacing it:
+work, so it gets a run of its own — and how many cleared items sit below it
+that this run will not reach, counted off the queue, so a marked item that has
+risen above other work is seen at the stop that it causes — then recommend
+/done. Mechanical, no judgment. It composes with the cleared-to-run line rather than replacing it:
 whichever bound comes first ends the run. What the marker means and where it is
 written are in plan.md's decision step, which is the authoring site.
 

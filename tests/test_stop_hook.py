@@ -45,6 +45,9 @@ Prose.
 --- Cleared to run above this line ---
 
 ## Unprocessed
+
+#### A capture just raised [just-raised]
+Prose.
 """
 
 
@@ -412,17 +415,17 @@ def test_process_now_offer_is_enforced_once_in_a_planning_chat():
     the reply, or in a previous assistant turn of the transcript, passes; a
     build working file present passes regardless."""
     root = project()
-    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+    code, out = run_with(root, "Filed [just-raised] at the bottom of "
                                "Unprocessed. Anything else?")
     check("a filing report with no formula anywhere is blocked",
           "Process this with you now" in out and '"decision": "block"' in out,
           out)
-    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+    code, out = run_with(root, "Filed [just-raised] at the bottom of "
                                "Unprocessed. Anything else?")
     check("the same check does not block twice in a session",
           '"decision": "block"' not in out, out)
 
-    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+    code, out = run_with(root, "Filed [just-raised] at the bottom of "
                                "Unprocessed. Process this with you now, or "
                                "file it for later? I'd take it now.",
                          session_id="s2")
@@ -435,7 +438,7 @@ def test_process_now_offer_is_enforced_once_in_a_planning_chat():
             {"type": "text", "text": "Process this with you now, or file it "
                                      "for later? I'd take it now."}]}}) + "\n")
         f.write(json.dumps({"type": "user", "message": {"content": "file it"}}) + "\n")
-    code, out = run_with(root, "Filed [still-queued] at the bottom of "
+    code, out = run_with(root, "Filed [just-raised] at the bottom of "
                                "Unprocessed.", session_id="s3",
                          transcript=transcript)
     check("the formula in the previous assistant turn of the transcript passes",
@@ -517,8 +520,68 @@ def test_post_close_write_to_log_only_owes_nothing():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_turn_length_is_fed_back_once():
+    """[turn-length-check-in-stop-hook]: prose past 175 words is fed back
+    once and passes on the next reply; the same words as a list pass; fenced
+    and quoted text is not counted; 174 words pass."""
+    root = project()
+    word = "word "
+    long_prose = ("The build ran. " + word * 300).strip()
+    code, out = run(root, long_prose)
+    check("a 300-word prose reply is blocked with the count and the bound",
+          '"decision": "block"' in out and "words of prose" in out
+          and "bound of 175" in out, out)
+    code, out = run(root, long_prose)
+    check("the same reply passes the second time", '"decision": "block"' not in out, out)
+    as_list = "\n".join("- " + (word * 30).strip() for _ in range(10))
+    code, out = run(root, as_list, session_id="s2")
+    check("the same words as a list pass", '"decision": "block"' not in out, out)
+    fenced = "Short.\n\n```\n" + word * 300 + "\n```\n\n> " + word * 300
+    code, out = run(root, fenced, session_id="s3")
+    check("fenced and quoted text is not counted", '"decision": "block"' not in out, out)
+    code, out = run(root, (word * 174).strip(), session_id="s4")
+    check("a 174-word reply passes", '"decision": "block"' not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_bold_mid_sentence_is_fed_back_once():
+    """The second trigger: bold inside a sentence is fed back once; bold at
+    line heads and list heads passes."""
+    root = project()
+    code, out = run(root, "The item is **ready** to go and the **files** are "
+                          "listed.")
+    check("two mid-sentence bold runs are blocked with the count",
+          '"decision": "block"' in out and "2 bold runs" in out, out)
+    code, out = run(root, "The item is **ready** to go.")
+    check("the check passes the second time", '"decision": "block"' not in out, out)
+    code, out = run(root, "**Files that change.** Two of them.\n\n- **plan.md** "
+                          "— one row\n- **done.md** — one row\n\n1. **First** "
+                          "step.\n\n**Ready to start?**", session_id="s2")
+    check("bold at line heads and list heads passes",
+          '"decision": "block"' not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_process_now_offer_not_owed_for_processed_slugs():
+    """[process-now-offer-skips-processed-slugs]: a reply naming a slug that
+    sits in Processed owes no offer; one in Unprocessed still does."""
+    root = project()
+    code, out = run_with(root, "Moved [still-queued] into Processed on your "
+                               "word, as agreed.")
+    check("a slug in Processed owes no offer", '"decision": "block"' not in out, out)
+    code, out = run_with(root, "Filed [just-raised] at the bottom of "
+                               "Unprocessed.", session_id="s2")
+    check("a slug in Unprocessed with no offer is blocked once",
+          "Process this with you now" in out and '"decision": "block"' in out,
+          out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("test_stop_hook")
+    test_turn_length_is_fed_back_once()
+    test_bold_mid_sentence_is_fed_back_once()
+    test_process_now_offer_not_owed_for_processed_slugs()
     test_denoted_date_anywhere_in_the_reply_sources_the_word()
     test_process_now_offer_is_enforced_once_in_a_planning_chat()
     test_checkpoint_with_clock_or_stop_offer_is_blocked_once()
