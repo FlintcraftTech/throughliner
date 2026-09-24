@@ -110,6 +110,29 @@ def main():
           drive_edit(d, claude_md) == "deny")
     os.remove(close_marker)
 
+    # Setup no longer renames its active marker; it writes the done marker
+    # beside it ([setup-done-marker-rename-fails-in-powershell]). With BOTH
+    # setup markers standing, the setup-run door is closed: a scaffold write
+    # outside the standing list is refused as in a planning session, and the
+    # /done run's correction is still allowed once the close marker joins.
+    active_marker = os.path.join(scratch, pre_tool_use.SETUP_MARKER_NAME)
+    for m in (active_marker, done_marker):
+        with open(m, "w", encoding="utf-8") as f:
+            f.write("")
+    check("active + done markers: the setup door is closed, CLAUDE.md refused",
+          drive_edit(d, claude_md) == "deny")
+    check("active + done markers: a file setup never scaffolds is refused",
+          drive_edit(d, other) == "deny")
+    with open(close_marker, "w", encoding="utf-8") as f:
+        f.write("")
+    check("active + done + close markers: the close's correction still allowed",
+          drive_edit(d, claude_md) == "allow")
+    os.remove(close_marker)
+    os.remove(done_marker)
+    check("active marker alone: the setup door is open, CLAUDE.md allowed",
+          drive_edit(d, claude_md) == "allow")
+    os.remove(active_marker)
+
     if _failures:
         print(f"\n{len(_failures)} FAILURE(S)")
         return 1

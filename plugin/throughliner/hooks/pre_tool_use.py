@@ -1579,9 +1579,13 @@ def _setup_marker_present(session_id: str) -> bool:
     """True while /setup has declared itself for THIS session.
 
     /setup writes `.throughliner-setup-active` into its session scratchpad at
-    the start of a run and removes it at the end. A session carrying it is
-    neither a planning session nor a build, so the standing list does not apply
-    to it.
+    the start of a run and `.throughliner-setup-done` beside it at the end —
+    the active marker is left where it is, since renaming it fails in
+    PowerShell where the scratchpad path carries an 8.3 short name
+    ([setup-done-marker-rename-fails-in-powershell]) — so the door is open
+    only while the active marker stands WITHOUT the done marker. A session
+    carrying the open door is neither a planning session nor a build, so the
+    standing list does not apply to it.
 
     The scratchpad is the marker's home for two reasons. It is already writable
     in every session type, so /setup can declare itself without being stopped by
@@ -1599,6 +1603,8 @@ def _setup_marker_present(session_id: str) -> bool:
     them for every planning session in every consumer project to fix a condition
     that is only true during setup.
     """
+    if _scratchpad_marker_present(session_id, SETUP_DONE_MARKER_NAME):
+        return False
     return _scratchpad_marker_present(session_id, SETUP_MARKER_NAME)
 
 
@@ -1857,19 +1863,21 @@ def _is_time_word_guarded_path(filepath: str, cwd: str) -> bool:
 # The limit, stated: a time BEHIND the real clock is not reached — three of the
 # five were — so this narrows the counted-up failure rather than closing it.
 # A time that follows a date earlier than today is a past event and passes.
+#
+# Only a STAMP-SHAPED place is read ([clock-check-refuses-event-start-time]):
+# a written file's first three lines, where a record's stamp lives, or a
+# sentence carrying a stamp word — the words derived from the five wrong
+# stamps above ("Recorded 22:21, read from the clock", "Filed at …",
+# "stamped by the queue tool") and stated as such. A time that names when an
+# event takes place — a session's 12:00 start, a video's runtime — sits in
+# no such place and is not reached, which is what retired the duration-word
+# carve-out.
 _CLOCK_TIME_PATTERN = re.compile(
     r"(?:(?P<date>\d{4}-\d{2}-\d{2})[ T]?)?\b(?P<h>[01]?\d|2[0-3]):(?P<m>[0-5]\d)\b"
 )
-# A sentence carrying one of these words is timing something — a video's
-# runtime, an excerpt's bounds — and its MM:SS is not a clock time
-# ([clock-check-fires-on-video-timestamps]). Derived from the one report's
-# examples and nothing else: a tunable constant, revisable once seen. The
-# pair "from … to" bracketing the match is checked separately.
-_DURATION_WORDS = re.compile(
-    r"\b(?:runtimes?|runs|running|duration|excerpt|clip|timestamps?|video)\b",
-    re.IGNORECASE,
-)
-_FROM_TO_AROUND = re.compile(r"\bfrom\b[^.\n]*?\bto\b", re.IGNORECASE)
+_STAMP_WORDS = re.compile(
+    r"\b(?:recorded|filed|stamped|read from the clock)\b", re.IGNORECASE)
+_STAMP_HEADER_LINES = 3
 
 
 def _clock_now() -> "tuple[str, str]":
@@ -1884,10 +1892,12 @@ def _clock_now() -> "tuple[str, str]":
     return now.strftime("%Y-%m-%d"), now.strftime("%H:%M")
 
 
-def _future_clock_times(text: str) -> list[str]:
-    """Distinct `HH:MM` times in `text`, outside quoted spans, that claim a
-    moment later than the clock reads now. A time carrying a date before today
-    is left alone; one carrying a date after today is reported."""
+def _future_clock_times(text: str, header_lines: int = 0) -> list[str]:
+    """Distinct `HH:MM` times in `text`, outside quoted spans, sitting in a
+    stamp-shaped place — one of the first `header_lines` lines (a whole
+    file's header), or a sentence carrying a stamp word — that claim a
+    moment later than the clock reads now. A time carrying a date before
+    today is left alone; one carrying a date after today is reported."""
     today, now_hhmm = _clock_now()
     found = []
     stripped = _strip_quoted_text(text)
@@ -1896,13 +1906,10 @@ def _future_clock_times(text: str) -> list[str]:
         date = match.group("date")
         if date and date < today:
             continue
+        line_index = stripped.count("\n", 0, match.start())
         left, right = _time_sentence_span(stripped, match.start(), match.end())
         sentence = stripped[left:right]
-        if _DURATION_WORDS.search(sentence):
-            continue
-        if any(m.start() <= match.start() - left and
-               m.end() >= match.end() - left
-               for m in _FROM_TO_AROUND.finditer(sentence)):
+        if line_index >= header_lines and not _STAMP_WORDS.search(sentence):
             continue
         if (date and date > today) or hhmm > now_hhmm:
             if hhmm not in found:
@@ -2066,6 +2073,71 @@ def _is_log_entry_overwrite(tool_name: str, filepath: str, cwd: str) -> bool:
     if not norm.startswith(log_dir + os.sep):
         return False
     return os.path.exists(filepath)
+
+
+_RECORD_FILENAME_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}-([a-z0-9][a-z0-9-]*?)(?:-plan|-build|-\d+)?\.md$")
+_BUILD_RECORD_KIND = re.compile(r"^#[^\n]*—\s*build\s*—", re.MULTILINE)
+_PROCESSED_HEADING_RE = re.compile(r"^#{4}\s+.*\[([a-z0-9][a-z0-9-]*)\]\s*$",
+                                   re.MULTILINE)
+
+
+def _processed_slugs(cwd: str) -> set:
+    """Every slug still heading an entry in QUEUE.md's Processed section."""
+    try:
+        with open(os.path.join(cwd, "QUEUE.md"), "r", encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return set()
+    start = text.find("## Processed")
+    if start == -1:
+        return set()
+    end = text.find("## Unprocessed", start)
+    section = text[start:end if end != -1 else len(text)]
+    return set(_PROCESSED_HEADING_RE.findall(section))
+
+
+def _build_record_claims_unticked(tool_name: str, filepath: str, cwd: str,
+                                  content: str) -> str:
+    """The slug a new build record claims while that slug still heads an
+    entry in Processed, else "".
+
+    A run removes each item from the queue at its tick, so at the close every
+    built item is already out of Processed, and a build record naming a slug
+    still there is always a false claim and never a timing accident — the
+    recorded instance is a close that wrote a record, an index line and a
+    commit message for an item never built
+    ([close-records-unticked-item-as-built]). The record's kind is read from
+    its first heading (`# <hash> — build — …`), the slug from its filename or
+    from a `[slug]` in that heading. A record reading not built, a user-step
+    or planning record, a chat-level record, and an Edit appending to an
+    existing record all pass.
+    """
+    if tool_name != "Write":
+        return ""
+    norm = _normalise(filepath)
+    log_dir = _normalise(os.path.join(cwd, "LOG"))
+    if not norm.startswith(log_dir + os.sep):
+        return ""
+    heading = ""
+    for line in (content or "").splitlines():
+        if line.startswith("#"):
+            heading = line
+            break
+    if not _BUILD_RECORD_KIND.match(heading):
+        return ""
+    if re.search(r"\bnot built\b", heading, re.IGNORECASE):
+        return ""
+    candidates = []
+    m = _RECORD_FILENAME_RE.match(os.path.basename(filepath))
+    if m:
+        candidates.append(m.group(1))
+    candidates.extend(re.findall(r"\[([a-z0-9][a-z0-9-]*)\]", heading))
+    processed = _processed_slugs(cwd)
+    for slug in candidates:
+        if slug in processed:
+            return slug
+    return ""
 
 
 SENT_REGISTER = os.path.join("INBOX", "sent.md")
@@ -2485,6 +2557,25 @@ def main() -> int:
             branch="overwrite guard: LOG entry",
         )
 
+    # A new build record for a slug still in Processed is a claim of work that
+    # was never ticked ([close-records-unticked-item-as-built]). Checked here
+    # beside the overwrite guard, for the same reason: LOG/ is writable in
+    # every kind of session.
+    unticked = _build_record_claims_unticked(
+        tool_name, filepath, cwd, tool_input.get("content", ""))
+    if unticked:
+        return _deny(
+            "[Throughliner] BLOCKED: this build record claims [%s] as built, "
+            "but that item still sits in QUEUE.md's Processed section — it "
+            "was never ticked. A run removes each item from the queue at its "
+            "tick, so a built item is never still there.\n\n"
+            "Either the item was not built, and the record says so (\"not "
+            "built\" in its heading) or is not written; or the working file's "
+            "Progress shows the tick and the queue removal did not happen, "
+            "which is settled before the record is written." % unticked,
+            branch="record claims unticked item",
+        )
+
     # A Write over the outbound register destroys the only copy — the mailbox is
     # gitignored, so there is no history to restore from. Unconditional for the
     # same reason as its LOG sibling: every scope branch permits INBOX/.
@@ -2549,8 +2640,10 @@ def main() -> int:
                 "record reads exactly like a right one for as long as it "
                 "stands. A name written with a capital mid-sentence — a "
                 "product's own page or feature — passes, so a refusal on one "
-                "is a false positive to reword or ignore. The same phrase "
-                "passes on the next attempt.",
+                "is a false positive to reword or ignore. A word that is "
+                "content — what a slide, a template or a script says — goes "
+                "in quotation marks, which this check does not read. The "
+                "same phrase passes on the next attempt.",
                 branch="time word",
             )
 
@@ -2559,7 +2652,9 @@ def main() -> int:
         # time per session, then allowed.
         _, now_hhmm = _clock_now()
         future = [
-            t for t in _future_clock_times(_written_text(tool_name, tool_input))
+            t for t in _future_clock_times(
+                _written_text(tool_name, tool_input),
+                header_lines=_STAMP_HEADER_LINES if tool_name == "Write" else 0)
             if _fire_once(cwd, sid, "future-time-" + t.replace(":", ""))
         ]
         if future:
@@ -2570,10 +2665,11 @@ def main() -> int:
                 "A time counted up from an earlier reading overshoots. Read "
                 "the clock by a command at the moment of writing and write "
                 "what it says; where the time is a real past one, put its "
-                "date in front of it. A video runtime or an excerpt bound "
-                "written MM:SS is a false positive too — write it as minutes "
-                "and seconds, or say what it times in the same sentence. The "
-                "same time passes on the next attempt.",
+                "date in front of it. Only a stamp-shaped place is read — a "
+                "file's first lines, or a sentence saying recorded, filed, "
+                "stamped or read from the clock — so a time that names when "
+                "an event takes place passes elsewhere. The same time passes "
+                "on the next attempt.",
                 branch="future clock time",
             )
 

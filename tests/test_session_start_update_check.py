@@ -163,6 +163,24 @@ def main():
     check("an unreadable registry behaves as before",
           "planning session offers" in line, line)
 
+    # A `local` channel line names a folder install, which is on no channel:
+    # no call is made and nothing is printed
+    # ([setup-channel-local-for-folder-install]).
+    d10 = project(channel="local")
+    r10 = Runner()
+    line = hook.update_check(d10, "1.22.0", now=NOW, run=r10, which=gh_present)
+    check("local channel: no call and nothing printed", line == "" and r10.calls == [],
+          line + " " + str(r10.calls))
+    check("local channel: no marker written",
+          not os.path.isfile(os.path.join(d10, hook.UPDATE_CHECK_MARKER)))
+    # Any other word on the line is named as unreadable rather than read as
+    # stable, and nothing is fetched.
+    d11 = project(channel="none")
+    r11 = Runner()
+    line = hook.update_check(d11, "1.22.0", now=NOW, run=r11, which=gh_present)
+    check("an unknown channel word is named as unreadable, nothing fetched",
+          "does not read" in line and r11.calls == [], line + " " + str(r11.calls))
+
     # A version string that is not a version is named as unreadable, never
     # printed ([sweep-security-hook-output-carries-machine-and-remote-strings]).
     d7 = project()

@@ -1,9 +1,6 @@
 # FAQ Index
 
-Quick answers about how this project's workflow works. Each question links to a
-full answer in [faq.md](faq.md). This FAQ fills as features are announced —
-see the note at the top of faq.md — so a short list means little has been
-announced yet, not that questions aren't welcome: just ask in chat.
+Quick answers about how this project's workflow works. Each question links to a full answer in [faq.md](faq.md). This FAQ fills as features are announced — see the note at the top of faq.md — so a short list means little has been announced yet, not that questions aren't welcome: just ask in chat.
 
 - **How do I install Throughliner?** — the two routes in, and the paid plan you
   need. [faq.md](faq.md)
@@ -123,3 +120,6 @@ announced yet, not that questions aren't welcome: just ask in chat.
 - **What is LOG/backlinks.md, and should I edit it?** — a generated map from
   every slug and plugin name to the records naming it, rebuilt at each close.
   [faq.md](faq.md)
+- **When has my project grown too big for one queue, and when is Throughliner
+  the wrong tool?** — the signs the planning opening reads for itself, the
+  signs only you can read, and the pop-out route. [faq.md](faq.md)

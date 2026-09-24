@@ -203,12 +203,14 @@ The work cycle. Every piece of work travels the same loop.
   ask "anything else?" before resuming. Claude noticed it → confirm and resume,
   naming what you filed ("I noticed X, filed it, resuming"), and carry straight
   on. The /plan-time offer for an un-agreed idea lives in plan.md's process-now
-  section, and in a planning session the one-line report of a filing ends on
-  that section's fixed formula.
+  section; the offer recommends, and where the lean is to process now,
+  processing proceeds.
   **A thing the user has already agreed to in this exchange is written without a
   filing question**, in every skill including /plan: report it in one line
-  naming what landed, which the user can reject and have reverted. Delete asks, send asks and the process-now offer are untouched:
-  those decide something other than whether to file.
+  naming what landed, which the user can reject and have reverted. Delete asks
+  and send asks are untouched, since they decide something other than whether
+  to file; the process-now offer belongs to an idea not yet agreed, before its
+  write.
 - **A verbatim-copy string is a paste target, and paste targets are rendered by
   the View-in-doc rendering section below.** Scope: genuine paste targets only —
   paste-ready prompts, and commands the user runs in a separate terminal. Commit
@@ -403,7 +405,7 @@ one explanation.
 answer honestly from what you can read and say that is what you are doing. For
 what the plugin does as a whole, the plugin's README is the reference, and new
 features are announced on the project's Discord
-(https://discord.gg/Z7ftKnSjR).
+(https://discord.gg/8qmuEwTy8u).
 
 **How to explain is yours to judge.** Answer the question you were actually
 asked, in the form that answers it.
@@ -617,7 +619,9 @@ verbatim-re-read test is met.
 **A session creating a new file reads the Parts block in the project's
 CLAUDE.md, chooses the folder the block names for that part, and names the
 folder in the line reporting the write**; a project with no Parts block keeps
-the workshop rule above as its default.
+the workshop rule above as its default; and a folder or human-used file
+created gets its line in `MAP.md` in the same turn, under the criterion the
+map's own preamble states, where the project has one.
 
 **File research findings as part of using them**, not only when asked. Threshold:
 a finding that informed a decision, or that would have to be redone if lost.
@@ -876,9 +880,11 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 [audit]      ->  review  ->  /next routes to next-build.md's audit section; findings become captures
 [user]       ->  walk-through; /next walks the user through it, never builds it
 [freeform]   ->  work done by hand rather than by /next; /next halts on it
+                 and never builds it
 [co-write]   ->  a text the user and Claude finish together, named with the
-                 one file it lives in; walked as the co-authored-draft loop
-                 below, and /next stops at it
+                 one file it lives in; done inside the run with the user
+                 present — the run pauses at it to work it as the
+                 co-authored-draft loop below, then carries on
 ```
 
 The tag **leads** the description. One leading tag at most. Flavor is settled
@@ -912,18 +918,14 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   When "can Claude do this at all?" returns **no**, file it. A thing in the
   world an item waits on is filed as its own item in Unprocessed, and filing it
   is where the user's part gets its `[user]` item.
-- **Where an item's own record shows it was handed to the user for completion
-  after a /done run, and it names no observable this method can reach, ask once
-  where the work landed instead of re-driving it.** Both facts together, read
-  off the record: a hand-over recorded at a /done run, and no reachable observable.
-  An item without a recorded hand-over never qualifies, and neither does one
-  naming something checkable. One ask, then take the answer.
-
 - **Walk a `[user]` item through whenever it is reached, and learn completion
   from what the user volunteers.** That is its whole lifecycle in every skill —
   /plan, /next and /done alike. Presenting one states how many other items are
   blocked on it, read off the queue's `Blocked by:` lines, and names them only
-  where the user genuinely needs it, and says nothing where nothing is. A
+  where the user genuinely needs it, and says nothing where nothing is; a step
+  whose record shows a hand-over for completion after a /done run and no
+  observable is presented as not marked done, with the waiting items named by
+  slug. A
   filed `[user]` item may be walked the moment
   it is filed, with the user present, where walking it now clears a red flag or
   unblocks work this session is doing; the item is written into the queue before
@@ -996,10 +998,13 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     with, spoken for that chat, nothing stored — an absolute path, and the
     short-name form the harness may report (`~1` in a folder name), do not
     open, the one exception being a `file:///` address with every space
-    written as `%20`, which opens a file outside the project folder — and
+    written as `%20`, which opens a file outside the project folder — a
+    draft created this turn handed over as the link and the file card
+    together, where the harness has a file-send tool — and
     offering in the same breath to display it inline or send the
-    file instead, for a reader on a phone or driving the session remotely,
-    subject to the cloud-link arm of the spoken departure below; then
+    file instead, for a reader who wants neither, on a phone or driving the
+    session remotely, subject to the cloud-link arm of the spoken departure
+    below; then
     reading it back only when they say to, asking whether there is anything else, and
     repeating until they say they are finished. Where the user says they cannot open or edit the
     file — said once, for the rest of the chat, with nothing detecting it —
@@ -1071,8 +1076,9 @@ asks whether their repo is safe to make public, say that not publishing these
 artifacts is the only real protection.
 
 **Authoring standard — one provision, two scopes.** Plain short sentences, one
-idea per sentence, whichever is being written. The human co-reads and approves
-this text: **unreadable is unapprovable.**
+idea per sentence, whichever is being written, and a paragraph written as one
+line — matching the wrapping of the files around it gives way to that. The
+human co-reads and approves this text: **unreadable is unapprovable.**
 
 ```
 the RECORD — a capture, a queue item, a LOG entry, a SPEC edit
@@ -1578,9 +1584,11 @@ expected handmade work, confirm with the user, and fold them into /done.
 
 ## Prior decisions
 
-- Before raising a design question, run the throughline retrieve. If **the
-  record** shows it's decided, state the prior decision. If the user revisits,
-  flag when it was decided.
+- Before putting to the user any question whose answer the record may hold —
+  a design question, or what happened, what was decided or why — run the
+  throughline retrieve down the ladder below, and put the question only where
+  the ladder comes back empty. If **the record** shows it's decided, state the
+  prior decision. If the user revisits, flag when it was decided.
 
 ```
 the record, in cheapest-first order:

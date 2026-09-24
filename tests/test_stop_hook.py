@@ -306,6 +306,8 @@ def test_bare_time_word_blocks_once_with_the_phrase_named():
     code, out = run(root, "That is what we settled an hour ago.")
     check("a bare 'an hour ago' blocks", time_blocked(out), out)
     check("the reason names the phrase", "an hour ago" in out, out)
+    check("the reason says a content word goes in quotation marks",
+          "in quotation marks, which this check does not read" in out, out)
     code, out = run(root, "Still what we settled an hour ago.")
     check("the same phrase does not block a second time",
           not time_blocked(out), out)
@@ -409,47 +411,173 @@ def run_with(root, message, session_id="s1", transcript=None):
     return r.returncode, (r.stdout or "") + (r.stderr or "")
 
 
+def transcript(root, command="plan", assistant_texts=(), name="transcript.jsonl",
+               first_timestamp="2026-09-24T02:00:00.000Z"):
+    """A transcript whose first entry carries a timestamp, whose second is the
+    user's skill invocation (`<command-name>/throughliner:plan</command-name>`
+    as the app records it, or none), then any assistant texts."""
+    path = os.path.join(root, name)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"type": "user", "timestamp": first_timestamp,
+                            "message": {"content": "hi"}}) + "\n")
+        if command:
+            f.write(json.dumps({"type": "user", "message": {"content":
+                    "<command-name>/throughliner:%s</command-name>" % command}})
+                    + "\n")
+        for text in assistant_texts:
+            f.write(json.dumps({"type": "assistant", "message": {"content": [
+                {"type": "text", "text": text}]}}) + "\n")
+    return path
+
+
 def test_process_now_offer_is_enforced_once_in_a_planning_chat():
-    """[process-now-offer-fixed-and-enforced]: a planning-shaped reply that
-    reports a filing with no offer in reach is blocked once; the formula in
-    the reply, or in a previous assistant turn of the transcript, passes; a
-    build working file present passes regardless."""
+    """[process-now-offer-fixed-and-enforced], reshaped by
+    [process-now-offer-recommends-or-proceeds]: a planning-chat reply that
+    reports a filing with neither the file-for-later ask in reach nor the
+    item's own bold ask is blocked once; "File it for later?" in the reply,
+    or in a previous assistant turn, passes; a reply proceeding into the
+    item's own ask passes; a build working file present passes regardless."""
     root = project()
+    t = transcript(root)
     code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed. Anything else?")
-    check("a filing report with no formula anywhere is blocked",
-          "Process this with you now" in out and '"decision": "block"' in out,
-          out)
+                               "Unprocessed. Anything else?", transcript=t)
+    check("a filing report with neither ask is blocked",
+          "File it for later?" in out and '"decision": "block"' in out, out)
     code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed. Anything else?")
+                               "Unprocessed. Anything else?", transcript=t)
     check("the same check does not block twice in a session",
           '"decision": "block"' not in out, out)
 
     code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed. Process this with you now, or "
-                               "file it for later? I'd take it now.",
-                         session_id="s2")
-    check("the formula in the reply passes", '"decision": "block"' not in out, out)
-
-    transcript = os.path.join(root, "transcript.jsonl")
-    with open(transcript, "w", encoding="utf-8") as f:
-        f.write(json.dumps({"type": "user", "message": {"content": "hi"}}) + "\n")
-        f.write(json.dumps({"type": "assistant", "message": {"content": [
-            {"type": "text", "text": "Process this with you now, or file it "
-                                     "for later? I'd take it now."}]}}) + "\n")
-        f.write(json.dumps({"type": "user", "message": {"content": "file it"}}) + "\n")
+                               "Unprocessed. It already seems complete, so I "
+                               "would file it.\n\n**File it for later?**",
+                         session_id="s2", transcript=t)
+    check("the file-for-later ask in the reply passes",
+          '"decision": "block"' not in out, out)
     code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed.", session_id="s3",
-                         transcript=transcript)
-    check("the formula in the previous assistant turn of the transcript passes",
+                               "Unprocessed. Taking it now: it would change "
+                               "the cleared build.\n\n**Do that?**",
+                         session_id="s5", transcript=t)
+    check("a reply proceeding into the item's own ask passes",
+          '"decision": "block"' not in out, out)
+
+    t2 = transcript(root, assistant_texts=["I would file this one for later. "
+                                           "File it for later?"],
+                    name="t2.jsonl")
+    code, out = run_with(root, "Filed [just-raised] at the bottom of "
+                               "Unprocessed.", session_id="s3", transcript=t2)
+    check("the ask in the previous assistant turn of the transcript passes",
           '"decision": "block"' not in out, out)
 
     with open(os.path.join(root, "_build-s4.md"), "w", encoding="utf-8") as f:
         f.write("# Active Build\n\nRun: build still-queued\n\nFiles:\n")
     code, out = run_with(root, "Filed [still-queued] at the bottom of "
-                               "Unprocessed.", session_id="s4")
+                               "Unprocessed.", session_id="s4", transcript=t)
     check("a build working file present passes regardless",
           '"decision": "block"' not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_process_now_offer_owed_only_in_a_planning_chat():
+    """[process-now-check-fires-outside-planning]: the offer is plan.md's, so
+    a transcript whose last method command is next owes nothing; one whose
+    last is plan still owes; one with no command owes nothing."""
+    root = project()
+    report = "Filed [just-raised] at the bottom of Unprocessed."
+    code, out = run_with(root, report, transcript=transcript(root, "next"))
+    check("last method command next: nothing owed", '"decision": "block"' not in out, out)
+    code, out = run_with(root, report, session_id="s2",
+                         transcript=transcript(root, "plan", name="p.jsonl"))
+    check("last method command plan: still owed", '"decision": "block"' in out, out)
+    code, out = run_with(root, report, session_id="s3",
+                         transcript=transcript(root, None, name="n.jsonl"))
+    check("no method command invoked: nothing owed", '"decision": "block"' not in out, out)
+    code, out = run_with(root, report, session_id="s4")
+    check("no transcript at all: nothing owed", '"decision": "block"' not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_process_now_check_skips_quoted_headings():
+    """[process-now-check-skips-quoted-headings]: a checkpoint pointer that
+    quotes the next item's heading, whose own words carry a filing verb,
+    owes no offer; a plain sentence with the verb still does."""
+    root = project()
+    t = transcript(root)
+    pointer = ("Deleted. Next up:\n\n**#### Server kept whole while its pieces "
+               "are built [just-raised]**\n\n**Take this one next?**")
+    code, out = run_with(root, pointer, transcript=t)
+    check("a quoted heading carrying 'kept … [slug]' owes no offer",
+          '"decision": "block"' not in out, out)
+    code, out = run_with(root, "Kept [just-raised] whole, as you asked.",
+                         session_id="s2", transcript=t)
+    check("a plain 'kept [slug]' sentence still owes",
+          '"decision": "block"' in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_mention_of_an_earlier_sessions_capture_owes_nothing():
+    """[stop-check-reads-mention-as-filing]: a slug whose capture's Filed
+    stamp predates the transcript's first timestamp is a mention, not this
+    chat's filing; one stamped after it still owes."""
+    root = project()
+    with open(os.path.join(root, "QUEUE.md"), "w", encoding="utf-8") as f:
+        f.write(QUEUE + "\n#### An older capture [older-one]\nProse.\n"
+                "Filed 2026-09-20 10:00, stamped by the capture tool.\n\n"
+                "#### A newer capture [newer-one]\nProse.\n"
+                "Filed 2026-09-24 23:00, stamped by the capture tool.\n")
+    t = transcript(root, first_timestamp="2026-09-24T02:00:00.000Z")
+    code, out = run_with(root, "That's filed as [older-one] already, from an "
+                               "earlier session.", transcript=t)
+    check("a slug stamped before the chat opened owes nothing",
+          '"decision": "block"' not in out, out)
+    code, out = run_with(root, "Filed [newer-one] at the bottom of "
+                               "Unprocessed.", session_id="s2", transcript=t)
+    check("a slug stamped after the chat opened still owes",
+          '"decision": "block"' in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_tail_check_skips_git_ignored_paths():
+    """[tail-check-skips-ignored-and-close-writes]: a post-close write to a
+    file git ignores owes no tail; one to a tracked file still does."""
+    import time
+    root = project()
+    subprocess.run(["git", "init", "-q"], cwd=root, capture_output=True)
+    with open(os.path.join(root, ".gitignore"), "w", encoding="utf-8") as f:
+        f.write("archive/\n")
+    os.makedirs(os.path.join(root, "archive"))
+    folder = os.path.join(root, ".throughliner")
+    os.makedirs(folder)
+    with open(os.path.join(folder, "session-closed-s1"), "w", encoding="utf-8") as f:
+        f.write("2026-09-24-fixture.md\n")
+    old = time.time() - 120
+    os.utime(os.path.join(folder, "session-closed-s1"), (old, old))
+    with open(os.path.join(folder, "pre-tool-use.log"), "w", encoding="utf-8", newline="") as f:
+        f.write("2099-01-01 00:00:00\tEdit\tallow\tbuild scope\t"
+                + os.path.join(root, "archive", "readme.md") + "\ts1\n")
+    code, out = run(root, "Filled the commit line in the readme.")
+    check("a write to a git-ignored file owes no tail", "marked tail" not in out, out)
+    with open(os.path.join(folder, "pre-tool-use.log"), "a", encoding="utf-8", newline="") as f:
+        f.write("2099-01-01 00:00:01\tEdit\tallow\tplanning standing list\t"
+                + os.path.join(root, "SPEC.md") + "\ts1\n")
+    code, out = run(root, "Reworded the sentence in SPEC.")
+    check("a write to a tracked file still owes the tail", "marked tail" in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_bold_lead_in_on_a_blockquote_line_passes():
+    """[bold-check-collides-with-blockquote-lead-in]: the rendering rule's
+    bold lead-in at the head of a quoted line leads the line; a bold run
+    mid-sentence inside a quoted line still owes."""
+    root = project()
+    code, out = run(root, "Here it is.\n\n> **Message header:** the text of "
+                          "the message follows here.")
+    check("a bold lead-in opening a blockquote line passes",
+          '"decision": "block"' not in out, out)
+    code, out = run(root, "Here it is.\n\n> The text is **ready** to go.",
+                    session_id="s2")
+    check("a bold run mid-sentence inside a quoted line still owes",
+          '"decision": "block"' in out and "1 bold run" in out, out)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -566,19 +694,25 @@ def test_process_now_offer_not_owed_for_processed_slugs():
     """[process-now-offer-skips-processed-slugs]: a reply naming a slug that
     sits in Processed owes no offer; one in Unprocessed still does."""
     root = project()
+    t = transcript(root)
     code, out = run_with(root, "Moved [still-queued] into Processed on your "
-                               "word, as agreed.")
+                               "word, as agreed.", transcript=t)
     check("a slug in Processed owes no offer", '"decision": "block"' not in out, out)
     code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed.", session_id="s2")
+                               "Unprocessed.", session_id="s2", transcript=t)
     check("a slug in Unprocessed with no offer is blocked once",
-          "Process this with you now" in out and '"decision": "block"' in out,
+          "File it for later?" in out and '"decision": "block"' in out,
           out)
     shutil.rmtree(root, ignore_errors=True)
 
 
 if __name__ == "__main__":
     print("test_stop_hook")
+    test_process_now_offer_owed_only_in_a_planning_chat()
+    test_process_now_check_skips_quoted_headings()
+    test_mention_of_an_earlier_sessions_capture_owes_nothing()
+    test_tail_check_skips_git_ignored_paths()
+    test_bold_lead_in_on_a_blockquote_line_passes()
     test_turn_length_is_fed_back_once()
     test_bold_mid_sentence_is_fed_back_once()
     test_process_now_offer_not_owed_for_processed_slugs()

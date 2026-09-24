@@ -271,12 +271,28 @@ def _unfounded_time_words(message):
     return [phrase for phrase, _ in _unfounded_time_phrases(message)]
 
 
+_QUOTED_HEADING_LEAD = re.compile(r"^\s*(?:\*\*)?#{4}\s")
+
+
+def _on_quoted_heading(message, position):
+    """True where `position` sits on a line that quotes a queue heading —
+    `#### ` or `**#### ` — as a checkpoint's pointer does. A heading's own
+    words ("kept whole … [slug]") are not a filing claim
+    ([process-now-check-skips-quoted-headings])."""
+    left = message.rfind("\n", 0, position) + 1
+    right = message.find("\n", position)
+    line = message[left:right if right != -1 else len(message)]
+    return bool(_QUOTED_HEADING_LEAD.match(line))
+
+
 def _claimed_slugs(message):
     """Slugs the message claims to have just written. Possibly empty."""
     found = set()
     message = _strip_quoted(message)
     for pattern in CLAIM_PATTERNS:
         for match in pattern.finditer(message):
+            if _on_quoted_heading(message, match.end() - 1):
+                continue
             groups = [g for g in match.groups() if g]
             # The slug is whichever group looks like a slug, not the verb.
             slug = None
@@ -451,7 +467,7 @@ def _already_blocked(cwd, session_id, slug):
 # list carries one item per line.
 TURN_PROSE_BOUND = 175
 _LIST_OR_STRUCTURE_LEAD = re.compile(r"^\s*(?:[-*+]\s|\d+[.)]\s|>|#)")
-_LIST_HEAD = re.compile(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)?")
+_LIST_HEAD = re.compile(r"^\s*(?:>\s*)*(?:[-*+]\s+|\d+[.)]\s+)?")
 _BOLD_RUN = re.compile(r"\*\*[^*\n]+?\*\*")
 
 
@@ -476,7 +492,10 @@ def _prose_word_count(message):
 
 def _bold_runs_mid_line(message):
     """How many bold runs start anywhere but at the head of a line or of a
-    list item, outside fenced blocks and blockquotes."""
+    list item, outside fenced blocks. A line opening with blockquote markers
+    is still a line: a bold run right after `> ` leads it — the rendering
+    rule's lead-in for shown text (`> **Commit message:** …`) — and one
+    further along is mid-line ([bold-check-collides-with-blockquote-lead-in])."""
     count = 0
     in_fence = False
     for line in message.splitlines():
@@ -484,7 +503,7 @@ def _bold_runs_mid_line(message):
         if stripped.startswith("```"):
             in_fence = not in_fence
             continue
-        if in_fence or stripped.startswith(">"):
+        if in_fence:
             continue
         head = _LIST_HEAD.match(line).end()
         for match in _BOLD_RUN.finditer(line):
@@ -557,9 +576,34 @@ def _session_closed_marker(cwd, session_id):
     return path if os.path.isfile(path) else None
 
 
+def _git_ignores(cwd, target):
+    """True where `git check-ignore` reports the path ignored, asked from the
+    file's own folder (or its nearest existing parent) so a nested project's
+    inner repository answers for its own files. A path outside any
+    repository, or one git cannot answer for, reads as not ignored
+    ([tail-check-skips-ignored-and-close-writes])."""
+    import subprocess
+    full = target if os.path.isabs(target) else os.path.join(cwd, target)
+    folder = os.path.dirname(os.path.abspath(full))
+    while folder and not os.path.isdir(folder):
+        parent = os.path.dirname(folder)
+        if parent == folder:
+            return False
+        folder = parent
+    try:
+        proc = subprocess.run(
+            ["git", "check-ignore", "-q", "--", os.path.abspath(full)],
+            cwd=folder, capture_output=True, encoding="utf-8", timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return proc.returncode == 0
+
+
 def _project_write_since(cwd, session_id, since):
     """True where the decision log shows an allowed edit-tool write by this
-    session, to a project file outside LOG/, stamped after `since`."""
+    session, to a project file outside LOG/ that git does not ignore,
+    stamped after `since`. Nothing ignored can be committed, so nothing
+    there can owe a tail."""
     safe = _safe_id(session_id)
     path = os.path.join(cwd, ".throughliner", "pre-tool-use.log")
     root = os.path.normcase(os.path.abspath(cwd)).replace("\\", "/")
@@ -582,6 +626,8 @@ def _project_write_since(cwd, session_id, since):
                 else:
                     rel = os.path.normcase(target).replace("\\", "/")
                 if rel.startswith("log/") or "/log/" in "/" + rel:
+                    continue
+                if _git_ignores(cwd, target):
                     continue
                 return True
     except OSError:
@@ -615,23 +661,122 @@ def _post_close_tail_owed(cwd, session_id, message):
 
 # --- The process-now offer ([process-now-offer-fixed-and-enforced]) ---
 #
-# In a planning chat — no build working file — a reply reporting a capture
-# filed must have made the fixed offer, "Process this with you now, or file it
-# for later? I'd take it now.", in this reply or one of the two assistant
-# replies before it. The rule was present in plan.md and not reached for, so
+# In a planning chat — the transcript's most recent method command is plan,
+# and no build working file — a reply reporting a capture filed owes one of
+# two things ([process-now-offer-recommends-or-proceeds]): the file-for-later
+# ask, "File it for later?", in this reply or one of the two assistant
+# replies before it; or, in the same reply, the item's own interview or
+# recommendation ask — a bold question — which is what proceeding to process
+# it now looks like. The rule was present in plan.md and not reached for, so
 # this is a mechanism. The limits, stated: it reaches a filing reported in a
-# recognisable line, so one reported in other words passes; it cannot tell a
-# recommendation to file from one to process now, so the direction stays
-# wording; and a "file it" answered more than two assistant turns after the
-# offer is a false block, bounded to one wasted turn by the once-per-session
-# gate. A reply whose every claimed slug sits in Processed owes no offer
+# recognisable line, so one reported in other words passes; it reads a bold
+# question as the item's own ask, so any bold question satisfies it; and a
+# "file it" answered more than two assistant turns after the offer is a false
+# block, bounded to one wasted turn by the once-per-session gate. A reply
+# whose every claimed slug sits in Processed owes no offer
 # ([process-now-offer-skips-processed-slugs]): an entry the user already
 # agreed to is written without a filing question, and its place in Processed
-# is what says so; a slug in Unprocessed, or in neither section, keeps the
-# check. The limit: a reply naming no slug and reporting the filing in other
-# words is still not reached.
-PROCESS_NOW_FORMULA = "process this with you now"
+# is what says so. A slug whose capture was filed before this chat opened —
+# its `Filed` stamp earlier than the transcript's first timestamp — is a
+# mention, not this chat's filing, and owes nothing
+# ([stop-check-reads-mention-as-filing]); a slug with no stamp, or a
+# transcript with no readable first timestamp, stays owed. Outside a
+# planning chat — the last method command is next, done, rescan, catchup or
+# setup, or none was invoked — the offer is plan.md's alone and nothing is
+# owed ([process-now-check-fires-outside-planning]); a transcript the hook
+# cannot read leaves the check owing as before.
+FILE_LATER_FORMULA = "file it for later?"
+PROCEED_ASK = re.compile(r"\*\*[^*\n]*\?\*\*")
 FILED_LINE = re.compile(r"Filed at the bottom of Unprocessed", re.IGNORECASE)
+_METHOD_COMMAND = re.compile(
+    r"<command-name>/(?:throughliner:)?(plan|next|done|rescan|catchup|setup)"
+    r"</command-name>")
+_FILED_STAMP = re.compile(r"^Filed (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})",
+                          re.MULTILINE)
+_ENTRY_HEADING = re.compile(r"^#{4}\s+.*\[([a-z0-9][a-z0-9-]*)\]\s*$",
+                            re.MULTILINE)
+
+
+def _transcript_lines(transcript_path):
+    """Each parsed JSON entry of the transcript, in order; empty where the
+    path is missing or unreadable."""
+    if not transcript_path:
+        return []
+    entries = []
+    try:
+        with open(transcript_path, "r", encoding="utf-8", errors="replace") as f:
+            for raw in f:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    entries.append(json.loads(raw))
+                except ValueError:
+                    continue
+    except OSError:
+        return []
+    return entries
+
+
+def _last_method_command(transcript_path):
+    """The most recently invoked Throughliner skill in the transcript — plan,
+    next, done, rescan, catchup or setup — or "" where none was, or the
+    transcript cannot be read. A skill invocation is recorded as a
+    `<command-name>/throughliner:<skill></command-name>` line."""
+    last = ""
+    for entry in _transcript_lines(transcript_path):
+        content = (entry.get("message") or {}).get("content")
+        if isinstance(content, list):
+            content = "\n".join(
+                block.get("text", "") for block in content
+                if isinstance(block, dict) and block.get("type") == "text")
+        if not isinstance(content, str):
+            content = entry.get("content") if isinstance(entry.get("content"), str) else ""
+        for match in _METHOD_COMMAND.finditer(content or ""):
+            last = match.group(1)
+    return last
+
+
+def _transcript_start(transcript_path):
+    """The first entry's timestamp as a naive LOCAL datetime, or None. The
+    transcript stamps in UTC (`...Z`); the queue's Filed stamps are local."""
+    import datetime as _dt
+    for entry in _transcript_lines(transcript_path):
+        stamp = entry.get("timestamp")
+        if not isinstance(stamp, str):
+            continue
+        try:
+            parsed = _dt.datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone().replace(tzinfo=None)
+        return parsed
+    return None
+
+
+def _filed_stamps(queue_path):
+    """{slug: naive datetime} for every queue entry carrying a `Filed
+    YYYY-MM-DD HH:MM` line; entries without one are absent."""
+    import datetime as _dt
+    try:
+        with open(queue_path, "r", encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return {}
+    stamps = {}
+    headings = list(_ENTRY_HEADING.finditer(text))
+    for i, heading in enumerate(headings):
+        end = headings[i + 1].start() if i + 1 < len(headings) else len(text)
+        m = _FILED_STAMP.search(text, heading.end(), end)
+        if not m:
+            continue
+        try:
+            stamps[heading.group(1)] = _dt.datetime.strptime(
+                m.group(1) + " " + m.group(2), "%Y-%m-%d %H:%M")
+        except ValueError:
+            continue
+    return stamps
 
 
 def _build_working_file_present(cwd, session_id):
@@ -672,10 +817,19 @@ def _recent_assistant_texts(transcript_path, count):
 
 def _process_now_offer_owed(cwd, session_id, message, transcript_path):
     """The block reason where a planning chat's reply reports a filing with
-    no process-now offer in reach, else None."""
+    neither the file-for-later ask in reach nor the item's own ask in the
+    reply, else None."""
     if _build_working_file_present(cwd, session_id):
         return None
+    if _last_method_command(transcript_path) != "plan":
+        return None
     claimed = _claimed_slugs(message)
+    if claimed:
+        start = _transcript_start(transcript_path)
+        if start is not None:
+            stamps = _filed_stamps(os.path.join(cwd, "QUEUE.md"))
+            claimed = {slug for slug in claimed
+                       if not (slug in stamps and stamps[slug] < start)}
     if not (claimed or FILED_LINE.search(message)):
         return None
     if claimed:
@@ -684,17 +838,20 @@ def _process_now_offer_owed(cwd, session_id, message, transcript_path):
         if all(slug in processed for slug in claimed):
             return None
     in_reach = [message] + _recent_assistant_texts(transcript_path, 3)
-    if any(PROCESS_NOW_FORMULA in text.lower() for text in in_reach):
+    if any(FILE_LATER_FORMULA in text.lower() for text in in_reach):
+        return None
+    if PROCEED_ASK.search(_strip_quoted(message)):
         return None
     if _already_blocked(cwd, session_id, "process-now-offer"):
         return None
     return (
-        "Your last message reports a capture filed, and neither it nor the "
-        "two replies before it made the offer that comes before a filing in "
-        "a planning chat: \"Process this with you now, or file it for later? "
-        "I'd take it now.\" Make the offer in those words — the report of "
-        "what landed, then the offer — and let the user answer. Saying the "
-        "same phrase passes on the next reply; this is stopped once."
+        "Your last message reports a capture filed in a planning chat, and "
+        "neither it nor the two replies before it recommended what to do "
+        "with it. Either recommend filing — the report of what landed, the "
+        "recommendation, then the ask \"File it for later?\" — or, where "
+        "your lean is to process it now, proceed: the reply carries the "
+        "item's own interview or recommendation ask, in bold, with no "
+        "routing question. This is stopped once."
     )
 
 
@@ -817,8 +974,10 @@ def main():
                 "message stays on screen, and no account of what the clock "
                 "reads. A name written with a capital mid-sentence — a "
                 "product's own page or feature — passes, so a block on one "
-                "is a false positive to reword or ignore. This phrase is "
-                "stopped once; it passes on the next reply."
+                "is a false positive to reword or ignore. A word that is "
+                "content — what a slide, a template or a script says — goes "
+                "in quotation marks, which this check does not read. This "
+                "phrase is stopped once; it passes on the next reply."
             ),
         }))
         sys.exit(0)

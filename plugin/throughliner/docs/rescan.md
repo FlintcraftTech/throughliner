@@ -88,10 +88,11 @@ files.
 
 **Work still to do → Unprocessed** [PROMPT]. Show the candidate set as ONE
 numbered message before anything is written, and wait. **End it with what each
-answer does, and the ask names what it counts:** one candidate, "Say go to file
-it, or say no" with no numbering; two, "Say go to file both, or contest by
-number"; three or more, "Say go to file them all, or contest by number." A
-contested item is then dropped or reworked one at a time.
+answer does, and the ask names what it counts.** In a build chat — the
+build-chat arm: one candidate, "Say go to file it, or say no" with no
+numbering; two, "Say go to file both, or contest by number"; three or more,
+"Say go to file them all, or contest by number." A contested item is then
+dropped or reworked one at a time. The planning-chat arm is below.
 **What happens then depends on the answer:**
 
 ```
@@ -112,13 +113,17 @@ process the surfaced items with you now, one at a time** — entering plan.md's
 ordinary present-and-interview loop on the user's yes. The offer says "with
 you": processing is done together, and wording it as something Claude does alone
 primes the user for the wrong interaction. In any other chat the offer is not
-made and this skill files only. In that same message, after the bulk ask,
-name by slug the candidates worth processing before the next build run, one
-clause each saying why — a capture that would change what a cleared build
-does, or that blocks one — or say that none bears on the cleared work; read
-off the digest's capture-bears-on-cleared flags and the cleared region, with
-the limit that a flag reaches a capture naming the cleared slug, and one that
-bears without naming is this turn's own judgment.
+made and this skill files only. In that same message, the bears-on-cleared
+clause from plan.md's end-of-queue gate names by slug the candidates worth
+processing before the next build run, or says that none bears. **The
+planning-chat arm of the ask is written in bold, opens on the recommendation
+that read yields, and go means process now**, with filing for later written as
+the alternative — the count of items in the words. Where none bears on
+cleared work: "None bears on cleared work, so there is no immediate need to
+process these. File these for later? Otherwise say go to process them now."
+Where some bear: "Items 2 and 3 bear on cleared work, so I recommend
+processing those two now. Process them now, filing item 1 for later?
+Otherwise say go to process all three now."
 
 **What already happened → this chat's LOG entry, as a marked tail.** Append rather
 than rewrite — with the state server's `append_tail` tool where the server is

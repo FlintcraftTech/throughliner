@@ -51,8 +51,10 @@ gets built first — through discussion, not silently.
 
   **So the decision step asks, on every item: does this change what SPEC says?** If
   yes, write the sentence now, with the user present — into the part's own
-  `SPEC.md` where the change concerns one part named in the project CLAUDE.md's
-  `## Parts` block, and into the root `SPEC.md` where it is whole-project; and
+  `SPEC.md` where the sentence is true of that part's files and of nothing else
+  in the project — the part named in the project CLAUDE.md's `## Parts` block,
+  its spec written where none exists — and into the root `SPEC.md` where a
+  reader of the root would need it; and
   a goal whose "reached when" test now holds is rewritten or removed in the
   Goals section at the same turn.
 
@@ -140,7 +142,7 @@ Runs alone
   region so the run reaches everything else first. **Use it where the work moves
   paths underneath a run in flight** — a rename, a folder move, a migration.
   /next reads the marker as a
-  run bound and stops there — except that an item the run finds already done,
+  run bound and ends the run before it — except that an item the run finds already done,
   its observable check satisfied before any step is driven, closes and the run
   continues, since the bound keys on the run performing the work; the marker
   binds /next and nothing else, so it does
@@ -223,6 +225,16 @@ revisit still reads LOG and still skips silently — nothing else changes.
 **Each of these reports a fact, never a verdict.** Read them as inputs to your
 own judgment.
 
+**Where the digest's size-signs block holds any sign — the same step of the
+user's deferred run after run, the held region growing or a runs-alone item
+with a rising count ahead of it, one part's work cleared while another's
+waits, a part whose items cite only each other, the queue past one read, or
+successive planning records ending with the same number left to process —
+name it in one line of the opening narration, folded in the shape the other
+checks use, and name the pop-out — setup run inside the part's folder — as
+the thing the user may choose; quiet otherwise.** The FAQ's entry on project
+size carries the signs only a person can read.
+
 **Where the digest fails to run, the read still happens and the computed facts
 are simply absent; say which of the two you have rather than reasoning from a
 partial view.**
@@ -246,9 +258,11 @@ whether they were passed in or recomputed. Re-print the whole digest when the
 whole picture is what you need.
 
 **Then read the `LOG/index.md` lines newer than the most recent planning
-session's record** — found by that record's body fields rather than its
-filename, since the per-entry split names planning records by slug. Where no
-planning record exists, read the current month's lines.
+session's record** — read with the state server's `planning_anchor` tool
+where the server is registered, and otherwise found by that record's body
+fields rather than its filename, since the per-entry split names planning
+records by slug. Where no planning record exists, read the current month's
+lines.
 
 **Fold a line into the opening narration when it names a slug or a file the
 current queue also names, and leave it out otherwise.**
@@ -341,7 +355,9 @@ the next opening.
 nor a repository that can receive them; [BRIEF] where the channel exists —
 what was found in either direction, or the quiet clause where nothing was.
 Read the outbound register's open issue lines and check each with `gh` for
-comments newer than the most recent planning session's record; and where this
+comments newer than the most recent planning session's record — its date
+read with the state server's `planning_anchor` tool where the server is
+registered, and computed from the record by hand otherwise; and where this
 project has a repository that can receive issues, surface new incoming issues
 the same way mail is surfaced. File one capture per issue carrying something
 new, satisfied while an open capture already carries its slug. Issues stay on GitHub — nothing is copied into
@@ -511,7 +527,14 @@ cycle due, no open capture with its slug  ->  file ONE capture in Unprocessed
                                               ranks it; the line marks
                                               standing material the ladder
                                               passes over
-cycle due, open capture already exists    ->  satisfied; file nothing
+cycle due, open capture already exists    ->  satisfied; file nothing. Where
+                                              the turn was deferred to a
+                                              date, the capture carries that
+                                              date as `Not before:` on the
+                                              user's yes, so the ladder
+                                              passes it over until the day
+                                              while it still holds the check
+                                              satisfied by existing
 cycle not due                             ->  file nothing
 no cycles doc                             ->  nothing, silently — a project
                                               with no cycles pays nothing
@@ -554,15 +577,15 @@ if the drop-reason needs ANY argument  ->  not bulk-droppable; leave it for the
 **This pass only ever deletes; moving an entry into Processed stays one item at a time.** If nothing is
 obviously droppable this beat doesn't fire at all — say nothing and go to beat 2.
 
-**The ask recommends the drop explicitly and offers keeping as the exception, at
-any batch size.**
+**The ask is the drop itself, at any batch size, with keeping named as the
+alternative in the sentence before it.**
 
 > "Two look droppable — 1. **[old-slug]**: its premise is gone, the feature it
-> targeted was cut. 2. **[dupe-slug]**: duplicates **[other-slug]**. Drop both, or
-> name any to keep?"
+> targeted was cut. 2. **[dupe-slug]**: duplicates **[other-slug]**. Say which to
+> keep, if any. Drop both?"
 
 > "One looks droppable — **[old-slug]**: its premise is gone, the feature it
-> targeted was cut. My recommendation is to drop it — keep it instead?"
+> targeted was cut. Say so if you would rather keep it. Drop it?"
 
 **Beat 2 — the ordering ask** [PROMPT]. One question: **"Anything you want to
 process first? Otherwise say go and I'll take them in the method's order."**
@@ -570,11 +593,11 @@ One question, not a menu —
 the only alternative offered is the user's own priorities. A user with something
 on their mind answers it here.
 
-**Where an uncleared red flag tops the order, the ask is asymmetric instead:
-lead with the flag as what comes first unless the user names something
-definitely more important** — e.g. "An unaddressed privacy risk is first up
-unless something else is definitely more important — anything you want ahead of
-it?"
+**Where an uncleared red flag tops the order, the flag is the recommendation
+and the ask is "Start with the flag?"**, with naming something definitely more
+important stated as the alternative before it — e.g. "An unaddressed privacy
+risk is first up. Name something else only if it is definitely more important.
+Start with the flag?"
 
 **A subset the user names sets the ORDER, not the length of the run.** When
 those items are done, the checkpoint simply presents the next item, exactly as it
@@ -1002,7 +1025,7 @@ written here.** Six things, one line each, in the item's text where the run
 reads them:
 
 ```
-which files change, and what changes inside each, a new path placed by the temporary-files rule and the Parts block
+which files change, and what changes inside each, a new path placed by the temporary-files rule, the Parts block and MAP.md where the project has one
 which files the work READS but does not change   # where any do
 the observation that shows the change landed
 the files that observation REACHES, named among the files that change
@@ -1070,9 +1093,7 @@ the item clears. An assertion that a file or folder is absent is checked with a
 listing that shows hidden files, since absence is the one claim a normal
 listing gets wrong silently. An item that names something inside a file — a
 section, a block, a heading it will edit — has that file opened here and the
-named thing confirmed in it, and does not clear where it is not there; the
-file is usually open already for the Files line, and a file that changes
-between planning and the build is what the run's own halt still catches.
+named thing confirmed in it, and does not clear where it is not there.
 
 **Two questions are settled before the build is described, and each is answered
 in the item's prose:**
@@ -1263,11 +1284,18 @@ steps cannot all be scripted yet, file it with a rough walkthrough and
 sharpen it here.
 
 *Where a kept item produces text the user may edit — a draft, a post, an
-article — write the item's drafting steps in the co-authored-draft shape* (the
-`.txt` handed to the side panel, read back on their word — the walkthrough
-sub-rule in skill-nonspecific-rules.md, which stays canonical there), and have
-the draft step name where the draft lives: the project's `temp/` folder by
-default, or a project path only where the item's Files line names one.
+article, a deck, a form's wording — write the item's drafting steps in the
+co-authored-draft shape* (the `.txt` handed to the side panel, read back on
+their word — the walkthrough sub-rule in skill-nonspecific-rules.md, which
+stays canonical there). Before the draft's home is named, choose the medium:
+ask whether the user will be editing this somewhere Claude cannot reach, and
+whether an equally good medium exists where Claude can; choose by three tests
+in order — the user can write in it, otherwise it is not co-writing; Claude
+can write in it across as many stages as possible; it is the right final
+form for delivery — and write the chosen medium on the item. Then have the
+draft step name where the draft lives: for plain text, a `.txt` in the
+project's `temp/` folder by default, or a project path only where the item's
+Files line names one.
 
 **Run the THOROUGH capability check here — this is its site.** Restate the
 question as *what would answer this?* **before** searching, then name the tool
@@ -1570,42 +1598,46 @@ thing, on either branch below: a reply on the thing's substance counts as
 recommend-and-ask, never on the routing question again:
 
 ```
-process it now   ->  RECOMMEND THIS. Loops straight into the present-and-
-                     interview loop. NO capture is written: the item goes
-                     into present-and-interview and is written once, as a
-                     work item.
-carry on         ->  write the capture; it waits in Unprocessed for its turn
-(either way: anything else to add first?)
+Claude's lean decides, and the lean is stated:
+process it now   ->  where processing it would change this session's work,
+                     or the thing is not yet complete: PROCEED with no ask.
+                     The interview opens on it in the same reply. NO capture
+                     is written: the item goes into present-and-interview
+                     and is written once, as a work item. The user can add
+                     to it during processing, so nothing asks first.
+file it          ->  where the thing already seems complete: write the
+                     capture, then offer filing with the recommendation in
+                     the ask — "I would file this one for later, since it
+                     already seems complete; say process now to take it
+                     now. File it for later?" It waits in Unprocessed for
+                     its turn; "process now" enters the interview.
 ```
 
-**The ask is one fixed formula on both branches: "Process this with you now,
-or file it for later? I'd take it now."** — the user-raised branch adding
-"Anything else to add first?" after it, the Claude-raised branch adding
-nothing.
+**The ask, where one is made, is one fixed formula: "File it for later?"**,
+with the recommendation and the process-now alternative in the sentence
+before it. Where the lean is to process now there is no ask: processing
+proceeds.
 
 **The turn that reports a filing in a planning session ends on the same
-formula**: the one-line report of what landed, then
-"Process this with you now, or file it for later? I'd take it now." — so the two moments a raised
-thing passes through, before the write and after it, both end on the same
-sentence.
+formula**, where the thing filed was not already agreed: the one-line report
+of what landed, the recommendation, then "File it for later?" — so the two
+moments a raised thing passes through, before the write and after it, both
+end on the same sentence.
 
 **What stays the user's:** whether to process it at all, and whether there is
 appetite to carry on.
 
-**The "anything else to add first?" clause is not optional**, and it belongs to
-this branch only.
-
-**When *Claude* raises something mid-/plan that may be work, ask once, at the
-moment it is raised, before any write and before any analysis, design, or other
-work on it, in the fixed formula above — and
-recommend working it now.** **The offer says "with you"** — processing is done
-together. An applied correction that may be method work still gets the offer.
-**Recommend the route and nothing else.**
+**When *Claude* raises something mid-/plan that may be work, decide once, at
+the moment it is raised, before any write and before any analysis, design, or
+other work on it, by the same lean — and lean to working it now.** **Processing
+is done with the user** — together, never as something Claude does alone. An
+applied correction that may be method work gets the same decision.
 Work-it-now runs the ordinary present-and-interview loop and, if kept, places the
 item straight into Processed.
 
-No anything-else clause on this branch: asking would be soliciting further
-captures off the back of Claude's own, which the always-loaded rule bars.
+No anything-else clause on either branch: asking would be soliciting further
+captures, which the always-loaded rule bars, and the user can add to a thing
+while it is being processed.
 
 **Either branch, once it loops into present-and-interview, is subject to the
 fold conditions above** — and a thing raised in this message has had no earlier
@@ -1613,17 +1645,13 @@ turn on its substance, so its disposition cannot fold into the same message
 that introduced it.
 
 **The timing answer is not a disposition, and the specimen is what shows it.**
-"Process it now" answers *when*, and the recommendation on where it lands still has to be
-put and still has to wait:
+Proceeding answers *when*, and the recommendation on where it lands still has
+to be put and still has to wait:
 
 ```
-Claude   Process this with you now, or file it for later? I'd take it now.
-         Anything else to add first?
-
-user     yes, now
-
-Claude   [interview turn: what the item is, what it would change, what is
-         still open — questions, not conclusions]
+Claude   Taking this one now, since it would change what the cleared build
+         does. [interview turn: what the item is, what it would change, what
+         is still open — questions, not conclusions]
 
 user     [answers]
 

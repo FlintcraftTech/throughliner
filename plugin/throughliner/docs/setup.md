@@ -64,9 +64,12 @@ Then wait for their answer, and do what they say.
 Before writing anything, create an empty file named
 `.throughliner-setup-active` in this session's scratchpad directory. When the
 run ends — including on every path that ends early: the user declining above,
-a stop partway through, an error — rename it to `.throughliner-setup-done`,
-which stays until this chat's /done run deletes it as its last action: while
-it stands beside that run's own marker, the safety check lets the /done run
+a stop partway through, an error — create `.throughliner-setup-done` beside
+it, an empty file written with the Write tool, and leave
+`.throughliner-setup-active` where it is; no shell command touches either
+marker. The safety check reads the done marker as the end of the run. It
+stays until this chat's /done run deletes it as its last action: while it
+stands beside that run's own marker, the safety check lets the /done run
 correct the files setup scaffolded.
 
 It is what tells the safety check that this session is a setup run rather than a
@@ -121,15 +124,21 @@ the user declines,    ->  say plainly, once: every session ends with a
 ```
 
 **Write one line to `TOOLS.md`** — created where the project has none —
-naming the channel the user installed from: `Throughliner channel: stable` or
+naming the channel the user installed from. First read the marketplace's
+source from the registry file the opening's update check reads
+(`~/.claude/plugins/known_marketplaces.json`, the entry named by the folder
+above the plugin's own in its cache path): where its source is a directory,
+write `Throughliner channel: local` and ask nothing — a folder install is on
+no channel. Otherwise write `Throughliner channel: stable` or
 `Throughliner channel: beta`, read from the install command they ran
-(`#stable` or `#beta` on the marketplace line) or asked once where you cannot
-tell. The weekly check reads that line; a project with none is treated as
-stable.
+(`#stable` or `#beta` on the marketplace line), asked once only for an
+install from GitHub whose command line is unknown. The weekly check reads
+that line; a project with none is treated as stable, and a `local` line means
+no check runs.
 
-**Told once, here:** the session opening will call GitHub once a week to read
-the newest version on that channel, and what that tells GitHub is that this
-machine asked for the plugin's release list.
+**Told once, here, and not for a `local` line:** the session opening will call
+GitHub once a week to read the newest version on that channel, and what that
+tells GitHub is that this machine asked for the plugin's release list.
 
 ## Step 1: Detect folder state  [SILENT] while detecting; [BRIEF, PROMPT] when the project is already up to date
 
@@ -139,7 +148,9 @@ Case B  content, no SPEC.md   the user's own files exist but no method docs.
                               Either a true fresh start OR a MIGRATION.
 Case C  already set up        SPEC.md exists.
 Case D  inside another        no SPEC.md here, but walking up the folders
-        project               finds one. A POP-OUT — see below.
+        project               finds one. Either a POP-OUT or a new project
+                              made here — setup does not know which; see
+                              below.
 ```
 
 **Case D takes precedence over B for a folder inside an adopted project**: walk
@@ -158,20 +169,28 @@ version matches current plugin   ->  fully up to date. Say so in a sentence,
 version missing or outdated      ->  Step 2C (migration scaffolding)
 ```
 
-## Case D: popping a subpart out into its own project
+## Case D: a folder inside an adopted project
 
 This folder sits inside a project that is already set up, and the user is
-adopting it separately. That is a **pop-out**: a subpart that has outgrown the
-parent — one unmanageable piece of a large differentiated project — becoming a
-project of its own.
+adopting it separately. It is one of two things, and setup does not know
+which: a **pop-out** — a subpart that has outgrown the parent, one
+unmanageable piece of a large differentiated project, becoming a project of
+its own — or a **new project made here**, inside another project's folder
+and nothing more.
 
-**Read the parent's SPEC, infer which subpart this folder covers, and put it to
-the user in clarifier form**  [PROMPT] — inviting their answer rather than
-proposing one, exactly as Case B's peek does.
+**Ask that first, in clarifier form**  [PROMPT] — pop-out, or a new project
+made here? — inviting their answer rather than proposing one, exactly as
+Case B's peek does. On "new project", the ordinary interview runs, and the
+setup record and the project's `CLAUDE.md` say only that the project sits
+inside another project's folder, in the user's words where they gave any;
+nothing is inferred about its history.
 
-**State the irreversibility in that same confirmation, plainly: there is no
-scripted way back in.** Popping out is a one-way move; folding the work back
-into the parent later is hand work nobody has written a path for.
+**On "pop-out", go on to which subpart:** read the parent's SPEC, infer which
+subpart this folder covers, and put it to the user in clarifier form
+[PROMPT]. **State the irreversibility in that same confirmation, plainly:
+there is no scripted way back in.** Popping out is a one-way move; folding
+the work back into the parent later is hand work nobody has written a path
+for.
 
 Then run the ordinary interview with that context, and write the ordinary docs.
 **The new project is an ordinary project in every respect and never reads
@@ -188,9 +207,10 @@ show it done, or wait for the user to mention it.
 boundary travels as approval-gated mail, and the receiving project files it with
 its own hands.
 
-**At /done, draft the pop-out message to the parent's INBOX**  [PROMPT] —
-shown to the user in full, sent only on an explicit yes, like any other outbound
-mail.
+**At /done, where the answer was pop-out, draft the pop-out message to the
+parent's INBOX**  [PROMPT] — shown to the user in full, sent only on an
+explicit yes, like any other outbound mail. A new project made here sends
+nothing.
 
 ## Case B: pre-existing content rules
 
@@ -275,7 +295,9 @@ no marker file
 ```
 
 **Read the epoch from the marker rather than inferring it from the documents** —
-inferring guesses about files users legitimately hand-edit.
+inferring guesses about files users legitimately hand-edit. The epoch-6
+section runs the LOG summary backfill through the backlinks script, once,
+shown before it runs.
 
 **Where a conversion writes a build block — or any instruction text — under an
 existing queue item, it writes one more line beneath it:**
@@ -368,8 +390,11 @@ offered and a rough one accepted, an ambiguous part put to the user. On an
 answer, plan the reorganisation with the user file by file — one folder per
 part, product parts in the inner repository and process parts in the outer,
 the looser split stated where the inner will never be public — and write the
-parts block, with a stub `SPEC.md` in each part's folder and a `## Parts`
-section in the root spec, as the scaffold's parts step writes them. On
+parts block, with a part's `SPEC.md` only where the user gives the part a
+sentence beyond its name — its first line saying it is a part of the project
+above — and a `## Parts` section in the root spec whose line says, for a part
+with no spec, that its truth is the root spec, as the scaffold's parts step
+writes them. On
 anything else, drop it: the project keeps the workshop rule
 as its default, and nothing runs at a later session opening for this. The
 top-up does not carry it.
@@ -585,8 +610,16 @@ One-line summaries of each session. Newest first. Each line names the session's
 full entry file in this folder.
 ````
 
-Session entries are written by /done, each as its own file in LOG/ — nothing else
+Session entries are written by /done, each as its own file in LOG/ carrying its
+own summary field, from which the close regenerates this index — nothing else
 to scaffold.
+
+**MAP.md** — written from `${CLAUDE_PLUGIN_ROOT}/templates/MAP-TEMPLATE.md`
+after the interview, at Step 4: one line per folder of the adopted tree and
+one per file a person uses — documents, slides, spreadsheets, PDFs, images —
+with a set of like files summarised as one line and machinery left out, each
+line one judgment under the criterion the template's preamble states. The
+migration path and the top-up add it to an existing project the same way.
 
 **FAQ/ folder** — create the directory **first**, then copy the templates in (the
 folder must exist before the copies, or they fail):
@@ -695,12 +728,17 @@ folder and its repository, and one line saying where a file belonging to no
 part goes. Where the inner repository will never be public, say so in one
 line and let the split be looser: more may sit alongside the product there.
 
-**Each part gets its own spec.** Write a stub `SPEC.md` into each part's folder
-— a heading and one line saying what the part is — and a `## Parts` section
-into the root `SPEC.md`: one line per part, what it is, and a link to that
-part's spec. The root spec stays the whole-project layer; a build reads a
-part's spec only for the items whose files sit in that part, and planning
-writes a decision's sentence into the part's spec where it concerns that part.
+**A part gets its own spec only where the interview gave it a sentence beyond
+its name.** Where it did, write that part's `SPEC.md` into the part's folder,
+its first line saying it is a part of the project above and not a project of
+its own, naming the root spec, then the sentence; where it did not, write no
+file. Write a `## Parts` section into the root `SPEC.md`: one line per part,
+what it is, and a link to that part's spec where it has one — otherwise the
+line says the part's truth is the root spec. The root spec stays the
+whole-project layer; a build reads a part's spec only for the items whose
+files sit in that part, and a part with no spec reads as the root alone;
+planning writes a decision's sentence into the part's spec where the sentence
+is true of that part's files and of nothing else in the project.
 
 **A folder that is already a flat repository is never restructured here.** The
 conversion is an offer — at the migration path, and again as the
@@ -1000,9 +1038,12 @@ Tell the user plainly, early on, that they can end it any
 time by saying **"build from what we have"**, at which point you stop asking and
 write the docs from whatever's been gathered.
 
-**The first capture** — whichever answer names the first thing to build — creates
-**one rough capture** in Unprocessed: a `#### ` heading **in the user's words**,
-with a kebab-case `[slug]` at the end and a "captured by you" note beneath.
+**The first capture** — whichever answer names the first thing to build — files
+**one rough capture** in Unprocessed through the state server's `file_capture`
+tool where the server is registered, and the queue tool's
+`--append Unprocessed` otherwise, the same way every other capture is filed:
+the tool is given the heading **in the user's words**, a kebab-case slug and a
+"captured by you" note as the body, and it stamps the entry itself.
 
 **Write the heading in the user's own words, and stop there.** Their words are
 the whole content of the item — anything added is Claude's scope decision wearing
@@ -1066,14 +1107,22 @@ a personal fact would improve a document and nobody supplied it, leave it out;
 where it is genuinely needed, ask for it as a question like any other.
 
 ```
-1.  fill SPEC.md from the interview answers
-2.  write ONE capture in Unprocessed from the first-thing-to-build answer
-    # the user's words, a [slug] at its end, a "captured by you" note.
-    # Not multiple scoped entries.
-3.  show the user what was created (file list + one line each)
-4.  rename `.throughliner-setup-active` in the session scratchpad to
-    `.throughliner-setup-done` — the run is over, so the declaration from
-    Step 0.5 comes down, and the done-marker says setup ran in this chat
+1.  fill SPEC.md from the interview answers, and write MAP.md from the
+    template — one judgment per folder and per human-used file of the
+    adopted tree, sets summarised, machinery left out
+2.  file ONE capture in Unprocessed from the first-thing-to-build answer,
+    # through the state server's file_capture tool where the server is
+    # registered and the queue tool's --append Unprocessed otherwise:
+    # the user's words as the heading, a slug, a "captured by you" note.
+    # Not multiple scoped entries, and never written by hand.
+3.  show the user what was created (file list + one line each), and say in
+    one line that the state server's tools are available from here, where
+    the server is registered — so a chat that falls to the scripts does
+    not do so silently
+4.  create an empty `.throughliner-setup-done` in the session scratchpad
+    with the Write tool, leaving `.throughliner-setup-active` where it is —
+    the safety check reads the done marker as the end of the run, and it
+    says setup ran in this chat
 5.  recommend /done to record this setup and commit the new files
 6.  teach the working rhythm (below)
 ```

@@ -305,24 +305,25 @@ at its tick and so describing what the build actually did rather than predicting
 it — reuse it. Planning sessions have no candidate; author fresh against the same
 rule.
 
-Prepend to `LOG/index.md` after the header, ending with the entry's filename:
+**Write the entry's index line into the entry itself**, as a front-matter
+block at the very top of the file — the line's text after the hash, and
+nothing is appended to `LOG/index.md` by hand:
 
 ```
-- [HASH] — [index entry] → [entry filename]
+---
+summary: [index entry]
+---
+# [HASH] — [entry heading]
 ```
 
-**Month rollover, checked here because this is the step that touches the
-index:** where `LOG/index.md` holds lines from a month that has ended, move
-that month's lines into `LOG/index-YYYY-MM.md` (creating it if absent, newest
-first like the main index), leaving the current month's lines where they are.
-Retrieval searches `LOG/index*.md`, so nothing is lost to the move; the main
-index stays the short file a planning opening reads from, back as far as the
-most recent planning session's record.
-
-**Then regenerate `LOG/backlinks.md`** with `python
-<plugin-root>/scripts/log_backlinks.py <project root>`, after the record and
-its index line are written, and stage it with them — the file is computed from
-the records every time and never edited by hand.
+**Then regenerate the index files and `LOG/backlinks.md` together** with
+`python <plugin-root>/scripts/log_backlinks.py <project root>`, after every
+record is written, and stage them with the records — `LOG/index.md` (the
+current month) and each `LOG/index-YYYY-MM.md` (a completed month) are
+written from the records' summary fields, newest first by each record's own
+date field, in the line shape `- <hash> — <summary> → <filename>`, so the
+month rollover happens in the generator; none of these files is edited by
+hand, and a record with no summary field is indexed from its heading.
 
 **Each entry is its own file under `LOG/`, date-prefixed** so the folder sorts
 newest-first on a name sort, each in its own file rather than a shared log:
@@ -355,10 +356,11 @@ sentence in its record, and change no filename or datestamp:**
 
 > This session ran across 2026-08-11 and 2026-08-12.
 
-**Write the hash into the entry heading and the index line only** — the commit
-hash doesn't exist yet when the file is written, which is why the placeholder
-pattern exists, and the filename carries the date instead. /done itself
-fills the placeholder right after the commit (the commit step below says how).
+**Write the hash into the entry heading only** — the commit hash doesn't
+exist yet when the file is written, which is why the placeholder pattern
+exists, and the filename carries the date instead; the index line takes the
+hash from the heading when it is regenerated. /done itself fills the
+placeholder right after the commit (the commit step below says how).
 
 **Write the literal placeholder token in hash position only**, where the
 automatic backfill treats any match mechanically, so a prose mention is one
@@ -508,7 +510,11 @@ Offer to delete only files meeting **all** of these:
 Claude created or wrote them THIS session
     # established from the build working file Changes and this session's own edits.
     # A file Claude did not create this session is NEVER presumed rubbish —
-    # uncommitted changes the session didn't make are the user's own work.
+    # uncommitted changes the session didn't make are the user's own work,
+    # and where they add, rename or remove folders of the product, the close
+    # reads the move as a structural decision of the user's, records it as
+    # one, and corrects the spec and Parts sentences that now read wrong on
+    # the user's yes (done-plan.md's handmade-work step carries the read).
 they have NO future use
     # not a deliverable, not a research finding, not evidence a later session
     # must re-read. Purely throwaway.
@@ -536,6 +542,15 @@ from this session's discussion so they land in this same commit. File-only.
 
 **Run the session-file cleanup before staging too**, so any deletions the user
 accepts fold into this same commit.
+
+**Run the map check before staging, where `MAP.md` exists at the root:** take
+this session's new and moved paths from `git status --porcelain`, grep each
+folder and each human-used file among them against `MAP.md`, and name in one
+line every folder and human-used file with no line there, writing the missing
+lines on the user's yes before the commit, under the criterion the map's own
+preamble states; a hand-made folder move rewrites the lines it moves at the
+same step. Machinery — scripts, configuration, anything wired to other files
+— earns no line and draws no question.
 
 **Shipped-slug cross-check (work-item closes).** When this session shipped work
 items, cross-check each shipped slug named in this session's LOG entries against
@@ -666,8 +681,9 @@ flat project — one repository — is unchanged by all of this.
 **Then leave the session-closed marker: write this session's record filename
 into `.throughliner/session-closed-<session-id>`.**
 
-**Then write the commit hash into the headings and index lines this /done run just
-wrote** — /done is the one moment the hash exists and the files are at
+**Then write the commit hash into the headings this /done run just wrote,
+and regenerate the index files with the backlinks script so their lines
+carry it** — /done is the one moment the hash exists and the files are at
 hand, and it is one convention for tracked and untracked projects alike (an
 untracked log never appears in any commit, so nothing later can attribute it
 from git). Read the hash from the commit just made, replace each placeholder
@@ -680,16 +696,24 @@ from each record's own time against the commit history.
 
 Every sub-doc's final step points here, adding only its flavor delta.
 
-**Content line for this turn: it states the queue situation as the next
-planning session would present it, any cycle whose turn is due — named whether
-or not a capture was filed for it — and the continuations — more planning, or a
-build — as statements of fact, and where the run this /done run records stopped at
-a held item whose blocker it shipped, what of the intended change is
-not yet on screen, in product terms, and nothing else; the close names no
-rescan, its own look-back having just run.** Neither continuation is
-assumed or recommended over the other: a user may plan as many times as they
-want until enough is queued to justify a build, so which comes next is theirs,
-and this turn's job is to leave them holding the facts that decide it.
+**Content line for this turn: five slots, each filled from a computed fact,
+and nothing else.** (1) The commit hash and the record's link. (2) The cleared
+count and the first few cleared items by name, read from the digest run after
+the session's last queue write — the state server's checkpoint counts where
+the server is registered, `queue_digest.py` otherwise. (3) The count waiting
+to be sorted, counted as the narration below defines, and the overlap scan's
+verdict. (4) The run-alone announcement, where the digest's count-ahead for
+the marked item reads zero, per the announce step below. (5) The one
+recommendation the queue-state ladder's rung yields, always with the sentence
+that a fresh session is where it runs — the command named in words
+mid-sentence. Any cycle whose turn is due is named whether or not a capture
+was filed for it; where the run this /done run records stopped at a held item
+whose blocker it shipped, what of the intended change is not yet on screen is
+said in product terms; the held-item lift proposal stays where the narration
+below places it. The close names no rescan, its own look-back having just
+run; it names no check that found nothing — the push where there is no
+remote, the scrub, the credential scan — and no cleared item the next run
+cannot reach.
 
 **Two arms, decided by whether this /done run filed a concrete advisory:**
 
@@ -746,25 +770,23 @@ as a hedge.
 
 ```
 1. captures appended this session that affect the next work
-       ->  recommend /plan, name the blocker
+       ->  name the blocker, and recommend planning next: running the plan
+           command in a fresh session is where it is sorted
 2. work sits ABOVE the readiness marker
-       ->  state the situation and both continuations as facts: the next
-           cleared item by name, and how much work is waiting to be sorted
-           (counted as the narration above defines). Where the build route is
-           stated, the statement includes that a build runs best in a fresh
-           session — information about that route, never the assumed next
-           step. End the message on a statement that names each
-           continuation's command in words, as the communication rule
-           defines it, mid-sentence — the plan command for more planning,
-           the next command for a build — with no command string at its end
+       ->  name the next cleared item and how much work is waiting to be
+           sorted (counted as the narration above defines), and recommend a
+           build next: running the next command in a fresh session is where
+           it runs. The command is named in words, as the communication rule
+           defines it, mid-sentence, with no command string at the message's
+           end
 2b. Processed holds work but the cleared region is EMPTY (the marker is at
     the top)
-       ->  say the next work still needs vetting, and that running the plan
-           command is what vets it. A build run would soft-stop here, costing
-           a round trip.
+       ->  say the next work still needs vetting, and recommend planning
+           next: running the plan command in a fresh session is what vets
+           it. A build run would soft-stop here, costing a round trip.
 3. Processed empty
-       ->  say the queue is clear and that running the plan command is where
-           more work comes from.
+       ->  say the queue is clear, and recommend planning next: running the
+           plan command in a fresh session is where more work comes from.
 ```
 
 **A session makes exactly one commit, and the tail makes none.** That is the
@@ -799,15 +821,23 @@ bottom of Unprocessed, or a filled-in hash, and give anything else the full
 treatment** — which is what keeps /done's staging check its teeth.
 
 **Announce an item the next run must take alone, where Processed holds one —
-a `[freeform]` item, or the top cleared build marked `Runs alone`.** /next halts
-on a freeform item rather than building it, and builds a run-alone item by
-itself and nothing else, so say plainly what the item is and that it needs a
-session of its own.
+a `[freeform]` item, or a cleared build marked `Runs alone` whose count-ahead
+in the queue digest reads zero.** The digest is run after the session's last
+queue write — the state server's checkpoint counts where the server is
+registered, `queue_digest.py` otherwise — and its count of cleared items ahead
+of each `Runs alone` item is the trigger: the run-alone arm fires only where
+that count is zero, and otherwise the closing message says how many cleared
+items sit ahead of the marked item and that its run comes after them. /next
+halts on a freeform item and never builds it, and ends the run before a
+run-alone item, building it in a run of its own; say plainly which it is and
+that it needs a session of its own.
 
 **Hand over the words to start it.** With the announcement, give the starter
 prompt for that case verbatim in a fenced block — a paste target, rendered per
 the view-in-doc rules — substituting only the item's slug for `<slug>` and,
-in the second, its heading for `<heading>`:
+in the second, its heading for `<heading>`, both filled from the state
+server's `queue_next_pick` answer where the server is registered and the
+digest's next-pick read otherwise, never typed from memory of the run:
 
 ```
 We're doing the freeform work item [<slug>] by hand in this chat — it's work

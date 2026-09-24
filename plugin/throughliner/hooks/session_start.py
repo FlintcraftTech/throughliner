@@ -66,7 +66,14 @@ import sys
 #      research notes sit at a path the scope-lock, the digest and the
 #      always-loaded rules no longer name, so its files are structurally
 #      wrong until /setup moves them.
-FORMAT_EPOCH = 5
+#   6  the LOG index is generated: each record carries its one-line summary
+#      in a front-matter field (`---` / `summary: …` / `---` above its
+#      heading), and the close regenerates `LOG/index.md` and the monthly
+#      files from those fields. An existing project's records carry no
+#      field, so its index would regenerate empty until the one-time
+#      backfill writes each record's index line into it
+#      ([log-index-generated-from-front-matter]).
+FORMAT_EPOCH = 6
 
 # The project records its own epoch here, written by /setup on completion.
 FORMAT_EPOCH_FILE = ".throughliner-format-epoch"
@@ -466,7 +473,18 @@ def backfill_log_hashes(cwd):
         misplaced_flagged = False
         is_index_file = name.startswith("index")
         is_legacy_log = name.startswith("log")
+        # A record's leading front-matter block — `---`, `summary: …`, `---`
+        # — carries the summary the index is generated from and never a hash
+        # slot, so the fill starts after it ([log-index-generated-from-front-matter]).
+        front_matter_end = -1
+        if lines and lines[0].strip() == "---":
+            for j in range(1, len(lines)):
+                if lines[j].strip() == "---":
+                    front_matter_end = j
+                    break
         for i, line in enumerate(lines):
+            if i <= front_matter_end:
+                continue
             match = _placeholder_in_slot(line, is_index_file, is_legacy_log)
             if not match:
                 if (
@@ -559,26 +577,48 @@ def backfill_log_hashes(cwd):
 # stable, the beta branch's manifest for beta — and says in one line where a
 # newer one exists. Seven days is the release cycle's own cadence, which is
 # the derivation. The channel is read from TOOLS.md, which setup writes; a
-# project with no line is on stable, the default install. Silence where the
-# CLI is absent, not signed in, or the marker is fresh; nothing runs without
-# the CLI, by the user's decision — one prerequisite, one route.
+# project with no line is on stable, the default install; a `local` line
+# names a folder install, which is on no channel, so no check runs for it
+# ([setup-channel-local-for-folder-install]); any other word is named as
+# unreadable rather than read as stable. Silence where the CLI is absent,
+# not signed in, or the marker is fresh; nothing runs without the CLI, by
+# the user's decision — one prerequisite, one route.
 UPDATE_CHECK_MARKER = os.path.join(".throughliner", "update-check")
 UPDATE_CHECK_DAYS = 7
 UPDATE_REPO = "FlintcraftTech/throughliner"
-_CHANNEL_LINE = re.compile(r"^\s*-?\s*\**Throughliner channel:?\**\s*:?\s*(stable|beta)\b",
+_CHANNEL_LINE = re.compile(r"^\s*-?\s*\**Throughliner channel:?\**\s*:?\s*([A-Za-z]+)\b",
                            re.IGNORECASE | re.MULTILINE)
+_CHANNELS = ("stable", "beta", "local")
 _VERSION_SHAPE = re.compile(r"v?(\d+)\.(\d+)\.(\d+)(?:-test(\d+))?")
 
 
+def _map_pointer(cwd):
+    """The one line naming MAP.md as the session's first read, where the file
+    exists at the root, else "". Its absence is never flagged: an existing
+    project gains the map through setup's top-up, and the map is a read, not
+    a scaffold check ([project-map-for-claude])."""
+    if not os.path.isfile(os.path.join(cwd, "MAP.md")):
+        return ""
+    return ("[Throughliner] MAP.md at the project root says what the "
+            "project's folders and human-used files are for — read it first, "
+            "before any other file, so a folder this session never opens is "
+            "still in view when something belongs there.")
+
+
 def _channel_from_tools(cwd):
-    """`stable` or `beta`, read from TOOLS.md's channel line; stable by default."""
+    """`stable`, `beta` or `local`, read from TOOLS.md's channel line; stable
+    where there is no line, and `unreadable` where the line carries any other
+    word."""
     try:
         with open(os.path.join(cwd, "TOOLS.md"), "r", encoding="utf-8",
                   errors="replace") as f:
             m = _CHANNEL_LINE.search(f.read())
     except OSError:
         return "stable"
-    return m.group(1).lower() if m else "stable"
+    if not m:
+        return "stable"
+    word = m.group(1).lower()
+    return word if word in _CHANNELS else "unreadable"
 
 
 def _version_key(version):
@@ -647,6 +687,16 @@ def update_check(cwd, installed_version, now=None, run=None, which=None,
     which = which or shutil.which
     run = run or _default_gh_runner
     now = now or datetime.datetime.now()
+    channel = _channel_from_tools(cwd)
+    if channel == "local":
+        # A folder install is on no channel: nothing to fetch, nothing said.
+        return ""
+    if channel == "unreadable":
+        return (
+            "[Throughliner] TOOLS.md's `Throughliner channel:` line carries a "
+            "word the update check does not read — it takes stable, beta or "
+            "local — so no update check ran."
+        )
     marker = os.path.join(cwd, UPDATE_CHECK_MARKER)
     try:
         age = now - datetime.datetime.fromtimestamp(os.path.getmtime(marker))
@@ -659,7 +709,6 @@ def update_check(cwd, installed_version, now=None, run=None, which=None,
     rc, _ = run(["auth", "status"])
     if rc != 0:
         return ""
-    channel = _channel_from_tools(cwd)
     newest = ""
     if channel == "beta":
         rc, out = run(["api", "-H", "Accept: application/vnd.github.raw",
@@ -3056,6 +3105,11 @@ def main() -> int:
             "question list is in FAQ/index.md and the answers in FAQ/faq.md. "
             "Open it when a workflow question comes up, or point the user there."
         )
+
+    map_pointer = _map_pointer(cwd)
+    if map_pointer:
+        context_parts.append("")
+        context_parts.append(map_pointer)
 
     # A short tone reminder, last of all. Anthropic's Opus 5 guidance pairs a
     # concision instruction with a brief restatement near the END of a long

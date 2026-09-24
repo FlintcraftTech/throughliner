@@ -202,8 +202,24 @@ def log_entries(root):
         # A planning session's entry is named for the session, not for a work
         # item, so the slug is where the flavor is legible without opening it.
         flavor = "plan" if slug == "plan" or slug.startswith("plan-") else "build"
-        out[name] = (date, flavor, words(body))
+        out[name] = (date, flavor, words(strip_front_matter(body)))
     return out
+
+
+def strip_front_matter(text):
+    """The record's text after its leading `---` front-matter block, which
+    carries the summary field the index is generated from and is not part
+    of the record's own length ([log-index-generated-from-front-matter]).
+    Copied per reader, since the scripts run standalone."""
+    if not text.startswith("---"):
+        return text
+    lines = text.split("\n")
+    if lines[0].strip() != "---":
+        return text
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[i + 1:])
+    return text
 
 
 # An entry heading in a pre-split combined log: `## <hash> — <title>`.

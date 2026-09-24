@@ -81,6 +81,9 @@ def project():
         f.write("print('hi')\n")
     with open(os.path.join(d, "notes.md"), "w", encoding="utf-8") as f:
         f.write("notes\n")
+    os.makedirs(os.path.join(d, "day one"))
+    with open(os.path.join(d, "day one", "plan.md"), "w", encoding="utf-8") as f:
+        f.write("plan\n")
     return d
 
 
@@ -195,6 +198,25 @@ check("non-ASCII survives byte-identical", "résumé" in w and "Ã©" not in w)
 check("the safety check's parser yields exactly the paths passed",
       hook_parse(os.path.join(d, "_build-s1.md")) == ["src/app.py", "notes.md"],
       repr(hook_parse(os.path.join(d, "_build-s1.md"))))
+
+# --- a space inside a folder name is an ordinary path -----------------------
+# ([build-open-refuses-paths-with-spaces]): accepted, written as one bullet,
+# and read back by the safety check's parser as one path.
+d_sp = project()
+text = call(d_sp, "build_open", dict(GOOD, files=["day one/plan.md", "notes.md"]))
+check("a path with a space inside a folder name is accepted",
+      text.startswith("Wrote _build-s1.md"), repr(text))
+check("the spaced path is written to Files: as one bullet and parsed as one path",
+      hook_parse(os.path.join(d_sp, "_build-s1.md")) == ["day one/plan.md", "notes.md"],
+      repr(hook_parse(os.path.join(d_sp, "_build-s1.md"))))
+shutil.rmtree(d_sp, ignore_errors=True)
+# Trailing whitespace is stripped at the door, so the bare path is what lands.
+d_tw = project()
+call(d_tw, "build_open", dict(GOOD, files=["src/app.py  ", "notes.md"]))
+check("trailing whitespace is stripped and the bare path written",
+      hook_parse(os.path.join(d_tw, "_build-s1.md")) == ["src/app.py", "notes.md"],
+      repr(hook_parse(os.path.join(d_tw, "_build-s1.md"))))
+shutil.rmtree(d_tw, ignore_errors=True)
 
 # --- the tick tool ticks an item in a file this tool opened ------------------
 tick = call(d, "build_tick", {

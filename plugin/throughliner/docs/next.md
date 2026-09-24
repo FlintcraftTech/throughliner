@@ -29,10 +29,11 @@ TRUE, and what every "do not interrupt this" rule below rests on:
 FALSE, and no longer claimed anywhere:
     that it finishes on its own. A run pauses at four points and occupies
     the session while it goes:
-      - a `[user]` item, walked through live, one step at a time
-      - a `[co-write]` item, driven as the co-authored-draft loop on its
-        one file, and the run stops at it as at a `[user]` item
-      - a `[freeform]` item, which halts it outright
+      - a `[user]` item, which the run pauses at to walk through live, one
+        step at a time, then carries on
+      - a `[co-write]` item, which the run pauses at to work with the user
+        as the co-authored-draft loop on its one file, then carries on
+      - a `[freeform]` item, which /next halts on and never builds
       - /done, which is the user's command to run — so a run left alone
         finishes its builds and sits there uncommitted
 ```
@@ -82,11 +83,13 @@ run       = Processed[ top .. `--- Cleared to run above this line ---` )
 flavor(item):
     (no tag)    ->  build   ->  next-build.md
     [audit]     ->  review  ->  next-build.md's audit section
-    [user]      ->  walk the user through it; never built
-    [co-write]  ->  walk it as the co-authored-draft loop in
-                    skill-nonspecific-rules.md, on the one file it names;
-                    the run stops at it as at a [user] item
-    [freeform]  ->  HALT — needs a session of its own; never built here
+    [user]      ->  the run pauses at it to walk the user through it, then
+                    carries on; never built
+    [co-write]  ->  the run pauses at it to work it with the user as the
+                    co-authored-draft loop in skill-nonspecific-rules.md, on
+                    the one file it names, then carries on
+    [freeform]  ->  /next HALTS ON it — needs a session of its own; never
+                    built here
 ```
 
 **Pick every item from above the marker, and only from there.** This is a
@@ -98,7 +101,7 @@ cleared region top-down:
 
 ```
 marker on an item, run has already built something
-    ->  stop before it. The run ends there.
+    ->  end the run before it.
 marker on the run's FIRST item
     ->  build it, then end the run after it.
 marker on an item whose observable check finds ALL of it already satisfied
@@ -106,8 +109,8 @@ marker on an item whose observable check finds ALL of it already satisfied
         performing the work; no paths moved, so there is nothing to protect.
 ```
 
-Say plainly why the run stopped: this item must not be built alongside other
-work, so it gets a run of its own — and how many cleared items sit below it
+Say plainly why the run ended before it: this item must not be built alongside
+other work, so it gets a run of its own — and how many cleared items sit below it
 that this run will not reach, counted off the queue, so a marked item that has
 risen above other work is seen at the stop that it causes — then recommend
 /done. Mechanical, no judgment. It composes with the cleared-to-run line rather than replacing it:
@@ -158,7 +161,9 @@ below cost almost nothing.
 **Per item, read the specs of the parts the item's files sit in.** Where the
 project CLAUDE.md carries a `## Parts` block, the run derives each part from the
 folders on the item's Files line and reads that part's own `SPEC.md`, in the
-part's folder — two parts, two specs; files in no part, the root alone. The
+part's folder — two parts, two specs; files in no part, the root alone; and a
+part whose folder has no `SPEC.md` reads as the root alone, the same as files
+in no part. The
 contradiction halt and the filed-gap rule in next-build.md apply to whichever
 spec was read.
 
@@ -198,7 +203,7 @@ the queue, and stop there rather than skipping to the next item.
 A `[freeform]` item is placed at one end of the cleared region rather than the
 middle, so the halt is always cheap: met first, nothing has started; met last,
 everything else is already finished. When one sits at the *end* of the run, Step 3
-builds everything above it and then halts on it, which is the same stop reached
+builds everything above it and then halts on it, which is the same halt reached
 from the other side.
 
 **On ALL_WALKTHROUGHS** [PROMPT] — there's nothing to build, so skip Step 2's
@@ -414,7 +419,8 @@ Changes:
 
 The `Files:` section feeds the scope-lock: pre_tool_use allows edits only to
 those files plus the method docs, and denies everything else. **Lines must be
-bare paths** — the hook matches each line as an exact path, so any annotation
+bare paths, each on its own `- ` bullet, which is what the safety check
+reads** — the hook matches each line as an exact path, so any annotation
 becomes part of the path and silently breaks the match, and a folder line
 covers no file beneath it: every file the run writes is named. Make sure no
 other line in the file starts with `Files:`.
@@ -598,8 +604,11 @@ judgment about whether its moment has come.
 **Test a precondition inside the item's own drive, never as an outside filter.**
 Where a drive's first step cannot proceed — the thing it needs isn't there, the
 build it assumes hasn't shipped — say so on that item's turn, in plain words,
-and let the user's answer settle it. That keeps the decision in front of the
-person who owns it, at the moment the item is actually in view.
+in one line; record it under the outcome block's "anything else" value as
+blocked on that thing; and move on to the next item with no ask. The ask stays
+only where the user's answer genuinely settles something — a step Claude could
+drive on their say-so, or a choice between two ways. That keeps the decision
+in front of the person who owns it, at the moment the item is actually in view.
 
 **A precondition field the run could evaluate mechanically is refused**: it
 recreates the outside filter with a schema, and this decision belongs in front
@@ -617,11 +626,10 @@ for a deterministic result set the user reads and accepts in one pass. A
 walk-through is an action driven live.)
 
 **Where the item's record shows it was handed over for completion after a /done run
-and names no observable this run can reach, replace the drive with the one
-ask** — where did that land? Both facts together, read off the record, and one
-ask rather than a walk-through of steps the user may already have finished days
-ago. The carve-out and its reasoning are in skill-nonspecific-rules.md's
-`[user]` lifecycle; this is where it fires.
+and names no observable this run can reach, present it as not marked done**,
+name what waits on it by slug from the queue's `Blocked by:` lines, and carry
+on; nothing is asked. Both facts together, read off the record. The list is
+the reason to act, and the user saying it is done is how the item completes.
 
 This is a place to record, not a restriction on doing. The branch is *supposed*
 to run whatever parts Claude can — that is what makes it a live drive. The record
@@ -636,6 +644,12 @@ walking beside them, not dumping a list for them to work alone.
 **What a step turn carries.** Where the step's reasoning is already agreed and on
 the record, the step is the ask alone — what to do and what to look for, in the
 standard ask shape. Full reasoning appears only for something not yet agreed.
+Where the ask offers leaving the item, it offers it for another session, never
+a day, and says nothing about how long this session has run; and once the user
+has left one step this run, each later hand-over leads with leaving that step
+as the recommendation, in the ask shape "Leave this one too?", saying in the
+same message that sending done leaves it and ends the session — done being the
+way to do both, never a third choice beside starting or leaving.
 
 ```
 reasoning agreed and recorded   ->  the ask alone
@@ -659,9 +673,10 @@ done          walked to its end this session, or the user said they did it, or
 deferred      the USER said to leave it — their word, never inferred
 not reached   the run never presented it, or presented it and got no answer
 anything else what actually happened, in one plain sentence, with the detail in
-              the item's own record — "halted mid-drive: its walkthrough says to
-              post into the existing topic, and re-homing needs a new one",
-              "driven to the end of Claude's part; the final step is the user's"
+              the item's own record — "blocked on the wifi adapter, not yet in
+              hand", "halted mid-drive: its walkthrough says to post into the
+              existing topic, and re-homing needs a new one", "driven to the
+              end of Claude's part; the final step is the user's"
 ```
 
 **Write `deferred` only from the user's own word — given about that item, or

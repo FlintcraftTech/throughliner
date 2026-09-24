@@ -186,6 +186,37 @@ LOG_ENTRY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-([a-z0-9][a-z0-9-]*)\.md$")
 # Only these three exact shapes are stripped. Prefix-matching arbitrary
 # suffixes was refused: a slug that extends another slug would misattribute.
 RECORD_SUFFIX_RE = re.compile(r"-(?:plan|build|\d+)$")
+
+
+def strip_front_matter(text):
+    """The record's text after its leading `---` front-matter block, where
+    it has one — the block carries the record's summary field and nothing a
+    reader of the body wants ([log-index-generated-from-front-matter]).
+    Copied into each reader rather than shared, since the hooks and scripts
+    run standalone."""
+    if not text.startswith("---"):
+        return text
+    lines = text.split("\n")
+    if lines[0].strip() != "---":
+        return text
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[i + 1:])
+    return text
+
+
+def record_kind(body):
+    """What a LOG record is, read from its body fields and never its name:
+    "built" where it carries `Files touched:`, "processed" where it carries
+    `Work processed:` and not `Files touched:`, "unknown" otherwise. The one
+    classifier — the state server's planning-anchor tool imports it rather
+    than copying it ([mcp-planning-anchor-tool])."""
+    body = strip_front_matter(body)
+    if "Files touched:" in body:
+        return "built"
+    if "Work processed:" in body:
+        return "processed"
+    return "unknown"
 # A bare date on its own line in the git log pass below: the commit's date,
 # emitted by --format=%as ahead of that commit's patch.
 GIT_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -518,12 +549,7 @@ def shipped_slugs(root, wanted=None):
         except OSError:
             kinds.setdefault(slug, "unknown")
             continue
-        if "Files touched:" in body:
-            kind = "built"
-        elif "Work processed:" in body:
-            kind = "processed"
-        else:
-            kind = "unknown"
+        kind = record_kind(body)
         # A slug with several entries is built if any one of them built it —
         # an item processed in planning and built later has both records, and
         # the built one is the answer.
@@ -1043,6 +1069,170 @@ def locate(slug, items, kinds=None):
     return "ABSENT"
 
 
+# --- Size signs ([project-size-signs-and-popout-offer]) ----------------------
+#
+# Facts a planning opening reads for whether a project has grown too big for
+# one queue, each computed from the queue, the record or the project's Parts
+# block; every line a fact and none a verdict, and the pop-out stays the
+# user's choice. The one-read figure is CYCLES.md's: 60,000 characters is
+# what one read returns.
+ONE_READ_CHARS = 60000
+_PARTS_HEADING_RE = re.compile(r"^##\s+Parts\b", re.IGNORECASE)
+_PART_LINE_RE = re.compile(r"^-\s+(.+?)\s+[—–-]+\s+`([^`]+?)/?`")
+_OUTCOME_DEFERRED_RE = re.compile(r"Outcome:\**\s*deferred\b", re.IGNORECASE)
+_LEFT_TO_PROCESS_RE = re.compile(r"Left to process[^0-9\n]{0,60}?(\d+)")
+
+
+def parts_block(root):
+    """[(name, folder)] from the project CLAUDE.md's `## Parts` block — one
+    line per part naming its folder in backticks. Empty where there is no
+    block, which is the flat project's normal state."""
+    try:
+        with open(os.path.join(root, "CLAUDE.md"), "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return []
+    parts = []
+    inside = False
+    for line in lines:
+        if _PARTS_HEADING_RE.match(line.strip()):
+            inside = True
+            continue
+        if inside and line.startswith("## "):
+            break
+        if inside:
+            m = _PART_LINE_RE.match(line.strip())
+            if m:
+                parts.append((m.group(1).strip(), m.group(2).strip().rstrip("/")))
+    return parts
+
+
+def _item_part(item, parts):
+    """The part whose folder the item's Files line names first, or None."""
+    raw = item["files_line_raw"] or item["files_line"] or ""
+    for path in FILES_PATH_RE.findall(raw):
+        path = path.strip().replace("\\", "/")
+        for name, folder in parts:
+            if path == folder or path.startswith(folder + "/"):
+                return name
+    return None
+
+
+def consecutive_deferrals(root, slug):
+    """How many of the slug's most recent records, read newest first, carry
+    a deferred outcome before one that does not — the count of a step
+    deferred run after run. Zero where no record exists."""
+    if not root or not slug:
+        return 0
+    folder = os.path.join(root, "LOG")
+    try:
+        names = sorted(os.listdir(folder), reverse=True)
+    except OSError:
+        return 0
+    count = 0
+    for name in names:
+        match = LOG_ENTRY_RE.match(name)
+        if not match or RECORD_SUFFIX_RE.sub("", match.group(1)) != slug:
+            continue
+        try:
+            with open(os.path.join(folder, name), "r", encoding="utf-8") as f:
+                body = f.read()
+        except OSError:
+            continue
+        if _OUTCOME_DEFERRED_RE.search(body):
+            count += 1
+        else:
+            break
+    return count
+
+
+def planning_left_counts(root):
+    """[(filename, count)] oldest first, for every planning record whose
+    body carries a `Left to process … N` line. Empty where none does."""
+    if not root:
+        return []
+    folder = os.path.join(root, "LOG")
+    try:
+        names = sorted(os.listdir(folder))
+    except OSError:
+        return []
+    out = []
+    for name in names:
+        if not LOG_ENTRY_RE.match(name):
+            continue
+        try:
+            with open(os.path.join(folder, name), "r", encoding="utf-8") as f:
+                body = f.read()
+        except OSError:
+            continue
+        if record_kind(body) != "processed":
+            continue
+        found = _LEFT_TO_PROCESS_RE.findall(body)
+        if found:
+            out.append((name, int(found[-1])))
+    return out
+
+
+def size_signs(items, root, queue_path):
+    """The size-signs block's lines — facts only."""
+    out = ["## Size signs — facts a planning opening reads, none a verdict"]
+    users = [i for i in items if i["section"] == "Processed" and i["flavor"] == "user"]
+    deferred = [(i["slug"], consecutive_deferrals(root, i["slug"])) for i in users]
+    deferred = [(s, n) for s, n in deferred if n]
+    if deferred:
+        for slug, n in deferred:
+            out.append(f"- [{slug}]: deferred in {n} consecutive record(s)")
+    else:
+        out.append("- user steps deferred run after run: none")
+    held = [i for i in items if i["section"] == "Processed" and not i["cleared"]]
+    out.append(f"- held region: {len(held)} item(s) below the line")
+    cleared_order = [i for i in items if i["section"] == "Processed" and i["cleared"]]
+    for item in cleared_order:
+        if item["runs_alone"]:
+            out.append(f"- [{item['slug'] or 'NO-SLUG'}] runs alone with "
+                       f"{cleared_order.index(item)} cleared item(s) ahead of it")
+    parts = parts_block(root)
+    if parts:
+        by_part = {}
+        for item in items:
+            if item["section"] != "Processed":
+                continue
+            part = _item_part(item, parts)
+            if part is None:
+                continue
+            counts = by_part.setdefault(part, {"cleared": 0, "held": 0, "slugs": set(), "cites": set()})
+            counts["cleared" if item["cleared"] else "held"] += 1
+            counts["slugs"].add(item["slug"])
+            counts["cites"].update(citations(item))
+        for name, _folder in parts:
+            c = by_part.get(name)
+            if c is None:
+                out.append(f"- part {name}: no work item names its files")
+                continue
+            out.append(f"- part {name}: {c['cleared']} cleared, {c['held']} held")
+            if len(c["slugs"]) >= 2 and c["cites"] and c["cites"] <= c["slugs"]:
+                out.append(f"- part {name}: its items cite only each other — a closed cluster")
+    else:
+        out.append("- parts: no Parts block in CLAUDE.md, so per-part counts are not computed")
+    try:
+        size = os.path.getsize(queue_path)
+    except OSError:
+        size = 0
+    out.append(f"- queue size: {size} characters against the one-read figure of {ONE_READ_CHARS}"
+               + (" — past one read" if size > ONE_READ_CHARS else ""))
+    lefts = planning_left_counts(root)
+    if len(lefts) >= 2:
+        last, prev = lefts[-1][1], lefts[-2][1]
+        trend = "fell" if last < prev else ("rose" if last > prev else "did not fall")
+        out.append(f"- left to process at the last two planning records: {prev} then {last} — the count {trend}")
+    elif lefts:
+        out.append(f"- left to process at the one planning record carrying the line: {lefts[0][1]}")
+    else:
+        out.append("- left to process: no planning record carries the line")
+    out.append("")
+    return out
+
+
 def render(items, root="", queue_path="QUEUE.md"):
     out = []
     # Bound the entry-reading to the slugs that can actually be printed: every
@@ -1223,10 +1413,21 @@ def render(items, root="", queue_path="QUEUE.md"):
         out.append("- none")
     out.append("")
 
+    out.extend(size_signs(items, root, queue_path))
+
     # The limits of what this print reaches, one line each, printed once at
     # the end ([digest-limit-paragraphs-folded]). Nothing softened: each line
     # still states the reach of the check it names.
     out.append("## Limits — what each check reaches, and no more")
+    out.append(
+        "- Size signs reach what the queue, the record and the Parts block "
+        "carry: a deferral counted from a record's outcome line, a part read "
+        "from an item's Files line, a left-to-process count from a planning "
+        "record that wrote one. A sign only a person can read — a queue with "
+        "no builds, several people at once, work that must run continuously, "
+        "records nobody reads — is in the FAQ and not here; none is a verdict, "
+        "and the pop-out stays the user's choice."
+    )
     out.append(
         "- Placement flags match a fixed set of known phrases: a clean result "
         "means none of those phrases were found, not that no contradiction "

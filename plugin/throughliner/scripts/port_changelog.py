@@ -149,7 +149,7 @@ def log_entries_for(project_root, commit, log_root=None):
         path = os.path.join(log_path, name)
         try:
             with open(path, encoding="utf-8") as handle:
-                text = handle.read()
+                text = strip_front_matter(handle.read())
         except OSError:
             continue
         first = text.split("\n", 1)[0]
@@ -234,6 +234,22 @@ def entry_is_shipped(entry, paths, basenames):
         if os.path.basename(name) in basenames:
             return True
     return False
+
+
+def strip_front_matter(text):
+    """The record's text after its leading `---` front-matter block — the
+    summary field the index is generated from sits above the heading this
+    script reads ([log-index-generated-from-front-matter]). Copied per
+    reader, since the scripts run standalone."""
+    if not text.startswith("---"):
+        return text
+    lines = text.split("\n")
+    if lines[0].strip() != "---":
+        return text
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[i + 1:])
+    return text
 
 
 def summary_of(text):

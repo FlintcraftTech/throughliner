@@ -124,7 +124,9 @@ read it, with a self-check on the reading; the bodies stay out of the payload,
 because hook output is capped at 10,000 characters and past that the harness
 discards the whole payload, so enough unread mail would cost the chat its project
 state and its rules directive as well as its mail. Read each named file in full,
-then run the triage — the three-way routing in the behaviour rules plus one
+surface it in chat as a relative link whose visible text is its path under
+`INBOX/` — `[INBOX/2026-09-24-from-x.md](INBOX/2026-09-24-from-x.md)` — with
+its substance in one line, never pasted whole, then run the triage — the three-way routing in the behaviour rules plus one
 outcome of the triage's own: work to do becomes a capture in Unprocessed — and
 a message bearing on this project's own product or design routes as a capture
 even where the sender frames it as informational or as handling its own side; a

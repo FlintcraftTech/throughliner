@@ -39,7 +39,7 @@ Fully restart Claude Code to load the plugin. To update later, run `claude plugi
 The plugin splits your project into a structured build queue managed by six main commands:
 
 - **`/setup`** — interviews you about your project, scaffolds text documents (`SPEC.md`, `QUEUE.md`, etc.), checks your machine for the command-line tools your project's work will need and records what it finds in `TOOLS.md`, and sets a brevity style for Claude's replies.
-- **`/plan`** — organizes the queue, captures new ideas, and resolves design questions.
+- **`/plan`** — organizes the queue, captures new ideas, and resolves design questions. Its opening also reads the signs that a project has outgrown one queue and names the pop-out where one holds.
 - **`/next`** — builds the next piece of ready work, staying locked to relevant files.
 - **`/rescan`** — reviews past conversation history to capture unrecorded decisions or notes into the queue.
 - **`/done`** — records session outcomes, commits changes to Git, and tees up next steps. Always run this before `/clear`.
@@ -50,7 +50,8 @@ The plugin splits your project into a structured build queue managed by six main
 Setup adds plain-text documentation and folders to your repository:
 
 - **`SPEC.md` / `QUEUE.md`** — what you are building, and what to work on next.
-- **`LOG/` and `workshop/`** — historical session records, research, and testing drafts.
+- **`LOG/` and `workshop/`** — historical session records, research, and testing drafts. Each record carries its own one-line summary, and the index is generated from those at every close.
+- **`MAP.md`** — a map of what the project's folders and human-used files are for, written for Claude to read first each session, so nothing sits in a folder it never opens.
 - **`TOOLS.md`** — persistent memory of what Claude has learned about your machine.
 - **`INBOX/`** — messaging hub if you run multiple connected projects.
 
@@ -63,7 +64,7 @@ Setup adds plain-text documentation and folders to your repository:
 
 ## Community and support
 
-Throughliner has a [Discord server](https://discord.gg/Z7ftKnSjR). It is where new versions are announced and where you can say so if something breaks.
+Throughliner has a [Discord server](https://discord.gg/8qmuEwTy8u). It is where new versions are announced and where you can say so if something breaks.
 
 ### New to the plugin?
 

@@ -87,6 +87,9 @@ def main():
           decision(first) == "deny"
           and '"yesterday"' in first.get("permissionDecisionReason", ""),
           repr(first))
+    check("the refusal says a content word goes in quotation marks",
+          "in quotation marks, which this check does not read"
+          in first.get("permissionDecisionReason", ""), repr(first))
     log_path = os.path.join(d, ".throughliner", "pre-tool-use.log")
     with open(log_path, encoding="utf-8") as f:
         log_text = f.read()
@@ -183,36 +186,41 @@ def main():
         check("a time carrying an earlier date is allowed",
               decision(r) == "allow", repr(r))
         r = drive(d4, "Edit", q4, {"old_string": "x",
-                                   "new_string": "Due 2026-09-10 09:00."})
-        check("a time carrying a later date is refused",
+                                   "new_string": "Filed 2026-09-10 09:00, stamped by the queue tool."})
+        check("a stamp carrying a later date is refused",
               decision(r) == "deny", repr(r))
         r = drive(d4, "Write", os.path.join(d4, "workshop", "resources", "research", "n.md"),
                   {"content": "Seen at 18:00.\n"})
         check("a future time in a research file is allowed",
               decision(r) == "allow", repr(r))
 
-        # 5. [clock-check-fires-on-video-timestamps]: a runtime or an excerpt
-        # bound written MM:SS passes where its sentence says what it times.
+        # 5. [clock-check-refuses-event-start-time]: only a stamp-shaped place
+        # is read — a written file's first three lines, or a sentence carrying
+        # a stamp word — so an event's time in a record body passes, a video
+        # runtime passes with no carve-out, and a stamp is still refused.
         d5 = project()
         q5 = os.path.join(d5, "QUEUE.md")
         r = drive(d5, "Edit", q5, {"old_string": "x",
+                                   "new_string": "The session starts at 12:00 and the room opens at 13:30."})
+        check("an event's start time in a record body passes",
+              decision(r) == "allow", repr(r))
+        r = drive(d5, "Edit", q5, {"old_string": "x",
                                    "new_string": "The first video's runtime is 23:14, against 14:46 for the second."})
-        check("a runtime in a sentence carrying a duration word passes",
+        check("a video runtime passes without the removed carve-out",
               decision(r) == "allow", repr(r))
         r = drive(d5, "Edit", q5, {"old_string": "x",
-                                   "new_string": "Show the excerpt from 15:35 to 17:58 in class."})
-        check("an excerpt bound bracketed by from … to passes",
-              decision(r) == "allow", repr(r))
-        r = drive(d5, "Edit", q5, {"old_string": "x",
-                                   "new_string": "The candidate runs 23:14 in all."})
-        check("the report's 'runs 23:14' passes", decision(r) == "allow", repr(r))
-        r = drive(d5, "Edit", q5, {"old_string": "x",
-                                   "new_string": "Filed at 23:14, stamped by the queue tool."})
-        check("a bare future time with none of the words is still refused",
+                                   "new_string": "Recorded 23:14, read from the clock."})
+        check("a stamp sentence ahead of the clock is refused",
               decision(r) == "deny", repr(r))
-        check("the refusal names the runtime shape as a false positive",
-              "video runtime or an excerpt bound" in r.get("permissionDecisionReason", ""),
+        check("the refusal names the stamp-shaped places it reads",
+              "stamp-shaped place" in r.get("permissionDecisionReason", ""),
               repr(r))
+        log5 = os.path.join(d5, "LOG", "2026-09-09-x.md")
+        r = drive(d5, "Write", log5,
+                  {"content": "# Record\n\n2026-09-09 14:30 — opened\n\nThe body says the show starts at 15:00.\n"})
+        check("a time in a written file's first three lines is refused",
+              decision(r) == "deny" and "14:30" in r.get("permissionDecisionReason", "")
+              and "15:00" not in r.get("permissionDecisionReason", ""), repr(r))
         shutil.rmtree(d5, ignore_errors=True)
     finally:
         del os.environ["THROUGHLINER_TEST_CLOCK"]

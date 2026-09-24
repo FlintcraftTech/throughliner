@@ -360,6 +360,93 @@ def tool_clock(_arguments):
                                 zone)
 
 
+_RECORD_DATE_RE = re.compile(
+    r"^(?:Recorded|Date:)\s*(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}))?",
+    re.MULTILINE)
+_RECORD_NAME_DATE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-")
+
+
+def _planning_anchor(root):
+    """(date, time, filename) of the most recent planning record in LOG/, or
+    None. A planning record is one the queue digest classifies as
+    "processed" — `Work processed:` and not `Files touched:` — read from its
+    body, never its filename; its date is the record's own `Recorded` or
+    `Date:` field, the filename's date as the fallback."""
+    digest = _digest()
+    if digest is None:
+        return None
+    folder = os.path.join(root, "LOG")
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return None
+    best = None
+    for name in names:
+        if not digest.LOG_ENTRY_RE.match(name):
+            continue
+        try:
+            with open(os.path.join(folder, name), "r", encoding="utf-8") as f:
+                body = f.read()
+        except OSError:
+            continue
+        if digest.record_kind(body) != "processed":
+            continue
+        m = _RECORD_DATE_RE.search(body)
+        if m:
+            date, time = m.group(1), m.group(2) or "00:00"
+        else:
+            nm = _RECORD_NAME_DATE_RE.match(name)
+            if not nm:
+                continue
+            date, time = nm.group(1), "00:00"
+        key = (date, time, name)
+        if best is None or key > best:
+            best = key
+    return best
+
+
+def _index_lines_newer_than(root, filename):
+    """The `- ` lines of LOG/index.md above the line naming `filename` —
+    newest first, so those are the newer ones; every line where the file
+    names no such record, which is also the current month's lines."""
+    try:
+        with open(os.path.join(root, "LOG", "index.md"), "r",
+                  encoding="utf-8") as f:
+            lines = [ln.rstrip("\n") for ln in f]
+    except OSError:
+        return []
+    entries = [ln for ln in lines if ln.startswith("- ")]
+    if filename:
+        for i, ln in enumerate(entries):
+            if filename in ln:
+                return entries[:i]
+    return entries
+
+
+def tool_planning_anchor(_arguments):
+    """When the most recent planning session was, read from the record's own
+    body fields, and the index lines newer than it — the anchor plan.md's
+    index read and issues check compute by hand, and this project's replies
+    read types into `--since`. Recomputed from the record every time; nothing
+    is stored."""
+    root = project_root()
+    anchor = _planning_anchor(root)
+    if anchor is None:
+        newer = _index_lines_newer_than(root, "")
+        lines = ["No planning record found in LOG/ — nothing there carries "
+                 "`Work processed:` without `Files touched:`. Falling back to "
+                 "the current month's index lines (%d):" % len(newer)]
+        lines.extend(newer)
+        return "\n".join(lines)
+    date, time, name = anchor
+    newer = _index_lines_newer_than(root, name)
+    lines = ["Most recent planning record: %s %s — LOG/%s" % (date, time, name),
+             "Anchor date for --since and the issues check: %s" % date,
+             "Index lines newer than it (%d):" % len(newer)]
+    lines.extend(newer)
+    return "\n".join(lines)
+
+
 SLUG_SHAPE = re.compile(r'^[a-z0-9][a-z0-9-]*$')
 
 
@@ -1808,7 +1895,12 @@ def tool_build_tick(arguments):
 # `_door_refused_earlier` read, reproduced because the hooks run standalone
 # and cannot be imported for one function.
 _DECISION_LOG = os.path.join(".throughliner", "pre-tool-use.log")
-_PATH_TRAILING_RE = re.compile(r"\s")
+# Text after the path only — whitespace following a file extension, then
+# more text ("src/app.py (new)") — never a space inside a folder or file
+# name: a pattern refusing any whitespace ruled out whole projects
+# ([build-open-refuses-paths-with-spaces]). Trailing whitespace on its own
+# is stripped at the door by `_text_list` before this runs.
+_PATH_TRAILING_RE = re.compile(r"\.[A-Za-z0-9]+\s+\S")
 
 
 def _safe_session_id(session_id):
@@ -1854,8 +1946,8 @@ def _path_problems(root, files):
                             "check matches the whole line as the path." % path)
             continue
         if _PATH_TRAILING_RE.search(path):
-            problems.append("path %r carries a space or trailing text — one "
-                            "bare path per line, nothing else." % path)
+            problems.append("path %r carries trailing text — one bare path "
+                            "per line, nothing else." % path)
             continue
         full = os.path.realpath(os.path.join(root, path))
         if not (os.path.normcase(full) == real_root
@@ -2053,6 +2145,18 @@ TOOLS = [
             "user's statement included — before saying it.",
         "inputSchema": {"type": "object", "properties": {}},
         "handler": tool_clock,
+    },
+    {
+        "name": "planning_anchor",
+        "description":
+            "When the most recent planning session was — its record's date, "
+            "read from the record's own fields rather than its filename, "
+            "and the LOG index lines newer than it. The anchor plan.md's "
+            "index read and issues check use, and a replies read's --since "
+            "date. Where no planning record exists it says so and answers "
+            "the current month's lines. Read-only; nothing is stored.",
+        "inputSchema": {"type": "object", "properties": {}},
+        "handler": tool_planning_anchor,
     },
     {
         "name": "file_capture",
@@ -2692,6 +2796,20 @@ def _advertised_tools():
             for tool in TOOLS if tool["name"] not in HOST_ONLY_TOOLS]
 
 
+def _not_set_up():
+    """The refusal every tool answers with while the project is not set up —
+    a folder with neither QUEUE.md nor SPEC.md — or "" once it is. Read at
+    each call, never at launch, so a project set up after the server started
+    is served by the same server."""
+    root = project_root()
+    if (os.path.isfile(_queue_path(root))
+            or os.path.isfile(os.path.join(root, "SPEC.md"))):
+        return ""
+    return ("Refused — this project is not set up: %s has neither QUEUE.md "
+            "nor SPEC.md. Run /setup here first; the tools answer once it "
+            "has written them." % root)
+
+
 def handle(message):
     """One request in, one response out — or None for a notification."""
     method = message.get("method")
@@ -2727,7 +2845,8 @@ def handle(message):
                     "error": {"code": -32602,
                               "message": "No such tool: %r" % name}}
         try:
-            text = _conflicted_queue(name) or handler(arguments)
+            text = (_not_set_up() or _conflicted_queue(name)
+                    or handler(arguments))
         except Exception as error:  # noqa: BLE001 — reported, never raised out
             return {"jsonrpc": "2.0", "id": request_id,
                     "result": {"isError": True,
@@ -2745,19 +2864,12 @@ def handle(message):
 def main():
     """Read newline-delimited JSON-RPC from stdin, answer on stdout.
 
-    Refuses to start where the project is not set up: the plugin registers
-    this server for every project it is installed in, and a folder with
-    neither a QUEUE.md nor a SPEC.md is not one the method has set up, so
-    the tools would answer about nothing ([mcp-server-promotion]). The
-    queue-reading tools carry their own no-queue refusals."""
-    root = project_root()
-    if not (os.path.isfile(_queue_path(root))
-            or os.path.isfile(os.path.join(root, "SPEC.md"))):
-        sys.stderr.write(
-            "throughliner-state: not starting — %s has neither QUEUE.md nor "
-            "SPEC.md, so this is not a project the method has set up. Run "
-            "/setup there first.\n" % root)
-        return 1
+    Starts in any folder. The not-set-up refusal lives in the tool dispatch
+    (`_not_set_up`), read at every call: the app launches the server once at
+    the chat's start and keeps a launch failure for the chat's life, so a
+    chat that begins with setup in an empty folder would otherwise never get
+    the server, even after setup writes the files
+    ([mcp-server-connection-closed-whole-session])."""
     for line in sys.stdin:
         line = line.strip()
         if not line:

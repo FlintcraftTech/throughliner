@@ -39,7 +39,8 @@ commands:**
 ```
 git diff HEAD -- SPEC.md '**/SPEC.md'   # every SPEC sentence written or changed
                                         # this session, in the root spec and in
-                                        # every part's spec
+                                        # every part's spec, where a part has
+                                        # one — a part with none is the root
 git diff HEAD -- QUEUE.md               # every item kept or reshaped this session
 ```
 
@@ -90,7 +91,13 @@ committed as their own clean record.
 the session didn't make are most likely the user's expected work. Run `git status
 --porcelain`, and where what changed isn't self-evident, look. Confirm with the
 user that these are theirs and meant to be saved. **Read them as expected work
-rather than a broken repo, and leave them intact.** Where a scope file
+rather than a broken repo, and leave them intact.** Where the hand edits add,
+rename or remove folders of the product — read from `git status --porcelain` —
+the entry records the move as a structural decision of the user's in one
+sentence, and the close greps the root `SPEC.md`, each part's `SPEC.md` and
+the project CLAUDE.md's Parts block for the old folder names, names each
+sentence that now reads wrong, and corrects it on the user's yes in the same
+commit, under the spec-sync gate's drift branch. Where a scope file
 (`_freeform-<session-id>.md`) is present at /done with no queue item behind
 it, read it as the record of what the user directed through the scope-lock's
 door, and name those paths in the entry. **Read the door's uses from the safety

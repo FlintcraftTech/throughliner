@@ -240,6 +240,44 @@ queue item or session record that gives a `resources/…` path as an instruction
 follow, now name a folder that has moved. Fix the instructions; leave the records
 alone — a record written before the move correctly says where the file was then.
 
+## Epoch 6 — the LOG index is generated from each record's summary field
+
+**This epoch changes the records, not the queue.** Each session record now
+carries its own one-line summary in a front-matter block at the top of the
+file — `---`, `summary: <the index line's text after the hash>`, `---`, then
+the `# <hash> — …` heading — and the close regenerates `LOG/index.md` and the
+monthly `LOG/index-YYYY-MM.md` files from those fields with the backlinks
+script, never by hand. An existing project's records carry no field, so its
+index would regenerate empty; the one-time backfill writes each record's
+existing index line into its record first.
+
+```
+run once, from the project root:
+    python <plugin-root>/scripts/log_backlinks.py <project root> --backfill-summaries
+
+what it does:
+    every per-entry record with no front matter   ->  gains a summary field
+                                                      from its index line, or
+                                                      from its heading where
+                                                      no line names it
+    LOG/index.md and LOG/index-YYYY-MM.md          ->  regenerated from the
+                                                      records; a line pointing
+                                                      at a pre-split combined
+                                                      log is carried over
+                                                      after its month's lines
+    LOG/backlinks.md                               ->  regenerated as at every
+                                                      close
+```
+
+**Show the user, before running it, what will change:** every record file
+gains three lines at its top and the index files are rewritten; nothing else
+in any record is touched. Where the project's records are kept out of git,
+say that the previous index files are not recoverable from history once
+rewritten, and get the okay first. After the run, compare the regenerated
+`LOG/index.md` with the previous one and name any line that differs — order
+within a day follows each record's own date field, which is the one
+difference a hand-written index may show.
+
 ## Section preambles — run this at every epoch
 
 **Quote a plain-prose section preamble.** Where the paragraph directly under

@@ -1463,6 +1463,69 @@ def test_assigned_to_prints_on_the_entry_line():
     check("an entry without the field reads None", beta["assigned_to"] is None)
 
 
+def test_size_signs_are_computed_facts():
+    """[project-size-signs-and-popout-offer]: the Size signs block prints
+    each computed sign as a fact — a user step's consecutive deferrals read
+    from its records' outcome lines, the held count, a runs-alone item's
+    count ahead, per-part cleared and held counts from the Parts block, a
+    closed cluster, the queue's size against the one-read figure, and the
+    left-to-process trend across planning records — and its limits line."""
+    root = project(
+        processed=(
+            "#### Alpha, in the app [alpha]\nProse citing [beta].\n\n"
+            "**Files that change:** `app/a.md`\n\n"
+            "#### Beta, in the app [beta]\nProse citing [alpha].\n\n"
+            "**Files that change:** `app/b.md`\n\n"
+            "#### [user] A step of yours [a-step]\nWalkthrough.\n\n"
+            "#### Gamma, alone [gamma]\nProse.\n\nRuns alone\n\n"
+            "**Files that change:** `notes/c.md`\n\n"
+        ),
+        unprocessed="",
+        log_entries=[
+            ("2026-09-20-a-step.md", "# x — user step\n\n**Outcome: deferred** — the word.\n"),
+            ("2026-09-22-a-step.md", "# y — user step\n\n**Outcome: deferred** — again.\n"),
+            ("2026-09-19-chat-plan.md", "# p — plan\n\nWork processed: two.\n\nLeft to process: 7\n"),
+            ("2026-09-21-chat-plan-2.md", "# q — plan\n\nWork processed: one.\n\nLeft to process: 7\n"),
+        ],
+    )
+    with open(os.path.join(root, "CLAUDE.md"), "w", encoding="utf-8") as f:
+        f.write("# CLAUDE\n\n## Parts\n\n- the app — `app/` — inner repository (product)\n"
+                "- the notes — `notes/` — outer repository (process)\n\n## Other\n")
+    _items, out = run(root)
+    block = out.split("## Size signs")[1].split("## Limits")[0]
+    check("a user step deferred in two consecutive records is counted",
+          "[a-step]: deferred in 2 consecutive record(s)" in block, block)
+    check("the held region is counted", "held region: 0 item(s)" in block, block)
+    check("a runs-alone item's count ahead prints",
+          "[gamma] runs alone with 3 cleared item(s) ahead of it" in block, block)
+    check("per-part cleared and held counts print from the Parts block",
+          "part the app: 2 cleared, 0 held" in block
+          and "part the notes: 1 cleared, 0 held" in block, block)
+    check("a part whose items cite only each other is named as a closed cluster",
+          "part the app: its items cite only each other" in block
+          and "part the notes: its items cite only" not in block, block)
+    check("the queue's size prints against the one-read figure",
+          "against the one-read figure of 60000" in block and "past one read" not in block,
+          block)
+    check("the left-to-process trend reads the planning records",
+          "7 then 7 — the count did not fall" in block, block)
+    check("the limits block says what the signs reach and that none is a verdict",
+          "Size signs reach" in out and "none is a verdict" in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_size_signs_degrade_without_parts_or_records():
+    root = project(processed="#### Alpha [alpha]\nProse.\n\n", unprocessed="")
+    _items, out = run(root)
+    block = out.split("## Size signs")[1].split("## Limits")[0]
+    check("no Parts block: the block says per-part counts are not computed",
+          "no Parts block" in block, block)
+    check("no records: no deferral and no left-to-process line is claimed",
+          "deferred run after run: none" in block
+          and "no planning record carries the line" in block, block)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("test_queue_digest.py")
     test_cleared_item_reading_the_queue_is_not_reported()
@@ -1519,6 +1582,8 @@ if __name__ == "__main__":
     test_held_since_attributes_within_one_commit()
     test_not_before_prints_with_its_state()
     test_unreadable_not_before_says_so()
+    test_size_signs_are_computed_facts()
+    test_size_signs_degrade_without_parts_or_records()
     print()
     if _failures:
         print(f"{len(_failures)} failure(s): " + ", ".join(_failures))
