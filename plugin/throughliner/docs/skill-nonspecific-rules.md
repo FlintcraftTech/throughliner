@@ -9,7 +9,7 @@ note: >
 # Throughliner — skill-nonspecific rules
 
 **A rule belongs in this file only if it fires in all four skills — /setup, /plan,
-/next and /done — or in conversation with no skill running.** A rule that fires
+/next and /close — or in conversation with no skill running.** A rule that fires
 inside one of them belongs in that skill's own doc, where it is paid only when
 that skill runs. This test is what the filename states, and it is the admission
 control: check a candidate rule against the four, and against the no-skill case,
@@ -64,7 +64,7 @@ The work cycle. Every piece of work travels the same loop.
      nobody confirms it.
   2. /next — build. Takes the top piece of ready work from above the
      readiness line and builds it, top-down, several back-to-back.
-  3. /done — record what happened, and commit.
+  3. /close — record what happened, and commit.
   4. Then the chat ends and a fresh one starts, carrying no memory of
      this one. Every return edge below therefore routes through a FILE.
   5. RETURN EDGE — an [audit] edits nothing. It files findings as
@@ -83,9 +83,9 @@ The work cycle. Every piece of work travels the same loop.
 - Run every command you can run yourself, handing one over only in the cases the
   rules below name.
 - **Name the method's own command in words and ask the user to send it** —
-  `/setup`, `/plan`, `/next`, `/rescan` and `/done` are theirs to run, and the
+  `/setup`, `/plan`, `/next`, `/rescan` and `/close` are theirs to run, and the
   scope-lock refuses an attempt to invoke one. In words means the command's
-  own name without the leading slash — say done, not "the closing step" — never a
+  own name without the leading slash — say close, not "the closing step" — never a
   paraphrase or a descriptive phrase, and never inside a code fence, which
   the app offers to run as a shell command. Where a command the user typed
   arrived as ordinary chat text, say it likely had not registered yet and ask
@@ -120,7 +120,7 @@ The work cycle. Every piece of work travels the same loop.
   is shaped; those lines say what a particular turn carries, which is what
   shaping alone cannot settle. Six turns have one: the item summary, the
   recommendation and the checkpoint in plan.md, the walkthrough step in
-  next.md, /done's Recommend-next turn in done.md, and the hand-back turn
+  next.md, /close's Recommend-next turn in close.md, and the hand-back turn
   in rescan.md.
 
   **Alternatives are delivered together and asked singly:** recommend one, and
@@ -192,7 +192,7 @@ The work cycle. Every piece of work travels the same loop.
   with no build running, the mechanics are these:** on the user's next word,
   write `_freeform-<session-id>.md` in the project root with a `Files:`
   section naming that one path, say so in one line, make the edit, and let
-  /done record it as handmade work — the door opens only after the safety
+  /close record it as handmade work — the door opens only after the safety
   check has refused that path earlier in the same session, which it reads from
   its own log. A
   deliverable the user asked for is not a temporary file: under the same door
@@ -235,8 +235,8 @@ NO  -> show it, then wait         anything that LEAVES THE MACHINE (the
                                   git does not yet hold it
 SHOWN, then committed in the      a commit message — shown as the record of
   same turn                       what is committed, never as an approval;
-                                  running /done was the consent
-EXCEPTION                         a /done or /rescan candidate set —
+                                  running /close was the consent
+EXCEPTION                         a /close or /rescan candidate set —
                                   several ideas landing at once at the
                                   session's end — is shown as ONE numbered
                                   message before anything is written; the
@@ -250,7 +250,7 @@ EXCEPTION                         a /done or /rescan candidate set —
   of the repository. A deleted queue item is recoverable from its
   snapshot.
 
-  **One consequence is stated rather than repaired: /done cannot read its own
+  **One consequence is stated rather than repaired: /close cannot read its own
   work back from the file's history, so it records from what it remembers.**
 
   **The snapshots are one machine and hold no history, so say that wherever the
@@ -869,7 +869,7 @@ a QUOTE claim     "your words", "in her own words", quotation marks
     format migration one side runs rewrites files the other's tooling does
     not expect.
 - The **filing-time commit stamp** exists because a capture filed after a
-  chat's /done close belongs to no committed session record. Plain prose, not
+  chat's /close close belongs to no committed session record. Plain prose, not
   a parsed field. It carries date and time, read from the clock at the moment
   of writing, never recalled.
 
@@ -920,10 +920,10 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   is where the user's part gets its `[user]` item.
 - **Walk a `[user]` item through whenever it is reached, and learn completion
   from what the user volunteers.** That is its whole lifecycle in every skill —
-  /plan, /next and /done alike. Presenting one states how many other items are
+  /plan, /next and /close alike. Presenting one states how many other items are
   blocked on it, read off the queue's `Blocked by:` lines, and names them only
   where the user genuinely needs it, and says nothing where nothing is; a step
-  whose record shows a hand-over for completion after a /done run and no
+  whose record shows a hand-over for completion after a /close run and no
   observable is presented as not marked done, with the waiting items named by
   slug. A
   filed `[user]` item may be walked the moment
@@ -1030,7 +1030,7 @@ paths for this session; without it, edits outside the standing planning
 surface are refused.
 
 **Most freeform work never passes through /plan at all.** The user and Claude do
-it by hand in a chat of its own, and /done reads the resulting edits as their
+it by hand in a chat of its own, and /close reads the resulting edits as their
 expected work. Where one *is* filed as a queue item, it is ready work with nothing
 blocking it, so it sits **above** the cleared-to-run line and /next halts on it.
 
@@ -1042,7 +1042,7 @@ definition.
 ### Scrub before writing, and state the limit
 
 **When filing a capture, read what you're about to write against this list**
-(/plan runs it again at the decision step and /done when writing a LOG entry — each
+(/plan runs it again at the decision step and /close when writing a LOG entry — each
 says so where it applies):
   - applying to text that leaves the machine — a send, a post, an issue, a
     report — and to a document in a repository that has a remote;
@@ -1259,9 +1259,9 @@ cleared returns its item to the bottom of Unprocessed. So every risk ends
 cleared, or its item is deleted. A marker always sits on an item carrying real
 remaining work, and it leaves only when that item does.
 
-/next builds a red-flagged item like any other; /done carries the cleared
+/next builds a red-flagged item like any other; /close carries the cleared
 flag into the LOG entry. **Backstop:** an uncleared flag in Processed should be
-impossible, so if /next or /done meets one, it stops and surfaces it.
+impossible, so if /next or /close meets one, it stops and surfaces it.
 
 ## The throughline
 
@@ -1435,9 +1435,9 @@ premise is broken       ->  halt and course-correct
     re-proposed later". The capture may carry `Not before:` or `Blocked by:`
     under their existing provisions; what it may not do is exist only as prose
     in a record or a rules file.
-- **After this chat's /done, offer once to append later work to this session's
+- **After this chat's /close, offer once to append later work to this session's
   record as a marked tail — at the end of a piece of work, where a file
-  changed.** The offer names both routes: a yes here, or running /done again,
+  changed.** The offer names both routes: a yes here, or running /close again,
   which appends the same tail — written with the state server's `append_tail`
   tool where the server is registered:
   - routing an urge in the tail to run or drive testing or verification into
@@ -1461,7 +1461,7 @@ a change that already carries its  ->  offered as a one-line pointer in the
   before it in the chat. The boundary that binds is filing vs processing,
   stated in the rule above.
 
-  **/done closes the CHAT**, once, when the chat is finished — it records
+  **/close closes the CHAT**, once, when the chat is finished — it records
   everything the chat did, across every plan run and next run in it.
 
   **Work on a project from one chat at a time.** Where a second chat is open on the same project,
@@ -1469,7 +1469,7 @@ a change that already carries its  ->  offered as a one-line pointer in the
 
   **What happens to an isolated chat's work at close.** The harness makes the worktree and its branch and **never merges
   either back**; at exit it asks keep-or-remove, and remove deletes the worktree
-  and the branch with everything in them. So an isolated /done run commits, then says
+  and the branch with everything in them. So an isolated /close run commits, then says
   which branch the work is on, that it is not merged, and that "remove" would
   delete it. The merge itself cannot happen there — git refuses to update a branch
   checked out in another working tree — so it is offered at the opening of
@@ -1580,7 +1580,7 @@ a chat opens into the aftermath of one. Reference, fetched on demand.
 before reporting that an edit doesn't exist.
 
 **Uncommitted changes you didn't make are the user's own work.** Read them as
-expected handmade work, confirm with the user, and fold them into /done.
+expected handmade work, confirm with the user, and fold them into /close.
 
 ## Prior decisions
 
@@ -1593,7 +1593,7 @@ expected handmade work, confirm with the user, and fold them into /done.
 ```
 the record, in cheapest-first order:
     decisions recorded earlier in THIS chat and still in view   # no retrieve needed — you were there
-    the item's own rationale in QUEUE.md         # where most decisions live until a /done run
+    the item's own rationale in QUEUE.md         # where most decisions live until a /close run
     SPEC.md
     LOG/index.md, then the one matched entry
 ```

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """mcp/server.py's append_tail tool: post-close work appended to the chat's
-own record under `## After /done`, found through the session-closed marker
+own record under `## After /close`, found through the session-closed marker
 ([post-close-tail-offer-enforced-once]).
 
 Run: py tests/test_mcp_append_tail.py
@@ -77,13 +77,13 @@ text = call(d, {"prose": "Fixed the wording — one sentence."})
 with open(os.path.join(d, "LOG", "2026-09-17-fixture.md"), encoding="utf-8") as f:
     record = f.read()
 check("the tail lands under the heading, once", text.startswith("Appended")
-      and record.count("## After /done") == 1
+      and record.count("## After /close") == 1
       and "Fixed the wording — one sentence." in record, record)
-check("the tail is stamped from the clock", "**2026-" in record.split("## After /done")[1], record)
+check("the tail is stamped from the clock", "**2026-" in record.split("## After /close")[1], record)
 call(d, {"prose": "A second piece."})
 with open(os.path.join(d, "LOG", "2026-09-17-fixture.md"), encoding="utf-8") as f:
     record = f.read()
-check("a second tail reuses the heading", record.count("## After /done") == 1
+check("a second tail reuses the heading", record.count("## After /close") == 1
       and "A second piece." in record, record)
 check("non-ASCII in the record survives", "with an em-dash" in record and "â€”" not in record)
 shutil.rmtree(d, ignore_errors=True)

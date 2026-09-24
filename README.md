@@ -42,7 +42,7 @@ The plugin splits your project into a structured build queue managed by six main
 - **`/plan`** — organizes the queue, captures new ideas, and resolves design questions. Its opening also reads the signs that a project has outgrown one queue and names the pop-out where one holds.
 - **`/next`** — builds the next piece of ready work, staying locked to relevant files.
 - **`/rescan`** — reviews past conversation history to capture unrecorded decisions or notes into the queue.
-- **`/done`** — records session outcomes, commits changes to Git, and tees up next steps. Always run this before `/clear`.
+- **`/close`** — records session outcomes, commits changes to Git, and tees up next steps. Always run this before `/clear`.
 - **`/catchup`** — summarizes feature statuses (shipped, ready, waiting) when returning after time away.
 
 ## Project structure

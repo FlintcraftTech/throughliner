@@ -73,7 +73,7 @@ UNADOPTED = tempfile.mkdtemp(prefix="skill-inv-unadopted-")
 CASES = [
     # (cwd, skill name, expected, what it pins)
     (ADOPTED, "throughliner:plan", "deny", "the recorded failure: /plan invoked"),
-    (ADOPTED, "throughliner:done", "deny", "/done, where the failure landed at a close"),
+    (ADOPTED, "throughliner:close", "deny", "/close, where the failure landed at a close"),
     (ADOPTED, "throughliner:next", "deny", "/next"),
     (ADOPTED, "throughliner:rescan", "deny", "/rescan"),
     (ADOPTED, "throughliner:setup", "deny", "/setup"),

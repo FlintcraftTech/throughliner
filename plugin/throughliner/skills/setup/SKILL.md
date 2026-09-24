@@ -19,5 +19,5 @@ Before writing anything, create an empty `.throughliner-setup-active` file in
 this session's scratchpad directory, and when the run ends — including on the
 paths that end early — rename it to `.throughliner-setup-done`. The first tells
 the safety check this is a setup run; without it, the files setup exists to
-write are refused. The second says setup ran in this chat, so this chat's /done
-run may correct the files setup scaffolded; /done deletes it.
+write are refused. The second says setup ran in this chat, so this chat's /close
+run may correct the files setup scaffolded; /close deletes it.

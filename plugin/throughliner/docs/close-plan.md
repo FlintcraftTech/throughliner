@@ -1,8 +1,8 @@
 ---
-name: done-plan
+name: close-plan
 docset: current
 note: >
-  Close-out for every no-build session. Reached from done.md's router when no
+  Close-out for every no-build session. Reached from close.md's router when no
   build working file exists — /plan sessions, /setup sessions, method-doc-only
   sessions, a completed [user] item, and standalone handmade work.
 ---
@@ -28,10 +28,10 @@ only the method docs; none is /plan-only.
 
 ## Spec-sync gate  [SILENT] in sync; [PROMPT] on drift
 
-**This is the only /done run that syncs SPEC.** A build session's /done runs a *check-against*
-instead (done-build.md) — it reads what was built against SPEC and reports a
+**This is the only /close run that syncs SPEC.** A build session's /close runs a *check-against*
+instead (close-build.md) — it reads what was built against SPEC and reports a
 contradiction rather than editing SPEC to match. Audits land no product changes,
-so an audit session's /done has neither.
+so an audit session's /close has neither.
 
 **Read what the session changed, not what it remembers — two reads, stated as
 commands:**
@@ -56,18 +56,18 @@ under the drift branch below. Where SPEC.md or QUEUE.md is gitignored, the diff
 falls to the copy the safety check keeps in the project's snapshot folder, read
 against the file as it stands.
 
-If either read finds drift, **stop /done before committing.** Surface the drift in plain
+If either read finds drift, **stop /close before committing.** Surface the drift in plain
 words, naming which SPEC sentence the session made wrong, get approval to fix it,
 then edit SPEC and commit it **in this same commit** rather than filing it as a
 capture for a later session.
 
-No scope-lock is active at any /done run reaching this doc, so edit SPEC.md directly
+No scope-lock is active at any /close run reaching this doc, so edit SPEC.md directly
 in-session. Editing SPEC to match a decision the user already made this session is
 RECORDING, not re-planning. That covers all three shapes alike.
 
 **The gate checks that every decision this session made had its SPEC sentence
 written at the decision step, and that the sentence still matches the item at
-/done.** By the time /done runs, the sentence either exists
+/close.** By the time /close runs, the sentence either exists
 or was missed, or was written correctly and made wrong when the same session
 later reshaped its item; the two diffs are what catch both.
 
@@ -84,7 +84,7 @@ and passes silently.
 
 Runs only where the user made ad-hoc edits by hand and wants them recorded.
 **Runs on request only:** hand edits left uncommitted are simply swept into the
-next /done that runs. This exists for when the user wants them logged and
+next /close that runs. This exists for when the user wants them logged and
 committed as their own clean record.
 
 **1. Read the edits as the user's own expected work.** Uncommitted changes
@@ -98,7 +98,7 @@ sentence, and the close greps the root `SPEC.md`, each part's `SPEC.md` and
 the project CLAUDE.md's Parts block for the old folder names, names each
 sentence that now reads wrong, and corrects it on the user's yes in the same
 commit, under the spec-sync gate's drift branch. Where a scope file
-(`_freeform-<session-id>.md`) is present at /done with no queue item behind
+(`_freeform-<session-id>.md`) is present at /close with no queue item behind
 it, read it as the record of what the user directed through the scope-lock's
 door, and name those paths in the entry. **Read the door's uses from the safety
 check's own log rather than from the scope file alone:** `.throughliner/pre-tool-use.log`
@@ -121,13 +121,13 @@ Write each entry's one-liner and rationale, then **report what landed.**
 **3. Stage the hand-edited files explicitly** at the commit step. The commit
 message is the approved entry; for several entries, the title names the
 handmade-work close and the body carries each entry's summary. The push
-follows the commit core in done.md.
+follows the commit core in close.md.
 
 ## Batch the human stops in Processed  [SILENT] when nothing moves; [BRIEF] when it does
 
 **One pass, over Processed only: put `[user]` and `[audit]` lines at the end
 of the cleared region but before any item carrying `Runs alone`, which stays
-last, and a `[co-write]` line after them.** That is the whole of /done's
+last, and a `[co-write]` line after them.** That is the whole of /close's
 reordering.
 
 **Place `[user]` and `[audit]` lines end-preferred**, after contiguous blocks of
@@ -150,7 +150,7 @@ after both, unless a build is held on it by slug.
 The second dependency runs the other way from the first — the audit depends on
 the build — and it carries no `Blocked by:` line, because placement is what
 orders the pair. Moving the audit to the end separates it from the tool it runs,
-and /done happens after /next, so the separation arrives in time to break the
+and /close happens after /next, so the separation arrives in time to break the
 *next* run rather than this one.
 
 Order here is low-stakes and reversible, so the narration is the catch-point
@@ -222,7 +222,7 @@ which.
 dependency entry's transcribed tick.** Every built item's entry carries either
 `done, confirmed` or `done, UNCONFIRMED: <what still needs running>`, written into
 the build working file at the moment the work happened and copied into the entry
-at /done (next-build.md, done-build.md). Read that field. This rule and the
+at /close (next-build.md, close-build.md). Read that field. This rule and the
 `[user]`-placement rule below both depend on the answer, and a fresh short session
 has no memory to fall back on.
 
@@ -272,10 +272,10 @@ readiness check of its own. Narrate it when a `[user]` item moves above the mark
 ## Completed `[user]` items  [SILENT] when none; [BRIEF] when closing one
 
 A `[user]` item never entered a build working file, so it isn't ticked and closed
-like a build. This is /done that records it and removes it from Processed, so
+like a build. This is /close that records it and removes it from Processed, so
 a finished item doesn't strand in the queue and get re-presented by the next
-/next. It runs as a /done run of its own, inside a planning session's /done, and — for the
-removal — inside a build session's /done.
+/next. It runs as a /close run of its own, inside a planning session's /close, and — for the
+removal — inside a build session's /close.
 
 **Completion is read as the always-loaded `[user]` lifecycle states**
 (skill-nonspecific-rules.md, "Walk a `[user]` item through whenever it is
@@ -302,13 +302,13 @@ item is real project progress, not bookkeeping.
 
 ## 1. Write LOG entry  [DISCUSS, PROMPT]
 
-Follow done.md's **LOG entry files** section, using its **Plan / setup** body
+Follow close.md's **LOG entry files** section, using its **Plan / setup** body
 fields (`Queue changes`; `Work processed`). Planning sessions carry no
 index-entry candidate — author the index entry fresh.
 
 If a red flag was cleared this session, record **how** in the session's LOG
 entry. Clearing happens at processing, so /plan is where this record is written
-— /done **records** and does not re-decide:
+— /close **records** and does not re-decide:
 
 ```
 designed out / fixed  ->  how the risk was removed
@@ -339,13 +339,13 @@ hold them.
 
 ## 2. Commit  [BRIEF, PROMPT]
 
-Run the commit core in done.md. Staged paths are the changed method docs
+Run the commit core in close.md. Staged paths are the changed method docs
 (QUEUE.md, SPEC.md, LOG/), plus the hand-edited files where this was a handmade
 close — planning sessions touch nothing else.
 
 ## 3. Recommend next  [BRIEF, PROMPT]
 
-Run done.md's **Recommend next** and apply its **Plan / setup close** delta: a
+Run close.md's **Recommend next** and apply its **Plan / setup close** delta: a
 fresh setup session whose only work item is the rough first build item recommends
 /plan to scope it rather than /next; otherwise the shared overlap scan + ladder
 apply.

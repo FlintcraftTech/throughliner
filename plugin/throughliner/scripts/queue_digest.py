@@ -179,7 +179,7 @@ FLAVOR_TAGS = frozenset({"audit", "user", "freeform", "co-write"})
 # shipped, which is the whole resolve — no history scan needed.
 LOG_ENTRY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-([a-z0-9][a-z0-9-]*)\.md$")
 # A record's kind suffix, or the legacy numeric one. A slug's second record
-# cannot reuse the bare filename, so /done suffixes the record's kind —
+# cannot reuse the bare filename, so /close suffixes the record's kind —
 # and older records took a bare number instead. Both are stripped so the
 # record still attributes to its slug; without this a second record is
 # invisible to the digest and its item reads as never written about.

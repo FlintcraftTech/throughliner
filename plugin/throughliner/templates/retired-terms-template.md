@@ -4,7 +4,7 @@ Mechanisms, settings and vocabulary this method has retired.
 
 **What this file is for.** Retiring a mechanism automatically puts every rule that still mentions it into question. This list is what makes that checkable: a search for a retired term across your live rules reports references that should have gone with it, so a stale reference produces a visible signal rather than silence.
 
-**It is source data, not derived state.** A retirement is an event, recorded once at /done that retires it — which is why storing it does not contradict computing everything else fresh.
+**It is source data, not derived state.** A retirement is an event, recorded once at /close that retires it — which is why storing it does not contradict computing everything else fresh.
 
 **How a term gets added.** The session that retires something appends a line here, in the same move as the gate disposition its record already carries. One line per term:
 

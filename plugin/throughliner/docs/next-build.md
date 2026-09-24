@@ -45,7 +45,7 @@ that gates, and it is a separate switch in the rules file.
 **A small mid-build tweak to a just-surfaced readable edit is in scope**
 [PROMPT]. Once the new text is visible the user may ask to change one bit. That
 refines the build's already-agreed work product, so: make it, reveal the updated
-text, and record it in the build working file Changes so it folds into the LOG entry /done
+text, and record it in the build working file Changes so it folds into the LOG entry /close
 writes. No separately logged object, no /plan round-trip. A request that's
 actually new scope — a different feature, or a change to something that already
 worked — routes out via Scope management below.
@@ -123,8 +123,8 @@ a check Claude CAN run   ->  just building
 a check needing the user ->  a [user] capture, which /plan would have kept as
                              its own item; /next walks the user through it
 a check Claude can run   ->  it stays OUTSTANDING in the run's working file.
-  but a circumstance of      Retry it before /done; if the circumstance
-  the moment blocks          still hasn't cleared, /done files it as a
+  but a circumstance of      Retry it before /close; if the circumstance
+  the moment blocks          still hasn't cleared, /close files it as a
   (the app must be on        capture. No new state, no new tag.
   screen and stealing
   focus would interrupt
@@ -216,7 +216,7 @@ second ask, SIGNIFICANT        ->  still propose the split. A repeated request
                                    absorbing a many-file change mid-run is what
                                    the run bound exists to prevent.
 QUEUE MOVE the user explicitly ->  perform it with the queue mover, narrate it
-  directs mid-run                  in one line, and record it at /done.
+  directs mid-run                  in one line, and record it at /close.
                                    An inferred move is never made and never
                                    offered; a delete keeps its own rules.
 ```
@@ -247,7 +247,7 @@ minor        ->  recommend adding it: "This needs [work], which means editing
                  the build working file's Files: BEFORE editing it — the scope-lock denies
                  edits to unlisted files.
 
-significant  ->  recommend splitting: finish what's scoped, /done to close, then
+significant  ->  recommend splitting: finish what's scoped, /close to close, then
 (many files,     /plan to queue the rest. Carrying it in this run is the escape,
  design          not the alternative offered.
  uncertainty)
@@ -308,7 +308,7 @@ has no facts on record, which answers nothing and costs one look.
 per fact** — a tool present and its path, or a failure mode such as "fails from
 Claude's shell, runs from the user's terminal". The file is writable whatever the
 run's scope-locked file list says, so this needs no scope addition and never
-waits for /done.
+waits for /close.
 
 **And confirm before connecting to or acting on the user's physical device or
 external hardware** — adb against a connected phone, flashing firmware, driving
@@ -352,7 +352,7 @@ abort and requeue ->  if the item is unsalvageable:
                            call — original position or top, by what was learned)
                         b. append any captures surfaced during the attempt
                         c. append the reshape direction, naming the item's slug
-                        d. tell the user to run /done
+                        d. tell the user to run /close
 ```
 
 The reshape-direction trigger is mechanical: *abort + item returned + a reshape
@@ -360,7 +360,7 @@ direction or learning the queue needs in conversation = capture needed.* Unroute
 it survives only in the LOG entry, which /plan doesn't read at planning time, so
 the item re-presents unchanged at the next /next.
 
-the build working file stays in place so /done's router still fires the build's close-out. The
+the build working file stays in place so /close's router still fires the build's close-out. The
 differences: the LOG entry describes the attempt and why it was aborted, and the
 item returns to QUEUE.md rather than disappearing into the log.
 
@@ -371,8 +371,8 @@ thin when the **user** says so. So this isn't a trigger to watch for; it's what 
 do when the user reports the squeeze.
 
 ```
-most of the run is ticked      ->  finish and /done. Short-term memory is enough.
-significant work remains       ->  close partial: /done what's ticked, requeue
+most of the run is ticked      ->  finish and /close. Short-term memory is enough.
+significant work remains       ->  close partial: /close what's ticked, requeue
                                    the rest. The next session picks up cleanly
                                    from the build working file and QUEUE.md.
 ```
@@ -390,13 +390,13 @@ where a held item bounded the run and the run shipped its blocker, what of the
 intended change is not yet on screen, in product terms — "part of the change
 you asked for is not in the app yet", never "now unblocked". It ends on a
 statement, naming any command in words as the communication rule defines it
-and keeping it clear of the sentence's end; the user reaches for /done themselves. It carries those things and
+and keeping it clear of the sentence's end; the user reaches for /close themselves. It carries those things and
 stops there.
 
 Tightening means refining done work; anything new routes through the existing
 paths.
 
-**Leave the build working file in place** — deleting it is /done's job.
+**Leave the build working file in place** — deleting it is /close's job.
 
 ## Audit procedure — for an `[audit]` item
 
@@ -489,5 +489,5 @@ command records this and commits — or keep reviewing."
 Reviewing means re-examining what was already found — not raising new work.
 Anything new routes through the existing paths: a discovery outside the audit's
 target follows the discovery rule; thinking work goes to Unprocessed. No chat
-summary of the routed findings — the LOG entry /done writes is the single session
+summary of the routed findings — the LOG entry /close writes is the single session
 record.

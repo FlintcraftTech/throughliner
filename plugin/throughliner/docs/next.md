@@ -34,7 +34,7 @@ FALSE, and no longer claimed anywhere:
       - a `[co-write]` item, which the run pauses at to work with the user
         as the co-authored-draft loop on its one file, then carries on
       - a `[freeform]` item, which /next halts on and never builds
-      - /done, which is the user's command to run — so a run left alone
+      - /close, which is the user's command to run — so a run left alone
         finishes its builds and sits there uncommitted
 ```
 
@@ -113,7 +113,7 @@ Say plainly why the run ended before it: this item must not be built alongside
 other work, so it gets a run of its own — and how many cleared items sit below it
 that this run will not reach, counted off the queue, so a marked item that has
 risen above other work is seen at the stop that it causes — then recommend
-/done. Mechanical, no judgment. It composes with the cleared-to-run line rather than replacing it:
+/close. Mechanical, no judgment. It composes with the cleared-to-run line rather than replacing it:
 whichever bound comes first ends the run. What the marker means and where it is
 written are in plan.md's decision step, which is the authoring site.
 
@@ -221,7 +221,7 @@ message — and hand over only what needs the user's eyes, decision, or hands.
 This is the last line of defence
 against a wrong tag, and it's nearly free — the run is about to act on that tag.
 If the check finds every step is Claude's, do the work as ordinary work and note
-the correction for /done; a wrong `[user]` item otherwise stops an unattended
+the correction for /close; a wrong `[user]` item otherwise stops an unattended
 run dead for work nobody needed the user to do.
 
 **Light, not thorough — no reframe, no search, no trying the tool.** The heavy
@@ -243,7 +243,7 @@ the run can still change rather than after scope is locked.
       region                        RUN ONLY. Leave the queue untouched.
 ```
 
-A reply, where one is owed, is drafted at /done.
+A reply, where one is owed, is drafted at /close.
 
 ### 3b. Cycles due-ness check  [SILENT] when no cycles doc exists; [BRIEF] whenever one does
 
@@ -360,7 +360,7 @@ you CAN scope it, but notice OTHER work      ->  adjacent-work discovery
 section, written at the moment of the write** — it belongs to the run rather
 than to any item, so no tick will ever record it, and after a crash the
 working file would otherwise say it never happened. A working file from before
-this section existed simply lacks it, and /done falls back to memory as it
+this section existed simply lacks it, and /close falls back to memory as it
 always did.
 
 **An item is buildable only when it says what changes *inside* the files it
@@ -426,7 +426,7 @@ covers no file beneath it: every file the run writes is named. Make sure no
 other line in the file starts with `Files:`.
 
 **Rationale is not copied here.** Each item's reasoning stays in QUEUE.md, which
-is where the run reads it and where /done reads it back. Copying it into the
+is where the run reads it and where /close reads it back. Copying it into the
 working file would put a second copy in a file scheduled for deletion. **The
 safety that governs this is step 3 below** — each item stays in QUEUE.md until
 the moment it is ticked, so no item's only copy ever sits in that file. **If
@@ -445,12 +445,12 @@ visibly shrinks as the run progresses, and an item still showing in QUEUE.md mea
 exactly one thing: not built yet.
 
 A `[user]` item is walked through in Step 3, not built, and is closed later by
-/done or /plan. It never enters the build working file, since the build working file is deleted at close.
+/close or /plan. It never enters the build working file, since the build working file is deleted at close.
 
 **4. Narrate the lock** [BRIEF] — one sentence, in user-facing terms: the build working file is
 the build's working file — it carries a copy of the run's work, lists the files the
 safety check allows, tracks progress so an interrupted session can resume, and
-holds the reasoning /done writes into the session record. The queue keeps its own
+holds the reasoning /close writes into the session record. The queue keeps its own
 copy of everything not yet built, and each item drops out of it as it's finished.
 
 ```
@@ -566,7 +566,7 @@ item strands in Processed and the next /next presents it again as if unbuilt.
   do, run whatever parts you can, give the **first** concrete step, and **wait**.
   One step at a time. This is a live drive, not an offer — you walk *beside* the
   user, you don't step back and hand off.
-- **/done is named only after the walk-through finishes.** How completion gets
+- **/close is named only after the walk-through finishes.** How completion gets
   recorded is told to the user *after* the last step is done or they defer.
 - **One `[user]` item at a time**, each in its own message, led by its own live
   walk-through. Not a bulk-approval result set.
@@ -574,9 +574,9 @@ item strands in Processed and the next /next presents it again as if unbuilt.
   skill-nonspecific-rules.md's "Walk a `[user]` item through whenever it is
   reached" bullet; an item whose blocker visibly hasn't shipped is not complete.
 - **A completed `[user]` item closes in a defined way:** log it under its slug and
-  remove it from Processed. Lives in **both** /done (the user runs /done right
+  remove it from Processed. Lives in **both** /close (the user runs /close right
   after finishing) and /plan (they completed it async and mention it).
-- **Re-clearing dependents** is the below-the-line revisit's job, not /done's.
+- **Re-clearing dependents** is the below-the-line revisit's job, not /close's.
 
 ### Walk-through branch — the `[user]` items  [SEQUENCE, PROMPT]
 
@@ -594,7 +594,7 @@ step is driven, append every path on the item's Files line to the working
 file's Files section, and say so in one clause.** **Write one line in the
 working file's Run-level section when the record is opened.** The item itself
 stays in QUEUE.md untouched, so nothing is stranded, and a crash mid-walk-through
-leaves a partial entry saying exactly what was done. /done then finds an
+leaves a partial entry saying exactly what was done. /close then finds an
 entry already started rather than writing one fresh.
 
 **Present every `[user]` item the pass reaches.** No item is set aside before it
@@ -625,7 +625,7 @@ moving to the next. (This is *not* the [SEQUENCE] bulk-approval inversion: that'
 for a deterministic result set the user reads and accepts in one pass. A
 walk-through is an action driven live.)
 
-**Where the item's record shows it was handed over for completion after a /done run
+**Where the item's record shows it was handed over for completion after a /close run
 and names no observable this run can reach, present it as not marked done**,
 name what waits on it by slug from the queue's `Blocked by:` lines, and carry
 on; nothing is asked. Both facts together, read off the record. The list is
@@ -690,7 +690,7 @@ record that explains why nobody need present it.
 deferral to honour and nothing to resume from.
 
 **Where the user volunteers that an item is done, take them at their word:** skip
-the walk-through and recommend /done to record it.
+the walk-through and recommend /close to record it.
 
 **Where the item's walkthrough names an observable check, run it**, and report
 a failed one as what was found, leaving the item in place.
@@ -723,8 +723,8 @@ self-corrects. The cost only lands when the command goes into a block for the
 user to run: they are a no-code developer, they cannot tell a typo from a broken tool,
 and the failure arrives in their hands rather than yours.
 
-**Say nothing about /done until the walk-through is complete** — while driving
-the steps, keep /done, "handing over" and recording out of the conversation
+**Say nothing about /close until the walk-through is complete** — while driving
+the steps, keep /close, "handing over" and recording out of the conversation
 entirely.
 
 **Once an item's walk-through is complete (or deferred), name how it is closed.** A
@@ -732,13 +732,13 @@ entirely.
 itself:
 
 ```
-run /done                ->  logs it under its slug, removes it from the queue
+run /close                ->  logs it under its slug, removes it from the queue
 raise it at the next /plan  ->  if the user would rather mention it there
 ```
 
 When every `[user]` item has been walked through or deferred, tell the user the
 whole run is complete — Claude-work built, user steps addressed — and that the
-done command, named in words mid-sentence, records it and commits.
+close command, named in words mid-sentence, records it and commits.
 
 **Copy discipline when the run is all `[user]` items.** Open with the item
 itself: say plainly that the next ready item is a step for the user to run, say
@@ -759,9 +759,9 @@ in the LOG entry, which /plan doesn't read at planning time, so the work
 re-presents unchanged at the next /next. Nothing reshape-shaped in conversation →
 skip, no output.
 
-**2. Name /done as the next step** [BRIEF]. Whatever the session did before
-stopping gets recorded and committed only by /done. Other recommendations (run
-/plan to vet the next work) ride alongside naming /done, which always happens.
+**2. Name /close as the next step** [BRIEF]. Whatever the session did before
+stopping gets recorded and committed only by /close. Other recommendations (run
+/plan to vet the next work) ride alongside naming /close, which always happens.
 
 No item returns to the queue, because none left it — scope was never locked.
 

@@ -1,8 +1,8 @@
 ---
-name: done-build
+name: close-build
 docset: current
 note: >
-  Close-out for build-flavor work items. Reached from done.md's router for the
+  Close-out for build-flavor work items. Reached from close.md's router for the
   run's build items (work items carrying no flavor tag), and — through the
   audit delta at the end — for its [audit] items.
 ---
@@ -26,7 +26,7 @@ Captures meaning that would be lost after compaction.
 
 ### Mid-close directive — new scope vs build-completing fix  [PROMPT]
 
-If a new directive arises during /done — the user raises a change, or
+If a new directive arises during /close — the user raises a change, or
 verification turns one up — decide by one line: **does it complete the just-built
 work's own verification, or is it new scope?**
 
@@ -38,7 +38,7 @@ new scope (a redesign, a new feature, a change to something that already worked)
         Even if it looks small. Even if the user raises it here.
 ```
 
-/done records and commits; it doesn't take on new build scope.
+/close records and commits; it doesn't take on new build scope.
 
 ### 1.1 Verify completion  [SILENT] when every item is ticked; [PROMPT] when any is not
 
@@ -89,7 +89,7 @@ Append each finding to Unprocessed, placed per the Captures placement rule
 
 ### 1.3 Spec check-against  [SILENT] when the run agrees with SPEC; [PROMPT] on a contradiction
 
-**The build session's /done checks the run's work against SPEC. It does not sync SPEC to
+**The build session's /close checks the run's work against SPEC. It does not sync SPEC to
 match it.** Each item was already checked as it was built (next-build.md, step 4);
 this is the run-level look, over work that has accumulated.
 
@@ -103,7 +103,7 @@ run CONTRADICTS SPEC   ->  name the SPEC sentence and the work that contradicts
 **Where the build found that SPEC owes a sentence, it filed a capture and wrote
 nothing** (next-build.md, Scope management). Confirm the capture exists and say
 in one line that SPEC lags that sentence until the next planning run. **Do
-not write it here:** /done is the same session as the build, so writing it
+not write it here:** /close is the same session as the build, so writing it
 now moves the self-certification later rather than crossing the session boundary
 the rule exists for.
 
@@ -121,7 +121,7 @@ the queue. Its flag was cleared at an earlier /plan run, so two things:
    # how-it-cleared record was written at the /plan close that cleared it.
 2. BACKSTOP [PROMPT]: marker still reads State: uncleared?
    # should be impossible. STOP and surface it rather than committing — an
-   # uncleared flag at a build session's /done run means the model was bypassed.
+   # uncleared flag at a build session's /close run means the model was bypassed.
 ```
 
 Silent when no built item carries a flag.
@@ -129,7 +129,7 @@ Silent when no built item carries a flag.
 ### 1.5 Reply to mail the run opened  [SILENT] when no mail arrived; [PROMPT] when it did
 
 Where /next's pre-flight opened a message that asked a question, a reply is owed:
-draft it now and show it. A defect report is owed nothing by default. /done is the moment the user is reliably present, which
+draft it now and show it. A defect report is owed nothing by default. /close is the moment the user is reliably present, which
 mid-run is not — and a reply leaves the machine, so it goes out only on their
 explicit yes to the exact wording, with the draft put in front of them unprompted.
 
@@ -138,11 +138,11 @@ explicit yes to the exact wording, with the draft put in front of them unprompte
 ### 2.1 Write LOG entry  [DISCUSS, PROMPT]
 
 **Narrate first** [BRIEF]: one sentence noting the work's reasoning is being
-carried from the build working file into the LOG entry — the file's last job before /done
+carried from the build working file into the LOG entry — the file's last job before /close
 deletes it.
 
 Write **one LOG entry file per built item**, each named after that item's slug.
-Follow done.md's **LOG entry files** section, with the build body fields:
+Follow close.md's **LOG entry files** section, with the build body fields:
 
 ```
 Files touched       from the build working file Changes
@@ -161,14 +161,14 @@ removed each item as it ticked:
 git show HEAD:QUEUE.md
 ```
 
-The run has not committed yet — /done is what commits — so every item this run
+The run has not committed yet — /close is what commits — so every item this run
 built is still in the last commit's copy, whole. **Take the item's whole block —
 from its `#### ` heading to the next heading, or the section's end** — and
 nothing else; a read of the whole file is not needed to answer one slug. A hand-sized grep or line window is not used:
-a window shorter than the item once truncated the read twice in one /done run, and
+a window shorter than the item once truncated the read twice in one /close run, and
 both outputs reasoned from the cut-off text, one reaching the user.
 
-**Where the fetched item's own text already dispositions a question /done is
+**Where the fetched item's own text already dispositions a question /close is
 about to put to the user, transcribe the disposition instead of asking** — and
 an ask that deliberately re-opens one names the recorded decision it re-opens.
 
@@ -181,10 +181,10 @@ of an untracked queue, and it is stated rather than discovered.
 **One entry per built item is unconditional in COUNT, not in content**, however
 long the run. A work item's queue text is *consumed* when it builds — /next
 removes it — so after the build the LOG entry is the only surviving record of
-what the work was for. The count rule never forbids done.md's sibling-citation
+what the work was for. The count rule never forbids close.md's sibling-citation
 provision: where one decision settled several of the run's items, one entry
 carries the reasoning and the sibling entries cite it, each still named for its
-own slug. /done sees the grouping from what it already reads — each built
+own slug. /close sees the grouping from what it already reads — each built
 item's queue text, read back one at a time — so items whose text records the
 same settlement are the siblings.
 
@@ -197,23 +197,23 @@ contested decision.
 
 **Read each item's rule-gate disposition from the working file by its slug too**
 — `Rule gate: <slug> — run — …` — for the same reason and in the same pass. The
-line /done then writes into the session's LOG entry stays slugless: it
+line /close then writes into the session's LOG entry stays slugless: it
 describes the session rather than one item, which is the form
 `workshop/resources/rule_signals.py` reads.
 
-**A built slug with no depth line is read as short**, and noted at /done as
+**A built slug with no depth line is read as short**, and noted at /close as
 a discipline slip rather than passing silently: the field is required, so a
 missing one means the build skipped a step, and saying so is what keeps it from
 decaying back into an optional line.
 
 **Transcribe each item's tick form into its LOG entry, and announce every
-unconfirmed item at /done** [BRIEF]. The tick reads either `done, confirmed`
+unconfirmed item at /close** [BRIEF]. The tick reads either `done, confirmed`
 or `done, UNCONFIRMED: <what still needs running>` (next-build.md). Carry
 whichever it says into the entry verbatim — transcribed, not composed — and where any item
-is unconfirmed, say so plainly in /done's narration, naming the item and what
+is unconfirmed, say so plainly in /close's narration, naming the item and what
 has not been run.
 
-**The announcement is required rather than left to judgment.** `done-plan.md`'s
+**The announcement is required rather than left to judgment.** `close-plan.md`'s
 hold-back rule reads this field to decide whether dependent work may clear, so an
 entry that omits it silently weakens a safety rule one document away.
 
@@ -222,10 +222,10 @@ and appended as it went (next.md). Continue that file rather than writing a fres
 one — the existing entry is the record, not a duplicate.
 
 **Close each `[user]` item on one of the three outcomes — done, deferred, or not
-reached — read off the run's own trail** (done.md's outcome block, and next.md's
+reached — read off the run's own trail** (close.md's outcome block, and next.md's
 walk-through branch, carry the definitions). **On the done arm, remove the item
 from Processed with the queue mover**, running first the observable check that
-done-plan.md's Completed `[user]` items step names; deferred and not reached
+close-plan.md's Completed `[user]` items step names; deferred and not reached
 leave the item in place.
 
 If a built item carried a red flag, note in this entry that it carried one and
@@ -234,7 +234,7 @@ written at the /plan close that cleared it.
 
 ### 2.2 Staleness sweep  [SILENT] when clean; [BRIEF] when flagging
 
-Run done.md's **Staleness sweep**.
+Run close.md's **Staleness sweep**.
 
 ### 2.3 Delete the build working file  [SILENT]
 
@@ -243,11 +243,11 @@ after everything above is complete.**
 
 ### 2.4 Commit  [BRIEF, PROMPT]
 
-Run the commit core in done.md.
+Run the commit core in close.md.
 
 ## Phase 3: Recommend next  [BRIEF, PROMPT]
 
-Run done.md's **Recommend next** and apply its build delta: the shared
+Run close.md's **Recommend next** and apply its build delta: the shared
 overlap scan + queue-state ladder are the whole recommendation.
 
 **Leave the next run's size to the cleared-to-run line**, in the recommendation
@@ -259,7 +259,7 @@ it — a behaviour-based stop rather than a number.
 
 ## Audit delta — for a run's `[audit]` items
 
-Run the phases above and apply this delta, the shape done-plan.md uses. Audits
+Run the phases above and apply this delta, the shape close-plan.md uses. Audits
 edit no source files — **the session's product is the captures it appended to
 Unprocessed** — and only what follows differs for an `[audit]` item.
 
@@ -274,7 +274,7 @@ outside the audit's criteria, process issues — from the same record the build
 step sweeps.
 
 **2.1 Write LOG entry** — one per audit item, named after its slug, using
-done.md's **Audit** body fields:
+close.md's **Audit** body fields:
 
 ```
 Files touched       the target artifacts READ — the audit edited nothing
@@ -293,4 +293,4 @@ that itself carries a marker is closed by 1.4 above like any built item.
 — the staged paths are the QUEUE.md capture additions, the LOG/ changes, and the
 build working file's deletion.
 
-**Phase 3** applies done.md's audit-session delta.
+**Phase 3** applies close.md's audit-session delta.

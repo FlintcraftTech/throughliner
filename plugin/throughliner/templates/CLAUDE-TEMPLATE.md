@@ -18,7 +18,7 @@ This project uses the Throughliner method.
 - `/plan` — queue management, captures, design questions.
 - `/next` — execute the top piece of ready work (a build or an audit, by its flavor tag). It can work several cleared pieces of work back-to-back, top-down, stopping at the readiness line or when something genuinely needs you.
 - `/rescan` — read back over the conversation and file anything decided or noticed but never written down. Run it whenever, as often as you like; it only looks back as far as the last time you ran it. It files things and leaves the deciding to /plan.
-- `/done` — record, update docs, commit.
+- `/close` — record, update docs, commit.
 
 ## Rules for Claude
 

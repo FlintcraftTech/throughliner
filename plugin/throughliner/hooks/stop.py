@@ -54,7 +54,7 @@ import sys
 # ("as [some-slug] says") does not match.
 CLAIM_PATTERNS = [
     # Queue-FILING verbs only. "logged", "recorded" and "wrote" are deliberately
-    # absent: /done legitimately says it logged a slug that it then removed from
+    # absent: /close legitimately says it logged a slug that it then removed from
     # the queue, and a LOG entry is not a QUEUE heading — this check is
     # QUEUE-specific, so those verbs would fire on correct reports.
     re.compile(
@@ -391,8 +391,8 @@ def _slugs_with_a_log_entry(cwd):
 def _slugs_ticked_in_working_file(cwd, session_id):
     """Slugs ticked in THIS session's build working file.
 
-    Between an item's tick and /done it is in neither the queue (the run
-    removed it at the tick) nor LOG/ (/done writes the entry), so a
+    Between an item's tick and /close it is in neither the queue (the run
+    removed it at the tick) nor LOG/ (/close writes the entry), so a
     citation of work built minutes earlier in the same run still drew a block
     — a guard false-firing at the moment of highest confidence. A tick line
     reads `- [x] <description>` under Progress, and the run's items carry
@@ -550,9 +550,9 @@ def _bold_mid_line_owed(cwd, session_id, message):
 
 # --- The post-close tail offer ([post-close-tail-offer-enforced-once]) ---
 #
-# After this chat's /done, the always-loaded rule says to offer once to append
+# After this chat's /close, the always-loaded rule says to offer once to append
 # later work to the session's record as a marked tail, at the end of a piece
-# of work where a file changed. It failed repeatedly in practice. /done leaves
+# of work where a file changed. It failed repeatedly in practice. /close leaves
 # `.throughliner/session-closed-<session-id>` carrying the record's filename;
 # where a project file outside LOG/ was written after it (read from the safety
 # check's decision log), a finished reply that carries neither the offer nor a
@@ -654,7 +654,7 @@ def _post_close_tail_owed(cwd, session_id, message):
         "This chat has already closed — its record is written and committed "
         "— and a project file changed since. The offer to append that work "
         "to this session's record as a marked tail is owed once: name both "
-        "routes, a yes here or running the done command again, which appends "
+        "routes, a yes here or running the close command again, which appends "
         "the same tail. This is fed back once and passes on the next reply."
     )
 
@@ -1012,7 +1012,7 @@ def main():
     # the sentence to tell them apart cannot work.
     recorded = _slugs_with_a_log_entry(cwd)
     # ...and a slug named in this session's own build working file is work this
-    # run built (or is building): between its tick and /done it is in
+    # run built (or is building): between its tick and /close it is in
     # neither the queue nor LOG/, so without this the guard fired on a run
     # correctly citing its own finished work.
     ticked = _slugs_ticked_in_working_file(cwd, session_id)

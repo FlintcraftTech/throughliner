@@ -612,13 +612,16 @@ def tool_file_capture(arguments):
 
 
 SESSION_CLOSED_PREFIX = "session-closed-"
-TAIL_HEADING = "## After /done"
+TAIL_HEADING = "## After /close"
+# The heading a record carries where its tail was opened before the close
+# command was renamed; a second tail there reuses it rather than adding one.
+OLD_TAIL_HEADING = "## After " + "/" + "done"
 
 
 def tool_append_tail(arguments):
     """Append post-close work to this chat's record as a marked tail
     ([post-close-tail-offer-enforced-once]). The chat's record is read from
-    the `session-closed-<id>` marker /done left in `.throughliner/`; the
+    the `session-closed-<id>` marker /close left in `.throughliner/`; the
     heading is created once; the time is stamped from the clock. Refuses
     where no marker exists — nothing has closed, so there is no tail."""
     root = project_root()
@@ -657,7 +660,7 @@ def tool_append_tail(arguments):
         text = f.read()
     eol = "\r\n" if "\r\n" in text else "\n"
     addition = ""
-    if TAIL_HEADING not in text:
+    if TAIL_HEADING not in text and OLD_TAIL_HEADING not in text:
         addition += eol + TAIL_HEADING + eol
     addition += eol + "**%s.** " % stamp + prose.replace("\n", eol) + eol
     with open(record, "a", encoding="utf-8", newline="") as f:
@@ -2228,10 +2231,10 @@ TOOLS = [
     {
         "name": "append_tail",
         "description":
-            "Append work done after this chat's /done to the chat's own "
-            "record as a marked tail under `## After /done`, created once, "
+            "Append work done after this chat's /close to the chat's own "
+            "record as a marked tail under `## After /close`, created once, "
             "with the time stamped from the clock. Finds the record from the "
-            "session-closed marker /done leaves; refuses where no chat here "
+            "session-closed marker /close leaves; refuses where no chat here "
             "has closed. The prose is Claude's — the tool composes nothing.",
         "inputSchema": {
             "type": "object",

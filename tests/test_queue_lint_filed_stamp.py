@@ -52,7 +52,7 @@ def main():
     check("a stamped capture draws nothing", not stamped, repr(stamped))
 
     unstamped = stamp_warnings(queue(unprocessed=(
-        "#### Hand-added capture [b-slug]\nRationale.\nFiled at /done 2026-09-20\n")))
+        "#### Hand-added capture [b-slug]\nRationale.\nFiled at /close 2026-09-20\n")))
     check("an unstamped capture draws the warning naming it",
           len(unstamped) == 1 and "'#### Hand-added capture [b-slug]'" in unstamped[0],
           repr(unstamped))

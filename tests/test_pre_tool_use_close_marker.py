@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""pre_tool_use.py reads /done's close marker from the project's own
+"""pre_tool_use.py reads /close's close marker from the project's own
 `.throughliner/` folder, per session ([scratchpad-refused-after-resume-close-marker]).
 
 Run: py tests/test_pre_tool_use_close_marker.py
@@ -75,7 +75,7 @@ check("an unlisted ordinary file stays refused under the marker",
       decision(d, os.path.join(d, "src", "other.py")) == "deny")
 shutil.rmtree(d, ignore_errors=True)
 
-# The two markers /done writes are permitted for the session's own id and
+# The two markers /close writes are permitted for the session's own id and
 # refused for another's, in a build session and a planning session alike
 # ([close-markers-refused-by-safety-check]).
 def marker_path(cwd, prefix, sid):

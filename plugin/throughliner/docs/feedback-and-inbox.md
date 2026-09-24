@@ -134,7 +134,7 @@ finding goes to the LOG, which is for what calls for no change here; evidence
 to re-read goes under `workshop/resources/`, **and a
 message that asks a question is owed a reply** — note the debt at triage, and
 draft the reply once the question has an answer: at that moment in a planning
-chat, at /done for a run. A defect report is owed nothing by default. The
+chat, at /close for a run. A defect report is owed nothing by default. The
 never-send-unseen guarantee is untouched — a drafted reply still leaves the
 machine only on the user's explicit yes to the exact wording. Then move the file
 to `INBOX/archive/`, so it isn't surfaced again at every opening. A project

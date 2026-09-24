@@ -216,7 +216,7 @@ def _is_root_commit(cwd, commit):
     """True where `commit` has no parent — the repository's first commit.
 
     A record found first in the root commit was imported with the repository
-    rather than written by a /done run inside it: a wrap, a clone or a folder move
+    rather than written by a /close run inside it: a wrap, a clone or a folder move
     adds every existing record in one commit, and the oldest-commit test then
     attributes all of them to it. Such a record keeps its placeholder and is
     reported as an import.
@@ -431,7 +431,7 @@ def backfill_log_hashes(cwd):
     impossible — no record file appears in any commit — so the report says
     that plainly when a placeholder exists, and stays silent otherwise. The
     close writes the hash itself right after the commit in that
-    configuration (done.md's commit step), which is what makes silence here
+    configuration (close.md's commit step), which is what makes silence here
     the normal state rather than a gap.
     """
     log_dir = os.path.join(cwd, "LOG")
@@ -1403,7 +1403,7 @@ def _log_session_opened(cwd, session_id, version):
 
 def _stale_close_markers(cwd, session_id):
     """Names of `close-active-<id>` markers in `.throughliner/` left by
-    sessions other than this one — a /done run that did not finish.
+    sessions other than this one — a /close run that did not finish.
     Reported, never deleted."""
     safe_id = re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
     folder = os.path.join(cwd, ".throughliner")
@@ -2055,7 +2055,7 @@ def _waiting_inbox_messages(cwd):
     substitutes a short preview plus a file path. So enough unread mail costs the
     session its project state, its queue facts and its rules directive — not
     merely the mail. Two unarchived messages totalling 7,107 characters took one
-    payload to 10,978, and the failure landed on a /done run.
+    payload to 10,978, and the failure landed on a /close run.
 
     Bodies were inlined for a period because an instruction to go and read a
     file is a step, and a step can be skipped — which happened, and cost a
@@ -2191,8 +2191,8 @@ def _untracked_core_docs(cwd: str) -> list:
     the design. /setup fires once, and the project that reported this was
     already adopted — so a setup-only check would have missed the very case that
     produced it. It is also what dissolves the deadlock that project hit: their
-    /done could not repair it, because the planning scope-lock refuses
-    `.gitignore` and the /done marker's permitted list omits it, so the fix
+    /close could not repair it, because the planning scope-lock refuses
+    `.gitignore` and the /close marker's permitted list omits it, so the fix
     became a request that a non-coder hand-edit `.gitignore` mid-close. Read at
     the opening, before any work, the same walkthrough costs nothing and
     interrupts nothing.
@@ -2674,7 +2674,7 @@ def main() -> int:
             context_parts.append(
                 "[Throughliner] Cycles on file (%d): %s. Facts, not verdicts — "
                 "the hook reports what each definition says and what its "
-                "observable reads; /plan, /next and /done compute due-ness from "
+                "observable reads; /plan, /next and /close compute due-ness from "
                 "the observable and file one capture per due step."
                 % (len(cycles), "; ".join(described))
             )
@@ -2740,7 +2740,7 @@ def main() -> int:
             "queue item included — can be put back from there.\n"
             "  2. Those copies are on this machine only and carry no history, "
             "so a lost disk loses them. Git is not keeping a copy.\n"
-            "  3. /done cannot read back its own work from the file's "
+            "  3. /close cannot read back its own work from the file's "
             "history, so it records from what it remembers of the session."
             % ", ".join(ignored)
         )
@@ -2764,7 +2764,7 @@ def main() -> int:
         context_parts.append(
             "[Throughliner] Isolation: this session is in its own git "
             "worktree, so its edits live on a branch of their own. This "
-            "session's work is NOT merged back automatically — /done says "
+            "session's work is NOT merged back automatically — /close says "
             "which branch it is on and warns that choosing \"remove\" at exit "
             "would delete it."
         )
@@ -2781,7 +2781,7 @@ def main() -> int:
         # Only a main-checkout session can merge a session branch back: git
         # refuses to update a branch that is checked out in another working
         # tree, so the isolated session cannot merge itself. That inverts the
-        # obvious design — the merge cannot happen at the isolated /done run, so
+        # obvious design — the merge cannot happen at the isolated /close run, so
         # this is the moment it gets offered.
         stranded = _unmerged_session_branches(cwd)
         session_work = [b for b in stranded if b[2]]
@@ -2926,7 +2926,7 @@ def main() -> int:
     stale_closes = _stale_close_markers(cwd, data.get("session_id", ""))
     if stale_closes:
         context_parts.append(
-            "[Throughliner] A /done run that did not finish left "
+            "[Throughliner] A /close run that did not finish left "
             + ", ".join(f"`.throughliner/{n}`" for n in stale_closes)
             + " behind. Left where it is; it belongs to another session and "
             "unlocks nothing here."
@@ -2989,7 +2989,7 @@ def main() -> int:
         context_parts.append(
             "ACTIVE BUILD in progress — this session's build working file "
             f"({os.path.basename(build_path)}) exists. "
-            "Run /next to resume, or /done if the work is complete. "
+            "Run /next to resume, or /close if the work is complete. "
             "A planning session (/plan) may run in a separate chat alongside this build — "
             "if this chat was opened to plan, that is allowed; don't refuse it or insist on "
             "resuming or closing the build first."
@@ -3032,7 +3032,7 @@ def main() -> int:
             f"sessions: {listed}. Each belongs to a session that never closed, or "
             "to one running right now in another chat. Nothing is deleted — a "
             "working file can hold the only record of what a crashed session did. "
-            "If one is genuinely orphaned, /done can close out what it records."
+            "If one is genuinely orphaned, /close can close out what it records."
         )
 
     # An artifact a retired feature left behind. Reported, never deleted — the
@@ -3048,14 +3048,14 @@ def main() -> int:
         )
 
     # Dirty-tree warning: uncommitted changes with no active build almost always
-    # mean a previous session ended without /done — work sitting unrecorded that
+    # mean a previous session ended without /close — work sitting unrecorded that
     # a non-coder won't notice for weeks. Silent during an active build, where
     # dirt is expected mid-session rather than orphaned.
     #
     # A planning session now leaves no working file at all, so there is no
     # second condition to suppress on. That costs one false fire: a /plan that
     # has edited QUEUE.md and not yet closed looks the same as an abandoned
-    # session. The message says /done will pick the changes up, which is true
+    # session. The message says /close will pick the changes up, which is true
     # either way, so the false fire is harmless.
     if not has_active_build:
         dirty_paths = _dirty_paths(cwd)
@@ -3074,14 +3074,14 @@ def main() -> int:
                 f"[Throughliner] {len(backfilled)} LOG file(s) changed because "
                 "this project's commit hashes were filled in automatically — "
                 "placeholders replaced with the real hash, nothing else. That "
-                "runs by itself at every session start and is normal; /done "
+                "runs by itself at every session start and is normal; /close "
                 "commits it along with everything else."
             )
         if remaining:
             context_parts.append("")
             context_parts.append(
                 f"[Throughliner] {len(remaining)} file(s) have uncommitted "
-                "changes from a previous session — /done will pick them up."
+                "changes from a previous session — /close will pick them up."
             )
 
     backfill_report = backfill_log_hashes(cwd)

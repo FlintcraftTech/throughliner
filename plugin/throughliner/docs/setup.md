@@ -41,7 +41,7 @@ that build's own list. Starting anyway would not be blocked cleanly at the door;
 it would fail partway, file by file, leaving the setup half-finished. So:
 
 > There's a build running in this project at the moment, and setting up while it
-> runs would leave things half-changed. Finish it, or run the done command to
+> runs would leave things half-changed. Finish it, or run the close command to
 > close it, and then start me again — I'll pick up from there.
 
 Then stop there — no scaffolding, no continue-anyway question, no workaround.
@@ -54,7 +54,7 @@ about to happen and let the user choose:
 
 > You've got a planning session going here. I can set up now — setting up
 > changes a few files outside the usual ones, which is fine and expected. Worth
-> knowing that the planning work in this chat isn't saved yet; the done command
+> knowing that the planning work in this chat isn't saved yet; the close command
 > is what records it. Set up now, or close first?
 
 Then wait for their answer, and do what they say.
@@ -68,8 +68,8 @@ a stop partway through, an error — create `.throughliner-setup-done` beside
 it, an empty file written with the Write tool, and leave
 `.throughliner-setup-active` where it is; no shell command touches either
 marker. The safety check reads the done marker as the end of the run. It
-stays until this chat's /done run deletes it as its last action: while it
-stands beside that run's own marker, the safety check lets the /done run
+stays until this chat's /close run deletes it as its last action: while it
+stands beside that run's own marker, the safety check lets the /close run
 correct the files setup scaffolded.
 
 It is what tells the safety check that this session is a setup run rather than a
@@ -207,7 +207,7 @@ show it done, or wait for the user to mention it.
 boundary travels as approval-gated mail, and the receiving project files it with
 its own hands.
 
-**At /done, where the answer was pop-out, draft the pop-out message to the
+**At /close, where the answer was pop-out, draft the pop-out message to the
 parent's INBOX**  [PROMPT] — shown to the user in full, sent only on an
 explicit yes, like any other outbound mail. A new project made here sends
 nothing.
@@ -266,7 +266,7 @@ source's shape wholesale.
   the source used a path block or pointed its docs elsewhere, that doesn't carry
   over.
 
-## Step 2C: Migration scaffolding  [SILENT] for the checks and file creation; [BRIEF] at /done
+## Step 2C: Migration scaffolding  [SILENT] for the checks and file creation; [BRIEF] at /close
 
 The plugin version changed since this project was last set up. Re-scaffold without
 overwriting user content. Run the checks and file creation **silently**; keep the
@@ -349,7 +349,7 @@ plain statement, so nobody is left thinking the mail is now private.
 offer, never a halt. Where the project is one flat repository, say in two or
 three sentences what the nested shape is (the product in a subfolder with its
 own clean repository, the method's documents tracked privately in the outer
-one, /done committing both) and which of the two conversions this project
+one, /close committing both) and which of the two conversions this project
 gets: where the repository has no remote, the product's files move into a new
 inner repository (the **split**); where it already has one, that repository is
 already the product's and is kept whole as the inner, the opened folder
@@ -535,7 +535,7 @@ a leftover build working file    ->  an earlier build was interrupted: name it
                                      migration's new files get recorded when
                                      that build closes.
 otherwise                        ->  tell the user what was created or updated
-                                     and recommend /done
+                                     and recommend /close
 ```
 
 **Add only — existing files stay as they are.** The goal is to add what a newer
@@ -610,7 +610,7 @@ One-line summaries of each session. Newest first. Each line names the session's
 full entry file in this folder.
 ````
 
-Session entries are written by /done, each as its own file in LOG/ carrying its
+Session entries are written by /close, each as its own file in LOG/ carrying its
 own summary field, from which the close regenerates this index — nothing else
 to scaffold.
 
@@ -707,7 +707,7 @@ repository is missing: once at the project root, once in the product
 subfolder. The inner repository holds only the product, displayed cleanly,
 and is the one that goes public when the user asks; the outer one never gets
 a remote, so the method's documents are tracked there — privately — and undo,
-history and /done's read-back all work from ordinary git. /done
+history and /close's read-back all work from ordinary git. /close
 commits both, the product commit into the inner repository and everything
 else into the outer. One product subfolder per project; a project with
 several outgrowing parts uses the subproject pop-out, which exists for that.
@@ -823,7 +823,7 @@ KEPT     Claude still writes to these first and reports what landed. Before
          each change the plugin saves a copy of the previous version into a
          local folder that is itself kept out of the repository, so an
          unwanted change — a deleted queue item included — can be put back.
-CHANGED  /done cannot read its own work back from the file's history, so
+CHANGED  /close cannot read its own work back from the file's history, so
          it records the session from what it remembers.
 LIMIT    those saved copies live on this machine and carry no history, so a
          lost disk loses them. Say this rather than describing the net as an
@@ -1123,12 +1123,12 @@ where it is genuinely needed, ask for it as a question like any other.
     with the Write tool, leaving `.throughliner-setup-active` where it is —
     the safety check reads the done marker as the end of the run, and it
     says setup ran in this chat
-5.  recommend /done to record this setup and commit the new files
+5.  recommend /close to record this setup and commit the new files
 6.  teach the working rhythm (below)
 ```
 
 The file list shows what appeared in the folder; the session's single summary is
-the LOG entry /done writes at close.
+the LOG entry /close writes at close.
 
 **Teach the working rhythm in plain words** — a few short sentences:
 
@@ -1136,13 +1136,13 @@ the LOG entry /done writes at close.
 - From here, two commands carry the work: **/plan** to think and organise, and
   **/next** to build the next thing on the list. Run /plan whenever planning is
   needed, and /next once per item as you work down the queue.
-- However a session goes, end it with **/done**, which records what happened
+- However a session goes, end it with **/close**, which records what happened
   and saves it. After that the conversation can be cleared: **/clear** wipes
   the conversation on screen and touches none of the project's files, which is
-  what makes it safe once /done has run — the next session starts fresh and
+  what makes it safe once /close has run — the next session starts fresh and
   reads everything back from the files. Say the order in words rather than
   stacking the two commands in one sentence, and point at the FAQ entry on why
-  every session ends with /done for the longer answer.
+  every session ends with /close for the longer answer.
 
 ## The self-hosting seed  [BRIEF, PROMPT]
 

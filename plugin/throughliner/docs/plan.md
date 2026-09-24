@@ -99,7 +99,7 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
   and agreeing to move it.**
 - **When placing an item into Processed — at the decision step, or when lifting one
   from below the line — keep `[user]` and `[audit]` lines end-preferred, as
-  done-plan.md's reorder step requires.**
+  close-plan.md's reorder step requires.**
 - **A user-credit stays on the item after processing** — see the provenance rule
   in skill-nonspecific-rules.md for what earns one.
 - **Who does the work, and how.** Work is Claude's to build by default, and the
@@ -219,7 +219,7 @@ the hold was written then.
 
 **Where this chat's own build working file still exists, say so plainly, once, in
 the opening narration:** this chat has a build that has not closed, so lifts and
-shipped-flags depending on that run's work will not resolve until /done runs. The
+shipped-flags depending on that run's work will not resolve until /close runs. The
 revisit still reads LOG and still skips silently — nothing else changes.
 
 **Each of these reports a fact, never a verdict.** Read them as inputs to your
@@ -388,7 +388,7 @@ The widening is real and bounded; do not describe it as covering everything that
 could bear on the project.
 
 **Where the user mentions having done a `[user]` item**, close it at this
-session's /done: log it under its slug and remove it from Processed.
+session's /close: log it under its slug and remove it from Processed.
 
 **Below-the-line revisit** [SILENT] when nothing lifts; [BRIEF] when
 proposing a lift. Every below-line item names what holds it — `Blocked by:`
@@ -439,7 +439,7 @@ it — **which is a fate decision, and therefore the user's.** That is the one
 branch here that is a question for them.
 
 Read shipped-ness off LOG. **"Shipped" here means built and
-verified**, per done-plan.md's hold-back-unverified-work rule.
+verified**, per close-plan.md's hold-back-unverified-work rule.
 **Nothing else here is a question for the user.** Lifting is narrated; a
 still-blocked item says nothing at all.
 
@@ -544,7 +544,7 @@ A due cycle gets its sentence ("weekly release: due, filed"); cycles with
 nothing due join the opening's quiet clause.
 
 The capture then ranks by the ladder like any other work. The same check runs at
-/next's pre-flight and /done's wind-down, filing only — this is the one site
+/next's pre-flight and /close's wind-down, filing only — this is the one site
 that also processes what it files.
 
 **Goals check** [SILENT] when nothing fires; [BRIEF] when something does. Read
@@ -733,7 +733,7 @@ whose relationships shifted — read the slug-references items already carry), a
 if the order already sits right, leave it.
 
 **State the four routes here, once** — *"I'll work through
-these one at a time; say skip, stop, or run the done command whenever you like — or, where an item is someone else's to do, say whose."* This is the only place
+these one at a time; say skip, stop, or run the close command whenever you like — or, where an item is someone else's to do, say whose."* This is the only place
 they are recited; the last route is spoken only where the project holds more
 than one person, and it rewrites the entry's `Assigned to:` line in one line. **Close that same message on the first item itself**: a pointer
 to it, its plain-English summary and its analysis, ending on the interview's own
@@ -1389,7 +1389,7 @@ fired without reading it can compound the first rather than correct it. **On a
 mismatch, read the tool's usage before any second attempt** — the hazards above
 are exactly the kind a re-guess repeats.
 
-**Before clearing, apply done-plan.md's hold-back-unverified-work rule.** Where
+**Before clearing, apply close-plan.md's hold-back-unverified-work rule.** Where
 this item's prose names a slug that LOG records as built but not yet verified,
 place it into Processed **below** the line naming that slug as its blocker,
 rather than clearing it.
@@ -1471,7 +1471,7 @@ After every item, present the next item. That is the whole checkpoint.
 
 > Into Processed, cleared to run. Next up:
 >
-> **#### /done invites another /next in the same session [close-invites-same-session-next]**
+> **#### /close invites another /next in the same session [close-invites-same-session-next]**
 > Captured by you (2026-08-13), from a live instance minutes earlier in another
 > project running this plugin.
 >
@@ -1682,7 +1682,7 @@ passed over and why** — how many entries wait for a cycle's turn, how
 many on other entries or on dates — naming any red-flagged capture outright
 with what it waits on, so a queue that came to rest by passing everything over
 is never reported as fully processed. The count is the count, not the list:
-the done command's closing message is what lists the cleared items. Then, over
+the close command's closing message is what lists the cleared items. Then, over
 the entries filed or skipped this session that remain in Unprocessed, name by
 slug the ones worth processing before the next build run, one clause each
 saying why — a capture that would change what a cleared build does, or that
@@ -1715,7 +1715,7 @@ Where the rescan command has not run in this chat:
 Where it has, the closing paragraph reads instead, the counts above it and
 the bold ask beneath it unchanged:
 
-> One command closes the session now: send the done command, which records
+> One command closes the session now: send the close command, which records
 > the session and commits it.
 
 **Ask once per rest.** The gate fires when the queue first empties. If the user
@@ -1731,7 +1731,7 @@ stop; nothing that reads as an invitation to leave.
 
 **Where the user declares they want the chat kept open to capture in, the
 wrap-up ask is silenced for the rest of the chat**, refills included. Held in
-the conversation; nothing is stored. It silences this gate only — /done runs
+the conversation; nothing is stored. It silences this gate only — /close runs
 when it is invoked, so there is nothing there to silence.
 
 New items from conversation follow the same loop — check QUEUE.md for overlap

@@ -38,7 +38,7 @@ Your queue has two sections. **Unprocessed** is where new ideas land, as **capt
 
 A `/plan` run opens by checking the queue for problems — work marked ready that contradicts its own notes, items that name no files to change, work waiting on itself in a loop — and reports what it finds. Then it asks one question: is there anything you want to process first? Otherwise say go, and Claude takes them in the method's order, starting on the first item.
 
-You don't have to process everything in one sitting. `/plan`, `/done`, fresh chat, `/plan` again is a normal rhythm.
+You don't have to process everything in one sitting. `/plan`, `/close`, fresh chat, `/plan` again is a normal rhythm.
 
 ## What does `/next` do?
 
@@ -64,27 +64,27 @@ Work can carry a tag saying how it runs:
 
 **If you ask for something mid-build that isn't part of the current job**, Claude files it as a capture and says why in one clause, rather than quietly widening the job. Ask a second time and a small change goes straight through.
 
-## Why does every session end with `/done`, and why start a fresh chat?
+## Why does every session end with `/close`, and why start a fresh chat?
 
-`/done` records what happened in your session log — what was decided, what was built, what's still open — and commits. Until it runs, the work may exist in your files but the reasoning behind it isn't on the record anywhere. So finish every session with it.
+`/close` records what happened in your session log — what was decided, what was built, what's still open — and commits. Until it runs, the work may exist in your files but the reasoning behind it isn't on the record anywhere. So finish every session with it.
 
-Then start a fresh chat, either with `/clear` or a new conversation. `/clear` wipes the conversation on screen and touches none of your project's files — which is exactly why it is safe once `/done` has run. This isn't tidiness. Every message in a conversation takes up room in Claude's context window, and a long session fills it; once it's full, earlier details start slipping — instructions get fuzzy, scope drifts, mistakes creep in. A fresh chat gives the next session the whole window. It doesn't lose anything, because the next session learns what happened from your log and what's planned from your queue.
+Then start a fresh chat, either with `/clear` or a new conversation. `/clear` wipes the conversation on screen and touches none of your project's files — which is exactly why it is safe once `/close` has run. This isn't tidiness. Every message in a conversation takes up room in Claude's context window, and a long session fills it; once it's full, earlier details start slipping — instructions get fuzzy, scope drifts, mistakes creep in. A fresh chat gives the next session the whole window. It doesn't lose anything, because the next session learns what happened from your log and what's planned from your queue.
 
-The order matters: **`/done` before `/clear`, always.** Clear first and the session's thinking is gone before it was written down.
+The order matters: **`/close` before `/clear`, always.** Clear first and the session's thinking is gone before it was written down.
 
-Typing `/done` is the yes: the commit message appears on screen as the record of what is being committed, and the commit follows with no question in between. Where your repository has a remote, one plain question follows about pushing; where it has none, push is never mentioned. What tells you it committed is the commit hash written into the session record's heading.
+Typing `/close` is the yes: the commit message appears on screen as the record of what is being committed, and the commit follows with no question in between. Where your repository has a remote, one plain question follows about pushing; where it has none, push is never mentioned. What tells you it committed is the commit hash written into the session record's heading.
 
-`/done` also tells you what the next work is and then stops, naming the command that starts it in words, mid-sentence — the plan command for more planning, the build command for building — so nothing runs by accident. It won't invite you into another build in the same chat. Where a build run ended at work still held, the closing message says in plain terms what part of your change is not in the product yet.
+`/close` also tells you what the next work is and then stops, naming the command that starts it in words, mid-sentence — the plan command for more planning, the build command for building — so nothing runs by accident. It won't invite you into another build in the same chat. Where a build run ended at work still held, the closing message says in plain terms what part of your change is not in the product yet.
 
 ## What is `/rescan` for?
 
-It reads back over the conversation — what you said, what Claude thought while working — and files anything that never made it into a file. A shortened version runs inside `/done` as a safety net, but you can run `/rescan` yourself at any moment.
+It reads back over the conversation — what you said, what Claude thought while working — and files anything that never made it into a file. A shortened version runs inside `/close` as a safety net, but you can run `/rescan` yourself at any moment.
 
-The reason to run it mid-session is that `/done` is too late for some things. If you've been freewheeling in a `/plan` session, running `/rescan` sweeps what was said into captures right then — so they can be processed in that same session and be cleared to run in time for your very next `/next`.
+The reason to run it mid-session is that `/close` is too late for some things. If you've been freewheeling in a `/plan` session, running `/rescan` sweeps what was said into captures right then — so they can be processed in that same session and be cleared to run in time for your very next `/next`.
 
 It also reads Claude's own working-out, not just your messages, so ideas that came up while Claude was actually working with your project get filed rather than lost.
 
-What it finds is routed by where it belongs: work still to do becomes a capture, while something that already *happened* is added to this session's record as a marked tail. That second half is what makes `/rescan` the one-word way to record work you did after /done.
+What it finds is routed by where it belongs: work still to do becomes a capture, while something that already *happened* is added to this session's record as a marked tail. That second half is what makes `/rescan` the one-word way to record work you did after /close.
 
 Two limits worth knowing. It reaches only as far back as Claude can still see in the conversation. And it stops at the last `/rescan` in that chat, so running it twice doesn't comb the same ground again.
 
@@ -154,7 +154,7 @@ Two deliberate stops exist, and both are yours. A build run works down your que
 
 ## Can I keep my planning documents out of the repository, and does undo still work?
 
-Yes to both. Setup proposes keeping your spec, your queue and your session records out of the repository — they hold your plans, your reasoning and your history, which is the most personal material the method produces, and keeping them untracked is the only complete protection if the project is ever published. You accept that, or choose to track them instead, and the choice is per document. What still works: Claude writes to those files first and tells you what landed, exactly as before, because before each change the plugin saves a copy of the previous version into a local folder that is itself kept out of the repository. A deleted queue item can be put back from there. What changes: /done cannot read its own work back from the file's history, so it records the session from what it remembers, and those saved copies live on this machine only — a lost disk loses them.
+Yes to both. Setup proposes keeping your spec, your queue and your session records out of the repository — they hold your plans, your reasoning and your history, which is the most personal material the method produces, and keeping them untracked is the only complete protection if the project is ever published. You accept that, or choose to track them instead, and the choice is per document. What still works: Claude writes to those files first and tells you what landed, exactly as before, because before each change the plugin saves a copy of the previous version into a local folder that is itself kept out of the repository. A deleted queue item can be put back from there. What changes: /close cannot read its own work back from the file's history, so it records the session from what it remembers, and those saved copies live on this machine only — a lost disk loses them.
 
 ## What is a checklist, and how is it different from a cycle?
 
@@ -166,7 +166,7 @@ A planning session's opening lines name the work that is waiting — a line like
 
 ## Can I move a queue item while a build is running?
 
-Yes, by saying so. A build run never rearranges your queue on its own initiative, but an instruction from you goes through: tell it to skip an item, hold one until something else lands, or move one to the bottom, and Claude makes the move with the queue tool, says so in one line, and carries on building. Nothing pauses and nothing is re-confirmed, because the instruction was yours. You can check by opening QUEUE.md and finding the item where you sent it, and the move is written into the session's record at /done. Two limits: Claude never guesses a move you did not ask for and never offers one mid-run — that waits for planning — and deleting an item is a separate decision a run will not make on the fly, so ask for a delete at planning instead.
+Yes, by saying so. A build run never rearranges your queue on its own initiative, but an instruction from you goes through: tell it to skip an item, hold one until something else lands, or move one to the bottom, and Claude makes the move with the queue tool, says so in one line, and carries on building. Nothing pauses and nothing is re-confirmed, because the instruction was yours. You can check by opening QUEUE.md and finding the item where you sent it, and the move is written into the session's record at /close. Two limits: Claude never guesses a move you did not ask for and never offers one mid-run — that waits for planning — and deleting an item is a separate decision a run will not make on the fly, so ask for a delete at planning instead.
 
 ## What are my project's parts, and where does a new file go?
 
@@ -174,11 +174,11 @@ Setup asks roughly what your project's moving parts are — the product, and wh
 
 ## The safety check refused my edit — how do I get it through?
 
-In a session with no build running, the safety check lets Claude write only the planning documents, and refuses anything else with a message naming the path. That is deliberate: other files are work, and work is queued and built. Where you genuinely want the edit now, ask for the same change again in your own words. Claude then declares that one path in a small scope file, says so in one line, and makes the edit; the done command names it in the session's record. The door opens one path at a time, only after a refusal on that path in the same session, and it never widens what a planning session may write. The check also keeps a log of every decision — allowed and refused — in the project's `.throughliner/` folder, so a write that went through with no line there is a check that never ran, which is the first thing to look at before blaming a rule.
+In a session with no build running, the safety check lets Claude write only the planning documents, and refuses anything else with a message naming the path. That is deliberate: other files are work, and work is queued and built. Where you genuinely want the edit now, ask for the same change again in your own words. Claude then declares that one path in a small scope file, says so in one line, and makes the edit; the close command names it in the session's record. The door opens one path at a time, only after a refusal on that path in the same session, and it never widens what a planning session may write. The check also keeps a log of every decision — allowed and refused — in the project's `.throughliner/` folder, so a write that went through with no line there is a check that never ran, which is the first thing to look at before blaming a rule.
 
 ## A command says the plugin's checks aren't running — what do I check?
 
-A chat in a set-up project normally opens with a few lines starting `[Throughliner]`: the project is set up, the date, the version installed, what the queue holds. Every command looks for those lines before doing anything else. Where they are missing, the plugin's small scripts never ran, and Claude says so, names the usual cause and carries on with the command — the procedure still governs, but the safety checks and the opening's facts are absent. The usual cause is Python: it is missing from the machine, or Windows has put a placeholder in its place. In a terminal, `python --version` must print a version number; the placeholder prints "Python was not found" instead. Install Python from python.org with "Add python.exe to PATH" ticked, close the terminal, then close and reopen the desktop app. A new chat then shows the `[Throughliner]` lines again. Without Python the plugin fails silently and reports success anyway, which is why the commands look for the lines rather than trusting that the checks ran.
+A chat in a set-up project normally opens with a few lines starting `[Throughliner]`: the project is set up, the date, the version installed, what the queue holds. Every command looks for those lines before doing anything else. Where they are missing, the plugin's small scripts never ran, and Claude says so, names the usual cause and carries on with the command — the procedure still governs, but the safety checks and the opening's facts are absent. The usual cause is Python: it is missing from the machine, or Windows has put a placeholder in its place. In a terminal, `py --version` or `python --version` must print a version number — the hooks use the py launcher where it exists and python otherwise, so either one printing a version is enough; the placeholder prints "Python was not found" instead. Install Python from python.org with "Add python.exe to PATH" ticked, close the terminal, then close and reopen the desktop app. A new chat then shows the `[Throughliner]` lines again. Without Python the plugin fails silently and reports success anyway, which is why the commands look for the lines rather than trusting that the checks ran.
 
 ## How do I hold work back until something else happens?
 
@@ -218,7 +218,7 @@ In a project whose documents live in a repository with no remote — the defaul
 
 ## What is the "Last session advises" note at the top of my queue?
 
-Advice, not work. When `/done` closes a session with a concrete recommendation for what to do next, it writes that as a note at the top of Unprocessed. The next `/plan` reads it aloud in its opening and deletes it in the same breath — surfacing it is what consumes it. It never moves into Processed and never becomes an item. If you see one, the last session had a view; if it is gone, a planning session has already read it.
+Advice, not work. When `/close` closes a session with a concrete recommendation for what to do next, it writes that as a note at the top of Unprocessed. The next `/plan` reads it aloud in its opening and deletes it in the same breath — surfacing it is what consumes it. It never moves into Processed and never becomes an item. If you see one, the last session had a view; if it is gone, a planning session has already read it.
 
 ## How do my projects send each other mail?
 
@@ -232,7 +232,7 @@ It reads SPEC.md once at the start of the run, and checks each item it builds a
 
 ## Which command do I run now?
 
-Every piece of work travels one loop. Anything noticed, by you or by Claude, in any chat, becomes a capture in Unprocessed. `/plan` turns captures into agreed work and clears it to run. `/next` builds the cleared work, top down. `/done` records what happened and commits. Then a fresh chat, which learns what happened from the record rather than from memory.
+Every piece of work travels one loop. Anything noticed, by you or by Claude, in any chat, becomes a capture in Unprocessed. `/plan` turns captures into agreed work and clears it to run. `/next` builds the cleared work, top down. `/close` records what happened and commits. Then a fresh chat, which learns what happened from the record rather than from memory.
 
 Two things come back to the start. An audit edits nothing: what it finds becomes captures, weighed at the next `/plan`. A build that discovers something files a capture and keeps building. And a step that is yours leaves the loop only when you have done it — a run walks you through it and then leaves it in the queue until you say it is done.
 
@@ -246,15 +246,15 @@ Because file order records when things landed, and that is more useful than a r
 
 ## Why does my project have two repositories?
 
-A new project is set up nested: the product sits in a subfolder with a clean repository of its own — the one that goes public when you ask — and the folder around it holds your planning documents in a private repository that never gets a remote. Someone landing on the published repository sees the product, not your reasoning. `/done` commits both.
+A new project is set up nested: the product sits in a subfolder with a clean repository of its own — the one that goes public when you ask — and the folder around it holds your planning documents in a private repository that never gets a remote. Someone landing on the published repository sees the product, not your reasoning. `/close` commits both.
 
 An existing flat project is never forced across. Setup offers the conversion, and offers it again at the moment the project goes public, telling the two shapes apart by whether your repository already has a remote. Where it does, the wrap keeps that repository whole as the inner one and creates the outer around it, moving the planning documents up and changing nothing that points at the published repository. What tells you it worked is the Visibility line in your project's CLAUDE.md naming both repositories.
 
-## I typed /done twice — what did the second one do?
+## I typed /close twice — what did the second one do?
 
-A session makes one commit, at its close. Work you do after that rides the next session's commit. So a second `/done` in the same chat files anything it finds, appends what happened to the session's record under an `## After /done` heading, commits nothing, and says so in one line. Where you want a real second commit now, open a fresh chat and run `/done` there.
+A session makes one commit, at its close. Work you do after that rides the next session's commit. So a second `/close` in the same chat files anything it finds, appends what happened to the session's record under an `## After /close` heading, commits nothing, and says so in one line. Where you want a real second commit now, open a fresh chat and run `/close` there.
 
-The same idea covers a change you make after closing: change a file after `/done` and Claude offers, once, to add what happened to the session's record as that marked tail. Say yes or ignore it — nothing is committed either way, and the tail rides the next close.
+The same idea covers a change you make after closing: change a file after `/close` and Claude offers, once, to add what happened to the session's record as that marked tail. Say yes or ignore it — nothing is committed either way, and the tail rides the next close.
 
 ## A step of mine says other items are waiting on it — what does that mean?
 
@@ -288,7 +288,7 @@ Because a long opening was not getting read. A planning session's first message
 
 Anyone present may file captures. An entry names whose it is to do in an `Assigned to:` line; a line you write in your project's CLAUDE.md, `Unassigned work is <name>'s.`, says whose the rest is. When a step is handed over, Claude names who it is for, and whoever is present can say "not mine, it's hers" — the line is rewritten and the session carries on. A build with someone else's name on it is skipped in one clause in your session. The decisions the method gives "the user" — keeping or deleting work, clearing a risk, approving a send — belong to the one person holding authority.
 
-Two more things you will see. When a teammate has pushed while you were away, your opening carries a line saying the remote has commits this checkout does not, and asks you to pull before working the queue — nothing pulls for you. And where a pull leaves conflict markers in the queue, every queue tool and the done command refuse the file and name the marker's line; two captures appended at the same spot are kept both.
+Two more things you will see. When a teammate has pushed while you were away, your opening carries a line saying the remote has commits this checkout does not, and asks you to pull before working the queue — nothing pulls for you. And where a pull leaves conflict markers in the queue, every queue tool and the close command refuse the file and name the marker's line; two captures appended at the same spot are kept both.
 
 ## Claude refused to put my work on a cycle — why?
 
@@ -307,3 +307,11 @@ No — it is generated. Every session close rebuilds it from your records: one 
 Some signs Claude reads for itself, at the start of every planning session, from your queue and your records: the same step of yours put off run after run; the held part of your queue growing while the ready part does not; a piece of work marked as needing a run of its own with more and more ready work piling up ahead of it; one part of the project getting all its work cleared while another part's waits, session after session; a part whose work only ever refers to itself; a queue too long for one read; or planning sessions that keep ending with the same number of things still to sort. Where one of those holds, the planning opening says so in one line and names the way out: open the part's own subfolder and run `/setup` there, which pops that part out into a project of its own with its own queue (the first-session entry above says how a pop-out works). Nothing moves unless you choose it.
 
 Some signs only you can read, and they say the method may no longer fit at all rather than that the project needs splitting: a queue holding nothing but steps of yours, with no building in it, where the method has become a to-do list with ceremony; several people needing to work on it at once; a thing that has to run continuously rather than in sessions; and you no longer reading the records, since approving them is the whole point. None of these is something Claude can check, so none is reported; they are what to look for in yourself.
+
+## I typed /done and nothing happened — where did it go?
+
+The command that closes a session is `/close` now, or `/throughliner:close` where the short name does not register. Type it where you typed `/done`: at the end of a session, after the building or the planning is finished. What it does is unchanged — it records what happened in your session log, commits, and names the next command in words. What tells you it worked is the commit hash written into the session record's heading, exactly as before. If `/done` still works for you, the plugin under your app is an older build; update it, fully quit and reopen the app, and the new name is there.
+
+## What is MAP.md, and do I write it?
+
+A map of your project, written for Claude to read first in every session: one line per folder and per file a person uses — a document, a slide deck, a spreadsheet, a PDF, an image — saying what it is for, with a set of like files summarised as one line and machinery left out. Setup writes it from the folders it adopts, and an existing project gains it through the top-up. From then on a session writes a line when it creates such a file, and the close names any new or moved path that has no line, so you rarely touch it yourself. Open it when you want to see what Claude believes each folder is for, and correct a line where it is wrong. It puts a folder in view; it does not decide what belongs there.

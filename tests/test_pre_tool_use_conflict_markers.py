@@ -6,7 +6,7 @@ Run: py tests/test_pre_tool_use_conflict_markers.py
 (Plain script, never pytest — see CLAUDE.md's scripting constraints.)
 
 Why this exists ([merge-conflicts-unhandled]): nothing checked for markers
-before a commit, so /done would have committed a half-merged queue clean.
+before a commit, so /close would have committed a half-merged queue clean.
 Each case builds a temp git repository, drives the hook as a subprocess with
 a real PreToolUse payload, and asserts on the decision that comes back.
 """

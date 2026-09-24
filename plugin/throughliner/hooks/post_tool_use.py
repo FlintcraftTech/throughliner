@@ -1138,7 +1138,7 @@ def _check_conflict_markers(content, warnings):
             warnings.append(
                 f"line {i}: {line.rstrip()!r} is a git conflict marker — the "
                 "queue is mid-merge, and both versions of that region parse "
-                "as real entries. The queue tools and the done command refuse "
+                "as real entries. The queue tools and the close command refuse "
                 "the file until the conflict is resolved; the common case, "
                 "two captures appended at the same spot, resolves as keep "
                 "both."
@@ -1385,7 +1385,7 @@ def _read_lint_state(cwd: str):
 
     A cleared flag's "gone" notice reads this rather than the commit: against
     the commit a flag cleared this session stays "gone" after every tool call
-    until /done commits, and one notice printed dozens of times in a
+    until /close commits, and one notice printed dozens of times in a
     session. Missing or unreadable means no gone notices this run — never an
     error, since the lint is advisory.
     """

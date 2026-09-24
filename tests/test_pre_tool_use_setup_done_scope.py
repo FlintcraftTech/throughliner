@@ -6,7 +6,7 @@ Host-only dev artifact — not shipped in the plugin package.
 Run:  py tests/test_pre_tool_use_setup_done_scope.py
 
 Why this exists ([setup-close-cannot-fix-setup-output]): a consumer's first
-/done run, in the same chat as a completed setup, found two corrections to
+/close run, in the same chat as a completed setup, found two corrections to
 what setup had just written and the standing list refused both — the setup
 marker had been deleted at the run's end, so the close ran as an ordinary
 no-build session. Setup now RENAMES its marker to `.throughliner-setup-done`;
@@ -114,7 +114,7 @@ def main():
     # beside it ([setup-done-marker-rename-fails-in-powershell]). With BOTH
     # setup markers standing, the setup-run door is closed: a scaffold write
     # outside the standing list is refused as in a planning session, and the
-    # /done run's correction is still allowed once the close marker joins.
+    # /close run's correction is still allowed once the close marker joins.
     active_marker = os.path.join(scratch, pre_tool_use.SETUP_MARKER_NAME)
     for m in (active_marker, done_marker):
         with open(m, "w", encoding="utf-8") as f:

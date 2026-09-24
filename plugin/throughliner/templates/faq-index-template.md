@@ -10,8 +10,8 @@ Quick answers about how this project's workflow works. Each question links to a
   to run, and what the opening checks for. [faq.md](faq.md)
 - **What does `/next` do?** — how a build run works, what stops it, and the
   four work tags, the co-write among them. [faq.md](faq.md)
-- **Why does every session end with `/done`, and why start a fresh chat?** —
-  what /done records, and why the context window makes a fresh chat the
+- **Why does every session end with `/close`, and why start a fresh chat?** —
+  what /close records, and why the context window makes a fresh chat the
   next step. [faq.md](faq.md)
 - **What is `/rescan` for?** — sweeping up what was said but never filed, and
   the two limits on how far back it reaches. [faq.md](faq.md)
@@ -87,7 +87,7 @@ Quick answers about how this project's workflow works. Each question links to a
 - **Why does my project have two repositories?** — the nested shape, which
   repository goes public, and how an existing project is wrapped without
   moving it. [faq.md](faq.md)
-- **I typed /done twice — what did the second one do?** — one commit per
+- **I typed /close twice — what did the second one do?** — one commit per
   session, the marked tail, and the once-only offer after a post-close
   change. [faq.md](faq.md)
 - **A step of mine says other items are waiting on it — what does that
@@ -123,3 +123,9 @@ Quick answers about how this project's workflow works. Each question links to a
 - **When has my project grown too big for one queue, and when is Throughliner
   the wrong tool?** — the signs the planning opening reads for itself, the
   signs only you can read, and the pop-out route. [faq.md](faq.md)
+- **I typed /done and nothing happened — where did it go?** — the close
+  command is `/close` now, what is unchanged, and what tells you it worked.
+  [faq.md](faq.md)
+- **What is MAP.md, and do I write it?** — one line per folder and human-used
+  file, written by setup and kept by the sessions, for Claude to read first.
+  [faq.md](faq.md)

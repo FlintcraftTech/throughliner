@@ -66,7 +66,7 @@ Contract:
              string inside one entry's block, touching no other entry. Refuses
              unless the old string occurs exactly once in that entry — make it
              longer until it is unique. The narrow fix for pointer drift (an
-             entry naming a filename that moved), performable at a build session's /done run
+             entry naming a filename that moved), performable at a build session's /close run
              where hand edits to the queue are refused. Judgment edits stay
              out: the replacement is byte-literal and uniqueness-checked.
              --section bounds the slug lookup to one section; without it both
@@ -948,9 +948,9 @@ def assign_item(queue_path, slug, name):
 def replace_in_item(queue_path, slug, old, new, section=None):
     """Replace one literal string inside one entry's block, and nothing else.
 
-    Why this exists ([pointer-drift-unfixable-at-a-build-close]): /done's
+    Why this exists ([pointer-drift-unfixable-at-a-build-close]): /close's
     staleness sweep may find a pure pointer drift — an entry naming a filename
-    that has since moved — and the fix is mechanical, but a build session's /done run's
+    that has since moved — and the fix is mechanical, but a build session's /close run's
     scope-lock refuses hand edits to QUEUE.md, so the sweep's arm was
     unperformable exactly where it fires. A literal, uniqueness-checked replace
     through the sanctioned tool is narrow enough to run in a build: judgment
@@ -1464,7 +1464,7 @@ def main():
     if len(args) < 2:
         # The usage message lists EVERY form the script supports. It used to
         # print only two of the four, and the reader who hit an error learned
-        # the tool was less capable than it is — a real /done run restated a full
+        # the tool was less capable than it is — a real /close run restated a full
         # 23-slug order twice when two relative moves would have done it.
         die("usage: reorder_queue.py <queue_path> <section> <slug...> "
             "[--marker-after <slug|TOP|BOTTOM>]\n"

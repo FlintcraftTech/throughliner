@@ -797,13 +797,13 @@ def _is_retired_terms_file(filepath: str, cwd: str) -> bool:
     that; the write is unschedulable by construction.
 
     Without this, the obligation was satisfiable only in a narrow undocumented
-    window: denied during the build and anywhere in /done before the
+    window: denied during the build and anywhere in /close before the
     working file is deleted, and working only after, by accident of ordering.
     A session that hit the denial mid-close was told to ask the user to widen
     scope, which is a bad trade for a bookkeeping append.
 
-    Two alternatives were weighed and lost. Stating the ordering in done.md
-    works but leaves a trap for anyone who reorders /done, and the ordering
+    Two alternatives were weighed and lost. Stating the ordering in close.md
+    works but leaves a trap for anyone who reorders /close, and the ordering
     that currently works is an accident rather than a design. Having /next
     widen `Files:` whenever a run touches rule-bearing files is more machinery
     than the problem deserves, and it guesses.
@@ -898,8 +898,8 @@ def _is_snapshot_subject(filepath: str, cwd: str) -> bool:
     The set is the documents /setup scaffolds and the privacy posture offers to
     keep out of the repository — the ones whose only undo is git, and which
     therefore have no undo at all once they are untracked. Working files are
-    deliberately absent: a build or plan working file is deleted at /done by
-    design, so snapshotting it would preserve the thing /done removes.
+    deliberately absent: a build or plan working file is deleted at /close by
+    design, so snapshotting it would preserve the thing /close removes.
     """
     norm = _normalise(filepath)
     for name in ("SPEC.md", "QUEUE.md", "CYCLES.md", "TOOLS.md", "CLAUDE.md"):
@@ -1192,7 +1192,7 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
         return True
     if rel.startswith(os.path.normcase("LOG") + "/"):
         return True
-    # FAQ/ is on the list for the same reason workshop/resources/research/ is: /done
+    # FAQ/ is on the list for the same reason workshop/resources/research/ is: /close
     # REQUIRES an FAQ disposition, so denying the path would break a mandated
     # step rather than merely inconvenience a session. Recovered from the
     # pre-reversion version of this gate, which carried it and said so; the
@@ -1233,7 +1233,7 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     # no decision moved downstream.
     #
     # It is also genuinely unlike the three exceptions fixed the same day — the
-    # rezip's plugin.json, /done's README.md, and /setup's markers. Each of
+    # rezip's plugin.json, /close's README.md, and /setup's markers. Each of
     # those was a required write with no permitted moment anywhere in the method.
     # This write has a proper home.
     if rel.startswith(os.path.normcase("FAQ") + "/"):
@@ -1440,7 +1440,7 @@ def _door_refused_earlier(filepath: str, cwd: str, session_id: str) -> bool:
 
 SETUP_MARKER_NAME = ".throughliner-setup-active"
 CLOSE_MARKER_NAME = ".throughliner-close-active"
-# The /done marker's home since [scratchpad-refused-after-resume-close-marker]:
+# The /close marker's home since [scratchpad-refused-after-resume-close-marker]:
 # `.throughliner/close-active-<session-id>` in the project's own working
 # folder, which every session may write. The scratchpad was refused to a
 # session whose plugin had been swapped under it, and a marker the close
@@ -1457,7 +1457,7 @@ def _close_marker_present(cwd: str, session_id: str) -> bool:
                                        CLOSE_MARKER_PREFIX + safe_id))
 
 
-# The marker /done writes after its commit, read by the stop check's tail
+# The marker /close writes after its commit, read by the stop check's tail
 # offer ([post-close-tail-offer-enforced-once]).
 SESSION_CLOSED_MARKER_PREFIX = "session-closed-"
 
@@ -1534,10 +1534,10 @@ def _version_change_notice(cwd: str, session_id: str) -> str:
         "the new version."
     )
 # Left where /setup used to delete its marker: "setup ran in this chat". While
-# it stands together with the /done marker, the /done run of that same chat
+# it stands together with the /close marker, the /close run of that same chat
 # may write the files setup scaffolds ([setup-close-cannot-fix-setup-output]).
-# /done deletes it as its last action. On its own — a planning run before
-# /done — it opens nothing.
+# /close deletes it as its last action. On its own — a planning run before
+# /close — it opens nothing.
 SETUP_DONE_MARKER_NAME = ".throughliner-setup-done"
 
 # The files /setup scaffolds, which its own chat's close may correct. Relative
@@ -1551,14 +1551,14 @@ SETUP_SCAFFOLD_FILES = (
 # The method's own skills, all of which ship with model invocation disabled.
 # Lowercased, and compared against the part of a skill name after any plugin
 # prefix. Adding a skill to the method means adding it here.
-METHOD_SKILLS = frozenset({"setup", "plan", "next", "rescan", "done"})
+METHOD_SKILLS = frozenset({"setup", "plan", "next", "rescan", "close"})
 
 # The files the method's own CLOSE obligations name. A close is required to write
 # these and a build is not, and the two phases share one working file — so
 # without this a required write had no permitted moment anywhere.
 #
 # README.md is the recorded case. The README feature-list sync rides the
-# SPEC-sync trigger, which fires at /done; /next self-scopes from the items
+# SPEC-sync trigger, which fires at /close; /next self-scopes from the items
 # it is about to build, and no item names README.md because the obligation is a
 # consequence of several items TOGETHER. So the file could not have entered the
 # build's list by any correct application of the scoping rule, and three
@@ -1569,7 +1569,7 @@ METHOD_SKILLS = frozenset({"setup", "plan", "next", "rescan", "done"})
 # close obligation added later that names a new file must be added here in the
 # same build, or the identical denial recurs one file over.
 #
-# It widens a BUILD's scope not at all — the marker below is written by /done
+# It widens a BUILD's scope not at all — the marker below is written by /close
 # and removed at its end, so during the build these paths are denied exactly as
 # they were.
 CLOSE_PHASE_FILES = ("README.md",)
@@ -1611,7 +1611,7 @@ def _setup_marker_present(session_id: str) -> bool:
 def _scratchpad_marker_present(session_id: str, marker_name: str) -> bool:
     """True while THIS session's scratchpad carries `marker_name`.
 
-    The shared mechanism behind the /setup marker and the /done marker. Matched
+    The shared mechanism behind the /setup marker and the /close marker. Matched
     by path shape under the system temp directory and scoped to this session's
     own id, so one project's run cannot unlock another's. Never raises: a
     scratchpad that cannot be read reports no marker, which leaves the lock ON.
@@ -1635,14 +1635,14 @@ def _scratchpad_marker_present(session_id: str, marker_name: str) -> bool:
 def _is_setup_close_file(filepath: str, cwd: str, session_id: str) -> bool:
     """True for a scaffolded file while this chat's close follows its setup.
 
-    Both markers must stand: `.throughliner-close-active` (this is a /done
+    Both markers must stand: `.throughliner-close-active` (this is a /close
     run) and `.throughliner-setup-done` (setup ran earlier in this same chat).
-    The recorded instance: a consumer's first /done run found two corrections
+    The recorded instance: a consumer's first /close run found two corrections
     to what setup had just written — a CLAUDE.md line, a .gitignore line — and
     the standing list refused both, so the consumer's first queue opened with
     a cleanup item for the method's own scaffolding.
 
-    Leaving the setup marker standing until the /done run was refused: a
+    Leaving the setup marker standing until the /close run was refused: a
     planning run in between would inherit setup's whole write set.
     """
     if not _close_marker_present(cwd, session_id):
@@ -1663,13 +1663,13 @@ def _is_setup_close_file(filepath: str, cwd: str, session_id: str) -> bool:
 def _is_close_phase_file(filepath: str, cwd: str, session_id: str) -> bool:
     """True for a close-obligation file while this session's close is running.
 
-    Two conditions, and both must hold: /done has declared itself with a
+    Two conditions, and both must hold: /close has declared itself with a
     scratchpad marker, and the path is one the method's close obligations name
-    (CLOSE_PHASE_FILES). Outside /done the marker is absent and these paths
+    (CLOSE_PHASE_FILES). Outside /close the marker is absent and these paths
     are denied exactly as before, so a build's scope is unchanged.
 
     The marker rather than a standing permission, because the hook has no other
-    way to tell a /done run from the build that preceded it — they share one working
+    way to tell a /close run from the build that preceded it — they share one working
     file, and the build's Files list is what denies the write. This copies
     /setup's declaration mechanism rather than inventing a second one, and it is
     strictly narrower: /setup's marker permits everything, this one permits a
@@ -2053,15 +2053,15 @@ def _is_log_entry_overwrite(tool_name: str, filepath: str, cwd: str) -> bool:
     write reports success, the file exists, the index line resolves, and the
     entry reads correctly because it is the one just written. The only trace is
     a ` M` where `??` was expected in a list of twenty-odd staged paths. Two
-    committed entries were destroyed that way in a single /done run and recovered
+    committed entries were destroyed that way in a single /close run and recovered
     only because the character was noticed by chance.
 
     WRITE ONLY, never Edit. A close legitimately edits `LOG/index.md` and
     appends a tail to an existing entry, and both go through Edit — so nothing
     correct is caught. A genuinely new entry filename does not exist yet, so
-    this never fires on a correct /done run either.
+    this never fires on a correct /close run either.
 
-    The filename derives from the /done date plus the session type, so every
+    The filename derives from the /close date plus the session type, so every
     session of the same kind on one day competes for one name. A consumer
     running one session a day never meets this; a day with a morning and an
     afternoon session meets it immediately.
@@ -2182,7 +2182,7 @@ def _is_hook_suite_file(filepath: str, cwd: str, build_files: list[str]) -> bool
     """A test suite, in a run that is already changing a hook.
 
     Bounded to exactly that pairing, and it completes a requirement the method
-    already imposes rather than widening what a run may write: a /done run whose
+    already imposes rather than widening what a run may write: a /close run whose
     staged paths include the hooks directory must run these suites before it can
     commit, so a hook-touching run ALWAYS meets its suites. Refusing them guarded
     files the rules make part of every such change.
@@ -2282,7 +2282,7 @@ def main() -> int:
     # --- Skill: the method's own commands are the user's to type ---
     # These five ship with model invocation disabled, so an attempt fails and
     # shows the user a red error at the moment they have least context for it.
-    # It has happened at a /done run, landing between "now closing the session" and
+    # It has happened at a /close run, landing between "now closing the session" and
     # any explanation, and the wording-only rule has now failed twice on record
     # — which is what moves this to a hook under the gate's fourth admission
     # question: the failure is mechanical, it recurs, and its cost lands on the
@@ -2737,7 +2737,7 @@ def main() -> int:
         # working files by name, and without the id it looks for
         # `_build-unknown.md` and never matches the real one — which denied a
         # scoped build every write to its own working file, including the
-        # progress ticks and change notes /done reads.
+        # progress ticks and change notes /close reads.
         sid = data.get("session_id", "")
         # The Files list is checked further down; a listed path is allowed
         # there. What follows here is the ordered chain of standing
@@ -2854,7 +2854,7 @@ def main() -> int:
         if _setup_marker_present(data.get("session_id", "")):
             return _allow("setup marker")
 
-        # The /done run of the chat setup ran in may correct what setup wrote
+        # The /close run of the chat setup ran in may correct what setup wrote
         # ([setup-close-cannot-fix-setup-output]): both markers, and a
         # scaffolded path.
         if _is_setup_close_file(filepath, cwd, data.get("session_id", "")):
