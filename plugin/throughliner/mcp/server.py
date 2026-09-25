@@ -450,6 +450,20 @@ def tool_planning_anchor(_arguments):
 SLUG_SHAPE = re.compile(r'^[a-z0-9][a-z0-9-]*$')
 
 
+# Phrases that mark an entry as a standing one — kept open on purpose,
+# returning at each planning session — which the capture tool refuses at the
+# door ([standing-entry-reads-as-unshipped]). Matched lowercased, as
+# substrings of the body.
+STANDING_PHRASES = (
+    "stays open until",
+    "kept open",
+    "kept whole while",
+    "returns at each",
+    "returns when the next",
+    "the umbrella",
+)
+
+
 def tool_file_capture(arguments):
     """File one capture at the bottom of Unprocessed, refusing what is
     checkably wrong.
@@ -489,6 +503,7 @@ def tool_file_capture(arguments):
     not_before = (arguments.get("not_before") or "").strip()
     cycle = (arguments.get("cycle") or "").strip().strip("[]")
     assigned_to = (arguments.get("assigned_to") or "").strip()
+    until_built = bool(arguments.get("until_built"))
 
     problems = []
 
@@ -497,6 +512,26 @@ def tool_file_capture(arguments):
         problems.append("assigned_to %r is not one name — the field names "
                         "the one person whose work this is to do."
                         % assigned_to)
+
+    if until_built and not blocked_by:
+        problems.append("until_built was given without blocked_by — the "
+                        "words qualify a Blocked by: hold and nothing else.")
+
+    # A standing entry — one kept open on purpose while pieces are built —
+    # reads to its owner as work never finished, whatever its prose says
+    # ([standing-entry-reads-as-unshipped]). The queue holds captures and
+    # work items and nothing else; a standing outcome is a goal in SPEC's
+    # Goals section with a "reached when" line, and the capture is the next
+    # concrete piece. The check matches these phrases only; a standing entry
+    # worded another way passes.
+    standing = [p for p in STANDING_PHRASES if p in body.lower()]
+    if standing:
+        problems.append(
+            "the body reads as a standing entry (%s) — an entry kept open "
+            "while its pieces are built reads as unshipped work. A standing "
+            "outcome is written as a goal in SPEC's Goals section with a "
+            "\"reached when\" line; file the next concrete piece of work as "
+            "the capture instead." % ", ".join("%r" % p for p in standing))
 
     if not heading:
         problems.append("heading is missing — the entry's one-line "
@@ -575,8 +610,9 @@ def tool_file_capture(arguments):
              body.rstrip() + "\n",
              "Filed %s, stamped by the capture tool.\n" % filed_at]
     if blocked_by:
-        entry.append("Blocked by: %s\n"
-                     % ", ".join("[%s]" % b for b in blocked_by))
+        entry.append("Blocked by: %s%s\n"
+                     % (", ".join("[%s]" % b for b in blocked_by),
+                        " until built" if until_built else ""))
     if not_before:
         entry.append("Not before: %s\n" % not_before)
     if cycle:
@@ -2171,12 +2207,30 @@ TOOLS = [
             "appends it through the queue tool's own append path. "
             "Refuses only what is checkably wrong — a missing, malformed or "
             "taken slug, a blocker resolving to no entry, an unreal date, a "
-            "cycle naming no definition, a heading led by A/An/The — echoing "
-            "the reason so the retry is instant. Body prose passes untouched.",
+            "cycle naming no definition, a heading led by A/An/The, "
+            "until_built with no blocker, and a body carrying a "
+            "standing-entry phrase (\"stays open until\", \"kept open\", "
+            "\"kept whole while\", \"returns at each\", \"returns when the "
+            "next\", \"the umbrella\") — a standing outcome is a goal in "
+            "SPEC's Goals section, not a capture, and the retry is the next "
+            "concrete piece of work; the check matches those phrases only, "
+            "so a standing entry worded another way passes — echoing "
+            "the reason so the retry is instant. Body prose otherwise passes "
+            "untouched. With blocked_by, until_built writes the hold as "
+            "`Blocked by: [slug] until built`, holding the capture until "
+            "every named entry is built rather than merely processed.",
         "inputSchema": {
             "type": "object",
             "required": ["heading", "slug", "body"],
             "properties": {
+                "until_built": {
+                    "type": "boolean",
+                    "description":
+                        "With blocked_by: hold the capture until every named "
+                        "entry is BUILT, not merely processed — written as "
+                        "the trailing words `until built` on the Blocked by: "
+                        "line. Refused without blocked_by.",
+                },
                 "heading": {
                     "type": "string",
                     "description":

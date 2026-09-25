@@ -43,9 +43,11 @@ Quick answers about how this project's workflow works. Each question links to a
   the assumption holding. [faq.md](faq.md)
 - **Can I move a queue item while a build is running?** — what to say, what
   Claude does and says back, and the two things a run will not do. [faq.md](faq.md)
-- **What are my project's parts, and where does a new file go?** — the parts
-  question at setup, one folder and one small SPEC per part, the Parts block a
-  session reads when it creates a file, and the `temp/` folder. [faq.md](faq.md)
+- **What are my project's parts, and where does a new file go?** — setup
+  researches the documents your work uses, shows the set for you to cut or
+  add, creates only what you approve, and `MAP.md` says who uses each file and
+  when; a session reads the map when it creates a file; and the `temp/`
+  folder. [faq.md](faq.md)
 - **The safety check refused my edit — how do I get it through?** — what the
   refusal means, the one door through it (ask again in your own words), and the
   decision log to read before blaming a rule. [faq.md](faq.md)
@@ -101,7 +103,8 @@ Quick answers about how this project's workflow works. Each question links to a
 - **A note says a heading is wrong — how is it fixed?** — the retitle that
   keeps the slug and touches nothing else. [faq.md](faq.md)
 - **What does /catchup show me?** — goals first, one line per feature with
-  its stage, then what is next, what is yours and what is held.
+  its stage, then what is next, what is yours and what is held, then the
+  return checks: a cycle due, mail waiting, a version change, the date moved.
   [faq.md](faq.md)
 - **A draft I'm asked to edit — where is it and how do I hand it back?** —
   the `.txt` in `temp/`, the side-panel link and save button, and what to say

@@ -26,8 +26,9 @@ PreToolUse hook — enforces three rules:
    when it's explicitly listed in Files: — a batch that needs to change
    SPEC lists it; a feature build that doesn't name SPEC can't touch it,
    so scope-lock alone keeps SPEC read-only for any build that doesn't
-   name it. A part's own SPEC.md, at any depth, is governed the same way:
-   listed in Files: by path, or read-only to the build.
+   name it. A SPEC.md at any depth is governed the same way — listed in
+   Files: by path, or read-only to the build — which serves a project still
+   carrying a part's spec from the retired per-part-specs mechanism.
 2. Git safety: block git reset --hard, git push --force, blanket
    staging (git add -A / --all / .), and git commit -a / -am.
 3. Subagent cost ask-gate: the Task tool (spawning a subagent) returns
@@ -753,9 +754,9 @@ def _is_research_dir(filepath: str, cwd: str) -> bool:
     """
     norm = _normalise(filepath)
     # Two forms: the workshop path every project gets, and `research/` at the
-    # project root, which is where a project whose Parts block names a research
-    # part keeps it ([hooks-name-old-workshop-paths]). A part named otherwise
-    # goes through the user's door.
+    # project root, which is where a project whose MAP.md names a research
+    # folder keeps it ([hooks-name-old-workshop-paths]). A folder named
+    # otherwise goes through the user's door.
     # `workshop/resources/supplied/` rides the same exemption
     # ([user-material-permanent-home-at-planning]): text the user wrote or
     # attached, written unchanged, needs a committed home a planning session
@@ -1169,11 +1170,11 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     quiet_files = ("QUEUE.md", "SPEC.md", "CYCLES.md")
     if rel in tuple(os.path.normcase(name) for name in quiet_files):
         return True
-    # A part's own SPEC.md, at any depth inside the project — a nested
-    # project's inner repository included. Planning writes a decision's
-    # sentence into the spec of the part it concerns, so the file is matched
-    # by name wherever it sits; the folder is the part's, the filename is
-    # fixed by convention, and nothing else named SPEC.md exists to collide.
+    # A SPEC.md at any depth inside the project — a nested project's inner
+    # repository included. Per-part specs are retired, but a project set up
+    # under that mechanism still carries one, and it stays editable so it
+    # can be folded into the root or deleted; the filename is fixed by
+    # convention, and nothing else named SPEC.md exists to collide.
     if rel.split("/")[-1] == os.path.normcase("SPEC.md"):
         return True
     # A build working file, whichever session owns it. Matched by shape rather

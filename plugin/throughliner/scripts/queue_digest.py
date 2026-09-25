@@ -1077,45 +1077,8 @@ def locate(slug, items, kinds=None):
 # user's choice. The one-read figure is CYCLES.md's: 60,000 characters is
 # what one read returns.
 ONE_READ_CHARS = 60000
-_PARTS_HEADING_RE = re.compile(r"^##\s+Parts\b", re.IGNORECASE)
-_PART_LINE_RE = re.compile(r"^-\s+(.+?)\s+[—–-]+\s+`([^`]+?)/?`")
 _OUTCOME_DEFERRED_RE = re.compile(r"Outcome:\**\s*deferred\b", re.IGNORECASE)
 _LEFT_TO_PROCESS_RE = re.compile(r"Left to process[^0-9\n]{0,60}?(\d+)")
-
-
-def parts_block(root):
-    """[(name, folder)] from the project CLAUDE.md's `## Parts` block — one
-    line per part naming its folder in backticks. Empty where there is no
-    block, which is the flat project's normal state."""
-    try:
-        with open(os.path.join(root, "CLAUDE.md"), "r", encoding="utf-8") as f:
-            lines = f.read().splitlines()
-    except OSError:
-        return []
-    parts = []
-    inside = False
-    for line in lines:
-        if _PARTS_HEADING_RE.match(line.strip()):
-            inside = True
-            continue
-        if inside and line.startswith("## "):
-            break
-        if inside:
-            m = _PART_LINE_RE.match(line.strip())
-            if m:
-                parts.append((m.group(1).strip(), m.group(2).strip().rstrip("/")))
-    return parts
-
-
-def _item_part(item, parts):
-    """The part whose folder the item's Files line names first, or None."""
-    raw = item["files_line_raw"] or item["files_line"] or ""
-    for path in FILES_PATH_RE.findall(raw):
-        path = path.strip().replace("\\", "/")
-        for name, folder in parts:
-            if path == folder or path.startswith(folder + "/"):
-                return name
-    return None
 
 
 def consecutive_deferrals(root, slug):
@@ -1191,29 +1154,6 @@ def size_signs(items, root, queue_path):
         if item["runs_alone"]:
             out.append(f"- [{item['slug'] or 'NO-SLUG'}] runs alone with "
                        f"{cleared_order.index(item)} cleared item(s) ahead of it")
-    parts = parts_block(root)
-    if parts:
-        by_part = {}
-        for item in items:
-            if item["section"] != "Processed":
-                continue
-            part = _item_part(item, parts)
-            if part is None:
-                continue
-            counts = by_part.setdefault(part, {"cleared": 0, "held": 0, "slugs": set(), "cites": set()})
-            counts["cleared" if item["cleared"] else "held"] += 1
-            counts["slugs"].add(item["slug"])
-            counts["cites"].update(citations(item))
-        for name, _folder in parts:
-            c = by_part.get(name)
-            if c is None:
-                out.append(f"- part {name}: no work item names its files")
-                continue
-            out.append(f"- part {name}: {c['cleared']} cleared, {c['held']} held")
-            if len(c["slugs"]) >= 2 and c["cites"] and c["cites"] <= c["slugs"]:
-                out.append(f"- part {name}: its items cite only each other — a closed cluster")
-    else:
-        out.append("- parts: no Parts block in CLAUDE.md, so per-part counts are not computed")
     try:
         size = os.path.getsize(queue_path)
     except OSError:
@@ -1420,10 +1360,9 @@ def render(items, root="", queue_path="QUEUE.md"):
     # still states the reach of the check it names.
     out.append("## Limits — what each check reaches, and no more")
     out.append(
-        "- Size signs reach what the queue, the record and the Parts block "
-        "carry: a deferral counted from a record's outcome line, a part read "
-        "from an item's Files line, a left-to-process count from a planning "
-        "record that wrote one. A sign only a person can read — a queue with "
+        "- Size signs reach what the queue and the record carry: a deferral "
+        "counted from a record's outcome line, a left-to-process count from a "
+        "planning record that wrote one. A sign only a person can read — a queue with "
         "no builds, several people at once, work that must run continuously, "
         "records nobody reads — is in the FAQ and not here; none is a verdict, "
         "and the pop-out stays the user's choice."

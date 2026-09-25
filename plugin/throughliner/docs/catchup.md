@@ -9,10 +9,13 @@ note: >
 
 # /catchup procedure
 
-/catchup is for a user coming back to the project after time away. It says
-where the project's important features stand, in a few lines, and does
-nothing else: **it files nothing, moves nothing and writes nothing.** The brief
-is chat only.
+/catchup is for a user coming back to the project after time away — a chat
+picked up days later as much as a fresh one. It says where the project's
+important features stand, in a few lines, and re-runs the return checks a
+fresh opening runs. **It moves nothing in the queue, and it files only what
+those checks file:** a due cycle's capture under the cycle's slug where no
+open capture carries it, and waiting mail read and routed through the
+three-way triage as the openings route it. The brief is chat only.
 
 ## What it reads  [SILENT]
 
@@ -30,6 +33,19 @@ the record's window        LOG/index.md — and LOG/index-<previous month>.md
                            The split by month is the derivation: the window
                            is one or two index files, never the whole
                            archive.
+the cycles doc             every definition with what its observable reads
+                           — the state server's cycles_state tool where the
+                           server is registered — and due-ness computed from
+                           it as plan.md's cycles due-ness check computes it
+the mailbox                INBOX/, read and routed as plan.md's waiting-mail
+                           step routes it
+the installed version      the plugin version this chat opened on, from the
+                           opening's `[Throughliner]` lines, against the
+                           version installed now; pre_tool_use's
+                           once-per-session notice is the other site
+the clock                  read now — the state server's clock tool where
+                           the server is registered, a shell clock command
+                           otherwise — against the opening's date line
 ```
 
 Where a planning or build session has already opened in this chat, those
@@ -80,7 +96,20 @@ what is held on a date       each dated item and its date — "nothing" where
                              there are none
 ```
 
-It ends on those three lines. No ask is manufactured: the user asked for a
+Then one line per return check that found something, in the opening's own
+words, and no line for a check that found nothing:
+
+```
+a cycle due now       "[weekly-release] is due: the last release was on the
+                      sixteenth, and its capture is filed"
+a message waiting     "one message waits in INBOX/, from <project>: <subject>"
+a version change      "the plugin under this chat changed, from 1.23.0-test4
+                      to 1.23.0-test5 — a fresh chat carries the new one"
+the date moved        "the chat opened on the twenty-second; it is now the
+                      twenty-fifth (2026-09-25)"
+```
+
+It ends on those lines. No ask is manufactured: the user asked for a
 brief, and the brief is the answer. The shape, with a project that has one
 goal and two features:
 
@@ -92,6 +121,9 @@ goal and two features:
 >
 > Next build: search across notes. Waiting on you: nothing. Held on a date:
 > the launch post, until the sixteenth.
+>
+> [weekly-release] is due: the last release was on the second, and its
+> capture is filed.
 
 Where SPEC has no Goals section, the brief opens on the first feature line
 instead.

@@ -513,8 +513,8 @@ Claude created or wrote them THIS session
     # uncommitted changes the session didn't make are the user's own work,
     # and where they add, rename or remove folders of the product, the close
     # reads the move as a structural decision of the user's, records it as
-    # one, and corrects the spec and Parts sentences that now read wrong on
-    # the user's yes (close-plan.md's handmade-work step carries the read).
+    # one, and corrects the spec sentences and map lines that now read wrong
+    # on the user's yes (close-plan.md's handmade-work step carries the read).
 they have NO future use
     # not a deliverable, not a research finding, not evidence a later session
     # must re-read. Purely throwaway.
@@ -529,6 +529,24 @@ untracked, or outside the repo               ->  NOT recoverable. Give a clear
 ```
 
 If nothing session-created looks throwaway, say so in one line and move on.
+
+**The `temp/` pass, run here where the folder exists** — three moves, since
+the folder is disposable by definition and nothing else ever empties it:
+
+```
+1. SENT DRAFTS    for each line in INBOX/sent.md whose pointer names a file
+                  under temp/, delete that file and say so in one line —
+                  the register line and the recipient's copy are the record
+2. THE REST       list every other file in the folder with its date, and
+                  offer once to clear them; a file a [co-write] item's Files
+                  line names, or one the user edited, is never deleted
+                  without that yes
+3. THE LIMIT      the close deletes on its own only what a register line
+                  names; a draft never sent stays until the user says
+```
+
+The temporary-files block in skill-nonspecific-rules.md says what the folder
+is for; this pass is what empties it.
 
 ## Commit core  [BRIEF]
 

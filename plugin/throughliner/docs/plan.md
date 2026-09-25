@@ -50,13 +50,15 @@ gets built first — through discussion, not silently.
   ahead of the build.
 
   **So the decision step asks, on every item: does this change what SPEC says?** If
-  yes, write the sentence now, with the user present — into the part's own
-  `SPEC.md` where the sentence is true of that part's files and of nothing else
-  in the project — the part named in the project CLAUDE.md's `## Parts` block,
-  its spec written where none exists — and into the root `SPEC.md` where a
-  reader of the root would need it; and
-  a goal whose "reached when" test now holds is rewritten or removed in the
-  Goals section at the same turn.
+  yes, write the sentence now, with the user present, into the root
+  `SPEC.md` — and before the new sentence is written, search the old
+  sentence's distinctive words across `SPEC.md` and every document the
+  project owns outside `LOG/`, the same search the decision step's
+  repeal-trace limb already runs, and file one capture per document still
+  saying the old thing, named by file; a search reaches documents carrying
+  the words tried, and a sentence saying the old thing in other words is
+  missed — and a goal whose "reached when" test now holds is rewritten or
+  removed in the Goals section at the same turn.
 
   **Write a queued item so that a build reading SPEC alongside it finds the two
   in agreement.**
@@ -883,6 +885,12 @@ NAMES          any earlier build or decision on the same mechanism found by
                the decision step's grep of the index, with what it did and
                why it was changed or undone, read from the entry rather than
                the line — or that the index holds nothing, said in one clause.
+SHAPE          where the change names more than two files or actions, a
+               numbered list — each item a bold verb-first label and one
+               plain sentence saying what happens to which file — with the
+               plain-words opening still first.
+FILES          the turn ends, above its ask, with the files that change, one
+               per line, names only, read off the item's Files line.
 ```
 
 A search reaches lines carrying the words tried, so an earlier attempt indexed
@@ -890,7 +898,20 @@ under other phrasing is missed, and this narrows the repeat rather than
 closing it.
 
 **Bold the recommendation's first sentence**, so the recommendation is findable
-without reading the turn to locate it.
+without reading the turn to locate it. The shape, for a change touching three
+things:
+
+> **The close would empty the temp folder of drafts already sent, so the pile
+> stops growing.**
+>
+> 1. **Delete** each draft whose send is on the register, at the close.
+> 2. **List** whatever else the folder holds, and ask once before clearing it.
+> 3. **Say** in the FAQ that the close does this.
+>
+> close.md
+> faq-template.md
+>
+> **Do that?**
 
 **Write the ask as one fixed formula every time — "Do <the recommendation>?", or
 as near as grammar allows.** Where the turn delivers alternatives, the ask is still single — the
@@ -925,7 +946,10 @@ delete ask is unchanged**: it already asks the fate question directly.
 **A recommendation to process an entry into Processed must describe what would
 actually get built**, in terms
 the user recognizes as the work product — which files change, what gets added,
-removed or rewritten, not just the topic. **This is a blocking check, not a prompt
+removed or rewritten, not just the topic — and where the answer is only the
+next slice and never the whole, the entry is not returned to Unprocessed to
+come back: its outcome is written as a goal with a "reached when" line at
+that turn, with the user present, and the next slice alone is kept as work. **This is a blocking check, not a prompt
 to try harder:** before recommending it, state the build in both limbs — the
 files that change AND what changes inside them — and if either limb can't be
 stated, the entry cannot move into Processed.
@@ -1025,7 +1049,7 @@ written here.** Six things, one line each, in the item's text where the run
 reads them:
 
 ```
-which files change, and what changes inside each, a new path placed by the temporary-files rule, the Parts block and MAP.md where the project has one
+which files change, and what changes inside each, a new path placed by the temporary-files rule and MAP.md where the project has one
 which files the work READS but does not change   # where any do
 the observation that shows the change landed
 the files that observation REACHES, named among the files that change
@@ -1701,7 +1725,7 @@ Where the rescan command has not run in this chat:
 > Eleven builds, one audit and three steps of yours are cleared to run.
 > Everything else is set aside: four entries wait for a cycle's turn, two wait
 > on other entries — one of them the red-flagged repository cleanup, which
-> waits on the per-part specs — and one waits on a date. Two of the entries
+> waits on the folder move — and one waits on a date. Two of the entries
 > filed this session bear on cleared work: [x], which would change what [y]
 > builds, and [z], which blocks [w].
 >

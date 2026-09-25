@@ -36,26 +36,6 @@ This project uses the Throughliner method.
 
 Visibility:
 
-## Parts
-
-<!-- Set at setup from the interview's parts question: the project's moving
-     parts, one line each naming the part, its folder and which repository
-     holds it (a product part sits in the inner repository, a process part
-     in the outer), and one last line for a file that belongs to no part.
-     A session creating a new file reads this block, chooses the folder, and
-     says where it put the file. A part has its own SPEC.md only where setup
-     was given a sentence about it; a part's line names its spec where it has
-     one, or says its truth is the root spec where it has none. Left blank
-     where the question was not asked; a project with no parts keeps the
-     workshop rule as its default.
-     e.g.:
-     - the app — `<product subfolder>/` — inner repository (product) — its spec: `<product subfolder>/SPEC.md`
-     - recipes and reference material — `research/` — outer repository (process) — its truth is the root spec
-     - a file belonging to no part — `workshop/` in the outer repository,
-       or `temp/` where it is disposable -->
-
-Parts:
-
 ## Language
 
 Language: English

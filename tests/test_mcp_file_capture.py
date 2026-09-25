@@ -191,6 +191,76 @@ check("a heading typed with its slug files the slug once",
       f"tool answered: {text!r}; queue tail: {queue_text[-300:]!r}")
 shutil.rmtree(d, ignore_errors=True)
 
+# --- a standing entry is refused at the door; a plain slice is filed
+# ([standing-entry-reads-as-unshipped]) ------------------------------------
+def answer(responses):
+    for r in responses:
+        if r.get("id") == 2:
+            return r.get("result", {}).get("content", [{}])[0].get("text", "")
+    return ""
+
+
+for phrase in ("stays open until", "kept open", "kept whole while",
+               "returns at each", "returns when the next", "the umbrella"):
+    d = project()
+    text = answer(call_file_capture(d, {
+        "heading": "Fixture standing entry",
+        "slug": "fixture-standing",
+        "body": "This entry %s every piece has shipped." % phrase,
+    }))
+    with open(os.path.join(d, "QUEUE.md"), "rb") as f:
+        queue_text = f.read().decode("utf-8")
+    check("a body carrying %r is refused and names the goal route" % phrase,
+          text.startswith("Refused") and "Goals section" in text
+          and "fixture-standing" not in queue_text,
+          f"tool answered: {text!r}")
+    shutil.rmtree(d, ignore_errors=True)
+
+d = project()
+text = answer(call_file_capture(d, {
+    "heading": "Fixture slice of work",
+    "slug": "fixture-slice",
+    "body": "The next concrete piece: the tool gains one field and one test.",
+}))
+check("a body naming a slice of work with none of the phrases is filed",
+      text.startswith("Filed"), f"tool answered: {text!r}")
+shutil.rmtree(d, ignore_errors=True)
+
+# --- until_built ([file-capture-until-built]): with a blocker the line ends
+# `until built`; without one the switch is refused --------------------------
+d = project()
+answer(call_file_capture(d, {
+    "heading": "Fixture blocker",
+    "slug": "fixture-blocker",
+    "body": "Filed by the suite.",
+}))
+text = answer(call_file_capture(d, {
+    "heading": "Fixture held until the blocker is built",
+    "slug": "fixture-held-until-built",
+    "body": "Filed by the suite.",
+    "blocked_by": ["fixture-blocker"],
+    "until_built": True,
+}))
+with open(os.path.join(d, "QUEUE.md"), "rb") as f:
+    queue_text = f.read().decode("utf-8")
+check("until_built with a blocker writes the line ending `until built`",
+      text.startswith("Filed")
+      and "Blocked by: [fixture-blocker] until built" in queue_text.replace("\r", ""),
+      f"tool answered: {text!r}; queue tail: {queue_text[-300:]!r}")
+before = queue_text
+text = answer(call_file_capture(d, {
+    "heading": "Fixture switch with no blocker",
+    "slug": "fixture-switch-alone",
+    "body": "Filed by the suite.",
+    "until_built": True,
+}))
+with open(os.path.join(d, "QUEUE.md"), "rb") as f:
+    after = f.read().decode("utf-8")
+check("until_built without blocked_by is refused and nothing is written",
+      text.startswith("Refused") and "without blocked_by" in text
+      and after == before, f"tool answered: {text!r}")
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print(f"{len(failures)} failure(s):")

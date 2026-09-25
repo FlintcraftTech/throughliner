@@ -107,6 +107,9 @@ marker on the run's FIRST item
 marker on an item whose observable check finds ALL of it already satisfied
     ->  close the item and continue the run. The bound keys on this run
         performing the work; no paths moved, so there is nothing to protect.
+the cases key on Claude-work items: a [user] step above the marked item
+    neither builds nor holds paths, so the marked item is then the run's
+    FIRST item — build it, then end the run after it.
 ```
 
 Say plainly why the run ended before it: this item must not be built alongside
@@ -153,19 +156,10 @@ habit, not a rule with machinery behind it.
 
 ### 2. Find the run, and read SPEC  [SILENT]
 
-**Read the root SPEC.md once here, at run start** — not per item. It is the
-product truth each item is built against, and a build that never reads it cannot
-be checked against it. Reading it once per run is what makes the per-item check
-below cost almost nothing.
-
-**Per item, read the specs of the parts the item's files sit in.** Where the
-project CLAUDE.md carries a `## Parts` block, the run derives each part from the
-folders on the item's Files line and reads that part's own `SPEC.md`, in the
-part's folder — two parts, two specs; files in no part, the root alone; and a
-part whose folder has no `SPEC.md` reads as the root alone, the same as files
-in no part. The
-contradiction halt and the filed-gap rule in next-build.md apply to whichever
-spec was read.
+**Read the root SPEC.md once here, at run start** — not per item, and no other
+spec. It is the product truth each item is built against, and a build that
+never reads it cannot be checked against it. Reading it once per run is what
+makes the per-item check in next-build.md cost almost nothing.
 
 Then read QUEUE.md's cleared region top-down, each item whole. That is the run.
 

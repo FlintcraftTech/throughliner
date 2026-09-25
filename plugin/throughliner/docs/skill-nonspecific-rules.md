@@ -616,12 +616,12 @@ composed. The default
 answer to "should this be a durable file?" is **no** unless the
 verbatim-re-read test is met.
 
-**A session creating a new file reads the Parts block in the project's
-CLAUDE.md, chooses the folder the block names for that part, and names the
-folder in the line reporting the write**; a project with no Parts block keeps
-the workshop rule above as its default; and a folder or human-used file
-created gets its line in `MAP.md` in the same turn, under the criterion the
-map's own preamble states, where the project has one.
+**A session creating a new file reads `MAP.md`, chooses the folder from its
+lines, and names the folder in the line reporting the write**; a file no map
+line covers, and a project with no map, keep the workshop rule above as the
+default; and a folder or human-used file created gets its line in `MAP.md` in
+the same turn, under the criterion the map's own preamble states and carrying
+who uses the file and when, where the project has one.
 
 **File research findings as part of using them**, not only when asked. Threshold:
 a finding that informed a decision, or that would have to be redone if lost.
@@ -984,7 +984,7 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     before the hand-over closes this one;
   - where a step needs a file the user already has, ending at their attaching
     it to the conversation — the naming, the copy into the folder the project's
-    Parts block names, or `workshop/resources/supplied/` where there is none,
+    `MAP.md` names, or `workshop/resources/supplied/` where no line covers it,
     and the index line
     all Claude's, made in the same turn because the upload folder does not
     persist — never handing over a storage path or a naming convention;

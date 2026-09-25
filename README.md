@@ -38,12 +38,12 @@ Fully restart Claude Code to load the plugin. To update later, run `claude plugi
 
 The plugin splits your project into a structured build queue managed by six main commands:
 
-- **`/setup`** — interviews you about your project, scaffolds text documents (`SPEC.md`, `QUEUE.md`, etc.), checks your machine for the command-line tools your project's work will need and records what it finds in `TOOLS.md`, and sets a brevity style for Claude's replies.
+- **`/setup`** — interviews you about your project, works out with you the smallest set of folders and documents your work actually uses before creating any of them, scaffolds text documents (`SPEC.md`, `QUEUE.md`, etc.), checks your machine for the command-line tools your project's work will need and records what it finds in `TOOLS.md`, and sets a brevity style for Claude's replies.
 - **`/plan`** — organizes the queue, captures new ideas, and resolves design questions. Its opening also reads the signs that a project has outgrown one queue and names the pop-out where one holds.
 - **`/next`** — builds the next piece of ready work, staying locked to relevant files.
 - **`/rescan`** — reviews past conversation history to capture unrecorded decisions or notes into the queue.
 - **`/close`** — records session outcomes, commits changes to Git, and tees up next steps. Always run this before `/clear`.
-- **`/catchup`** — summarizes feature statuses (shipped, ready, waiting) when returning after time away.
+- **`/catchup`** — summarizes feature statuses (shipped, ready, waiting) when returning after time away, and re-runs the return checks a fresh chat runs: a cycle due now, mail waiting, the plugin version changed under the chat, the date moved.
 
 ## Project structure
 

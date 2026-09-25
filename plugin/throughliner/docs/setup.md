@@ -382,22 +382,19 @@ before the move.
 Both arms then write the Visibility line the nested scaffold writes, naming
 the opened folder as the outer.
 
-**1d. Offer the parts question to an existing project**  [BRIEF, PROMPT] — an
-offer, never a halt, and never forced. Where the project CLAUDE.md carries no
-parts block, ask the interview's parts question (Step 3): roughly what the
-project's moving parts are and which are the product, with a guessed answer
-offered and a rough one accepted, an ambiguous part put to the user. On an
-answer, plan the reorganisation with the user file by file — one folder per
-part, product parts in the inner repository and process parts in the outer,
-the looser split stated where the inner will never be public — and write the
-parts block, with a part's `SPEC.md` only where the user gives the part a
-sentence beyond its name — its first line saying it is a part of the project
-above — and a `## Parts` section in the root spec whose line says, for a part
-with no spec, that its truth is the root spec, as the scaffold's parts step
-writes them. On
-anything else, drop it: the project keeps the workshop rule
-as its default, and nothing runs at a later session opening for this. The
-top-up does not carry it.
+**1d. Offer the structure conversation to an existing project**  [BRIEF,
+PROMPT] — an offer, never a halt, and never forced. Where the project's
+`MAP.md` carries no line naming a folder's repository, offer the interview's
+structure conversation (Step 3) over the existing tree: research what a
+person doing this work uses, and show one numbered list proposing what to
+add, naming what the tree already holds that no line covers, and which
+repository each folder sits in — product in the inner, process in the outer,
+the looser split stated where the inner will never be public. Nothing is
+deleted. On the person's yes, plan the reorganisation with them file by file
+and write each folder's map line as the scaffold's structure step writes
+them. On anything else, drop it: the project keeps the workshop rule as its
+default, and nothing runs at a later session opening for this. The top-up
+does not carry it.
 
 **2. Retire REGISTRY.md if present**  [SILENT] when it holds only what the old
 setup put there; [BRIEF, PROMPT] when the user has written into it. No longer
@@ -478,6 +475,9 @@ retired terms to search for, with their replacements:
                                      line, revisited each planning run
     "Parked:"                    ->  work is held below the cleared-to-run line
                                      by `Blocked by:` or `Not before:`
+    "## Parts", "Parts block"    ->  MAP.md's lines say what each folder is
+                                     for and which repository holds it; a
+                                     part's own SPEC.md is read by nothing
 ```
 
 **Also read the project's SPEC.md for a "Project docs" section** — the old
@@ -615,11 +615,15 @@ own summary field, from which the close regenerates this index — nothing else
 to scaffold.
 
 **MAP.md** — written from `${CLAUDE_PLUGIN_ROOT}/templates/MAP-TEMPLATE.md`
-after the interview, at Step 4: one line per folder of the adopted tree and
-one per file a person uses — documents, slides, spreadsheets, PDFs, images —
-with a set of like files summarised as one line and machinery left out, each
-line one judgment under the criterion the template's preamble states. The
-migration path and the top-up add it to an existing project the same way.
+after the interview, at Step 4: one line per folder and per `.md` document of
+the approved set, and one per folder or human-used file already in the adopted
+tree — documents, slides, spreadsheets, PDFs, images — with a set of like
+files summarised as one line and machinery left out, each line one judgment
+under the criterion the template's preamble states. A line for a human-used
+file carries two more facts, who uses it and when — its audience and its use
+time — and the preamble says so, so a line written later at a file's creation
+carries the same two facts. The migration path and the top-up add the map to
+an existing project the same way.
 
 **FAQ/ folder** — create the directory **first**, then copy the templates in (the
 folder must exist before the copies, or they fail):
@@ -719,26 +723,19 @@ Visibility slot carries the pattern. This is the standing line every later
 session reads when weighing a git operation, so a nested scaffold that leaves
 it blank leaves "which repository am I in" unanswered.
 
-**One folder per part, in the right repository.** The interview's parts
-answer (Step 3) names the project's moving parts and which are the product.
-Create one folder per part: a product part inside the inner repository, a
-process part in the outer. Write the parts block into the project CLAUDE.md —
-the template's `## Parts` slot carries the pattern — one line per part naming its
-folder and its repository, and one line saying where a file belonging to no
-part goes. Where the inner repository will never be public, say so in one
-line and let the split be looser: more may sit alongside the product there.
-
-**A part gets its own spec only where the interview gave it a sentence beyond
-its name.** Where it did, write that part's `SPEC.md` into the part's folder,
-its first line saying it is a part of the project above and not a project of
-its own, naming the root spec, then the sentence; where it did not, write no
-file. Write a `## Parts` section into the root `SPEC.md`: one line per part,
-what it is, and a link to that part's spec where it has one — otherwise the
-line says the part's truth is the root spec. The root spec stays the
-whole-project layer; a build reads a part's spec only for the items whose
-files sit in that part, and a part with no spec reads as the root alone;
-planning writes a decision's sentence into the part's spec where the sentence
-is true of that part's files and of nothing else in the project.
+**Only the approved set, in the right repository.** The structure
+conversation (Step 3) ends on a list the person approved: folders and `.md`
+documents, each with its audience, its use time and its repository. Create
+exactly that set — a product folder inside the inner repository, a process
+folder in the outer, an empty or stub `.md` only where the list names one —
+and no folder or placeholder the list does not name. Each line in `MAP.md`
+(Step 4) carries which repository the folder sits in — "inner repository" or
+"outer repository" — where the project has two, so a session choosing a
+folder for a new file reads the repository off the same line. Where the inner
+repository will never be public, say so in one line and let the split be
+looser: more may sit alongside the product there. No part gets a `SPEC.md` of
+its own: the project has one spec, the root, and a build reads it once at run
+start.
 
 **A folder that is already a flat repository is never restructured here.** The
 conversion is an offer — at the migration path, and again as the
@@ -994,8 +991,8 @@ the core — the main thing it produces,  ->  How it works
     organises, or does
 principles or constraints               ->  Principles
     ("must work offline", "no accounts", "everything in plain text")
-the project's moving parts, and which   ->  the parts block in CLAUDE.md, and
-    of them are the product                 one folder per part (Step 2)
+the documents the person's own work     ->  the structure conversation (below):
+    uses, and which are the product         only the approved set is created
 the first thing to build today          ->  becomes the first capture
 where the project is heading, and how   ->  Goals — one sentence per goal,
     the user would know it got there        each with a "Reached when:" line
@@ -1017,12 +1014,36 @@ anything else worth knowing
   the offer shows the line as it will be written; a project of one person is
   not asked.
 
-  **The parts question is asked roughly, and a rough answer is accepted.** Offer
-  a guess like every other question — "I'd say this has two parts: the app,
-  which is the product, and the recipes you're collecting for it, which are
-  process — is that right?" — and take what comes back. Where a part is
-  neither clearly product nor clearly process, ask which it is rather than
-  deciding.
+  **The parts question is the structure conversation, in three moves, and
+  nothing is created until the third.** The project's structure is worked out
+  with the person before any folder exists, so what lands in the tree is what
+  they use and nothing that would later read as the product.
+
+  1. **Research what documents a person doing this work uses.** From what the
+     interview says the project is, run a bounded read — under the research
+     rule in skill-nonspecific-rules.md, run rather than offered — of what
+     that field's own practice calls its documents, in the field's own terms,
+     and infer from those the folders needed to reach them. The limit: the
+     research reaches what the field has written down about its own
+     documents; a person's unusual practice is what the next move is for.
+  2. **Show the smallest defensible set inline, as one numbered list**, each
+     line a folder or a `.md` document with who uses it and when, and which
+     repository it sits in where the project has two — product in the inner,
+     process in the outer, and a folder that is neither clearly one nor the
+     other put to the person rather than decided. The person cuts or adds by
+     number; the ask is whether the list is right.
+
+     > 1. `programme/` — the workshop programme, one folder per day — outer
+     > 2. `programme/day-1/handout.md` — the participants' handout, read by
+     >    them on the day — outer
+     > 3. `app/` — the booking app, the product — inner
+     >
+     > **Cut or add by number, or is this the set?**
+
+  3. **Create exactly the approved set** at Step 4: the folders and the
+     empty-or-stub `.md` files the list names, no placeholders beyond it, and
+     `MAP.md` written from the list with each line carrying the audience and
+     use time the list gave it.
 
   Skip what an earlier answer or the existing content already settled; probe deeper
   wherever the picture is thin.
@@ -1107,9 +1128,11 @@ a personal fact would improve a document and nobody supplied it, leave it out;
 where it is genuinely needed, ask for it as a question like any other.
 
 ```
-1.  fill SPEC.md from the interview answers, and write MAP.md from the
-    template — one judgment per folder and per human-used file of the
-    adopted tree, sets summarised, machinery left out
+1.  fill SPEC.md from the interview answers; create the approved set from
+    the structure conversation and nothing beyond it; write MAP.md from the
+    template — one line per approved folder and document carrying its
+    audience and use time, one judgment per folder and per human-used file
+    already in the adopted tree, sets summarised, machinery left out
 2.  file ONE capture in Unprocessed from the first-thing-to-build answer,
     # through the state server's file_capture tool where the server is
     # registered and the queue tool's --append Unprocessed otherwise:

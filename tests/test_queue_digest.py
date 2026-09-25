@@ -1467,9 +1467,10 @@ def test_size_signs_are_computed_facts():
     """[project-size-signs-and-popout-offer]: the Size signs block prints
     each computed sign as a fact — a user step's consecutive deferrals read
     from its records' outcome lines, the held count, a runs-alone item's
-    count ahead, per-part cleared and held counts from the Parts block, a
-    closed cluster, the queue's size against the one-read figure, and the
-    left-to-process trend across planning records — and its limits line."""
+    count ahead, the queue's size against the one-read figure, and the
+    left-to-process trend across planning records — and its limits line.
+    The per-part counts once printed here went with the Parts block
+    ([parts-folded-into-map])."""
     root = project(
         processed=(
             "#### Alpha, in the app [alpha]\nProse citing [beta].\n\n"
@@ -1488,9 +1489,6 @@ def test_size_signs_are_computed_facts():
             ("2026-09-21-chat-plan-2.md", "# q — plan\n\nWork processed: one.\n\nLeft to process: 7\n"),
         ],
     )
-    with open(os.path.join(root, "CLAUDE.md"), "w", encoding="utf-8") as f:
-        f.write("# CLAUDE\n\n## Parts\n\n- the app — `app/` — inner repository (product)\n"
-                "- the notes — `notes/` — outer repository (process)\n\n## Other\n")
     _items, out = run(root)
     block = out.split("## Size signs")[1].split("## Limits")[0]
     check("a user step deferred in two consecutive records is counted",
@@ -1498,12 +1496,8 @@ def test_size_signs_are_computed_facts():
     check("the held region is counted", "held region: 0 item(s)" in block, block)
     check("a runs-alone item's count ahead prints",
           "[gamma] runs alone with 3 cleared item(s) ahead of it" in block, block)
-    check("per-part cleared and held counts print from the Parts block",
-          "part the app: 2 cleared, 0 held" in block
-          and "part the notes: 1 cleared, 0 held" in block, block)
-    check("a part whose items cite only each other is named as a closed cluster",
-          "part the app: its items cite only each other" in block
-          and "part the notes: its items cite only" not in block, block)
+    check("no per-part line prints, the Parts block being retired",
+          "part the app" not in block and "Parts block" not in block, block)
     check("the queue's size prints against the one-read figure",
           "against the one-read figure of 60000" in block and "past one read" not in block,
           block)
@@ -1514,12 +1508,10 @@ def test_size_signs_are_computed_facts():
     shutil.rmtree(root, ignore_errors=True)
 
 
-def test_size_signs_degrade_without_parts_or_records():
+def test_size_signs_degrade_without_records():
     root = project(processed="#### Alpha [alpha]\nProse.\n\n", unprocessed="")
     _items, out = run(root)
     block = out.split("## Size signs")[1].split("## Limits")[0]
-    check("no Parts block: the block says per-part counts are not computed",
-          "no Parts block" in block, block)
     check("no records: no deferral and no left-to-process line is claimed",
           "deferred run after run: none" in block
           and "no planning record carries the line" in block, block)
@@ -1583,7 +1575,7 @@ if __name__ == "__main__":
     test_not_before_prints_with_its_state()
     test_unreadable_not_before_says_so()
     test_size_signs_are_computed_facts()
-    test_size_signs_degrade_without_parts_or_records()
+    test_size_signs_degrade_without_records()
     print()
     if _failures:
         print(f"{len(_failures)} failure(s): " + ", ".join(_failures))
