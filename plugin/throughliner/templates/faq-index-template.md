@@ -132,3 +132,6 @@ Quick answers about how this project's workflow works. Each question links to a
 - **What is MAP.md, and do I write it?** — one line per folder and human-used
   file, written by setup and kept by the sessions, for Claude to read first.
   [faq.md](faq.md)
+- **Can my steps go onto the task list I already keep?** — the `Task list:`
+  line, the checkbox line a kept task gets, ticking it in your notes app, and
+  the one thing Claude never does to the file. [faq.md](faq.md)

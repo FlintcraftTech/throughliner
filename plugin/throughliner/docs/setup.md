@@ -337,6 +337,16 @@ SPEC.md has no `## Goals` heading
                         ->  ask the interview's goals question once (Step 3),
                             in one line, and write the answer as the section,
                             add-only; "none" writes nothing
+CLAUDE.md has no `Task list:` line
+                        ->  ask once, in one line, whether the user keeps one
+                            markdown task list for every project in their
+                            notes app, and for its full path; write the answer
+                            as `Task list: <absolute path>` in the managed
+                            block's Task list section. A relative path is
+                            refused, since the list sits outside the project
+                            and the safety check reads the line for the one
+                            file it permits there; "none" writes nothing and
+                            is not asked again
 ```
 
 **Where the project has INBOX files already in git history, say so plainly.**
@@ -467,7 +477,8 @@ Search the file for each retired term the method carries, and for each hit say
 plainly what the term was and what replaced it.
 
 ```
-retired terms to search for, with their replacements:
+retired terms a consumer's CLAUDE.md could carry, with their replacements in
+the consumer's words — kept separately from the host register on purpose:
     "batch", "Build/Test/Audit"  ->  a work item is a single `#### ` heading
                                      with a flavor tag; there are no batches
                                      and no sub-headings inside one

@@ -75,6 +75,32 @@ check("an unlisted ordinary file stays refused under the marker",
       decision(d, os.path.join(d, "src", "other.py")) == "deny")
 shutil.rmtree(d, ignore_errors=True)
 
+# The three development-project paths the close's obligations write — the
+# nested README, the retired-terms register and setup's 3b table — are permitted
+# while this session's marker stands and refused without it, exactly as
+# README.md is ([retired-terms-append-refused-at-build-close]).
+NESTED_CLOSE_FILES = (
+    os.path.join("throughliner", "README.md"),
+    os.path.join("method", "retired-terms.md"),
+    os.path.join("throughliner", "plugin", "throughliner", "docs", "setup.md"),
+)
+d = project()
+for rel in NESTED_CLOSE_FILES:
+    os.makedirs(os.path.dirname(os.path.join(d, rel)), exist_ok=True)
+    with open(os.path.join(d, rel), "w", encoding="utf-8") as f:
+        f.write("x\n")
+    check(f"no marker: {rel} is refused in a build",
+          decision(d, os.path.join(d, rel)) == "deny")
+with open(os.path.join(d, ".throughliner", f"close-active-{SESSION}"), "w", encoding="utf-8") as f:
+    f.write("")
+for rel in NESTED_CLOSE_FILES:
+    check(f"this session's marker unlocks {rel}",
+          decision(d, os.path.join(d, rel)) == "allow")
+check("a sibling doc under the marker stays refused",
+      decision(d, os.path.join(d, "throughliner", "plugin", "throughliner",
+                               "docs", "plan.md")) == "deny")
+shutil.rmtree(d, ignore_errors=True)
+
 # The two markers /close writes are permitted for the session's own id and
 # refused for another's, in a build session and a planning session alike
 # ([close-markers-refused-by-safety-check]).

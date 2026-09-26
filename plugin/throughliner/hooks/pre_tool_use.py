@@ -18,7 +18,7 @@ PreToolUse hook — enforces three rules:
    (_build-<session-id>.md) has a Files: section governing which files are
    editable (method docs — QUEUE.md, LOG/, that working file — plus the user's
    memory dir, workshop/resources/research/, the session scratchpad dir,
-   TOOLS.md, and
+   TOOLS.md, the file the project's `Task list:` line names (appends only), and
    any project's INBOX/ are always editable). Tri-state:
    no Files: section = no enforcement;
    section present but empty = method docs only; entries listed = only
@@ -840,6 +840,68 @@ def _is_tools_file(filepath: str, cwd: str) -> bool:
     return _normalise(filepath) == _normalise(os.path.join(cwd, "TOOLS.md"))
 
 
+# --- The user's task list above every project ([task-list-above-projects]) ---
+#
+# A project's own CLAUDE.md may carry one line, `Task list: <absolute path>`,
+# naming the user's one markdown task list — a file in the notes app they run
+# their day from, shared by every project they work on. Planning appends a
+# checkbox line there when it keeps a task-shaped [user] item, and reads the
+# file at every opening for ticked lines. It is the ONE permitted write outside
+# the project root, and it is append-only: Claude never removes or reorders a
+# line, because the person edits the file by hand in another app.
+TASK_LIST_LINE_RE = re.compile(r"^Task list:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
+
+
+def _task_list_path(cwd: str) -> str:
+    """The absolute path a project's `Task list:` line names, or "".
+
+    Read from the project's own CLAUDE.md at the root the session opened in.
+    A relative path is not a task list — setup refuses to write one, and a
+    line carrying one here names nothing, so the permission never opens.
+    """
+    try:
+        with open(os.path.join(cwd, "CLAUDE.md"), "r", encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return ""
+    m = TASK_LIST_LINE_RE.search(text)
+    if not m:
+        return ""
+    path = m.group(1).strip().strip("`")
+    if not path or not os.path.isabs(path):
+        return ""
+    return path
+
+
+def _is_task_list_file(filepath: str, cwd: str) -> bool:
+    """True for the file the project's `Task list:` line names — exact match."""
+    path = _task_list_path(cwd)
+    return bool(path) and _normalise(filepath) == _normalise(path)
+
+
+def _is_task_list_append(tool_name: str, tool_input: dict, filepath: str) -> bool:
+    """True where this call only ADDS to the task list.
+
+    A Write passes only where the file does not exist yet (creating the list);
+    an Edit passes only where its new text begins with the text it replaces,
+    which is the shape an append takes. Anything else — a rewrite, a removed or
+    reordered line — is refused, because the list is the person's own and
+    Claude only ever appends to it.
+    """
+    if tool_name == "Write":
+        return not os.path.exists(filepath)
+    edits = [tool_input] if tool_name == "Edit" else \
+        [e or {} for e in (tool_input.get("edits") or [])]
+    if not edits:
+        return False
+    for edit in edits:
+        old = edit.get("old_string") or ""
+        new = edit.get("new_string") or ""
+        if not old or not new.startswith(old):
+            return False
+    return True
+
+
 def _is_inbox_dir(filepath: str) -> bool:
     """Check if a path is inside any project's INBOX folder.
 
@@ -1573,7 +1635,33 @@ METHOD_SKILLS = frozenset({"setup", "plan", "next", "rescan", "close"})
 # It widens a BUILD's scope not at all — the marker below is written by /close
 # and removed at its end, so during the build these paths are denied exactly as
 # they were.
-CLOSE_PHASE_FILES = ("README.md",)
+#
+# Which obligation each path serves ([retired-terms-append-refused-at-build-close]):
+#   README.md                            — the README feature-list sync, in a
+#                                          flat project whose README sits at the
+#                                          root
+#   throughliner/README.md               — the same sync in the method's own
+#                                          nested project, whose README sits in
+#                                          the inner repository, so the root
+#                                          entry never matched there
+#   method/retired-terms.md              — the close's `Retired:` line, which
+#                                          appends the retired term to the host
+#                                          register in the same move
+#   throughliner/plugin/throughliner/docs/setup.md
+#                                        — the consumer-facing row the same
+#                                          `Retired:` move adds to setup's 3b
+#                                          table where a consumer's CLAUDE.md
+#                                          could carry the term; written from
+#                                          the outer root the hook runs at, so
+#                                          it carries the inner's folder prefix
+# The last three paths exist only in the method's own development project, so a
+# consumer's close sees no change from them.
+CLOSE_PHASE_FILES = (
+    "README.md",
+    "throughliner/README.md",
+    "method/retired-terms.md",
+    "throughliner/plugin/throughliner/docs/setup.md",
+)
 
 
 def _setup_marker_present(session_id: str) -> bool:
@@ -1680,7 +1768,11 @@ def _is_close_phase_file(filepath: str, cwd: str, session_id: str) -> bool:
         return False
     rel = os.path.relpath(os.path.normpath(filepath), os.path.normpath(cwd))
     rel = os.path.normcase(rel).replace("\\", "/")
-    return rel in tuple(os.path.normcase(n) for n in CLOSE_PHASE_FILES)
+    # normcase turns "/" into "\" on Windows, so the list is brought to the same
+    # forward-slash shape as `rel` — without this only a root-level name could
+    # ever match, which is how the nested entries were first refused.
+    return rel in tuple(os.path.normcase(n).replace("\\", "/")
+                        for n in CLOSE_PHASE_FILES)
 
 
 # --- Relative time words with no source ([unfounded-time-words-stopped-once]) ---
@@ -2595,6 +2687,24 @@ def main() -> int:
             branch="overwrite guard: sent register",
         )
 
+    # The user's task list is append-only. A call that would rewrite, remove or
+    # reorder a line in it is refused whatever kind of session is running;
+    # an append passes through the scope branches below by name.
+    if _is_task_list_file(filepath, cwd) and not _is_task_list_append(
+            tool_name, tool_input, filepath):
+        return _deny(
+            "[Throughliner] BLOCKED: this would change the user's task list "
+            "other than by adding to it.\n\n"
+            f"File: {filepath}\n\n"
+            "The task list is the person's own, edited by hand in their notes "
+            "app, and this project's CLAUDE.md names it so Claude can APPEND "
+            "a task line when one is kept. Removing, rewording or reordering a "
+            "line is theirs to do. Use Edit with the file's last line as the "
+            "text to replace and that same line plus the new one as the "
+            "replacement.",
+            branch="task list: not an append",
+        )
+
     # A cycles-doc definition the opening cannot read — neither a Cadence: nor
     # a Trigger: line — is refused at the write, naming the slug and the tool
     # that writes the field the hook reads. Reaches the definition this call
@@ -2760,6 +2870,7 @@ def main() -> int:
             ("temp folder", lambda: _is_temp_dir(filepath, cwd)),
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
+            ("task list append", lambda: _is_task_list_file(filepath, cwd)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("close-phase file",
              lambda: _is_close_phase_file(filepath, cwd, sid)),
@@ -2875,6 +2986,7 @@ def main() -> int:
             ("temp folder", lambda: _is_temp_dir(filepath, cwd)),
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
+            ("task list append", lambda: _is_task_list_file(filepath, cwd)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("checklist Writes: field",
              lambda: _is_checklist_declared_path(filepath, cwd)),

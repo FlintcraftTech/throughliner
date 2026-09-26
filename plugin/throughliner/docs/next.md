@@ -595,6 +595,12 @@ entry already started rather than writing one fresh.
 has had its own turn, and nothing is filtered out of the pass in advance on a
 judgment about whether its moment has come.
 
+**A task-shaped `[user]` item — one carrying a task line in place of a
+walkthrough — is not driven: the run says in one clause that it is on the
+user's task list and carries on to the next item.** It completes when the user
+ticks the line in their notes app, which the planning opening reads; its
+outcome this run is `not reached`, since nothing was presented to be done.
+
 **Test a precondition inside the item's own drive, never as an outside filter.**
 Where a drive's first step cannot proceed — the thing it needs isn't there, the
 build it assumes hasn't shipped — say so on that item's turn, in plain words,
@@ -642,7 +648,7 @@ Where the ask offers leaving the item, it offers it for another session, never
 a day, and says nothing about how long this session has run; and once the user
 has left one step this run, each later hand-over leads with leaving that step
 as the recommendation, in the ask shape "Leave this one too?", saying in the
-same message that sending done leaves it and ends the session — done being the
+same message that sending close leaves it and ends the session — close being the
 way to do both, never a third choice beside starting or leaving.
 
 ```

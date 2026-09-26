@@ -879,6 +879,9 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 (no tag)     ->  build   ->  /next routes to next-build.md
 [audit]      ->  review  ->  /next routes to next-build.md's audit section; findings become captures
 [user]       ->  walk-through; /next walks the user through it, never builds it
+                 — or, where it carries a task line in place of a walkthrough,
+                 a task on the user's own list, which /next names as on the
+                 list and passes
 [freeform]   ->  work done by hand rather than by /next; /next halts on it
                  and never builds it
 [co-write]   ->  a text the user and Claude finish together, named with the
@@ -936,7 +939,15 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   the world for it: a file present or absent, a branch gone, a URL responding.
   Where it names none, the item stays in place until the user mentions it.
 - **A `[user]` item carries a walkthrough** — which steps, in what order, what to
-  check. **Each step names the thing to click or type and the thing to look for**,
+  check — **or, where the work needs no walking through, one task line in its
+  place**, `- [ ] <task> (<project>) 📅 <YYYY-MM-DD where dated>`, with
+  subtasks indented beneath it as their own checkboxes where they help;
+  which of the two is settled at /plan's decision step, and the task line is
+  appended to the user's task list the moment the item is kept, where the
+  project's own CLAUDE.md names one in a `Task list:` line — a project with
+  no such line has no list, and Claude only ever appends to it, never
+  removing or reordering a line.
+  **Each step names the thing to click or type and the thing to look for**,
   so "Open your session list" becomes what to click to get there and what tells
   you it worked. **A step
   carries at most three instructions, and anything more splits into further

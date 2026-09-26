@@ -107,7 +107,10 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
 - **Who does the work, and how.** Work is Claude's to build by default, and the
   flavor tags are in skill-nonspecific-rules.md. A `[co-write]` item — a text
   the user and Claude finish together, which the user asks for by saying they
-  want to co-write something — names the one file the text lives in and says
+  want to co-write something, and which the decision step also offers, in the
+  recommendation, where the item's Files line names a file whose `MAP.md` line
+  says a person uses it, the offer declined by the user's ordinary answer —
+  names the one file the text lives in and says
   whether the text exists yet, and who leads — where the text already exists
   it is the user's, so Claude reads and responds, editing, questioning and
   continuing only where asked; where it does not, the decision step asks who
@@ -115,8 +118,13 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
   `[user]` item, unless a build is held on it by slug. A `[user]` item must carry a
   DESCRIBED walkthrough, settled here at the decision step — including that each step
   names the thing to click or type and the thing to look for, not just where to
-  go. The requirement is stated in full in skill-nonspecific-rules.md; this is the
-  moment it is applied.
+  go — or a task line in its place, where the recommendation says the work
+  needs no walking through: a task, or a task with subtasks, in the line shape
+  skill-nonspecific-rules.md's walkthrough rule gives. Where the item is kept
+  with a task line and the project's own CLAUDE.md carries a `Task list:` line,
+  append the task line to that file in the same turn, after its last line, and
+  say so in the one-line report. The requirement is stated in full in
+  skill-nonspecific-rules.md; this is the moment it is applied.
 
 - **`[freeform]` placement, for the uncommon case where one reaches the queue at
   all.** Either the user or Claude may designate it,
@@ -179,6 +187,17 @@ for the reasoning it deliberately omits.
 python <plugin-root>/scripts/queue_digest.py <QUEUE.md path>
 ```
 
+**Read the user's task list, where the project's own CLAUDE.md carries a
+`Task list:` line** [SILENT] when no line is ticked for this project; [BRIEF]
+when one is. Open the file the line names and read every checkbox line whose
+project in brackets is this project, matching a line to its `[user]` item by
+the task text and the project alone — anything appended after them, such as
+the `✅ <date>` the notes app writes on a tick, and the lines' order are
+ignored, since the user's plugins reorder lines. A ticked line means the user
+has done that task: name it in one clause here, and close its item at this
+session's close as a mentioned-done `[user]` item. Never remove or reorder a
+line in the file.
+
 **Read the runs-alone count as recession, not as staleness.** /next stops *before*
 such an item, so every planning run that adds ready work pushes it further
 back. It is a fact like every other digest line, and moving the item is the
@@ -229,8 +248,7 @@ own judgment.
 
 **Where the digest's size-signs block holds any sign — the same step of the
 user's deferred run after run, the held region growing or a runs-alone item
-with a rising count ahead of it, one part's work cleared while another's
-waits, a part whose items cite only each other, the queue past one read, or
+with a rising count ahead of it, the queue past one read, or
 successive planning records ending with the same number left to process —
 name it in one line of the opening narration, folded in the shape the other
 checks use, and name the pop-out — setup run inside the part's folder — as
@@ -983,9 +1001,10 @@ now and never queued.
 **Third limb: where an item changes how a mechanism behaves, or repeals or
 rewords a specific sentence or value, grep the mechanism's or the sentence's
 distinctive words across the project before writing the Files line, and
-across the `LOG/index*.md` files, opening any matching entry — and open
-`LOG/backlinks.md` at the mechanism's key and the item's cited slugs, where
-the file exists, reading the records it lists; a record naming the mechanism
+those distinctive words that are not slugs across the `LOG/index*.md` files,
+opening any matching entry — and open `LOG/backlinks.md` at the mechanism's
+key and the item's cited slugs, where the file exists, reading the records it
+lists, which is the complete answer for a slug; a record naming the mechanism
 by neither its slug nor its package name is still missed.**
 
 ```
@@ -993,8 +1012,9 @@ the Files line is derived FROM the grep, not from the discussion
     -> the grep names every doc, template and FAQ entry carrying the words
     -> anything the grep finds and the item does not want changed is stated
        as an exclusion, in its own sentence outside the Files line
-    -> the index's matching lines name what was done to this mechanism
-       before; the entry says why, and the recommendation carries it
+    -> the index's matching lines, and the records the backlinks list under
+       the slugs, name what was done to this mechanism before; the entry
+       says why, and the recommendation carries it
 ```
 
 **Where the item repeals SHIPPED behaviour, run the same grep over
@@ -1314,7 +1334,7 @@ their word — the walkthrough sub-rule in skill-nonspecific-rules.md, which
 stays canonical there). Before the draft's home is named, choose the medium:
 ask whether the user will be editing this somewhere Claude cannot reach, and
 whether an equally good medium exists where Claude can; choose by three tests
-in order — the user can write in it, otherwise it is not co-writing; Claude
+in order — the user can write in it; Claude
 can write in it across as many stages as possible; it is the right final
 form for delivery — and write the chosen medium on the item. Then have the
 draft step name where the draft lives: for plain text, a `.txt` in the
@@ -1493,26 +1513,27 @@ After every item, present the next item. That is the whole checkpoint.
 
 **The specimen — this is the shape of the message:**
 
-> Into Processed, cleared to run. Next up:
->
-> **#### /close invites another /next in the same session [close-invites-same-session-next]**
-> Captured by you (2026-08-13), from a live instance minutes earlier in another
-> project running this plugin.
+> Into Processed, cleared to run. Next up: a capture you filed on 2026-08-13
+> saying that after a close the session offered to run another build in the
+> same chat, seen live in another project on this plugin
+> [close-invites-same-session-next].
 >
 > **Take this one next?**
 >
 > 20 cleared to run · 14 left to process.
 
-Beneath the item: one bold question about that item, then the two counts, and
-nothing else. No menu of routes, no analysis.
+Beneath the sentence: one bold question about that item, then the two counts,
+and nothing else. No menu of routes, no analysis.
 
 ```
 message order:
     1. where the just-finished entry landed, named as the outcome —
        "Deleted." / "Into Processed, cleared to run." / "Into Processed,
        held below the line." — so the user knows before meeting the next
-    2. a one-line pointer to the NEXT item (item only, no analysis)
-       — re-read from QUEUE.md first to confirm the pointer resolves
+    2. one plain sentence of Claude's saying what the NEXT item is, written
+       from the whole read of the entry, with the slug in brackets after it
+       — the heading line is not quoted; re-read from QUEUE.md first to
+       confirm the pointer resolves (item only, no analysis)
     3. one bold question inviting the user into THAT item ("Take this one
        next?") — never a fate question, which waits for the recommend step
        after the interview
@@ -1659,9 +1680,7 @@ applied correction that may be method work gets the same decision.
 Work-it-now runs the ordinary present-and-interview loop and, if kept, places the
 item straight into Processed.
 
-No anything-else clause on either branch: asking would be soliciting further
-captures, which the always-loaded rule bars, and the user can add to a thing
-while it is being processed.
+No anything-else clause on either branch.
 
 **Either branch, once it loops into present-and-interview, is subject to the
 fold conditions above** — and a thing raised in this message has had no earlier

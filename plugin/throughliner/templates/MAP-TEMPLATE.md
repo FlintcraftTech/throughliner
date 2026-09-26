@@ -8,7 +8,11 @@ Written by setup from the tree it adopted; a session that creates a folder or a 
      - <path>/ — what it holds, in one or two lines — <which repository, where there are two>
      - <path> — what the file is — who uses it, and when
      - <folder>/<pattern> (N files) — what the set is — who uses it, and when
+     - a folder's line as above, and beneath it, indented one level, each
+       human-used file or set by its own name only, carrying the same facts a
+       full-path line carries — so a path is written once and the files sit
+       under their folder; the flat forms above stay allowed
      e.g.:
      - programme/ — the workshop programme, one folder per day — outer repository
-     - programme/day-1/handout.md — the participants' handout for day one — read by participants on the day
-     - programme/day-1/*.png (6 files) — the slides' images, in slide order — shown by the facilitator during the session -->
+       - day-1/handout.md — the participants' handout for day one — read by participants on the day
+       - day-1/*.png (6 files) — the slides' images, in slide order — shown by the facilitator during the session -->

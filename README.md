@@ -12,6 +12,7 @@ Every project keeps a written record of *why* things are built a certain way (`S
 - **Silent regressions are caught:** historical context prevents unwanted changes.
 - **Seamless handoffs:** easily pick up where you left off after a break, or hand the project to someone else.
 - **Checked writes:** a small local server, accepted once per project, files captures and moves queue work with every field checked before anything lands.
+- **One task list across projects:** name a markdown task list from your notes app once per project, and steps of yours that need no walkthrough are appended there as checkbox lines, with the project in brackets and a due date where there is one; tick a line in your notes app and the next planning session closes the item.
 
 ## Installation
 

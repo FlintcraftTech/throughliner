@@ -279,7 +279,9 @@ removal — inside a build session's /close.
 
 **Completion is read as the always-loaded `[user]` lifecycle states**
 (skill-nonspecific-rules.md, "Walk a `[user]` item through whenever it is
-reached"); anything else stays in Processed, silently. Where the item's
+reached") — and, for a task-shaped item, as its line ticked on the user's task
+list at this session's opening, closed here exactly as an item the user
+mentioned done; anything else stays in Processed, silently. Where the item's
 walkthrough names an observable check, **run it before recording completion**,
 and report a failed one as what was found, leaving the item in place.
 

@@ -80,9 +80,11 @@ several distinct changes.**
 A no-build /close run writes the method documents, the close-obligation files
 the Declare step permits, and its two markers.
 
-Detect a completed `[user]` item from what the session can already see. The
-detection rules and /close itself are in close-plan.md, which handles a
-completed item and a planning session together, since the two can coincide.
+Detect a completed `[user]` item from what the session can already see — a
+task-shaped item whose line the planning opening found ticked on the user's
+task list among them. The detection rules and /close itself are in
+close-plan.md, which handles a completed item and a planning session together,
+since the two can coincide.
 
 **Record each `[user]` item the session touched under an outcome, and read that
 outcome off the session's own trail, never off what the item's presence in the

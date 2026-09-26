@@ -40,6 +40,19 @@ Visibility:
 
 Language: English
 
+## Task list
+
+<!-- Optional. The full path of the one markdown task list you keep for every
+     project in your notes app. When planning keeps a step of yours that needs
+     no walkthrough, Claude appends one checkbox line there — the task, this
+     project's name in brackets, and a due date where there is one — and
+     reads the file at each planning opening for lines you have ticked. Claude
+     only ever adds lines; it never removes or reorders one. Leave the line
+     blank to keep no list. An absolute path, e.g.
+     "Task list: C:\Users\you\Notes\Tasks.md" -->
+
+Task list:
+
 <!-- ▲ PLUGIN-MANAGED — do not edit above this line. ▲ -->
 
 ## Project rules
