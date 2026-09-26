@@ -107,8 +107,8 @@ Quick answers about how this project's workflow works. Each question links to a
   return checks: a cycle due, mail waiting, a version change, the date moved.
   [faq.md](faq.md)
 - **A draft I'm asked to edit — where is it and how do I hand it back?** —
-  the `.txt` in `temp/`, the side-panel link and save button, and what to say
-  when you are done. [faq.md](faq.md)
+  who drafts first, the `.txt` in `temp/`, the side-panel link and save
+  button, and what to say when you are done. [faq.md](faq.md)
 - **Why is the planning opening so short?** — the one quiet clause for checks
   that found nothing, held work as a count, and the limit. [faq.md](faq.md)
 - **Two of us share one queue — whose is what?** — the `Assigned to:` line,
