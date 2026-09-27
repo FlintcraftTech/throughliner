@@ -211,7 +211,7 @@ def test_missing_log_directory_behaves_as_before():
 #
 # The three CATCH cases are the three replies driven through the live hook on
 # 2026-08-31 that went undetected. Each carries its hedge in the sentence
-# BEFORE the claim, which is the shape next-build.md's capture-report rule
+# BEFORE the claim, which is the shape build-work.md's capture-report rule
 # actually mandates.
 # --------------------------------------------------------------------------
 
@@ -480,12 +480,12 @@ def test_process_now_offer_is_enforced_once_in_a_planning_chat():
 
 def test_process_now_offer_owed_only_in_a_planning_chat():
     """[process-now-check-fires-outside-planning]: the offer is plan.md's, so
-    a transcript whose last method command is next owes nothing; one whose
+    a transcript whose last method command is build owes nothing; one whose
     last is plan still owes; one with no command owes nothing."""
     root = project()
     report = "Filed [just-raised] at the bottom of Unprocessed."
-    code, out = run_with(root, report, transcript=transcript(root, "next"))
-    check("last method command next: nothing owed", '"decision": "block"' not in out, out)
+    code, out = run_with(root, report, transcript=transcript(root, "build"))
+    check("last method command build: nothing owed", '"decision": "block"' not in out, out)
     code, out = run_with(root, report, session_id="s2",
                          transcript=transcript(root, "plan", name="p.jsonl"))
     check("last method command plan: still owed", '"decision": "block"' in out, out)

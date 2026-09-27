@@ -132,7 +132,7 @@ reordering.
 
 **Place `[user]` and `[audit]` lines end-preferred**, after contiguous blocks of
 build work and ahead of any item carrying `Runs alone`. Both flavors force
-/next to stop for the user — a step they must run, an audit whose findings they
+/build to stop for the user — a step they must run, an audit whose findings they
 must approve — so one sitting *inside* a contiguous build run interrupts a
 sequence that would otherwise never stop to ask. Position them at the **end**
 of the block so the stops that need the user batch together, and never past a
@@ -150,7 +150,7 @@ after both, unless a build is held on it by slug.
 The second dependency runs the other way from the first — the audit depends on
 the build — and it carries no `Blocked by:` line, because placement is what
 orders the pair. Moving the audit to the end separates it from the tool it runs,
-and /close happens after /next, so the separation arrives in time to break the
+and /close happens after /build, so the separation arrives in time to break the
 *next* run rather than this one.
 
 Order here is low-stakes and reversible, so the narration is the catch-point
@@ -176,7 +176,7 @@ trust the self-check:  exits non-zero -> NOTHING was written. A slug-set
 
 ```
 narration scales:
-    changes what /next would pick next  ->  flag it clearly
+    changes what /build would pick next  ->  flag it clearly
         "Moved 'Rewrite the welcome email' [welcome-email-rewrite] above
          'Add a plan picker' [plan-picker], so the email lands first —
          say if not."
@@ -222,7 +222,7 @@ which.
 dependency entry's transcribed tick.** Every built item's entry carries either
 `done, confirmed` or `done, UNCONFIRMED: <what still needs running>`, written into
 the build working file at the moment the work happened and copied into the entry
-at /close (next-build.md, close-build.md). Read that field. This rule and the
+at /close (build-work.md, close-build.md). Read that field. This rule and the
 `[user]`-placement rule below both depend on the answer, and a fresh short session
 has no memory to fall back on.
 
@@ -253,7 +253,7 @@ you can't yet say what it        ->  Unprocessed — it still needs thought
 ```
 
 **Place ready `[user]` walk-through work above the marker.** The marker is the
-single gate for walk-throughs as well as builds — /next walks a `[user]` item
+single gate for walk-throughs as well as builds — /build walks a `[user]` item
 through only when it sits above the marker.
 
 ```
@@ -265,7 +265,7 @@ prerequisite still pending
 
 **Being a `[user]` item is not a reason to shelve it** — only a pending
 prerequisite keeps it below the marker. This lives in the /plan close rather than
-/next so the marker stays one positional gate, instead of /next growing a second
+/build so the marker stays one positional gate, instead of /build growing a second
 readiness check of its own. Narrate it when a `[user]` item moves above the marker
 — one line naming which is now ready.
 
@@ -274,7 +274,7 @@ readiness check of its own. Narrate it when a `[user]` item moves above the mark
 A `[user]` item never entered a build working file, so it isn't ticked and closed
 like a build. This is /close that records it and removes it from Processed, so
 a finished item doesn't strand in the queue and get re-presented by the next
-/next. It runs as a /close run of its own, inside a planning session's /close, and — for the
+/build. It runs as a /close run of its own, inside a planning session's /close, and — for the
 removal — inside a build session's /close.
 
 **Completion is read as the always-loaded `[user]` lifecycle states**
@@ -349,5 +349,5 @@ close — planning sessions touch nothing else.
 
 Run close.md's **Recommend next** and apply its **Plan / setup close** delta: a
 fresh setup session whose only work item is the rough first build item recommends
-/plan to scope it rather than /next; otherwise the shared overlap scan + ladder
+/plan to scope it rather than /build; otherwise the shared overlap scan + ladder
 apply.

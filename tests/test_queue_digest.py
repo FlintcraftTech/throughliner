@@ -216,7 +216,7 @@ def test_marker_text_in_prose_does_not_move_the_line():
     """
     quoting = (
         "#### An item that describes the queue [talker]\n"
-        "This explains that /next builds from above the\n"
+        "This explains that /build builds from above the\n"
         "--- Cleared to run above this line --- marker, which is what bounds a run.\n"
     )
     plain = "#### An ordinary second item [quiet]\nRationale.\n"
@@ -849,7 +849,7 @@ def test_filed_stamp_is_read_over_git_and_horizon_prints_by():
 def test_runs_alone_reports_what_is_ahead_of_it():
     """A correctly placed `Runs alone` item recedes as the queue is worked.
 
-    /next stops BEFORE it, so it is reached only once everything ahead is built
+    /build stops BEFORE it, so it is reached only once everything ahead is built
     — and every planning session adds newly ready work ahead of it. Nothing in
     the queue shows that happening, and it was noticed once only because someone
     happened to say it out loud.

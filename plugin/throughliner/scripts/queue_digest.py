@@ -82,7 +82,7 @@ FLAG_RE = re.compile(r"^Red flag\s*·\s*State:\s*(\w+)", re.IGNORECASE)
 # whose session a run is in decides what follows, and that is not read here.
 ASSIGNED_RE = re.compile(r"^Assigned to:\s*(.+?)\s*$", re.IGNORECASE)
 FLAVOR_RE = re.compile(r"^\[(audit|user|freeform|co-write)\]\s*", re.IGNORECASE)
-# "Runs alone" — the item is ready, but /next must not build it alongside other
+# "Runs alone" — the item is ready, but /build must not build it alongside other
 # work. Printed on the item's digest line because a solo item changes how much
 # of the ready region a single run can actually clear, which is exactly what a
 # planning session is deciding when it reads the digest.
@@ -1329,7 +1329,7 @@ def render(items, root="", queue_path="QUEUE.md"):
 
     # How much ready work sits in front of each `Runs alone` item.
     #
-    # /next stops BEFORE such an item, so it is reached only once everything
+    # /build stops BEFORE such an item, so it is reached only once everything
     # ahead of it has been built — and every planning session adds newly ready
     # work ahead of it. So a correctly placed item quietly recedes each time the
     # queue is worked, and nothing in the queue shows that happening.

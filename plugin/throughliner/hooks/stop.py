@@ -90,7 +90,7 @@ PLACEHOLDER_SLUG = re.compile(r"(^|-)slug($|-)", re.IGNORECASE)
 #
 # Scoped to the claim's OWN sentence, and that scope is the whole guard. A
 # fixed character window reaches backwards past the full stop into whatever
-# preceded it, and `next-build.md` REQUIRES a capture report to say why the
+# preceded it, and `build-work.md` REQUIRES a capture report to say why the
 # thing was captured rather than done now — so the mandated wording ("I
 # captured this rather than folding it in. Filed as [slug].") puts this
 # pattern's own trigger words in the previous sentence, and three real filing
@@ -689,7 +689,7 @@ FILE_LATER_FORMULA = "file it for later?"
 PROCEED_ASK = re.compile(r"\*\*[^*\n]*\?\*\*")
 FILED_LINE = re.compile(r"Filed at the bottom of Unprocessed", re.IGNORECASE)
 _METHOD_COMMAND = re.compile(
-    r"<command-name>/(?:throughliner:)?(plan|next|done|rescan|catchup|setup)"
+    r"<command-name>/(?:throughliner:)?(plan|build|done|rescan|catchup|setup)"
     r"</command-name>")
 _FILED_STAMP = re.compile(r"^Filed (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})",
                           re.MULTILINE)

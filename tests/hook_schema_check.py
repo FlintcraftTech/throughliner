@@ -573,7 +573,7 @@ def test_content_stamp_ignores_the_cli_in_use_marker():
           session_start.content_stamp(d) == before)
 
     # The exclusion must be narrow: a real package file still moves it.
-    with open(os.path.join(d, "docs", "next.md"), "w", encoding="utf-8") as fh:
+    with open(os.path.join(d, "docs", "build.md"), "w", encoding="utf-8") as fh:
         fh.write("# next\n")
     check("content_stamp: a genuine package file DOES move the stamp",
           session_start.content_stamp(d) != before)

@@ -793,7 +793,7 @@ def _is_retired_terms_file(filepath: str, cwd: str) -> bool:
     Exempt for a structural reason, not a convenient one. The method requires a
     session that retires a term to append it to this file. Retirement is
     discovered DURING a build — you find out a term is retired by retiring it —
-    so it can never appear in a `Files:` list that /next computed from the work
+    so it can never appear in a `Files:` list that /build computed from the work
     items before the build started. No amount of better self-scoping can fix
     that; the write is unschedulable by construction.
 
@@ -805,7 +805,7 @@ def _is_retired_terms_file(filepath: str, cwd: str) -> bool:
 
     Two alternatives were weighed and lost. Stating the ordering in close.md
     works but leaves a trap for anyone who reorders /close, and the ordering
-    that currently works is an accident rather than a design. Having /next
+    that currently works is an accident rather than a design. Having /build
     widen `Files:` whenever a run touches rule-bearing files is more machinery
     than the problem deserves, and it guesses.
 
@@ -830,7 +830,7 @@ def _is_tools_file(filepath: str, cwd: str) -> bool:
     writable, in a planning session and mid-build alike, because the moment a
     session learns such a fact is the moment it must be written down: a fact
     deferred to a queue item is a fact the next session re-derives, which is
-    the cost this file exists to remove. next-build.md's environment check
+    the cost this file exists to remove. build-work.md's environment check
     reads it before assuming a tool is absent and writes to it on learning
     one.
 
@@ -1614,14 +1614,14 @@ SETUP_SCAFFOLD_FILES = (
 # The method's own skills, all of which ship with model invocation disabled.
 # Lowercased, and compared against the part of a skill name after any plugin
 # prefix. Adding a skill to the method means adding it here.
-METHOD_SKILLS = frozenset({"setup", "plan", "next", "rescan", "close"})
+METHOD_SKILLS = frozenset({"setup", "plan", "build", "rescan", "close"})
 
 # The files the method's own CLOSE obligations name. A close is required to write
 # these and a build is not, and the two phases share one working file — so
 # without this a required write had no permitted moment anywhere.
 #
 # README.md is the recorded case. The README feature-list sync rides the
-# SPEC-sync trigger, which fires at /close; /next self-scopes from the items
+# SPEC-sync trigger, which fires at /close; /build self-scopes from the items
 # it is about to build, and no item names README.md because the obligation is a
 # consequence of several items TOGETHER. So the file could not have entered the
 # build's list by any correct application of the scoping rule, and three
@@ -2607,7 +2607,7 @@ def main() -> int:
     # into shipped documents. It stopped that and cost something larger: a build
     # that cannot see why a thing is being built infers a why, and a wrong why
     # aims the whole change wrong. The boundary is now stated in the procedure
-    # (next.md's opening) rather than enforced by withholding — read the
+    # (build.md's opening) rather than enforced by withholding — read the
     # reasoning to aim the work, write the action and not the reasoning.
     if tool_name not in ("Edit", "Write", "MultiEdit"):
         return 0

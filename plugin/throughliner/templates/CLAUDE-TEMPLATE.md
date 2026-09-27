@@ -16,7 +16,7 @@ This project uses the Throughliner method.
 
 - `/setup` — scaffold project docs (done if you're reading this).
 - `/plan` — queue management, captures, design questions.
-- `/next` — execute the top piece of ready work (a build or an audit, by its flavor tag). It can work several cleared pieces of work back-to-back, top-down, stopping at the readiness line or when something genuinely needs you.
+- `/build` — execute the top piece of ready work (a build or an audit, by its flavor tag). It can work several cleared pieces of work back-to-back, top-down, stopping at the readiness line or when something genuinely needs you.
 - `/rescan` — read back over the conversation and file anything decided or noticed but never written down. Run it whenever, as often as you like; it only looks back as far as the last time you ran it. It files things and leaves the deciding to /plan.
 - `/close` — record, update docs, commit.
 

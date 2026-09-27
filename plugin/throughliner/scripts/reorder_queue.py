@@ -380,7 +380,7 @@ def unnamed_crossing_message(unnamed, marker_pref):
     if up:
         parts.append("CLEAR %d item%s you did not name: %s — placing the "
                      "marker after '%s' puts %s above the readiness line, so "
-                     "an unattended /next run could build %s"
+                     "an unattended /build run could build %s"
                      % (len(up), "" if len(up) == 1 else "s",
                         ", ".join("[%s]" % s for s in up), marker_pref,
                         "it" if len(up) == 1 else "them",
@@ -535,7 +535,7 @@ def write_verified(queue_path, new_lines, absent=(), present=()):
     Why this exists: a --delete once printed its normal success line, exited
     zero, and left the item sitting in the file. Re-running the identical
     command a moment later worked. That is worse than a loud failure, which
-    costs one retry — /next treats the success line as proof an item was built
+    costs one retry — /build treats the success line as proof an item was built
     and removed, and the whole copy-per-item design rests on "an item still
     showing in QUEUE.md means exactly one thing: not built yet". A false
     success breaks that guarantee silently.
@@ -814,7 +814,7 @@ def delete_item(queue_path, slug, section):
             dependents.append(heading or ('line %d' % (i + 1)))
     if dependents:
         # Deliberately states both readings instead of asserting one. This same
-        # --delete removes a BUILT item during a /next run and a DROPPED item at
+        # --delete removes a BUILT item during a /build run and a DROPPED item at
         # /plan, and the script cannot tell which — so a message that assumed
         # "deleted as not worth doing" would cry wolf on every build removal of
         # an item other work waits on, which is the common case. A warning that
@@ -1131,7 +1131,7 @@ def move_section(queue_path, slug, sec_from, sec_to, position, anchor,
     Every check below runs BEFORE anything is written, so the call either does
     both halves or neither. A half-applied queue edit is worse than a plain
     refusal, because the readiness marker decides how much work an unattended
-    /next run may build without the user present.
+    /build run may build without the user present.
     """
     for name in (sec_from, sec_to):
         if name not in ('Processed', 'Unprocessed'):
@@ -1548,7 +1548,7 @@ def main():
         # So without this branch the marker follows its anchor around the
         # section instead of holding its place, and a plain --move of the
         # anchor silently drags the readiness boundary with it. That is not a
-        # cosmetic reshuffle: the marker sets how much work an unattended /next
+        # cosmetic reshuffle: the marker sets how much work an unattended /build
         # run may build without the user present, so moving it as a side effect
         # of an unrelated request silently widens what an autonomous run is
         # allowed to do. Observed live: moving the anchor below a deliberately

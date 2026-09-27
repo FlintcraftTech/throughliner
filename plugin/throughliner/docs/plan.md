@@ -131,7 +131,7 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
   typically as a stopgap or as the nuclear option for something too big to fix
   stepwise. **Place it at one end of the cleared
   region, clear of the Claude-work:** first when it is a prerequisite or
-  repairs machinery /next uses, last when it is unrelated so the run clears the
+  repairs machinery /build uses, last when it is unrelated so the run clears the
   buildable work before stopping. Both ends satisfy the rule; narrate which end and
   why, like any other ordering judgment. If later cleared work genuinely depends on
   the freeform fix landing first, that is an ordinary `Blocked by: [slug]`
@@ -151,11 +151,11 @@ Runs alone
   Settle it at the decision step, and place the item at one end of the cleared
   region so the run reaches everything else first. **Use it where the work moves
   paths underneath a run in flight** — a rename, a folder move, a migration.
-  /next reads the marker as a
+  /build reads the marker as a
   run bound and ends the run before it — except that an item the run finds already done,
   its observable check satisfied before any step is driven, closes and the run
   continues, since the bound keys on the run performing the work; the marker
-  binds /next and nothing else, so it does
+  binds /build and nothing else, so it does
   not stop the work being done alongside other work by hand.
 
 - **Assign an uncommon execution marker only after re-reading its definition in
@@ -198,7 +198,7 @@ has done that task: name it in one clause here, and close its item at this
 session's close as a mentioned-done `[user]` item. Never remove or reorder a
 line in the file.
 
-**Read the runs-alone count as recession, not as staleness.** /next stops *before*
+**Read the runs-alone count as recession, not as staleness.** /build stops *before*
 such an item, so every planning run that adds ready work pushes it further
 back. It is a fact like every other digest line, and moving the item is the
 user's decision.
@@ -486,7 +486,7 @@ decision step's rewrite-whole rule, saying what cleared it.
 ```
 item in Processed whose own text says     ->  surface it. It is cleared to run
   it must not be built, or was                and its own text forbids building
-  returned unbuilt                            it — a /next run would build the
+  returned unbuilt                            it — a /build run would build the
                                               thing the item forbids
 item in Processed whose Files line names  ->  surface it. The decision step's
   nothing, or names its own design's          buildability limb, failing after
@@ -564,7 +564,7 @@ A due cycle gets its sentence ("weekly release: due, filed"); cycles with
 nothing due join the opening's quiet clause.
 
 The capture then ranks by the ladder like any other work. The same check runs at
-/next's pre-flight and /close's wind-down, filing only — this is the one site
+/build's pre-flight and /close's wind-down, filing only — this is the one site
 that also processes what it files.
 
 **Goals check** [SILENT] when nothing fires; [BRIEF] when something does. Read

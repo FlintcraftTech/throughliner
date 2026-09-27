@@ -862,7 +862,7 @@ def test_move_section_applies_marker_after():
 def test_move_section_marker_failure_writes_nothing():
     """Both halves, or neither. A half-applied queue edit is worse than a refusal.
 
-    The readiness marker decides how much work an unattended /next run may
+    The readiness marker decides how much work an unattended /build run may
     build with nobody present, so a move that lands while its marker placement
     fails is the dangerous outcome, not the tidy one.
     """
@@ -894,7 +894,7 @@ def test_delete_reports_only_what_landed():
     """The success line must mean the item really left the file.
 
     A --delete once printed its normal success line, exited zero, and left the
-    item in place. /next reads that line as proof an item was built and
+    item in place. /build reads that line as proof an item was built and
     removed, so a false success breaks the one guarantee the copy-per-item
     design rests on. This asserts the ordinary path genuinely lands.
     """

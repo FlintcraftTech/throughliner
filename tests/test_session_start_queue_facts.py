@@ -63,7 +63,7 @@ def test_marker_text_in_prose_does_not_move_the_line():
     """
     quoting = (
         "#### An item that describes the queue [talker]\n"
-        "This explains that /next builds from above the\n"
+        "This explains that /build builds from above the\n"
         + MARKER + " marker, which is what bounds a run.\n"
     )
     plain = "#### An ordinary second item [quiet]\nRationale.\n"

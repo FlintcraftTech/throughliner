@@ -74,7 +74,7 @@ CASES = [
     # (cwd, skill name, expected, what it pins)
     (ADOPTED, "throughliner:plan", "deny", "the recorded failure: /plan invoked"),
     (ADOPTED, "throughliner:close", "deny", "/close, where the failure landed at a close"),
-    (ADOPTED, "throughliner:next", "deny", "/next"),
+    (ADOPTED, "throughliner:build", "deny", "/build"),
     (ADOPTED, "throughliner:rescan", "deny", "/rescan"),
     (ADOPTED, "throughliner:setup", "deny", "/setup"),
     (ADOPTED, "plan", "deny", "the bare name in an adopted project"),

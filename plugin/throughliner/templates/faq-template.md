@@ -34,17 +34,17 @@ You talk. Describe what you want, raise ideas, answer Claude's questions. Claude
 
 Your queue has two sections. **Unprocessed** is where new ideas land, as **captures** — rough is fine, just enough to remember what you meant. A capture can come from you at any moment in any chat, from Claude noticing something mid-build, or from `/rescan` sweeping up what was said but never filed.
 
-**Processed** is work you and Claude have agreed on, and inside it a readiness line separates work that's ready to build from work that's still waiting on something. The part above that line is cleared to run, and it's what `/next` builds from. Work sits below the line for one of two reasons, written on the item itself: another named piece of work has to ship first, or a date hasn't passed yet.
+**Processed** is work you and Claude have agreed on, and inside it a readiness line separates work that's ready to build from work that's still waiting on something. The part above that line is cleared to run, and it's what `/build` builds from. Work sits below the line for one of two reasons, written on the item itself: another named piece of work has to ship first, or a date hasn't passed yet.
 
 A `/plan` run opens by checking the queue for problems — work marked ready that contradicts its own notes, items that name no files to change, work waiting on itself in a loop — and reports what it finds. Then it asks one question: is there anything you want to process first? Otherwise say go, and Claude takes them in the method's order, starting on the first item. After each item, Claude says where it landed and describes the next one in a plain sentence of its own, with the item's name in brackets, then asks whether to take it next.
 
 You don't have to process everything in one sitting. `/plan`, `/close`, fresh chat, `/plan` again is a normal rhythm.
 
-## What does `/next` do?
+## What does `/build` do?
 
 It builds the ready work. Claude takes the top item, reads what it's meant to change and which files it touches, and builds it — locked to those files, and never adding one without asking you first.
 
-If several items are ready, `/next` builds them back to back without asking you to confirm each one. It's not a run that finishes on its own, though: it pauses to walk you through anything that's yours to do and then carries on, it halts on work marked as needing a session of its own and never builds that, it ends the run before work marked `Runs alone`, and it never closes itself.
+If several items are ready, `/build` builds them back to back without asking you to confirm each one. It's not a run that finishes on its own, though: it pauses to walk you through anything that's yours to do and then carries on, it halts on work marked as needing a session of its own and never builds that, it ends the run before work marked `Runs alone`, and it never closes itself.
 
 Work can carry a tag saying how it runs:
 
@@ -53,8 +53,8 @@ Work can carry a tag saying how it runs:
 - **`[user]`** — work Claude genuinely can't do, like a check that needs your
   eyes. Claude walks you through it live, one step at a time, after all the
   building is finished.
-- **`[freeform]`** — work `/next` must not run, because it's large or because
-  it can't safely run inside a build. `/next` halts on one rather than
+- **`[freeform]`** — work `/build` must not run, because it's large or because
+  it can't safely run inside a build. `/build` halts on one rather than
   skipping past it, and never builds it.
 - **`[co-write]`** — a text you and Claude finish together, in one named
   file. Claude drafts it or takes the file as it stands, hands it to you as a
@@ -80,7 +80,7 @@ Typing `/close` is the yes: the commit message appears on screen as the record 
 
 It reads back over the conversation — what you said, what Claude thought while working — and files anything that never made it into a file. A shortened version runs inside `/close` as a safety net, but you can run `/rescan` yourself at any moment.
 
-The reason to run it mid-session is that `/close` is too late for some things. If you've been freewheeling in a `/plan` session, running `/rescan` sweeps what was said into captures right then — so they can be processed in that same session and be cleared to run in time for your very next `/next`.
+The reason to run it mid-session is that `/close` is too late for some things. If you've been freewheeling in a `/plan` session, running `/rescan` sweeps what was said into captures right then — so they can be processed in that same session and be cleared to run in time for your very next `/build`.
 
 It also reads Claude's own working-out, not just your messages, so ideas that came up while Claude was actually working with your project get filed rather than lost.
 
@@ -188,7 +188,7 @@ You never have to remember any of it. Every planning session opens by checking 
 
 ## What happens at planning when a cycle's turn is due?
 
-Recurring work — a weekly release, a posting rhythm, a maintenance pass — can be put on a cycle: defined once in your cycles doc with its steps, its cadence and the observable that marks a completed turn. From then on the openings of `/plan` and `/next` compute whether a turn is due and file it into your queue as an ordinary item.
+Recurring work — a weekly release, a posting rhythm, a maintenance pass — can be put on a cycle: defined once in your cycles doc with its steps, its cadence and the observable that marks a completed turn. From then on the openings of `/plan` and `/build` compute whether a turn is due and file it into your queue as an ordinary item.
 
 At the planning opening, due cycle work is presented first, ahead of everything else — timing work loses its value waiting in the pack. Nothing is stored between sessions: each opening recomputes from the observable, so skipping a week drifts nothing. What tells you it worked is the opening's line naming the due cycle, and the item for its turn at the top of what Claude presents. A project with no cycles has no doc and pays nothing.
 
@@ -232,7 +232,7 @@ It reads SPEC.md once at the start of the run, and checks each item it builds a
 
 ## Which command do I run now?
 
-Every piece of work travels one loop. Anything noticed, by you or by Claude, in any chat, becomes a capture in Unprocessed. `/plan` turns captures into agreed work and clears it to run. `/next` builds the cleared work, top down. `/close` records what happened and commits. Then a fresh chat, which learns what happened from the record rather than from memory.
+Every piece of work travels one loop. Anything noticed, by you or by Claude, in any chat, becomes a capture in Unprocessed. `/plan` turns captures into agreed work and clears it to run. `/build` builds the cleared work, top down. `/close` records what happened and commits. Then a fresh chat, which learns what happened from the record rather than from memory.
 
 Two things come back to the start. An audit edits nothing: what it finds becomes captures, weighed at the next `/plan`. A build that discovers something files a capture and keeps building. And a step that is yours leaves the loop only when you have done it — a run walks you through it and then leaves it in the queue until you say it is done.
 
@@ -311,6 +311,10 @@ Some signs only you can read, and they say the method may no longer fit at all r
 ## I typed /done and nothing happened — where did it go?
 
 The command that closes a session is `/close` now, or `/throughliner:close` where the short name does not register. Type it where you typed `/done`: at the end of a session, after the building or the planning is finished. What it does is unchanged — it records what happened in your session log, commits, and names the next command in words. What tells you it worked is the commit hash written into the session record's heading, exactly as before. If `/done` still works for you, the plugin under your app is an older build; update it, fully quit and reopen the app, and the new name is there.
+
+## I typed /next and nothing happened — where did it go?
+
+The command that builds your cleared work is `/build` now, or `/throughliner:build` where the short name does not register. Type it where you typed `/next`: after planning, when the queue has work above the cleared-to-run line. What it does is unchanged — it reads the cleared work from the top, builds each item in turn, walks you through your own steps, and stops at the line. What tells you it worked is the same as before: the run names the items it is about to build and asks you to say go. If your project's CLAUDE.md still mentions `/next`, the next setup run tells you so and changes nothing; if `/next` still works for you, the plugin under your app is an older build — update it, fully quit and reopen the app, and the new name is there.
 
 ## What is MAP.md, and do I write it?
 

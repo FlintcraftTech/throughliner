@@ -34,7 +34,7 @@ work's own verification, or is it new scope?**
 a fix to a genuine bug in what this build was meant to deliver
     ->  FOLDS IN. Finish it, tick it — it's part of the build.
 new scope (a redesign, a new feature, a change to something that already worked)
-    ->  ROUTES OUT: a fresh /next, or a capture to Unprocessed if not urgent.
+    ->  ROUTES OUT: a fresh /build, or a capture to Unprocessed if not urgent.
         Even if it looks small. Even if the user raises it here.
 ```
 
@@ -46,7 +46,7 @@ Read the build working file. Is every item ticked — each build item done?
 
 ```
 yes             ->  proceed
-some unticked   ->  [PROMPT] ask: finish the rest (/next), or close partial?
+some unticked   ->  [PROMPT] ask: finish the rest (/build), or close partial?
                     Wait for the user's call.
 ```
 
@@ -90,7 +90,7 @@ Append each finding to Unprocessed, placed per the Captures placement rule
 ### 1.3 Spec check-against  [SILENT] when the run agrees with SPEC; [PROMPT] on a contradiction
 
 **The build session's /close checks the run's work against SPEC. It does not sync SPEC to
-match it.** Each item was already checked as it was built (next-build.md, step 4);
+match it.** Each item was already checked as it was built (build-work.md, step 4);
 this is the run-level look, over work that has accumulated.
 
 ```
@@ -101,7 +101,7 @@ run CONTRADICTS SPEC   ->  name the SPEC sentence and the work that contradicts
 ```
 
 **Where the build found that SPEC owes a sentence, it filed a capture and wrote
-nothing** (next-build.md, Scope management). Confirm the capture exists and say
+nothing** (build-work.md, Scope management). Confirm the capture exists and say
 in one line that SPEC lags that sentence until the next planning run. **Do
 not write it here:** /close is the same session as the build, so writing it
 now moves the self-certification later rather than crossing the session boundary
@@ -128,7 +128,7 @@ Silent when no built item carries a flag.
 
 ### 1.5 Reply to mail the run opened  [SILENT] when no mail arrived; [PROMPT] when it did
 
-Where /next's pre-flight opened a message that asked a question, a reply is owed:
+Where /build's pre-flight opened a message that asked a question, a reply is owed:
 draft it now and show it. A defect report is owed nothing by default. /close is the moment the user is reliably present, which
 mid-run is not — and a reply leaves the machine, so it goes out only on their
 explicit yes to the exact wording, with the draft put in front of them unprompted.
@@ -179,7 +179,7 @@ that the decision history could not be recovered. That is one of the consequence
 of an untracked queue, and it is stated rather than discovered.
 
 **One entry per built item is unconditional in COUNT, not in content**, however
-long the run. A work item's queue text is *consumed* when it builds — /next
+long the run. A work item's queue text is *consumed* when it builds — /build
 removes it — so after the build the LOG entry is the only surviving record of
 what the work was for. The count rule never forbids close.md's sibling-citation
 provision: where one decision settled several of the run's items, one entry
@@ -189,7 +189,7 @@ item's queue text, read back one at a time — so items whose text records the
 same settlement are the siblings.
 
 **Each item's depth field says which form its entry takes — read it, don't judge
-it.** The field is defined at its authoring site, next.md's per-item completion
+it.** The field is defined at its authoring site, build.md's per-item completion
 step, and is slug-bound: `Depth: <slug> — short|full`. Read each built item's
 depth line **by its slug** rather than by its position under a tick, and
 whatever the run's size — a twelve-item run can still contain the session's most
@@ -208,7 +208,7 @@ decaying back into an optional line.
 
 **Transcribe each item's tick form into its LOG entry, and announce every
 unconfirmed item at /close** [BRIEF]. The tick reads either `done, confirmed`
-or `done, UNCONFIRMED: <what still needs running>` (next-build.md). Carry
+or `done, UNCONFIRMED: <what still needs running>` (build-work.md). Carry
 whichever it says into the entry verbatim — transcribed, not composed — and where any item
 is unconfirmed, say so plainly in /close's narration, naming the item and what
 has not been run.
@@ -218,11 +218,11 @@ hold-back rule reads this field to decide whether dependent work may clear, so a
 entry that omits it silently weakens a safety rule one document away.
 
 **If a `[user]` item's entry was already started**, the walk-through opened it live
-and appended as it went (next.md). Continue that file rather than writing a fresh
+and appended as it went (build.md). Continue that file rather than writing a fresh
 one — the existing entry is the record, not a duplicate.
 
 **Close each `[user]` item on one of the three outcomes — done, deferred, or not
-reached — read off the run's own trail** (close.md's outcome block, and next.md's
+reached — read off the run's own trail** (close.md's outcome block, and build.md's
 walk-through branch, carry the definitions). **On the done arm, remove the item
 from Processed with the queue mover**, running first the observable check that
 close-plan.md's Completed `[user]` items step names; deferred and not reached

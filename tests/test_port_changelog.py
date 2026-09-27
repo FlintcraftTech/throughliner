@@ -78,7 +78,7 @@ def build_fixture(repo):
     run(repo, "config", "user.email", "fixture@example.invalid")
     run(repo, "config", "user.name", "Fixture")
 
-    write(repo, "plugin/throughliner/docs/next.md", "# next\n\noriginal\n")
+    write(repo, "plugin/throughliner/docs/build.md", "# next\n\noriginal\n")
     write(repo, "plugin/throughliner/hooks/session_start.py",
           "FORMAT_EPOCH = 4\n")
     write(repo, "plugin/throughliner/.claude-plugin/plugin.json",
@@ -86,7 +86,7 @@ def build_fixture(repo):
     write(repo, "resources/release-checklist.md", "# checklist\n\noriginal\n")
     base = commit(repo, "baseline")
 
-    write(repo, "plugin/throughliner/docs/next.md", "# next\n\nreworded\n")
+    write(repo, "plugin/throughliner/docs/build.md", "# next\n\nreworded\n")
     shipped = commit(repo, "reword the run's pre-flight")
 
     write(repo, "plugin/throughliner/hooks/session_start.py",
@@ -106,7 +106,7 @@ def build_fixture(repo):
     write(repo, "LOG/2026-01-01-reworded.md",
           "# %s — The run's pre-flight is reworded\n\n"
           "The pre-flight said the run was unattended, which it is not.\n\n"
-          "**Files touched:** `plugin/throughliner/docs/next.md`\n"
+          "**Files touched:** `plugin/throughliner/docs/build.md`\n"
           % shipped[:7])
     write(repo, "LOG/2026-01-02-epoch.md",
           "# %s — The format epoch moves to 5\n\n"
@@ -134,7 +134,7 @@ def main():
         check("the entry carries its record's behavioural summary",
               "The pre-flight said the run was unattended" in text, text)
         check("the entry names the shipped file it touched",
-              "plugin/throughliner/docs/next.md" in text, text)
+              "plugin/throughliner/docs/build.md" in text, text)
         check("the entry points at its record",
               "LOG/2026-01-01-reworded.md" in text, text)
         check("an epoch bump is flagged",
@@ -172,7 +172,7 @@ def main():
                 handle.write(
                     "# %s — The run's pre-flight is reworded\n\n"
                     "Written from the outer.\n\n"
-                    "**Files touched:** `plugin/throughliner/docs/next.md`\n"
+                    "**Files touched:** `plugin/throughliner/docs/build.md`\n"
                     % marks["shipped"][:7])
             with open(os.path.join(outer, "LOG", "2026-01-01-reworded-plan.md"),
                       "w", encoding="utf-8") as handle:

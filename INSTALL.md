@@ -120,7 +120,7 @@ An update is two commands, run in that order, then a full restart. First refresh
 
 Once the plugin is installed and the `/setup` command is recognised, tell the user:
 
-> You're set up. To start a real project, open its folder in Claude Code (**File > Open Folder**, or create a new empty folder for it first) and run `/setup` to scaffold the method docs. From there, `/plan` to scope your first batch and `/next` to start building.
+> You're set up. To start a real project, open its folder in Claude Code (**File > Open Folder**, or create a new empty folder for it first) and run `/setup` to scaffold the method docs. From there, `/plan` to scope your first batch and `/build` to start building.
 
 Do not run /setup for them in this chat — they need to do it in their own desktop app, in their own project folder.
 

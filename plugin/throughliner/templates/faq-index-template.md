@@ -8,7 +8,7 @@ Quick answers about how this project's workflow works. Each question links to a
   creates, and how a big project splits into parts later. [faq.md](faq.md)
 - **What actually happens in a `/plan` session?** — captures, what gets cleared
   to run, and what the opening checks for. [faq.md](faq.md)
-- **What does `/next` do?** — how a build run works, what stops it, and the
+- **What does `/build` do?** — how a build run works, what stops it, and the
   four work tags, the co-write among them. [faq.md](faq.md)
 - **Why does every session end with `/close`, and why start a fresh chat?** —
   what /close records, and why the context window makes a fresh chat the
@@ -129,6 +129,9 @@ Quick answers about how this project's workflow works. Each question links to a
 - **I typed /done and nothing happened — where did it go?** — the close
   command is `/close` now, what is unchanged, and what tells you it worked.
   [faq.md](faq.md)
+- **I typed /next and nothing happened — where did it go?** — the build
+  command is `/build` now (or `/throughliner:build`); same job, new name, and
+  what to do if the old one still works. [faq.md](faq.md)
 - **What is MAP.md, and do I write it?** — one line per folder and human-used
   file, written by setup and kept by the sessions, for Claude to read first.
   [faq.md](faq.md)

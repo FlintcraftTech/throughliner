@@ -6,7 +6,7 @@ Host-only dev artifact — not shipped in the plugin package.
 Run:  py tests/test_mcp_build_open.py
 
 Why this exists ([mcp-build-open-tool]): the run wrote its working file by
-hand from next.md's specimen, and two failures nothing caught before the run
+hand from build.md's specimen, and two failures nothing caught before the run
 started — a folder line, which covers no file beneath it, and a path outside
 the project — reached the safety check only at the first refused edit. The
 tool writes the build working file, or the freeform scope file, from fields,

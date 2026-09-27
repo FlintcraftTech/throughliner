@@ -489,6 +489,8 @@ the consumer's words — kept separately from the host register on purpose:
     "## Parts", "Parts block"    ->  MAP.md's lines say what each folder is
                                      for and which repository holds it; a
                                      part's own SPEC.md is read by nothing
+    "/next"                      ->  the command that builds the cleared work
+                                     is `/build`; what it does is unchanged
 ```
 
 **Also read the project's SPEC.md for a "Project docs" section** — the old
@@ -542,7 +544,7 @@ deleted, only relocated below the marker, and the narration names it.
 ```
 a leftover build working file    ->  an earlier build was interrupted: name it
     is present
-                                     and recommend resuming with /next. The
+                                     and recommend resuming with /build. The
                                      migration's new files get recorded when
                                      that build closes.
 otherwise                        ->  tell the user what was created or updated
@@ -1168,8 +1170,8 @@ the LOG entry /close writes at close.
 
 - **/setup** you've now run once; you won't run it again for this project.
 - From here, two commands carry the work: **/plan** to think and organise, and
-  **/next** to build the next thing on the list. Run /plan whenever planning is
-  needed, and /next once per item as you work down the queue.
+  **/build** to build the next thing on the list. Run /plan whenever planning is
+  needed, and /build once per item as you work down the queue.
 - However a session goes, end it with **/close**, which records what happened
   and saves it. After that the conversation can be cleared: **/clear** wipes
   the conversation on screen and touches none of the project's files, which is

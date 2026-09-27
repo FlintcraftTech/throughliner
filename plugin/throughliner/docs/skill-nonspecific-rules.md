@@ -9,7 +9,7 @@ note: >
 # Throughliner — skill-nonspecific rules
 
 **A rule belongs in this file only if it fires in all four skills — /setup, /plan,
-/next and /close — or in conversation with no skill running.** A rule that fires
+/build and /close — or in conversation with no skill running.** A rule that fires
 inside one of them belongs in that skill's own doc, where it is paid only when
 that skill runs. This test is what the filename states, and it is the admission
 control: check a candidate rule against the four, and against the no-skill case,
@@ -62,7 +62,7 @@ The work cycle. Every piece of work travels the same loop.
      as a capture first, then hold the item against it. Work
      held by a DATE releases itself — nothing is processed and
      nobody confirms it.
-  2. /next — build. Takes the top piece of ready work from above the
+  2. /build — build. Takes the top piece of ready work from above the
      readiness line and builds it, top-down, several back-to-back.
   3. /close — record what happened, and commit.
   4. Then the chat ends and a fresh one starts, carrying no memory of
@@ -83,7 +83,7 @@ The work cycle. Every piece of work travels the same loop.
 - Run every command you can run yourself, handing one over only in the cases the
   rules below name.
 - **Name the method's own command in words and ask the user to send it** —
-  `/setup`, `/plan`, `/next`, `/rescan` and `/close` are theirs to run, and the
+  `/setup`, `/plan`, `/build`, `/rescan` and `/close` are theirs to run, and the
   scope-lock refuses an attempt to invoke one. In words means the command's
   own name without the leading slash — say close, not "the closing step" — never a
   paraphrase or a descriptive phrase, and never inside a code fence, which
@@ -120,7 +120,7 @@ The work cycle. Every piece of work travels the same loop.
   is shaped; those lines say what a particular turn carries, which is what
   shaping alone cannot settle. Six turns have one: the item summary, the
   recommendation and the checkpoint in plan.md, the walkthrough step in
-  next.md, /close's Recommend-next turn in close.md, and the hand-back turn
+  build.md, /close's Recommend-next turn in close.md, and the hand-back turn
   in rescan.md.
 
   **Alternatives are delivered together and asked singly:** recommend one, and
@@ -876,13 +876,13 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 **Flavor marker** — an optional leading tag naming how the item is executed:
 
 ```
-(no tag)     ->  build   ->  /next routes to next-build.md
-[audit]      ->  review  ->  /next routes to next-build.md's audit section; findings become captures
-[user]       ->  walk-through; /next walks the user through it, never builds it
+(no tag)     ->  build   ->  /build routes to build-work.md
+[audit]      ->  review  ->  /build routes to build-work.md's audit section; findings become captures
+[user]       ->  walk-through; /build walks the user through it, never builds it
                  — or, where it carries a task line in place of a walkthrough,
-                 a task on the user's own list, which /next names as on the
+                 a task on the user's own list, which /build names as on the
                  list and passes
-[freeform]   ->  work done by hand rather than by /next; /next halts on it
+[freeform]   ->  work done by hand rather than by /build; /build halts on it
                  and never builds it
 [co-write]   ->  a text the user and Claude finish together, named with the
                  one file it lives in; done inside the run with the user
@@ -897,7 +897,7 @@ when the item moves into Processed.
 the rest, not a mode a session is in.**
 
 The `[user]` tag is governed by a **matched pair** of rules. (How a
-`[user]` item is then *run* is the walk-through lifecycle in next.md.)
+`[user]` item is then *run* is the walk-through lifecycle in build.md.)
 
 - **Reserve `[user]` for work Claude genuinely cannot perform or witness** — a
   check needing the user's eyes, a decision only they can make, a physical
@@ -914,7 +914,7 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   front of the user.
 
   **Before tagging `[user]`, run the CLI-tool check (Research and evidence
-  filing, below) — thorough at /plan's decision step, light at /next's
+  filing, below) — thorough at /plan's decision step, light at /build's
   pre-hand-off.**
 - **File every piece of genuine user work as a `[user]` item**, so it lives in
   the queue rather than in the conversation, which ends and takes it with it.
@@ -923,7 +923,7 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   is where the user's part gets its `[user]` item.
 - **Walk a `[user]` item through whenever it is reached, and learn completion
   from what the user volunteers.** That is its whole lifecycle in every skill —
-  /plan, /next and /close alike. Presenting one states how many other items are
+  /plan, /build and /close alike. Presenting one states how many other items are
   blocked on it, read off the queue's `Blocked by:` lines, and names them only
   where the user genuinely needs it, and says nothing where nothing is; a step
   whose record shows a hand-over for completion after a /close run and no
@@ -1029,7 +1029,7 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
     reads it back and responds on their word, and a draft of Claude's own goes
     only where they ask for one.
 
-The `[freeform]` tag names **work done by hand rather than by /next** — because it
+The `[freeform]` tag names **work done by hand rather than by /build** — because it
 is large, or because it characteristically cannot run inside a run. **Before its first
 edit, a freeform session working a queued item writes a scope file —
 `_freeform-<session-id>.md` in the project root, with a `Files:` section
@@ -1043,9 +1043,9 @@ surface are refused.
 **Most freeform work never passes through /plan at all.** The user and Claude do
 it by hand in a chat of its own, and /close reads the resulting edits as their
 expected work. Where one *is* filed as a queue item, it is ready work with nothing
-blocking it, so it sits **above** the cleared-to-run line and /next halts on it.
+blocking it, so it sits **above** the cleared-to-run line and /build halts on it.
 
-A repair to the machinery /next itself uses — the queue mover, the scope-lock, the
+A repair to the machinery /build itself uses — the queue mover, the scope-lock, the
 lint — is **one example** of work that cannot run inside a run, since running the
 broken mechanism to build past it is the failure. It is an example and not the
 definition.
@@ -1169,7 +1169,7 @@ Unprocessed                    a capture, not yet fully processed. Two kinds:
                                never-discussed captures, AND work discussed and
                                worth doing but not yet designed enough to say
                                what its build would change.
-Processed, above the line      a work item, kept and ready. /next picks work
+Processed, above the line      a work item, kept and ready. /build picks work
                                from here, except a `[freeform]` item, which it
                                halts on.
 Processed, below the line      a work item, designed and buildable, held by a
@@ -1270,9 +1270,9 @@ cleared returns its item to the bottom of Unprocessed. So every risk ends
 cleared, or its item is deleted. A marker always sits on an item carrying real
 remaining work, and it leaves only when that item does.
 
-/next builds a red-flagged item like any other; /close carries the cleared
+/build builds a red-flagged item like any other; /close carries the cleared
 flag into the LOG entry. **Backstop:** an uncleared flag in Processed should be
-impossible, so if /next or /close meets one, it stops and surfaces it.
+impossible, so if /build or /close meets one, it stops and surfaces it.
 
 ## The throughline
 
@@ -1361,7 +1361,7 @@ replaces it.
 
 **Build scope is the active work's described work** — the changes the work items
 call for, and nothing past them. That's the definition, enforced by judgment. Its
-mechanical approximation, and how /next derives it, is in next.md.
+mechanical approximation, and how /build derives it, is in build.md.
 
 **The scope-lock covers files, so work governed by the approval rules is
 everything that happens away from the filesystem** — a message that leaves the
@@ -1401,7 +1401,7 @@ CLAUDE.md vs memory =  "this project" vs "all projects"
   user frames something as a behaviour change ("make Claude always do X") that's
   really product truth ("the app does X"), name it as SPEC content and route it
   there.
-- **Executable work lives in the queue as work items.** /next runs the queue
+- **Executable work lives in the queue as work items.** /build runs the queue
   and only the queue. A task mixing Claude-work and
   user moments **decomposes into queue items**: build items for Claude's parts,
   `[user]` items for the user's.
@@ -1466,14 +1466,14 @@ a change that already carries its  ->  offered as a one-line pointer in the
 
 - **One build at a time.** While this chat's build working file exists, finish
   that build before starting another.
-- **One chat runs /plan and /next as many times as the work needs, one after
-  another.** A plan run and a next run are runs of a command inside a
+- **One chat runs /plan and /build as many times as the work needs, one after
+  another.** A plan run and a build run are runs of a command inside a
   chat, not the chat itself. Run whichever the user asks for, whatever ran
   before it in the chat. The boundary that binds is filing vs processing,
   stated in the rule above.
 
   **/close closes the CHAT**, once, when the chat is finished — it records
-  everything the chat did, across every plan run and next run in it.
+  everything the chat did, across every plan run and build run in it.
 
   **Work on a project from one chat at a time.** Where a second chat is open on the same project,
   say so and let the user close it or come back to it.

@@ -1154,7 +1154,7 @@ CYCLES_PREAMBLE = (
     "runs on request. A cycle names the artifact, the steps of one turn, its "
     "cadence — declared by the user or derived from the record, and the "
     "definition says which — and the observable that marks a completed turn; "
-    "the openings and closes of /plan and /next read this file, compute each "
+    "the openings and closes of /plan and /build read this file, compute each "
     "cycle's due-ness from its observable, and file one capture per due step. "
     "A checklist carries the word that fires it in place of a cadence and an "
     "observable, and runs when the user says that word. A chained cycle "
@@ -1736,7 +1736,7 @@ _MOVE_PROPERTIES = {
 # Slice six: the build run's per-item close as one checked call
 # ([mcp-build-tick-tool]). The tick, the slug-bound depth and rule-gate lines,
 # the index candidate and the changes entry go into the session's build
-# working file in the exact shapes next.md's specimen shows, and the item
+# working file in the exact shapes build.md's specimen shows, and the item
 # leaves Processed through reorder_queue.py's own delete in the same call.
 # --------------------------------------------------------------------------
 
@@ -2702,7 +2702,7 @@ TOOLS = [
             "UNCONFIRMED: <reason>`), the slug-bound `Depth:` line, the "
             "slug-bound `Rule gate:` line where the queue item carries one, "
             "the index-entry candidate and the `Changes:` entry into this "
-            "session's build working file in the exact shapes next.md's "
+            "session's build working file in the exact shapes build.md's "
             "specimen shows, then removes the item from Processed through "
             "the queue tool's own delete. Refuses at the door a slug not in "
             "the working file's item list or already ticked, a missing "
@@ -2769,7 +2769,7 @@ TOOLS = [
         "description":
             "Open a build run's working file (`_build-<session-id>.md`) or a "
             "freeform session's scope file (`_freeform-<session-id>.md`) from "
-            "fields, in the exact shape next.md's specimen shows, with every "
+            "fields, in the exact shape build.md's specimen shows, with every "
             "path checked at the door before anything exists. Refuses, "
             "echoing why: a working file of that kind already open for the "
             "session; for a build, a slug not in Processed, below the "

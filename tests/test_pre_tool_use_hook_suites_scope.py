@@ -96,7 +96,7 @@ def test_the_pairing_does_not_widen_beyond_the_testing_folder():
     d = tempfile.mkdtemp(prefix="hook-suites-scope-")
     for outside in ("README.md",
                     "workshop/resources/research/some-finding.md",
-                    "plugin/throughliner/docs/next.md"):
+                    "plugin/throughliner/docs/build.md"):
         check(f"a hook-touching run is still refused {outside}",
               not mod._is_build_file(os.path.join(d, outside), d, HOOK_FILES),
               "permitted outside the testing folder")

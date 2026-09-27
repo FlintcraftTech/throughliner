@@ -72,7 +72,7 @@ NO build working file          ->  close-plan.md, which carries all three
 ```
 
 **The freeform /close run is this third shape.** A freeform session is work done by
-hand rather than by /next, so most never pass through /plan at all and there is
+hand rather than by /build, so most never pass through /plan at all and there is
 no queue item and no build working file. **Read the edits as the user's expected
 work, and split them across separate log entries by judgment where they cover
 several distinct changes.**
@@ -251,7 +251,7 @@ Advisory: not needed — <why>
 - state conditions in the prose beneath it, rather than counts.
 
 ```
-write:      a /next run will halt on this item and build nothing past it
+write:      a /build run will halt on this item and build nothing past it
 never:      it sits ninth, with eight items ahead of it
 ```
 
@@ -575,7 +575,7 @@ same step. Machinery — scripts, configuration, anything wired to other files
 **Shipped-slug cross-check (work-item closes).** When this session shipped work
 items, cross-check each shipped slug named in this session's LOG entries against
 Processed and confirm it's been removed. A work item is normally removed when
-/next locks scope, so the slug should already be gone — this is the safety net. If
+/build locks scope, so the slug should already be gone — this is the safety net. If
 a shipped slug is still sitting in Processed as active work, surface it in one line
 and remove it (or halt and ask) before committing.
 
@@ -638,7 +638,7 @@ ONE work item shipped        ->  the message IS that entry:
                                  # show it, stating that identity plainly
 
 SEVERAL work items shipped   ->  title = a one-line summary of what the run
-(a multi-item /next run)                 shipped across all its items
+(a multi-item /build run)                 shipped across all its items
                                  body  = each shipped item's one-liner, one
                                          per line
                                  # this roll-up IS genuinely new text — show
@@ -795,7 +795,7 @@ as a hedge.
 2. work sits ABOVE the readiness marker
        ->  name the next cleared item and how much work is waiting to be
            sorted (counted as the narration above defines), and recommend a
-           build next: running the next command in a fresh session is where
+           build next: running the build command in a fresh session is where
            it runs. The command is named in words, as the communication rule
            defines it, mid-sentence, with no command string at the message's
            end
@@ -847,7 +847,7 @@ queue write — the state server's checkpoint counts where the server is
 registered, `queue_digest.py` otherwise — and its count of cleared items ahead
 of each `Runs alone` item is the trigger: the run-alone arm fires only where
 that count is zero, and otherwise the closing message says how many cleared
-items sit ahead of the marked item and that its run comes after them. /next
+items sit ahead of the marked item and that its run comes after them. /build
 halts on a freeform item and never builds it, and ends the run before a
 run-alone item, building it in a run of its own; say plainly which it is and
 that it needs a session of its own.
@@ -868,7 +868,7 @@ its recipe lives. When we're finished, the close command records and commits it.
 ```
 
 ```
-Run the next command. The top cleared item is "<heading>" [<slug>], marked
+Run the build command. The top cleared item is "<heading>" [<slug>], marked
 Runs alone, so this run builds that item and nothing else — the run ends after
 it. Its entry is in QUEUE.md (in this project's root folder), at the top of the
 cleared-to-run region of the Processed section; read that entry first — it
@@ -895,7 +895,7 @@ flavor deltas:
                       and the ladder apply (steps 2–3).
     plan/setup    ->  a fresh setup session whose only work item is the rough
                       first build item recommends /plan to scope it, NEVER
-                      /next — the interview wrote that item deliberately
+                      /build — the interview wrote that item deliberately
                       unscoped. Otherwise the shared scan + ladder apply.
 ```
 

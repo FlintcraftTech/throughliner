@@ -41,11 +41,11 @@ rather than blending it in, so what was recorded at /close stays visible as
 what /close recorded.
 
 Filing is capture-making and is open to every skill. Routing and building are
-/plan's and /next's, and this skill stays on the filing side of that line.
+/plan's and /build's, and this skill stays on the filing side of that line.
 
 **It does not build, and the reason is worth keeping.** The complaint that
 produced this skill is a real one: a finding about the machinery being used right
-now waits for a /plan to process it, a /next to build it, and a reinstall before
+now waits for a /plan to process it, a /build to build it, and a reinstall before
 it is live. Building on the spot would not answer that, because the installed
 plugin is a frozen copy — a fix made now does not reach the chat that made it
 until the plugin is reinstalled and the app restarted. And a skill that could

@@ -1,12 +1,12 @@
 ---
-name: next-build
+name: build-work
 docset: current
-note: Execution procedure for build-flavor work items. Reached from next.md.
+note: Execution procedure for build-flavor work items. Reached from build.md.
 ---
 
 # Build procedure
 
-next.md routes here for each build item (a work item with no flavor tag).
+build.md routes here for each build item (a work item with no flavor tag).
 
 ## Execute  [SILENT]
 
@@ -55,13 +55,13 @@ worked — routes out via Scope management below.
 **What this item's instructions are.** The item's own text in QUEUE.md, read
 whole: which files change, what changes inside them, the observation that shows
 it landed, and any option already refused. An item that does not say what
-changes inside the files it names is underspecified and halts, per next.md's
+changes inside the files it names is underspecified and halts, per build.md's
 self-scoping step.
 
 **Read the item's reasoning to aim the work, and write the action rather than
 the reasoning.** Why the work is worth doing tells you what the change is for;
 it belongs in what this session records, not in the documents this session
-edits — unless the item specifically instructs otherwise. next.md's opening
+edits — unless the item specifically instructs otherwise. build.md's opening
 carries the full statement.
 
 **Treat a recorded refusal as settled.** It names an option already rejected and
@@ -100,7 +100,7 @@ built, NOT confirmed     ->  - [x] item description — done, UNCONFIRMED:
 ```
 
 **Step 4 checks the work against SPEC and leaves SPEC unedited.** SPEC was read
-once at run start (next.md's pre-flight), so this costs almost nothing. **Silent
+once at run start (build.md's pre-flight), so this costs almost nothing. **Silent
 unless it finds something** — an unattended run narrates no passing check.
 
 ```
@@ -126,7 +126,7 @@ failed into a `head` that succeeded reports a pass.
 ```
 a check Claude CAN run   ->  just building
 a check needing the user ->  a [user] capture, which /plan would have kept as
-                             its own item; /next walks the user through it
+                             its own item; /build walks the user through it
 a check Claude can run   ->  it stays OUTSTANDING in the run's working file.
   but a circumstance of      Retry it before /close; if the circumstance
   the moment blocks          still hasn't cleared, /close files it as a
@@ -167,7 +167,7 @@ together stays in a single file — splitting it would make the AI's job harder.
 
 Stay within the active run's described work. Growing past it needs approval first.
 
-**The item's `Changes:` entry is written at the tick, per next.md's per-item
+**The item's `Changes:` entry is written at the tick, per build.md's per-item
 completion step.** The Changes shape:
 
 ```
@@ -177,7 +177,7 @@ Changes:
 ```
 
 **Where the project's own instructions require a rule-gate disposition, it is
-transcribed from the item, never composed here** — see next.md's per-item
+transcribed from the item, never composed here** — see build.md's per-item
 completion step, which also says what to do when the item carries none.
 
 ## Scope management
@@ -323,7 +323,7 @@ user's whole device, so using it silently is a consent surprise.
 
 ### Going in circles  [PROMPT]
 
-/next is unattended in practice — it works faster than the user can follow — so an
+/build is unattended in practice — it works faster than the user can follow — so an
 item that silently thrashes wastes the run with no one watching.
 
 ```
@@ -363,7 +363,7 @@ abort and requeue ->  if the item is unsalvageable:
 The reshape-direction trigger is mechanical: *abort + item returned + a reshape
 direction or learning the queue needs in conversation = capture needed.* Unrouted,
 it survives only in the LOG entry, which /plan doesn't read at planning time, so
-the item re-presents unchanged at the next /next.
+the item re-presents unchanged at the next /build.
 
 the build working file stays in place so /close's router still fires the build's close-out. The
 differences: the LOG entry describes the attempt and why it was aborted, and the
@@ -386,7 +386,7 @@ Either way, pair it with the fresh-session handoff offer.
 
 ## Completion  [BRIEF, PROMPT]
 
-When this item is done, next.md moves to the run's next. When the whole run is
+When this item is done, build.md moves to the run's next. When the whole run is
 built (every Claude-work item ticked, any `[user]` item walked through):
 
 **What the completion turn carries.** That the build is complete; what remains
@@ -405,7 +405,7 @@ paths.
 
 ## Audit procedure — for an `[audit]` item
 
-next.md routes here for each `[audit]` item. Nothing above applies to one; this
+build.md routes here for each `[audit]` item. Nothing above applies to one; this
 section is its whole procedure.
 
 **The output contract defines an audit:** findings route to Unprocessed so /plan
@@ -415,7 +415,7 @@ audit reads.**
 What gets read varies — procedure docs, the user's spec, code, UI flows, workflow
 output. The shape is the same regardless: **read many, propose many.**
 
-Audit items contribute nothing to the run's `Files:` list — settled at next.md's
+Audit items contribute nothing to the run's `Files:` list — settled at build.md's
 self-scoping step.
 
 ### If the audit item directs a write into a document, stop and ask  [PROMPT]
@@ -487,7 +487,7 @@ to reject one, which happens at /plan.
 
 ### Close  [BRIEF, PROMPT]
 
-When the audit item is done, next.md moves to the run's next item. When the whole
+When the audit item is done, build.md moves to the run's next item. When the whole
 run is done, tell the user how many findings were filed, and say: "The done
 command records this and commits — or keep reviewing."
 

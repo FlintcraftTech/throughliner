@@ -5,8 +5,8 @@ SessionStart hook — detect project state, orient Claude.
 Three states:
   1. Not adopted (no SPEC.md) → suggest /setup.
   2. Adopted, this session's build working file exists → active build,
-     offer resume with /next.
-  3. Adopted, no active build → ready for /plan or /next.
+     offer resume with /build.
+  3. Adopted, no active build → ready for /plan or /build.
 """
 
 import datetime
@@ -35,7 +35,7 @@ import sys
 # exists — /setup re-scaffolds and loads migrate-checklist.md — so nothing was
 # missing except a project ever finding out it needed it. Left to the user
 # noticing drift, a project silently on an old format spends every /plan and
-# /next reasoning over stale scaffolding, and the person least able to spot that
+# /build reasoning over stale scaffolding, and the person least able to spot that
 # is the non-coder the method is for.
 #
 # Detection by structure ("does QUEUE.md LOOK two-section?") was rejected: it
@@ -1231,7 +1231,7 @@ def _queue_dependency_facts(queue_path):
     Returns (cleared, held, blockers_in_unprocessed, waiting, dead,
     date_held, date_passed, waiting_to_be_planned):
       cleared  — items in Processed above the cleared-to-run marker; the work
-                 /next can pick up right now.
+                 /build can pick up right now.
       held     — items in Processed below it; each names a blocker.
       blockers_in_unprocessed
                — how many distinct slugs those held items are blocked by that
@@ -1275,7 +1275,7 @@ def _queue_dependency_facts(queue_path):
     read, so the marginal cost is negligible.
 
     The counts are facts only. /plan reads them and this hook runs for every
-    session — a hook telling a /next run what to process would be narrating
+    session — a hook telling a /build run what to process would be narrating
     something that does not apply to it.
 
     Never raises: any error returns None and the caller stays silent.
@@ -1760,7 +1760,7 @@ def _parse_chain(text):
     """The checklists a Chain: field names, each with its lead in days.
 
     Returns a list of (checklist_slug, lead_days_or_None). An item naming no
-    checklist (a step that is the ordinary /plan and /next) is skipped; an item
+    checklist (a step that is the ordinary /plan and /build) is skipped; an item
     naming a checklist but no lead travels with None, so the report can say the
     lead is not stated rather than guessing one.
     """
@@ -1947,7 +1947,7 @@ def leftover_working_files(cwd: str, session_id: str) -> list:
     and its unrecorded work would be lost.
 
     Surfaced, never deleted: the file may hold the only record of what a
-    crashed session did, which is exactly why /next writes progress to it.
+    crashed session did, which is exactly why /build writes progress to it.
     """
     found = []
     try:
@@ -2441,7 +2441,7 @@ def main() -> int:
             "files were set up under an older version of the workflow and need "
             "bringing up to date, and that running /setup will do it — it "
             "migrates the existing documents rather than replacing them, and "
-            "their work is not lost. Do NOT run /plan or /next first: both would "
+            "their work is not lost. Do NOT run /plan or /build first: both would "
             "spend the session reasoning over documents in a shape this version "
             "no longer reads correctly, and would report a confidently wrong "
             "picture rather than an error. If the user tells you to carry on "
@@ -2674,7 +2674,7 @@ def main() -> int:
             context_parts.append(
                 "[Throughliner] Cycles on file (%d): %s. Facts, not verdicts — "
                 "the hook reports what each definition says and what its "
-                "observable reads; /plan, /next and /close compute due-ness from "
+                "observable reads; /plan, /build and /close compute due-ness from "
                 "the observable and file one capture per due step."
                 % (len(cycles), "; ".join(described))
             )
@@ -2979,7 +2979,7 @@ def main() -> int:
         context_parts.append(
             "PROJECT MISSING NEWER SETTINGS — this project was set up before the "
             "method added one or more settings it now expects. Bring it up to date "
-            "now, before /next or /plan, adding only what's missing:"
+            "now, before /build or /plan, adding only what's missing:"
         )
         for instruction in missing_settings:
             context_parts.append("- " + instruction)
@@ -2989,7 +2989,7 @@ def main() -> int:
         context_parts.append(
             "ACTIVE BUILD in progress — this session's build working file "
             f"({os.path.basename(build_path)}) exists. "
-            "Run /next to resume, or /close if the work is complete. "
+            "Run /build to resume, or /close if the work is complete. "
             "A planning session (/plan) may run in a separate chat alongside this build — "
             "if this chat was opened to plan, that is allowed; don't refuse it or insist on "
             "resuming or closing the build first."
@@ -2998,7 +2998,7 @@ def main() -> int:
         context_parts.append("")
         context_parts.append(
             "Ready. "
-            "Run /throughliner:plan to manage the queue, or /throughliner:next "
+            "Run /throughliner:plan to manage the queue, or /throughliner:build "
             "to start the top work item.\n"
             # The qualified form, unconditionally. The plugin's skills are
             # namespaced, so on some installs the bare `/plan` resolves to
@@ -3014,7 +3014,7 @@ def main() -> int:
             # it works is a harness fact nobody has measured and the qualified
             # form is correct in every project either way. Sidesteps the
             # unverified question rather than waiting on it.
-            "(The bare /plan and /next work on some installs and not others — "
+            "(The bare /plan and /build work on some installs and not others — "
             "the longer names always work.)"
         )
 

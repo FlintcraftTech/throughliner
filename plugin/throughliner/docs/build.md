@@ -1,17 +1,17 @@
 ---
-name: next
+name: build
 docset: current
 note: >
-  /next procedure. This is the method's one docset — light, for the 5-series,
+  /build procedure. This is the method's one docset — light, for the 5-series,
   originally authored by subtraction from the now-retired heavy docset.
   Register: structure in typed blocks, everything else in prose, tags inline.
 ---
 
-# /next procedure
+# /build procedure
 
-/next is where recorded intent becomes the built thing — the run executes what
+/build is where recorded intent becomes the built thing — the run executes what
 the user already agreed, exactly as agreed, which is why it need not stop to
-ask. You are building the cleared work from the queue. /next works the Processed
+ask. You are building the cleared work from the queue. /build works the Processed
 section top-down — building Claude-work items, walking the user through user-work
 — scope-locked to the files that work touches.
 
@@ -33,7 +33,7 @@ FALSE, and no longer claimed anywhere:
         step at a time, then carries on
       - a `[co-write]` item, which the run pauses at to work with the user
         as the co-authored-draft loop on its one file, then carries on
-      - a `[freeform]` item, which /next halts on and never builds
+      - a `[freeform]` item, which /build halts on and never builds
       - /close, which is the user's command to run — so a run left alone
         finishes its builds and sits there uncommitted
 ```
@@ -49,7 +49,7 @@ no-blocking-ask rules are all sound and are not reopened.
 user cannot capture anything. That is a real cost of the current shape rather than
 a wording problem, and it is answered by concurrency work rather than here.
 
-## What /next runs on
+## What /build runs on
 
 **A run reads SPEC, then the queue's cleared region whole** — each item's full
 text, its reasoning inline, exactly as it stands in QUEUE.md. Nothing is
@@ -75,26 +75,26 @@ is this stated purpose rather than the prose being absent.
 (Step 3), which is unchanged.
 
 QUEUE.md holds two sections: **Unprocessed** (captured, not yet processed)
-and **Processed** (agreed, ready). /next builds only from Processed, and only from
+and **Processed** (agreed, ready). /build builds only from Processed, and only from
 above the cleared-to-run marker.
 
 ```
 run       = Processed[ top .. `--- Cleared to run above this line ---` )
 flavor(item):
-    (no tag)    ->  build   ->  next-build.md
-    [audit]     ->  review  ->  next-build.md's audit section
+    (no tag)    ->  build   ->  build-work.md
+    [audit]     ->  review  ->  build-work.md's audit section
     [user]      ->  the run pauses at it to walk the user through it, then
                     carries on; never built
     [co-write]  ->  the run pauses at it to work it with the user as the
                     co-authored-draft loop in skill-nonspecific-rules.md, on
                     the one file it names, then carries on
-    [freeform]  ->  /next HALTS ON it — needs a session of its own; never
+    [freeform]  ->  /build HALTS ON it — needs a session of its own; never
                     built here
 ```
 
 **Pick every item from above the marker, and only from there.** This is a
 standing rule, not a branch condition — it holds at every step, on every path
-through /next.
+through /build.
 
 **A `Runs alone` line on an item is the run's second bound.** Walking the
 cleared region top-down:
@@ -159,7 +159,7 @@ habit, not a rule with machinery behind it.
 **Read the root SPEC.md once here, at run start** — not per item, and no other
 spec. It is the product truth each item is built against, and a build that
 never reads it cannot be checked against it. Reading it once per run is what
-makes the per-item check in next-build.md cost almost nothing.
+makes the per-item check in build-work.md cost almost nothing.
 
 Then read QUEUE.md's cleared region top-down, each item whole. That is the run.
 
@@ -230,7 +230,7 @@ presented. That ordering is the point: mail can block work, so it is read while
 the run can still change rather than after scope is locked.
 
 ```
-/next OPENS, FILES and DEFERS. It never processes.
+/build OPENS, FILES and DEFERS. It never processes.
     anything a message raises   ->  a capture in Unprocessed
     a message bearing on an     ->  name it at the present-the-run beat and
       item in the cleared           recommend dropping that item FROM THIS
@@ -251,7 +251,7 @@ Put the run in front of the user and invite a last-glance change **in the same
 message** — presenting and offering the off-ramp are one beat, not two.
 
 **Frame the pause as what it is for: a last chance to change scope or reorder**
-before /next runs unattended-in-practice. Invoking /next already signalled
+before /build runs unattended-in-practice. Invoking /build already signalled
 readiness, so a permission-to-start question asks for something already given.
 
 ```
@@ -323,7 +323,7 @@ denies the rest, as a backstop. **The two layers are not the same thing** — a 
 can stay inside every listed file and still do more than the work describes. The
 described work is the test; the `Files:` list is the guardrail.
 
-/next **self-scopes**: it reads the Claude-work items it's about to build and
+/build **self-scopes**: it reads the Claude-work items it's about to build and
 derives the scope from them. Work outside the described work is appended to
 Unprocessed, not folded in.
 
@@ -455,7 +455,7 @@ progress format:
     audit item  ->  - [x] Finding description — captured | dropped
 ```
 
-The confirmed/UNCONFIRMED wording belongs to next-build.md's per-item completion
+The confirmed/UNCONFIRMED wording belongs to build-work.md's per-item completion
 step, which says how to choose between the two forms; this block shows the shape
 so a run writing the file has the correct specimen in front of it.
 
@@ -475,8 +475,8 @@ already writes it there by slug — and nothing new is written on the item. This
 is what lets a `[user]` item be walked through without terminating the run.
 
 ```
-build item (no tag)  ->  read and follow next-build.md
-[audit] item         ->  read and follow next-build.md's audit section
+build item (no tag)  ->  read and follow build-work.md
+[audit] item         ->  read and follow build-work.md's audit section
 ```
 
 Between build items, keep going autonomously — the user confirmed the whole run
@@ -554,9 +554,9 @@ How a `[user]` item is run and closed. (What earns the tag is the matched pair i
 skill-nonspecific-rules.md, Captures; the record check before walking — read any
 LOG records under the item's slug and resume after what they show done — is that
 file's lifecycle bullet.) Without the back half, a finished `[user]`
-item strands in Processed and the next /next presents it again as if unbuilt.
+item strands in Processed and the next /build presents it again as if unbuilt.
 
-- **/next leads with the walk-through and drives it live.** Name what's theirs to
+- **/build leads with the walk-through and drives it live.** Name what's theirs to
   do, run whatever parts you can, give the **first** concrete step, and **wait**.
   One step at a time. This is a live drive, not an offer — you walk *beside* the
   user, you don't step back and hand off.
@@ -743,7 +743,7 @@ close command, named in words mid-sentence, records it and commits.
 **Copy discipline when the run is all `[user]` items.** Open with the item
 itself: say plainly that the next ready item is a step for the user to run, say
 why it's theirs, and start walking them through it. The silent active-build
-check stays silent, and "there's nothing for me to build" stays unsaid — /next
+check stays silent, and "there's nothing for me to build" stays unsaid — /build
 helps either way.
 
 ## Ending before scope-lock
@@ -756,7 +756,7 @@ mechanical: *run ending + no scope locked + a reshape direction or learning
 the queue needs in conversation = capture needed.* Append it naming the item's
 slug; write it, then report what was filed. Unrouted, the direction survives only
 in the LOG entry, which /plan doesn't read at planning time, so the work
-re-presents unchanged at the next /next. Nothing reshape-shaped in conversation →
+re-presents unchanged at the next /build. Nothing reshape-shaped in conversation →
 skip, no output.
 
 **2. Name /close as the next step** [BRIEF]. Whatever the session did before

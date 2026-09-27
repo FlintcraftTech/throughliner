@@ -71,7 +71,7 @@ WORK_SECTIONS = ("Processed", "Unprocessed")
 
 VALID_FLAG_STATES = {"cleared", "uncleared"}
 
-# The single boundary /next runs on, and the shape of any structural
+# The single boundary /build runs on, and the shape of any structural
 # `--- ... ---` line that legitimately sits between work items.
 CLEARED_MARKER = "--- Cleared to run above this line ---"
 STRUCTURAL_LINE = re.compile(r"^---\s.*---$")
@@ -422,11 +422,11 @@ def _check_red_flag_states(annotated, warnings):
 def _check_readiness_marker(annotated, blocks, warnings):
     """Check 4: exactly one readiness marker, in Processed, when work exists.
 
-    The marker is the single boundary /next runs on, so its absence or
+    The marker is the single boundary /build runs on, so its absence or
     duplication is a structural fault even though every item validates.
     Flagged, not repaired — advisory like the rest. The dangerous half of
     the failure (a missing marker silently clearing everything) is closed
-    read-side in next.md, which now treats no-marker as nothing-cleared;
+    read-side in build.md, which now treats no-marker as nothing-cleared;
     this check is what makes the fault visible at the moment of the write.
     """
     marker_lines = [
@@ -440,14 +440,14 @@ def _check_readiness_marker(annotated, blocks, warnings):
         lines_shown = ", ".join(str(i + 1) for i, _s in marker_lines)
         warnings.append(
             f"lines {lines_shown}: the cleared-to-run marker appears "
-            f"{len(marker_lines)} times — there must be exactly one; /next "
+            f"{len(marker_lines)} times — there must be exactly one; /build "
             "runs on a single boundary and two markers make the run bound "
             "ambiguous."
         )
     elif not marker_lines and processed_has_items:
         warnings.append(
             "Processed holds work items but the '--- Cleared to run above "
-            "this line ---' marker is missing — /next treats a missing "
+            "this line ---' marker is missing — /build treats a missing "
             "marker as NOTHING cleared, so no work will run until the "
             "marker is restored."
         )
@@ -455,7 +455,7 @@ def _check_readiness_marker(annotated, blocks, warnings):
         if h2 == "Unprocessed":
             warnings.append(
                 f"line {i + 1}: the cleared-to-run marker sits in Unprocessed "
-                "— it belongs in Processed, where it bounds what /next may "
+                "— it belongs in Processed, where it bounds what /build may "
                 "run."
             )
 
@@ -896,7 +896,7 @@ def _project_has_rule_gate(root: str) -> bool:
 def _check_cleared_gate_disposition(annotated, blocks, warnings):
     """Check 10: a cleared rule-touching item carries a gate disposition.
 
-    The gate's site is planning's decision step, and /next only transcribes —
+    The gate's site is planning's decision step, and /build only transcribes —
     so an item that names a gate-trigger path and clears with no `Rule gate:`
     line sends a build into a halt the decision step should have prevented.
     Scoped to cleared items only: held work and captures are not yet through
