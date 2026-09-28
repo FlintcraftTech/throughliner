@@ -138,3 +138,6 @@ Quick answers about how this project's workflow works. Each question links to a
 - **Can my steps go onto the task list I already keep?** — the `Task list:`
   line, the checkbox line a kept task gets, ticking it in your notes app, and
   the one thing Claude never does to the file. [faq.md](faq.md)
+- **What is the difference between an item being kept and being cleared?** —
+  kept is the decision at planning, cleared is the position above the line, and
+  a lift is how a held item becomes cleared later. [faq.md](faq.md)
