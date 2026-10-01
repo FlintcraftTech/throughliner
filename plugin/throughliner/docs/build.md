@@ -333,7 +333,9 @@ Once the user confirms:
 instructions name. An item that does not say what changes inside the files it
 names is underspecified below. `[audit]` items name no files —
 an audit reads and reports — so a run of only audit items gets an empty Files
-list, locking the session to method docs.
+list, locking the session to method docs; the audit's slug still goes in the
+item list passed to `build_open`, so `build_tick` closes it like any
+Claude-work item.
 
 Two situations must not be conflated:
 

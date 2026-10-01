@@ -55,6 +55,19 @@ cols = line.split("\t")
 check("the opened-version line has the log's six columns",
       len(cols) == 6 and cols[1] == "SessionStart" and cols[3] == "session opened"
       and cols[4] == "version 1.24.0-test1" and cols[5] == "this-session", line)
+# [setup-close-leaves-freeform-scope-file]: a scope file from another session
+# is named as a leftover working file; this session's own is not.
+for name in ("_freeform-old-session.md", "_freeform-this-session.md"):
+    with open(os.path.join(d, name), "w", encoding="utf-8") as f:
+        f.write("# Freeform scope\n\nFiles:\n- MAP.md\n")
+left = hook.leftover_working_files(d, "this-session")
+names = [(n, k) for n, k, _ in left]
+check("another session's scope file is a leftover of kind freeform scope",
+      ("_freeform-old-session.md", "freeform scope") in names, repr(names))
+check("this session's scope file is not a leftover",
+      all(n != "_freeform-this-session.md" for n, _ in names), repr(names))
+check("the scope files are still there — nothing deleted",
+      os.path.isfile(os.path.join(d, "_freeform-old-session.md")))
 shutil.rmtree(d, ignore_errors=True)
 
 print(f"\n{len(failures)} failure(s)" if failures else "\nall passed")

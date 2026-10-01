@@ -255,9 +255,100 @@ def test_a_chain_is_computed_for_each_weekday():
     shutil.rmtree(d, ignore_errors=True)
 
 
+def test_a_chain_step_carries_its_task_line():
+    """A step whose own definition carries `Task line:` has that text on the
+    chain, keyed by the checklist's slug; a step with none is absent from the
+    dict rather than given an invented line."""
+    import datetime
+    doc = CHAINED.replace(
+        '## Release [release]\nTrigger: the word "release".',
+        '## Release [release]\nTrigger: the word "release".\n\n'
+        '**Task line:** Run the plan command and say yes when it asks '
+        'whether to release the beta\n')
+    d = project(doc)
+    chains = hook.cycle_chains(d, datetime.date(2026, 9, 3))
+    shutil.rmtree(d, ignore_errors=True)
+    check("the chain is still read with the field present",
+          chains is not None and len(chains) == 1, repr(chains))
+    if chains:
+        task_lines = chains[0].get("task_lines") or {}
+        check("the release step carries its task line",
+              task_lines.get("release") == "Run the plan command and say yes "
+              "when it asks whether to release the beta", repr(task_lines))
+        check("a step with no field is not in the dict",
+              "maintenance-sweep" not in task_lines and "rezip" not in task_lines,
+              repr(task_lines))
+
+
+DATED = """# CYCLES
+
+## Cohort delivery [cohort]
+
+**Cadence:** per cohort, declared by the user 2026-09-26.
+
+**Anchor:** 2026-11-03, the cohort's first day.
+
+**Chain:** the calendar around one cohort:
+1. **Go or no-go [go-no-go]** — two days before the anchor.
+2. **Set-up [set-up]** — the anchor.
+3. **Wrap [wrap]** — the day after the anchor.
+4. **Delete recordings [delete-recordings]** — 7 days after the anchor.
+
+**Observable:** the wrap record in LOG/.
+
+## Go or no-go [go-no-go]
+Trigger: its chain date.
+
+## Set-up [set-up]
+Trigger: its chain date.
+
+## Wrap [wrap]
+Trigger: its chain date.
+
+## Delete recordings [delete-recordings]
+Trigger: its chain date.
+"""
+
+
+def test_a_date_anchor_with_forward_leads_and_the_spent_state():
+    """[event-anchored-checklist-chain]: a chain hung on one booked date
+    computes its steps from that date, forward leads land after it, and once
+    the last step's date has passed the chain is spent and files nothing."""
+    import datetime
+    d = project(DATED)
+    chains = hook.cycle_chains(d, datetime.date(2026, 10, 1))
+    check("the date-anchored chain is read", chains is not None
+          and len(chains) == 1, repr(chains))
+    if chains:
+        chain = chains[0]
+        due = dict(chain["checklists"])
+        check("the anchor date is the booked date",
+              chain["anchor_date"] == "2026-11-03", repr(chain))
+        check("two days before lands before the anchor",
+              due.get("go-no-go") == "2026-11-01", repr(due))
+        check("the day after lands the day after",
+              due.get("wrap") == "2026-11-04", repr(due))
+        check("seven days after lands a week on",
+              due.get("delete-recordings") == "2026-11-10", repr(due))
+        check("ahead of the event the chain is not spent",
+              chain.get("spent") is False, repr(chain))
+    on_wrap = hook.checklists_due_on(d, datetime.date(2026, 11, 4))
+    check("the wrap is due on its day",
+          on_wrap == [("cohort", "wrap")], repr(on_wrap))
+    later = hook.cycle_chains(d, datetime.date(2026, 11, 20))
+    check("past the last step the chain reports spent",
+          later and later[0].get("spent") is True, repr(later))
+    check("a spent chain has no step due, even on a matching date",
+          hook.checklists_due_on(d, datetime.date(2026, 11, 20)) == [],
+          repr(later))
+    shutil.rmtree(d, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("test_session_start_cycles_facts.py")
     test_a_chain_is_computed_for_each_weekday()
+    test_a_chain_step_carries_its_task_line()
+    test_a_date_anchor_with_forward_leads_and_the_spent_state()
     test_a_doc_produces_a_definition_per_cycle()
     test_a_wrapped_field_reads_whole()
     test_a_blank_line_ends_a_field()

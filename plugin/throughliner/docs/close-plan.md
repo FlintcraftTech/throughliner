@@ -105,7 +105,8 @@ check's own log rather than from the scope file alone:** `.throughliner/pre-tool
 holds one line per decision, and every line whose branch reads `freeform scope
 file` and whose last column is this session's id is a path the door admitted.
 Name each such path in the entry under handmade work, one line per path; where
-the log holds none, say nothing.
+the log holds none, say nothing. The session-file cleanup step then deletes the
+scope file.
 
 **2. Decide LOG granularity by judgment.**
 

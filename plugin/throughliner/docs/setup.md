@@ -146,7 +146,8 @@ tells GitHub is that this machine asked for the plugin's release list.
 Case A  no content            the folder is empty or nearly so. Fresh start.
 Case B  content, no SPEC.md   the user's own files exist but no method docs.
                               Either a true fresh start OR a MIGRATION.
-Case C  already set up        SPEC.md exists.
+Case C  already set up,       SPEC.md exists.
+        bring it up to date
 Case D  inside another        no SPEC.md here, but walking up the folders
         project               finds one. Either a POP-OUT or a new project
                               made here — setup does not know which; see
@@ -338,15 +339,24 @@ SPEC.md has no `## Goals` heading
                             in one line, and write the answer as the section,
                             add-only; "none" writes nothing
 CLAUDE.md has no `Task list:` line
-                        ->  ask once, in one line, whether the user keeps one
-                            markdown task list for every project in their
-                            notes app, and for its full path; write the answer
-                            as `Task list: <absolute path>` in the managed
-                            block's Task list section. A relative path is
-                            refused, since the list sits outside the project
-                            and the safety check reads the line for the one
-                            file it permits there; "none" writes nothing and
-                            is not asked again
+                        ->  ask once, in one line, in this shape: "Next: do
+                            you already have the Throughliner unified to-do
+                            list? If so please share the file's path.
+                            Otherwise I can tell you more about how it
+                            works." The ask names the list as the one
+                            Throughliner appends the user's own steps to as
+                            checkbox lines, asks for its full path where one
+                            exists, and offers to say more otherwise — the
+                            list is read best in Obsidian with the Tasks plugin,
+                            whose fields the task line uses, and any markdown
+                            editor works; write
+                            the answer as `Task list: <absolute path>` in the
+                            managed block's Task list section, or at the end
+                            of the file where CLAUDE.md carries no managed
+                            block. A relative path is refused, since the list
+                            sits outside the project and the safety check
+                            reads the line for the one file it permits there;
+                            "none" writes nothing and is not asked again
 ```
 
 **Where the project has INBOX files already in git history, say so plainly.**
@@ -402,9 +412,11 @@ repository each folder sits in — product in the inner, process in the outer,
 the looser split stated where the inner will never be public. Nothing is
 deleted. On the person's yes, plan the reorganisation with them file by file
 and write each folder's map line as the scaffold's structure step writes
-them. On anything else, drop it: the project keeps the workshop rule as its
-default, and nothing runs at a later session opening for this. The top-up
-does not carry it.
+them. The map is written from the existing tree either way, each folder's
+line as the scaffold writes them; what a no declines is the reorganising
+conversation, and the project then keeps the workshop rule as its default,
+with nothing running at a later session opening for this. The top-up does
+not carry the conversation.
 
 **2. Retire REGISTRY.md if present**  [SILENT] when it holds only what the old
 setup put there; [BRIEF, PROMPT] when the user has written into it. No longer
@@ -1017,7 +1029,11 @@ anything else worth knowing
   **The goals question is asked once in an existing project too:** the top-up,
   meeting a SPEC with no `## Goals` heading, asks it in one line and writes the
   answer as the section, add-only; a project that answers "none" gets no
-  section and is not asked again.
+  section and is not asked again. A recurring need or a task named in the
+  answer is filed at that turn as a `[user]` capture carrying its task line,
+  appended to the user's task list where the project names one, per the
+  task-line provision in skill-nonspecific-rules.md — never noted for
+  planning.
 
   **Where the interview, or the top-up on the user's word, learns the project
   has more than one person, offer the default line once:** one line in the
@@ -1077,7 +1093,11 @@ write the docs from whatever's been gathered.
 tool where the server is registered, and the queue tool's
 `--append Unprocessed` otherwise, the same way every other capture is filed:
 the tool is given the heading **in the user's words**, a kebab-case slug and a
-"captured by you" note as the body, and it stamps the entry itself.
+"captured by you" note as the body, and it stamps the entry itself. Where the
+answer names a task of the user's own — a recurring one among them — it is
+filed as a `[user]` capture carrying its task line and appended to the user's
+task list in the same turn, under the same provision as the goals question
+above.
 
 **Write the heading in the user's own words, and stop there.** Their words are
 the whole content of the item — anything added is Claude's scope decision wearing

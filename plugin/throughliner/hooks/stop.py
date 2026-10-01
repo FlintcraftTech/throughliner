@@ -522,10 +522,11 @@ def _turn_length_owed(cwd, session_id, message):
         return None
     return (
         "[Throughliner] This reply runs %d words of prose against a bound of "
-        "%d. Lead with the decision; where more than two things are named, "
-        "one item per line; reasoning on request, not front-loaded. Reply "
-        "with a shorter correction of the same content, never a repeat. This "
-        "is fed back once and passes on the next reply." % (
+        "%d. The earlier message stays on screen: reply with the correction "
+        "alone, one or two lines carrying nothing from it, and carry the "
+        "shape into the replies that follow — lead with the decision, one "
+        "item per line where more than two things are named, reasoning on "
+        "request. This is fed back once and passes on the next reply." % (
             words, TURN_PROSE_BOUND)
     )
 
@@ -689,7 +690,7 @@ FILE_LATER_FORMULA = "file it for later?"
 PROCEED_ASK = re.compile(r"\*\*[^*\n]*\?\*\*")
 FILED_LINE = re.compile(r"Filed at the bottom of Unprocessed", re.IGNORECASE)
 _METHOD_COMMAND = re.compile(
-    r"<command-name>/(?:throughliner:)?(plan|build|done|rescan|catchup|setup)"
+    r"<command-name>/(?:throughliner:)?(plan|build|close|rescan|catchup|setup)"
     r"</command-name>")
 _FILED_STAMP = re.compile(r"^Filed (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})",
                           re.MULTILINE)

@@ -423,8 +423,10 @@ so this arm reaches only the case where the window is genuinely empty.
 
 **Cycles due-ness check first** [SILENT] when no cycles doc exists; [BRIEF]
 whenever one does. Run the cycles due-ness check as plan.md's Step 1 states it
-("Cycles due-ness check"), filing only — routing stays planning work — with
-one limb of this site's own: **read the project root for `CYCLES.md` here as
+("Cycles due-ness check"), filing only — routing stays planning work — a
+chain step's capture under the checklist's own slug and the chain's task lines
+appended where the project names a task list, exactly as that check states,
+with one limb of this site's own: **read the project root for `CYCLES.md` here as
 well**, because a doc created this session carries no opening line and would
 otherwise be invisible to its own /close run.
 
@@ -502,9 +504,11 @@ look-back window above. /plan has none, and gains none.**
 
 ## Session-file cleanup (throwaway artifacts)  [BRIEF, PROMPT]
 
-Commit core points here, so it runs at every /close run. The build working file is
-deleted by /close already; this generalises that lifecycle to *other* throwaway
-files this session created.
+Commit core points here, so it runs at every /close run. The build working file
+and this session's scope file, `_freeform-<session-id>.md`, are deleted by
+/close — the scope file after close-plan.md's handmade-work step has read it,
+with no ask, since the method wrote both; this generalises that lifecycle to
+*other* throwaway files this session created.
 
 Offer to delete only files meeting **all** of these:
 
@@ -760,13 +764,14 @@ available.
     counts where the server is registered, `queue_digest.py` otherwise — run
     after the session's last queue write, never from memory of the opening;
   - where a held item's every `Blocked by:` entry was built in this run and
-    its tick confirmed, this /close run states what the item rests on — its
-    rests-on line, or that it has none — proposes the lift in the closing
-    message, and
-    on the user's yes moves the item with the state server's `queue_move`, or
-    the mover, naming it as the last item that should stay cleared, drops its
-    `Blocked by:` line and rewrites it whole per plan.md's rewrite-whole rule,
-    saying what cleared it; a blocker
+    its tick confirmed, this /close run moves the item above the line with
+    the state server's `queue_move`, or the mover, naming it as the last item
+    that should stay cleared, drops its `Blocked by:` line and rewrites it
+    whole per plan.md's rewrite-whole rule, and names the move and what the
+    item rests on — its rests-on line, or that it has none — in one line of
+    the closing message, asking nothing, and where the lifted item is a task-shaped
+    `[user]` item and the project's own CLAUDE.md names a task list, appends
+    its task line to that list in the same turn; a blocker
     built but not confirmed is named and the item left held, per close-plan.md's
     hold-back rule. The advisory's clearing is untouched.
 

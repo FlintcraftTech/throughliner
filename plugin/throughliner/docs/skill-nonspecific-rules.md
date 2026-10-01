@@ -797,7 +797,8 @@ into the rationale, not fixed lines of this block — see the two bullets below.
 
 ```
 an ORIGIN claim   "captured by you", "you raised this", "on your
-                  instruction"
+                  instruction", "designed with you", "settled with you",
+                  "worked out together"
                   -> says where the item came from. Write it wherever
                      the user raised the thing, and state it in your own
                      paraphrase. No quotation is required or expected.
@@ -941,12 +942,18 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
 - **A `[user]` item carries a walkthrough** — which steps, in what order, what to
   check — **or, where the work needs no walking through, one task line in its
   place**, `- [ ] <task> (<project>) 📅 <YYYY-MM-DD where dated>`, with
-  subtasks indented beneath it as their own checkboxes where they help;
+  subtasks indented beneath it as their own checkboxes where they help —
+  except that where the list file opens with a header describing its line
+  conventions, the line's fields, a recurrence among them, are written as
+  that header says, the shape above standing where it has none;
   which of the two is settled at /plan's decision step, and the task line is
   appended to the user's task list the moment the item is kept, where the
   project's own CLAUDE.md names one in a `Task list:` line — a project with
   no such line has no list, and Claude only ever appends to it, never
-  removing or reordering a line.
+  removing or reordering a line; and a task the user asks for, in any skill,
+  is filed at that moment as a `[user]` capture carrying its task line and
+  appended to the list in the same turn, the capture ranked at planning like
+  any other.
   **Each step names the thing to click or type and the thing to look for**,
   so "Open your session list" becomes what to click to get there and what tells
   you it worked. **A step
@@ -1476,7 +1483,10 @@ a change that already carries its  ->  offered as a one-line pointer in the
   everything the chat did, across every plan run and build run in it.
 
   **Work on a project from one chat at a time.** Where a second chat is open on the same project,
-  say so and let the user close it or come back to it.
+  say so and let the user close it or come back to it; a second chat
+  still runs its own close, recording what it did and staging only what it
+  wrote, the other chat's changes left to that chat, and a chat with nothing
+  to record says so and still closes itself.
 
   **What happens to an isolated chat's work at close.** The harness makes the worktree and its branch and **never merges
   either back**; at exit it asks keep-or-remove, and remove deletes the worktree

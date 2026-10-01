@@ -212,11 +212,17 @@ def tool_cycles_state(_arguments):
     # the record by the skill.
     chains = getattr(hooks, "cycle_chains", None)
     for chain in (chains(root) if chains else []) or []:
-        lines.append("[%s] chain — anchor %s, next %s" % (
+        lines.append("[%s] chain — anchor %s, next %s%s" % (
             chain["slug"], chain["anchor"] or "not stated",
-            chain["anchor_date"] or "weekday not read"))
+            chain["anchor_date"] or "weekday or date not read",
+            " — SPENT: its last step's date has passed; nothing is filed "
+            "until planning rewrites the anchor" if chain.get("spent") else ""))
+        task_lines = chain.get("task_lines") or {}
         for checklist, due in chain["checklists"]:
-            lines.append("  [%s] due %s" % (checklist, due or "no lead stated"))
+            lines.append("  [%s] due %s%s" % (
+                checklist, due or "no lead stated",
+                ("; task line: %s" % task_lines[checklist])
+                if checklist in task_lines else ""))
         lines.append("")
 
     checklists = hooks.checklists_facts(root)
@@ -1188,15 +1194,14 @@ def _lead_days(item):
         lead = 0
     if lead is None:
         return None, "chain item [%s] names no lead_days — a number of days " \
-                     "before the anchor, or 0 for the anchor itself." \
+                     "before the anchor, a negative number for days after " \
+                     "it, or 0 for the anchor itself." \
                      % item.get("slug")
     try:
         days = int(lead)
     except (TypeError, ValueError):
         return None, "chain item [%s] has lead_days %r, which is not a whole " \
                      "number." % (item.get("slug"), lead)
-    if days < 0:
-        return None, "chain item [%s] has a negative lead." % item.get("slug")
     return days, None
 
 
@@ -1227,6 +1232,7 @@ def tool_cycle_define(arguments):
     chain = arguments.get("chain") or []
     writes = _text_list(arguments.get("writes"))
     material = (arguments.get("material") or "").strip()
+    task_line = (arguments.get("task_line") or "").strip()
     steps = _text_list(arguments.get("steps"))
 
     problems = []
@@ -1289,8 +1295,21 @@ def tool_cycle_define(arguments):
         problems.append("the chain names the anchor twice — one item is the "
                         "anchor, the rest count back from it.")
     if chain_rows and not anchor:
-        problems.append("a chain was given with no anchor — the weekday the "
-                        "leads count back from.")
+        problems.append("a chain was given with no anchor — the weekday that "
+                        "recurs, or the one booked date, the leads count "
+                        "from.")
+    if anchor:
+        booked = hook._anchor_date(anchor) if hasattr(hook, "_anchor_date") \
+            else None
+        if booked is not None and booked < datetime.date.today():
+            problems.append("anchor %r is a date already past — a chain hung "
+                            "on one date is booked ahead, and planning "
+                            "rewrites the anchor for the next event."
+                            % anchor)
+        elif booked is None and hook._anchor_weekday(anchor) is None:
+            problems.append("anchor %r names neither a weekday nor a date "
+                            "YYYY-MM-DD, so no step's date can be computed "
+                            "from it." % anchor)
 
     real_root = os.path.realpath(root)
     for p in writes:
@@ -1322,10 +1341,13 @@ def tool_cycle_define(arguments):
     if chain_rows:
         block.append("**Chain:** the close calendar of one turn, in order, "
                      "each checklist with its lead counted back from the "
-                     "anchor:")
+                     "anchor or forward from it:")
         for n, (item_slug, days) in enumerate(chain_rows, start=1):
             if days == 0:
                 lead = "the anchor"
+            elif days < 0:
+                lead = "%d day%s after the anchor" % (-days,
+                                                     "" if days == -1 else "s")
             else:
                 lead = "%d day%s before the anchor" % (days,
                                                       "" if days == 1 else "s")
@@ -1336,6 +1358,8 @@ def tool_cycle_define(arguments):
                   ""]
     if material:
         block += ["**Material.** %s" % material, ""]
+    if task_line:
+        block += ["**Task line:** %s" % task_line, ""]
     block.append(STEPS_SENTENCE)
     for n, step in enumerate(steps, start=1):
         block.append("%d. %s" % (n, step))
@@ -1384,8 +1408,10 @@ def tool_cycle_define(arguments):
         lines.append("The cadence and the observable are recorded as "
                      "declared; nothing here computes due-ness.")
     else:
-        lines.append("A checklist runs when the user says its word and at "
-                     "no other time; nothing computes due-ness for it.")
+        lines.append("A checklist runs when the user says its word, or, where "
+                     "a cycle chains it, when its chain date arrives — the "
+                     "openings compute that date and file its capture under "
+                     "this slug.")
     return "\n".join(lines)
 
 
@@ -2268,7 +2294,8 @@ TOOLS = [
                         "turns draw and the planning ladder passes over. "
                         "Must name a definition in the project's cycles "
                         "doc. Never set it on a cycle's DUE TURN itself: "
-                        "that capture is filed under the cycle's slug with "
+                        "that capture is filed under the cycle's slug — or, "
+                        "for a chain step, the checklist's — with "
                         "no cycle field, and the slug is what ranks it.",
                 },
                 "assigned_to": {
@@ -2560,7 +2587,9 @@ TOOLS = [
                 "anchor": {
                     "type": "string",
                     "description": "Optional, required with a chain: the "
-                                   "weekday the leads count back from.",
+                                   "weekday that recurs, or one booked date "
+                                   "YYYY-MM-DD (not already past), that the "
+                                   "leads count from.",
                 },
                 "chain": {
                     "type": "array",
@@ -2570,8 +2599,10 @@ TOOLS = [
                             "slug": {"type": "string"},
                             "lead_days": {
                                 "type": "integer",
-                                "description": "Days before the anchor; 0 "
-                                               "marks the anchor itself.",
+                                "description": "Days before the anchor; a "
+                                               "negative number for days "
+                                               "after it; 0 marks the anchor "
+                                               "itself.",
                             },
                         },
                         "required": ["slug", "lead_days"],
@@ -2593,6 +2624,15 @@ TOOLS = [
                     "description": "Optional: the Material paragraph — a "
                                    "pool file or standing entries the turns "
                                    "draw from.",
+                },
+                "task_line": {
+                    "type": "string",
+                    "description": "Optional, for a checklist a cycle chains: "
+                                   "the text of the task line the openings "
+                                   "append to the user's task list on the "
+                                   "step's day — the command to send and what "
+                                   "to answer; the project and date are "
+                                   "added by the opening.",
                 },
                 "steps": {
                     "type": "array",

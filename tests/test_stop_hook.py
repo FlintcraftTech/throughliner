@@ -659,6 +659,11 @@ def test_turn_length_is_fed_back_once():
     check("a 300-word prose reply is blocked with the count and the bound",
           '"decision": "block"' in out and "words of prose" in out
           and "bound of 175" in out, out)
+    check("the feed-back asks for the correction alone, one or two lines",
+          "stays on screen" in out and "one or two lines carrying nothing"
+          in out, out)
+    check("the feed-back no longer asks for a shorter version of the same content",
+          "of the same content" not in out, out)
     code, out = run(root, long_prose)
     check("the same reply passes the second time", '"decision": "block"' not in out, out)
     as_list = "\n".join("- " + (word * 30).strip() for _ in range(10))
@@ -669,6 +674,22 @@ def test_turn_length_is_fed_back_once():
     check("fenced and quoted text is not counted", '"decision": "block"' not in out, out)
     code, out = run(root, (word * 174).strip(), session_id="s4")
     check("a 174-word reply passes", '"decision": "block"' not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_last_command_read_returns_close():
+    """[done-doc-names-linger-in-method-tooling]: the last-command read names
+    close, the command that replaced done, so a close chat is never read as
+    a planning chat."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("stop_hook", HOOK)
+    stop = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(stop)
+    root = project()
+    t = transcript(root, command="close")
+    check("a chat whose last command is close reads as close",
+          stop._last_method_command(t) == "close",
+          repr(stop._last_method_command(t)))
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -715,6 +736,7 @@ if __name__ == "__main__":
     test_bold_lead_in_on_a_blockquote_line_passes()
     test_turn_length_is_fed_back_once()
     test_bold_mid_sentence_is_fed_back_once()
+    test_last_command_read_returns_close()
     test_process_now_offer_not_owed_for_processed_slugs()
     test_denoted_date_anywhere_in_the_reply_sources_the_word()
     test_process_now_offer_is_enforced_once_in_a_planning_chat()

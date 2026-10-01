@@ -7,7 +7,7 @@ user-invocable: true
 
 # /setup
 
-The user wants to bring this folder under the Throughliner method.
+The user wants this folder adopted under the Throughliner method, or, where it is already adopted, brought up to date — which setup never refuses; the procedure decides which.
 
 **First, check this conversation for the `[Throughliner]` session-start lines.** Where none are present, the hooks did not run — usually because `python` is missing from the machine, or is the Windows Store placeholder that prints "Python was not found" and exits. Say so plainly, give the check (typing `py --version` or `python --version` — either printing a version number means Python is there, and "Python was not found" from both means the hooks did not run), and carry on with this skill: the procedure docs still govern, and only the safety checks and the session-start facts are absent.
 

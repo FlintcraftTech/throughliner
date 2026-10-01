@@ -1577,19 +1577,29 @@ CYCLE_CADENCE_RE = re.compile(r"^\s*\*{0,2}Cadence\s*:\*{0,2}\s*(.+?)\s*$",
 # A checklist's field: the word that fires it, standing where a cadence would be.
 CYCLE_TRIGGER_RE = re.compile(r"^\s*\*{0,2}Trigger\s*:\*{0,2}\s*(.+?)\s*$",
                               re.IGNORECASE)
-# A chained cycle's two extra fields. Anchor names a weekday (and a time of
-# day, which is read for the user and not computed on); Chain is a numbered
-# list whose items each name a checklist by [slug] and a lead in days before the
-# anchor, or say they are the anchor itself.
+# A chained cycle's two extra fields. Anchor names a weekday that recurs (and
+# a time of day, which is read for the user and not computed on) or one booked
+# date, YYYY-MM-DD; Chain is a numbered list whose items each name a checklist
+# by [slug] and a lead in days before or after the anchor, or say they are the
+# anchor itself. A date-anchored chain is spent once its last step's date has
+# passed, until planning rewrites the anchor.
 CYCLE_ANCHOR_RE = re.compile(r"^\s*\*{0,2}Anchor\s*:\*{0,2}\s*(.+?)\s*$",
                              re.IGNORECASE)
 CYCLE_CHAIN_RE = re.compile(r"^\s*\*{0,2}Chain\s*:\*{0,2}\s*(.*?)\s*$",
                             re.IGNORECASE)
+# A chained step's task line: the text the openings append to the user's task
+# list on the step's day, read from the step's own definition and carried on
+# the cycles line per step so no opening re-parses the doc for it.
+CYCLE_TASK_LINE_RE = re.compile(
+    r"^\s*\*{0,2}Task line\s*:\*{0,2}\s*(.+?)\s*$", re.IGNORECASE)
 CHAIN_ITEM_SPLIT_RE = re.compile(r"(?:^|\s)\d+\.\s+")
 CHAIN_SLUG_RE = re.compile(r"\[([a-z0-9][a-z0-9-]*)\]")
 CHAIN_LEAD_RE = re.compile(
     r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+days?\s+"
-    r"before\s+the\s+anchor", re.IGNORECASE)
+    r"(before|after)\s+the\s+anchor", re.IGNORECASE)
+# The forward lead's short form: "the day after the anchor" is one day after.
+CHAIN_DAY_AFTER_RE = re.compile(r"\bthe\s+day\s+after\s+the\s+anchor\b",
+                                re.IGNORECASE)
 CHAIN_IS_ANCHOR_RE = re.compile(r"\bthe\s+anchor\b(?!\s*\))", re.IGNORECASE)
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday",
             "saturday", "sunday"]
@@ -1648,7 +1658,8 @@ def _parse_cycles_doc(cwd):
                        "observable": None,
                        "trigger": None,
                        "anchor": None,
-                       "chain": None}
+                       "chain": None,
+                       "task_line": None}
             cycles.append(current)
             pending = None
             continue
@@ -1673,6 +1684,11 @@ def _parse_cycles_doc(cwd):
         if anchor and current["anchor"] is None:
             current["anchor"] = anchor.group(1)
             pending = "anchor"
+            continue
+        task_line = CYCLE_TASK_LINE_RE.match(line)
+        if task_line and current["task_line"] is None:
+            current["task_line"] = task_line.group(1)
+            pending = "task_line"
             continue
 
         observable = CYCLE_OBSERVABLE_RE.match(line)
@@ -1759,10 +1775,13 @@ def cycles_facts(cwd):
 def _parse_chain(text):
     """The checklists a Chain: field names, each with its lead in days.
 
-    Returns a list of (checklist_slug, lead_days_or_None). An item naming no
-    checklist (a step that is the ordinary /plan and /build) is skipped; an item
-    naming a checklist but no lead travels with None, so the report can say the
-    lead is not stated rather than guessing one.
+    Returns a list of (checklist_slug, lead_days_or_None). A lead is counted
+    back from the anchor as a positive number ("two days before the anchor")
+    and forward as a negative one ("two days after the anchor", "the day
+    after the anchor" being -1). An item naming no checklist (a step that is
+    the ordinary /plan and /build) is skipped; an item naming a checklist but
+    no lead travels with None, so the report can say the lead is not stated
+    rather than guessing one.
     """
     out = []
     for item in CHAIN_ITEM_SPLIT_RE.split(text or ""):
@@ -1773,6 +1792,10 @@ def _parse_chain(text):
         if lead:
             word = lead.group(1).lower()
             days = int(word) if word.isdigit() else NUMBER_WORDS[word]
+            if lead.group(2).lower() == "after":
+                days = -days
+        elif CHAIN_DAY_AFTER_RE.search(item):
+            days = -1
         elif CHAIN_IS_ANCHOR_RE.search(item):
             days = 0
         else:
@@ -1790,41 +1813,71 @@ def _anchor_weekday(text):
     return None
 
 
+def _anchor_date(text):
+    """The one booked date an Anchor: field names, as a date, or None where
+    the field names no ISO date (a weekday anchor)."""
+    found = ISO_DATE_IN_TEXT_RE.search(text or "")
+    if not found:
+        return None
+    try:
+        return datetime.date.fromisoformat(found.group(0))
+    except ValueError:
+        return None
+
+
 def cycle_chains(cwd, today=None):
     """Each chained cycle's next anchor date and the due date of every checklist
     in its chain, computed from the calendar.
 
     Returns None where the project has no cycles doc, otherwise a list of
-    dicts: slug, anchor (the field as written), anchor_date (an ISO date, the
-    next occurrence of the anchor's weekday on or after today), and checklists —
-    a list of (checklist_slug, due_date_or_None). A cycle with no Chain: field is
-    not listed. Dates only, never a verdict: whether a checklist whose date has
-    arrived still needs running is read from the record by the skill.
+    dicts: slug, anchor (the field as written), anchor_date (an ISO date: the
+    next occurrence of the anchor's weekday on or after today, or the one
+    booked date the field names), checklists — a list of (checklist_slug,
+    due_date_or_None), a forward lead landing after the anchor — task_lines,
+    a dict from checklist slug to the `Task line:` text its own definition
+    carries (absent from the dict where it carries none), and spent — True
+    for a date-anchored chain whose last step's date has passed, so the
+    opening files nothing for it until planning rewrites the anchor. A cycle
+    with no Chain: field is not listed. Dates only, never a verdict: whether a
+    checklist whose date has arrived still needs running is read from the
+    record by the skill.
     """
     entries = _parse_cycles_doc(cwd)
     if entries is None:
         return None
     if today is None:
         today = datetime.date.today()
+    task_lines_by_slug = {e["slug"]: e["task_line"] for e in entries
+                          if e["task_line"]}
     out = []
     for entry in entries:
         if _is_checklist(entry) or not entry["chain"]:
             continue
-        weekday = _anchor_weekday(entry["anchor"])
-        anchor_date = None
+        booked = _anchor_date(entry["anchor"])
+        weekday = None if booked else _anchor_weekday(entry["anchor"])
+        anchor_date = booked
         if weekday is not None:
             anchor_date = today + datetime.timedelta(
                 days=(weekday - today.weekday()) % 7)
         checklists = []
+        last_due = None
         for checklist_slug, lead in _parse_chain(entry["chain"]):
             due = None
             if anchor_date is not None and lead is not None:
-                due = (anchor_date - datetime.timedelta(days=lead)).isoformat()
+                due_date = anchor_date - datetime.timedelta(days=lead)
+                due = due_date.isoformat()
+                if last_due is None or due_date > last_due:
+                    last_due = due_date
             checklists.append((checklist_slug, due))
+        spent = bool(booked and last_due is not None and last_due < today)
         out.append({"slug": entry["slug"],
                     "anchor": entry["anchor"],
                     "anchor_date": anchor_date.isoformat() if anchor_date else None,
-                    "checklists": checklists})
+                    "checklists": checklists,
+                    "spent": spent,
+                    "task_lines": {slug: task_lines_by_slug[slug]
+                                   for slug, _due in checklists
+                                   if slug in task_lines_by_slug}})
     return out
 
 
@@ -1839,6 +1892,7 @@ def checklists_due_on(cwd, today=None):
     chains = cycle_chains(cwd, today) or []
     iso = today.isoformat()
     return [(chain["slug"], checklist) for chain in chains
+            if not chain.get("spent")
             for checklist, due in chain["checklists"] if due == iso]
 
 
@@ -1861,6 +1915,7 @@ def checklists_facts(cwd):
 
 
 WORKING_FILE_RE = re.compile(r"^_(build|plan)-(.+)\.md$")
+SCOPE_FILE_RE = re.compile(r"^_freeform-(.+)\.md$")
 
 
 def _working_file(cwd: str, kind: str, session_id: str) -> str:
@@ -1961,12 +2016,20 @@ def leftover_working_files(cwd: str, session_id: str) -> list:
     # hold the only record of what that session did; it just can never be
     # excluded as "mine".
     mine = os.path.basename(_working_file(cwd, "build", session_id))
+    # The scope file the safety check's door writes for a freeform session is
+    # a working file of the same lifecycle: /close deletes this session's, and
+    # one carrying another session's id was left by a session that never
+    # closed ([setup-close-leaves-freeform-scope-file]). Report only.
+    my_scope = "_freeform-%s.md" % session_id
     for name in names:
-        if name == mine:
+        if name == mine or name == my_scope:
             continue
         match = WORKING_FILE_RE.match(name)
+        scope = SCOPE_FILE_RE.match(name)
         if match:
             kind = match.group(1)
+        elif scope:
+            kind = "freeform scope"
         elif name in ("_build.md", "_plan.md"):
             # The pre-session-scoping names. A project mid-build when the
             # rename shipped would otherwise have its working file become
@@ -2663,14 +2726,21 @@ def main() -> int:
             # checklist's computed due date — dates, never a verdict on whether
             # the checklist still needs running.
             for chain in cycle_chains(cwd) or []:
+                task_lines = chain.get("task_lines") or {}
                 checklists = ", ".join(
-                    "[%s] due %s" % (checklist, due or "no lead stated")
+                    "[%s] due %s%s" % (
+                        checklist, due or "no lead stated",
+                        (" (task line: %s)" % task_lines[checklist])
+                        if checklist in task_lines else "")
                     for checklist, due in chain["checklists"])
                 described.append(
-                    "[%s] chain — anchor %s, next %s; checklists: %s"
+                    "[%s] chain — anchor %s, next %s; checklists: %s%s"
                     % (chain["slug"], chain["anchor"] or "not stated",
-                       chain["anchor_date"] or "weekday not read",
-                       checklists or "none named"))
+                       chain["anchor_date"] or "weekday or date not read",
+                       checklists or "none named",
+                       "; SPENT — its last step's date has passed, so "
+                       "nothing is filed until planning rewrites the anchor"
+                       if chain.get("spent") else ""))
             context_parts.append(
                 "[Throughliner] Cycles on file (%d): %s. Facts, not verdicts — "
                 "the hook reports what each definition says and what its "
@@ -2692,9 +2762,10 @@ def main() -> int:
             % (len(malformed), ", ".join("[%s]" % s for s in malformed))
         )
 
-    # Checklists ride the same doc and are reported by name and trigger word only.
-    # No due-ness is computed for one and no capture is ever filed: a checklist has
-    # no cadence, so it runs when the user says its word and at no other time.
+    # Checklists ride the same doc and are reported by name and trigger. A
+    # checklist a cycle chains has its date computed on the cycles line above,
+    # and an opening files its capture under the checklist's own slug when that
+    # date arrives; an unchained one runs when the user says its word.
     checklists = checklists_facts(cwd)
     if checklists:
         named = []
@@ -2705,10 +2776,11 @@ def main() -> int:
             part += f" — fires on: {trigger or 'no trigger word stated'}"
             named.append(part)
         context_parts.append(
-            "[Throughliner] Checklists on file (%d): %s. A checklist runs when the "
-            "user says its word — nothing computes due-ness for one and nothing "
-            "files a capture for one. Read its steps from the cycles doc when "
-            "that word is said."
+            "[Throughliner] Checklists on file (%d): %s. A checklist a cycle "
+            "chains has its date on the cycles line above, and an opening files "
+            "its capture under the checklist's own slug when that date arrives; "
+            "an unchained one runs when the user says its word. Read its steps "
+            "from the cycles doc when it runs."
             % (len(checklists), "; ".join(named))
         )
 

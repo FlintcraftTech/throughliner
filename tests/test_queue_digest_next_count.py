@@ -161,6 +161,26 @@ check("queue_next_pick carries the 0 at rest",
       offerable_line(server_text) == "Left to process, this one included: 0",
       repr(server_text))
 
+# [plan-announces-unblock-rung-exhausted]: the digest says when no offerable
+# capture is cited by another, and stays silent while one is.
+text = run_digest(d)
+check("with no offerable capture cited, the exhausted line prints",
+      "No remaining capture is cited by another" in text, repr(text))
+with open(os.path.join(d, "QUEUE.md"), "a", encoding="utf-8", newline="") as f:
+    f.write("\n#### Seven — cites a plain capture [seven]\n"
+            "Waits on [four] in prose.\n")
+text = run_digest(d)
+check("with an offerable capture cited, the line is absent",
+      "No remaining capture is cited by another" not in text, repr(text))
+server_text = call_server(d, {"skip": ["seven"]})
+check("queue_next_pick omits the line while a pool capture is cited",
+      "No remaining capture is cited by another" not in server_text,
+      repr(server_text))
+server_text = call_server(d, {"skip": ["four", "seven"]})
+check("queue_next_pick carries the line once the cited capture is skipped",
+      "No remaining capture is cited by another" in server_text,
+      repr(server_text))
+
 shutil.rmtree(d, ignore_errors=True)
 
 print()

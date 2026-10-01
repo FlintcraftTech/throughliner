@@ -271,6 +271,36 @@ refused("a writes path resolving outside the project",
         dict(CHECKLIST, writes=["../elsewhere/file.md"]), "outside the project")
 refused("an empty steps list", dict(CHECKLIST, steps=[]), "steps is empty")
 
+# --- [event-anchored-checklist-chain]: a date anchor and a forward lead ------
+refused("a date anchor already past",
+        {"heading": "Cohort", "slug": "cohort", "artifact": "x",
+         "cadence": "per cohort, declared by the user 2026-09-26",
+         "observable": "y", "anchor": "2020-01-01",
+         "chain": [{"slug": "rezip", "lead_days": 0}],
+         "steps": ["Go."]}, "already past")
+refused("an anchor naming neither a weekday nor a date",
+        {"heading": "Cohort", "slug": "cohort", "artifact": "x",
+         "cadence": "per cohort, declared by the user 2026-09-26",
+         "observable": "y", "anchor": "soon",
+         "chain": [{"slug": "rezip", "lead_days": 0}],
+         "steps": ["Go."]}, "neither a weekday nor a date")
+d = project()
+text = call(d, {"heading": "Cohort", "slug": "cohort", "artifact": "x",
+                "cadence": "per cohort, declared by the user 2026-09-26",
+                "observable": "y", "anchor": "2099-11-03",
+                "chain": [{"slug": "rezip", "lead_days": -1}],
+                "steps": ["Go."]})
+after = doc_text(d) or ""
+check("a date anchor with a forward lead is accepted",
+      "as a cycle, chaining 1 checklist(s)" in text, repr(text))
+check("the forward lead is written as days after the anchor",
+      "1. [rezip] — 1 day after the anchor" in after, after[-600:])
+chains = {c["slug"]: c for c in (hook.cycle_chains(d) or [])}
+check("the date anchor computes the step after the anchor",
+      dict(chains.get("cohort", {}).get("checklists", [])).get("rezip")
+      == "2099-11-04", repr(chains.get("cohort")))
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

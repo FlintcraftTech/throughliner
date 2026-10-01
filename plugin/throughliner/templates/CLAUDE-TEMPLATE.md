@@ -43,10 +43,13 @@ Language: English
 ## Task list
 
 <!-- Optional. The full path of the one markdown task list you keep for every
-     project in your notes app. When planning keeps a step of yours that needs
-     no walkthrough, Claude appends one checkbox line there — the task, this
-     project's name in brackets, and a due date where there is one — and
-     reads the file at each planning opening for lines you have ticked. Claude
+     project. It is read best in Obsidian with the Tasks plugin, whose fields
+     the task line uses; any markdown editor works. When planning keeps a step
+     of yours that needs no walkthrough, Claude appends one checkbox line
+     there — the task, this project's name in brackets, and a due date where
+     there is one — and reads the file at each planning opening for lines you
+     have ticked. Where the file opens with a header stating its line
+     conventions, the line's fields are written as that header says. Claude
      only ever adds lines; it never removes or reorders one. Leave the line
      blank to keep no list. An absolute path, e.g.
      "Task list: C:\Users\you\Notes\Tasks.md" -->

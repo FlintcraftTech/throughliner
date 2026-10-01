@@ -1632,12 +1632,22 @@ def render_whats_next(items, root, queue_path, skip=(), picked=0,
     # from the section's size ([checkpoint-count-from-next-pick-tool]); the
     # presented item counts, so a last item reads 1 rather than 0
     # ([mixed-kind-counts-say-cleared-to-run]).
-    remaining = len(offerable(items, root, skip=skip))
+    pool = offerable(items, root, skip=skip)
+    remaining = len(pool)
     offerable_line = "Left to process, this one included: %d" % (
         remaining if item is not None else 0)
+    # Whether the unblock-potential rung has anything left to yield: printed
+    # as a fact from the citation counts the digest already computes, so the
+    # checkpoint can say once, the first time it sees this line, that no
+    # more blockers remain ([plan-announces-unblock-rung-exhausted]).
+    counts = incoming_citations(items)
+    unblock_line = None
+    if not any(i["slug"] and counts.get(i["slug"], 0) > 0 for i in pool):
+        unblock_line = "No remaining capture is cited by another"
     if item is None:
-        return "Next: nothing — %s.\n%s\n%s" % (why, offerable_line,
-                                              medians_line)
+        return "Next: nothing — %s.\n%s\n%s%s" % (
+            why, offerable_line, medians_line,
+            ("\n" + unblock_line) if unblock_line else "")
 
     try:
         with open(queue_path, "r", encoding="utf-8") as handle:
@@ -1652,9 +1662,10 @@ def render_whats_next(items, root, queue_path, skip=(), picked=0,
         "Starts at line %d of %s" % (item["first_line"], queue_path),
         offerable_line,
         medians_line,
-        "",
-        text,
     ]
+    if unblock_line:
+        out.append(unblock_line)
+    out += ["", text]
     return "\n".join(out)
 
 

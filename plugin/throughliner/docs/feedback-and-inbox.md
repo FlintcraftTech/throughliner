@@ -62,15 +62,19 @@ at flintcraft.tech/report — it is a fallback, not a lesser route.
 **Where the sender wants a reply, agree how it will be checked and file one
 dated capture at the moment of sending.** Ask at the send. For an issue, the
 check is the issue's own comments, which the planning opening's issue scan
-already reaches. For a form report there is no such channel, so where a
-suitable email connection exists and the user approves using it, that is the
-agreed method; otherwise the capture says plainly that the check is theirs to
-make. Write the agreed method into the capture and give it a `Not before:`
-date by which there is plausibly news. No reply wanted: nothing filed.
+already reaches. For a form report the form's optional address is the reply
+channel: the reporter is told, when the report is drafted, that a reply comes
+to the address they give where the report has an answer, and the dated
+capture names that address's mailbox as the check. Write the agreed method
+into the capture and give it a `Not before:` date by which there is plausibly
+news. No reply wanted: nothing filed.
 
 - **One free-form block, not labelled fields** — the report page is a single
   text box. The block carries, as prose: what the plugin did versus what was
-  expected, which skill and step, the method version, and generic repro steps.
+  expected, which skill and step, the method version and the install channel
+  — stable, beta or a local build, read from the project's channel record
+  that setup writes, so the author knows which build the report is against —
+  and generic repro steps.
 - **Scrubbed by construction.** Include no app names, file contents, secrets,
   QUEUE/SPEC content, or project specifics beyond describing the issue. A
   report is *about* sensitive content more often than it contains some —

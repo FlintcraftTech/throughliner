@@ -122,7 +122,9 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
   needs no walking through: a task, or a task with subtasks, in the line shape
   skill-nonspecific-rules.md's walkthrough rule gives. Where the item is kept
   with a task line and the project's own CLAUDE.md carries a `Task list:` line,
-  append the task line to that file in the same turn, after its last line, and
+  append the task line to that file in the same turn, after its last line —
+  reading the list file's header first, where it has one, and writing the
+  line's fields as the header says — and
   say so in the one-line report. The requirement is stated in full in
   skill-nonspecific-rules.md; this is the moment it is applied.
 
@@ -195,7 +197,11 @@ the task text and the project alone — anything appended after them, such as
 the `✅ <date>` the notes app writes on a tick, and the lines' order are
 ignored, since the user's plugins reorder lines. A ticked line means the user
 has done that task: name it in one clause here, and close its item at this
-session's close as a mentioned-done `[user]` item. Never remove or reorder a
+session's close as a mentioned-done `[user]` item. After the ticked-line read,
+append one task line for every cleared task-shaped `[user]` item whose line is
+not on the list — matched by task text and project the same way — through the
+write the safety check permits for that file, and say so in one clause; a
+project with no `Task list:` line appends nothing. Never remove or reorder a
 line in the file.
 
 **Read the runs-alone count as recession, not as staleness.** /build stops *before*
@@ -446,7 +452,10 @@ blocker absent from the
 
 **A turn proposing a lift says what the item's premise rests on, and whether
 anything has verified it since it was written** — read off the item's rests-on
-line where it has one, and said plainly where it has none.
+line where it has one, and said plainly where it has none. A lifted
+task-shaped `[user]` item gets its task line appended to the user's task list
+in the same turn, where the project's own CLAUDE.md names one, exactly as the
+keep at the decision step appends it.
 
 **Where an item's hold names work belonging to a subproject** — a project set
 up inside this one, which `session_start` detects and reports — check it by
@@ -536,13 +545,33 @@ its computed date — reported on the opening's cycles line — has arrived, tod
 date read from the state server's `clock` tool where the server is registered
 and a shell clock command otherwise, and no
 completed turn of this cycle is recorded since the previous anchor, and the
-capture filed names that checklist in its heading, under the cycle's slug. A
-cycle with no chain is unchanged.
+capture filed names that checklist in its heading, under the checklist's own
+slug. A cycle with no chain is unchanged.
+
+**Where the project's own CLAUDE.md carries a `Task list:` line, the same check
+appends the chain's task lines:** for each chain step whose computed date is
+today or ahead and whose line is not yet on that list — matched by task text
+and project, the way the opening's list read matches — append one line in the
+task-line shape, `- [ ] <the step's task text> (<project name>) 📅 <YYYY-MM-DD>`,
+the task text read from the step's task line on the opening's cycles line (the
+`**Task line:**` field of the step's definition in the cycles doc), and where a
+definition carries none, `Run the <command> for <the checklist's name>`, the
+command being the one the step's definition says it runs in; appended through
+the same permitted write the kept task-shaped `[user]` item uses, the list
+file's header read first where it has one and the line's fields written as it
+says. A chain hung on one date writes its lines at the opening after planning
+sets the anchor.
 
 ```
-cycle due, no open capture with its slug  ->  file ONE capture in Unprocessed
-                                              under the cycle's slug, naming
-                                              the due step, and carrying no
+cycle due, no open capture with its slug  ->  file ONE capture in Unprocessed:
+                                              a cycle with no chain files under
+                                              the cycle's slug; a chain step
+                                              files under the CHECKLIST's slug,
+                                              satisfied while an open capture
+                                              with THAT slug exists, so one
+                                              cycle capture never satisfies
+                                              another step. The capture names
+                                              the due step and carries no
                                               `Cycle:` line — the slug is what
                                               ranks it; the line marks
                                               standing material the ladder
@@ -745,7 +774,8 @@ membership/order  length decides membership and the date filed decides
                   order, in rungs 4 and 5 alike
 ```
 
-The ladder is never surfaced to the user.
+The ladder's order is never explained to the user, and the checkpoint says once
+when the cited captures are done.
 
 The reorder is **conditional and change-scoped**, not a full re-derivation:
 consider only what changed since last session (items newly captured, dropped, or
@@ -1198,8 +1228,10 @@ test reads for, subordinate to it:
     fires on the one before it and is Claude's unless the step says
     otherwise") names both for every step it covers;
   - where a cycle chains checklists, the chain written as a **close calendar**
-    — each earlier checklist counted back from the anchor with its lead, "two
-    days before, the day before, the day".
+    — each checklist counted back from the anchor or forward from it with its
+    lead, "two days before, the day, the day after" — the anchor named as a
+    weekday that recurs or as one booked date, which planning rewrites when
+    the next event is booked.
 
 **An observable read from the project's own `LOG/` must be distinguishable from
 the records planning itself writes.** The cheap form, written into the
@@ -1208,10 +1240,13 @@ turn, and the observable reads only those records.
 
 **And where the user asks for a named step list with no schedule, author it here
 as a checklist** — into the same cycles doc, carrying the artifact, the steps,
-**the word that fires it** in place of a cadence and an observable, and **the
-paths its steps write**. A checklist is run when the user says its word and at no
-other time, so nothing computes due-ness for one and nothing files a capture for
-one.
+**what fires it** in place of a cadence and an observable, and **the
+paths its steps write**. A checklist's trigger is a chain date or a condition
+its definition names, which the openings and closes read; a bare word is
+admitted only where the definition says the moment is the user's own. A
+checklist runs when the user says its word, or, where a cycle chains it, when
+its chain date arrives — the openings computing that date and filing its
+capture under the checklist's slug.
 
 **Write the paths as a `Writes:` field, and name them narrowly.** A planning
 session may write only the project's own documents, and a checklist's steps often
@@ -1530,6 +1565,10 @@ message order:
     1. where the just-finished entry landed, named as the outcome —
        "Deleted." / "Into Processed, cleared to run." / "Into Processed,
        held below the line." — so the user knows before meeting the next
+    1b. where the next-pick output carries the line `No remaining capture is
+       cited by another` for the first time in this session, one sentence:
+       "No more blockers to process; from here the longest and oldest things
+       in the queue" — said once and never repeated
     2. one plain sentence of Claude's saying what the NEXT item is, written
        from the whole read of the entry, with the slug in brackets after it
        — the heading line is not quoted; re-read from QUEUE.md first to
@@ -1653,19 +1692,19 @@ process it now   ->  where processing it would change this session's work,
 file it          ->  where the thing already seems complete: write the
                      capture, then offer filing with the recommendation in
                      the ask — "I would file this one for later, since it
-                     already seems complete; say process now to take it
-                     now. File it for later?" It waits in Unprocessed for
-                     its turn; "process now" enters the interview.
+                     already seems complete; a no leaves it filed. Process
+                     now?" It waits in Unprocessed for its turn; a yes
+                     enters the interview.
 ```
 
-**The ask, where one is made, is one fixed formula: "File it for later?"**,
-with the recommendation and the process-now alternative in the sentence
-before it. Where the lean is to process now there is no ask: processing
-proceeds.
+**The ask, where one is made, is one fixed formula: "Process now?"**, with the
+recommendation to file and the file-it alternative in the sentence before it —
+a yes enters the interview, a no files the capture. Where the lean is to
+process now there is no ask: processing proceeds.
 
 **The turn that reports a filing in a planning session ends on the same
 formula**, where the thing filed was not already agreed: the one-line report
-of what landed, the recommendation, then "File it for later?" — so the two
+of what landed, the recommendation, then "Process now?" — so the two
 moments a raised thing passes through, before the write and after it, both
 end on the same sentence.
 
@@ -1763,14 +1802,17 @@ the bold ask beneath it unchanged:
 
 **Ask once per rest.** The gate fires when the queue first empties. If the user
 raises a further capture, file it and return to this same gate, but end plainly
-this time — say the queue is clear again and stop, with no second ask.
+this time — with the queue clear and one line of route, that sending the
+close command records this chat and build runs in a fresh chat after it, with
+no ask. The specimen line: "The queue is clear. Send the close command to
+record this chat; build runs in a fresh chat after that."
 
 **Each refill-and-emptying re-arms the ask.** Further work filling the queue and
 emptying it again is a new rest, and the gate fires there as it did at the first
 one — on a second refill as on any later one.
 
-**A plain ending carries no close-leaning framing** — say the queue is clear and
-stop; nothing that reads as an invitation to leave.
+**A plain ending names the route as information and asks nothing**, so it
+reads as neither an invitation to leave nor as though build could run here.
 
 **Where the user declares they want the chat kept open to capture in, the
 wrap-up ask is silenced for the rest of the chat**, refills included. Held in
