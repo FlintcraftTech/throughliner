@@ -198,8 +198,7 @@ contested decision.
 **Read each item's rule-gate disposition from the working file by its slug too**
 — `Rule gate: <slug> — run — …` — for the same reason and in the same pass. The
 line /close then writes into the session's LOG entry stays slugless: it
-describes the session rather than one item, which is the form
-`workshop/resources/rule_signals.py` reads.
+describes the session rather than one item.
 
 **A built slug with no depth line is read as short**, and noted at /close as
 a discipline slip rather than passing silently: the field is required, so a

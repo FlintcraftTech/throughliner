@@ -54,6 +54,9 @@ Rule gate: run — one clause admitted to its parent; nothing evicted.
 #### Beta — a cleared build with no gate [beta]
 Beta's rationale.
 
+#### [audit] Gamma — a cleared audit [gamma]
+Gamma's rationale.
+
 --- Cleared to run above this line ---
 
 ## Unprocessed
@@ -69,6 +72,7 @@ Run: build alpha, build beta
 Entries:
 - build — alpha — Alpha — a cleared build with a gate
 - build — beta — Beta — a cleared build with no gate
+- audit — gamma — Gamma — a cleared audit
 
 Index entry candidates:
 
@@ -135,6 +139,8 @@ GOOD = {
     "rule_gate": "run — one clause admitted to its parent; nothing evicted",
     "index_candidate": "some/file.py: the guard gains a résumé check — Ω",
     "changes": "- some/file.py: added the check, 12 lines",
+    "bears_on": "SPEC.md: the guard is described under Four hooks",
+    "spec_check": "agrees",
 }
 
 
@@ -166,6 +172,17 @@ refused("a missing gate line the item carries",
 refused("an index candidate led by an article",
         dict(GOOD, index_candidate="The guard gains a check"),
         "opens with A/An/The")
+refused("an empty bears-on field", dict(GOOD, bears_on="  "),
+        "bears_on is missing")
+refused("a missing bears-on field",
+        {k: v for k, v in GOOD.items() if k != "bears_on"},
+        "bears_on is missing")
+refused("an empty SPEC-check field", dict(GOOD, spec_check=""),
+        "spec_check is missing")
+refused("a SPEC-check value outside the three forms",
+        dict(GOOD, spec_check="looked fine"), "spec_check opens")
+refused("a contradicts with no sentence",
+        dict(GOOD, spec_check="contradicts:"), "spec_check opens")
 refused("no working file", GOOD, "no build working file", working=None)
 refused("two working files and no session id", GOOD,
         "pass session_id", extra_working=True)
@@ -183,6 +200,9 @@ check("the slug-bound Depth line follows the tick",
 check("the slug-bound Rule gate line follows the depth",
       "Depth: alpha — short\nRule gate: alpha — run — one clause admitted to "
       "its parent; nothing evicted\n" in w, repr(w))
+check("the slug-bound Bears on and SPEC check lines follow the gate",
+      "nothing evicted\nBears on: alpha — SPEC.md: the guard is described "
+      "under Four hooks\nSPEC check: alpha — agrees\n" in w, repr(w))
 check("the index candidate lands under its header",
       "\nIndex entry candidates:\n- some/file.py: the guard gains a résumé "
       "check — Ω\n" in w, repr(w))
@@ -201,17 +221,29 @@ text2 = call(d, {"slug": "beta", "verdict": "unconfirmed",
                  "reason": "the suite has not run",
                  "depth": "full", "trigger": "alternative seriously weighed",
                  "index_candidate": "docs/x.md: reworded",
-                 "changes": "docs/x.md: one sentence"})
+                 "changes": "docs/x.md: one sentence",
+                 "bears_on": "none found: reworded, x.md",
+                 "spec_check": "owes: spec-owes-x-sentence"})
 w = read(d, "_build-s1.md")
+check("the second item's two lines land under its own slug",
+      "weighed\nBears on: beta — none found: reworded, x.md\n"
+      "SPEC check: beta — owes: spec-owes-x-sentence\n" in w, repr(w))
 check("the second tick follows the first under Progress",
-      "Rule gate: alpha — run — one clause admitted to its parent; nothing "
-      "evicted\n- [x] Beta — a cleared build with no gate — done, UNCONFIRMED: "
+      "SPEC check: alpha — agrees\n- [x] Beta — a cleared build with no gate — done, UNCONFIRMED: "
       "the suite has not run\nDepth: beta — full, alternative seriously "
       "weighed\n" in w, repr(w))
 check("a bare changes line gains its bullet",
       "- some/file.py: added the check, 12 lines\n- docs/x.md: one sentence\n"
       in w, repr(w))
 check("beta left Processed too", "[beta]" not in read(d, "QUEUE.md"))
+call(d, {"slug": "gamma", "verdict": "confirmed", "depth": "short",
+         "index_candidate": "audit of x: two findings captured",
+         "changes": "- finding one — captured",
+         "bears_on": "not applicable", "spec_check": "not applicable"})
+w = read(d, "_build-s1.md")
+check("an audit takes not applicable in both fields",
+      "Bears on: gamma — not applicable\nSPEC check: gamma — not applicable\n"
+      in w and "[gamma]" not in read(d, "QUEUE.md"), repr(w))
 text3 = call(d, dict(GOOD))
 check("re-ticking a ticked item is refused",
       text3.startswith("Refused") and "not a work item in Processed" in text3,

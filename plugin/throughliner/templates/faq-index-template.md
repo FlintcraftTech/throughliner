@@ -99,8 +99,7 @@ Quick answers about how this project's workflow works. Each question links to a
 - **The safety check refused a time from the future — what do I do?** — what
   the message means, reading the clock by a command, and the limit.
   [faq.md](faq.md)
-- **What do the numbers after a queue edit mean?** — the change, the total
-  and the section's median, as a fact and not a threshold. [faq.md](faq.md)
+- **What do the numbers after a queue edit mean?** — the change and the total, as a fact and not a threshold. [faq.md](faq.md)
 - **A note says a heading is wrong — how is it fixed?** — the retitle that
   keeps the slug and touches nothing else. [faq.md](faq.md)
 - **What does /catchup show me?** — goals first, one line per feature with

@@ -248,9 +248,6 @@ EXCEPTION                         a /close or /rescan candidate set —
   of the repository. A deleted queue item is recoverable from its
   snapshot.
 
-  **One consequence is stated rather than repaired: /close cannot read its own
-  work back from the file's history, so it records from what it remembers.**
-
   **The snapshots are one machine and hold no history, so say that wherever the
   configuration is described** — a lost disk loses them.
 
@@ -522,11 +519,7 @@ fact or condition, with the date it was last checked, wherever the sentence
 lives** — as the rests-on line on a work item, and in a SPEC sentence's own
 words.
 
-**It bites hardest in a `[user]` walkthrough**, where a step asserting what
-someone else's website, app or service allows is handed to a no-code developer
-to perform with nobody to ask. Where the surface can be tested harmlessly — a
-throwaway of your own to act on rather than anything of theirs — that test is
-the read, and it goes into the walkthrough as its first step.
+**Where a `[user]` walkthrough step asserts what an outside surface allows and the surface can be tested harmlessly — a throwaway of your own to act on rather than anything of theirs — that test is the read, and it goes into the walkthrough as its first step.**
 
 **Every statement of when something happened or will happen is derived from a
 computed field, a timestamp, or the record — in chat as much as in anything
@@ -871,10 +864,7 @@ a QUOTE claim     "your words", "in her own words", quotation marks
     hooks, the queue format and the scripts differ between versions, and a
     format migration one side runs rewrites files the other's tooling does
     not expect.
-- The **filing-time commit stamp** exists because a capture filed after a
-  chat's /close close belongs to no committed session record. Plain prose, not
-  a parsed field. It carries date and time, read from the clock at the moment
-  of writing, never recalled.
+- The **filing-time commit stamp** is plain prose, not a parsed field. It carries date and time, read from the clock at the moment of writing, never recalled.
 
 **Flavor marker** — an optional leading tag naming how the item is executed:
 
@@ -943,19 +933,12 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   Where it names none, the item stays in place until the user mentions it.
 - **A `[user]` item carries a walkthrough** — which steps, in what order, what to
   check — **or, where the work needs no walking through, one task line in its
-  place**, `- [ ] <task> (<project>) 📅 <YYYY-MM-DD where dated>`, with
-  subtasks indented beneath it as their own checkboxes where they help —
-  except that where the list file opens with a header describing its line
-  conventions, the line's fields, a recurrence among them, are written as
-  that header says, the shape above standing where it has none;
-  which of the two is settled at /plan's decision step, and the task line is
-  appended to the user's task list the moment the item is kept, where the
-  project's own CLAUDE.md names one in a `Task list:` line — a project with
-  no such line has no list, and Claude keeps this project's own lines in it
-  current and changes any other line on the user's ask; and a task the user asks for, in any skill,
-  is filed at that moment as a `[user]` capture carrying its task line and
-  appended to the list in the same turn, the capture ranked at planning like
-  any other.
+  place**, which of the two is settled at /plan's decision step. The task line is:
+  - written as `- [ ] <task> (<project>) 📅 <YYYY-MM-DD where dated>`, with subtasks indented beneath it as their own checkboxes where they help, its fields, a recurrence among them, written as the list file's header says where the file opens with one;
+  - carrying what the user needs in order to act on it — a phone number, an email address, a place, a reference — taken from the source or looked up where the source lacks it, and never the user's own home address;
+  - appended to the user's task list the moment the item is kept, where the project's own CLAUDE.md names one in a `Task list:` line, a project with no such line, or one reading `none`, having no list;
+  - kept current by Claude where it is this project's own, any other line changed on the user's ask;
+  - filed at the moment the user asks for a task, in any skill, as a `[user]` capture carrying it and appended to the list in the same turn, the capture ranked at planning like any other.
   **Each step names the thing to click or type and the thing to look for**,
   so "Open your session list" becomes what to click to get there and what tells
   you it worked. **A step
@@ -1111,34 +1094,19 @@ a DELIVERABLE written to disk — a report, a summary, a document for a reader
     where the deliverable lives, and carries the reasoning about it.
 ```
 
-**Every written shape is bounded, and this is the one statement of it — every
-other length rule in the method is subject to this one.** Three provisions:
+**Every written shape is bounded by what it is for, and this is the one statement of it — every other length rule in the method is subject to this one.** Four provisions:
 
-- a record — a capture, a queue item, a session entry — is bounded by the median
-  of its own shape in this project's measured distribution;
+- a work item carries why the work exists, its instructions, and each refused option with why it lost;
+- a capture carries what was noticed and the reasoning, and a session entry how the thing was decided or what was done;
 - a deliverable written to disk is bounded by what the task needs;
-- an index line is bounded by the median index line, per Index entries below.
+- an index line is bounded by its content requirement, per Index entries below.
 
-**Read the bound off the corpus:** `scripts/
-measure_written_shape_length.py` prints each shape's current median. A median is
-a proportion of what is already written rather than an invented figure, and it
-ratchets — writing to it pulls it down.
-
-**A plan entry splits per item processed, exactly as a build entry splits per
-item built.** A planning decision is a disposition on a queue item, and that item
-carries a slug, a filename and an index line. What is genuinely chat-level — a
-correction given, an error found and fixed, a decision belonging to no item —
-goes in the `Also in this chat:` section.
+**`scripts/measure_written_shape_length.py` reports how long each shape runs in this project, as fact.**
 
 **The lever is where text lives as much as how much of it there is.** A work item
 is divided into the instructions a build reads and the decision history a person
 reads; history is relocated to the record and cited from the item rather than
 carried inside it.
-
-**Run `<plugin-root>/scripts/measure_written_shape_length.py .` to report this
-project's own distributions.** It prints how long your captures, work items,
-session records and index lines actually run, and it prints no threshold of any
-kind.
 
 **Placement: append to the bottom of Unprocessed, always.** No judgment call, no
 narration line. **A capture filed mid-run follows the same rule and gets no
@@ -1158,8 +1126,7 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> \
 # a path
 ```
 
-**Subordinate to the ideation loop above** — this is what runs once the loop
-releases the write.
+**Subordinate to the hold on a design still being worked out, under Communication above** — this is what runs once that hold releases the write.
 
 **Narration discipline.** State what was filed in one line and move on, leaving
 the shelving mechanics unsaid. Put timing in the capture-now, design-later frame
@@ -1227,10 +1194,6 @@ ships; on a capture, an idea not worth offering again while the named entry is
 open. **The field takes
 several slugs where the work waits on a group, and the item lifts only when
 every one of them resolves.**
-
-**Carry an ordering preference between captures in prose, because the field
-would hide the entry.** On a capture `Blocked by:` makes the ranking pass over
-it silently — out of what the user sees during an ordinary run.
 
 ## Red flags
 
@@ -1353,11 +1316,9 @@ each entry must carry:
 
 **The index is split by month — the current month's lines in `LOG/index.md`,
 each completed month's in `LOG/index-YYYY-MM.md` — and a targeted retrieve
-searches the index files rather than reading them whole**, so the archive can
-grow without any single read growing with it. The limit is stated rather than
+searches the index files rather than reading them whole**. The limit is stated rather than
 hidden: a search reaches lines that carry the words searched for, and an entry
-indexed under phrasing the search never tries is missed. A planning session's opening still reads, unprompted, the
-`LOG/index.md` lines newer than the most recent planning session's record.
+indexed under phrasing the search never tries is missed.
 
 **Subject to the Authoring standard's length provision above, the bound here is
 the content requirement itself:** an index line carries enough to support the
@@ -1490,15 +1451,7 @@ a change that already carries its  ->  offered as a one-line pointer in the
   wrote, the other chat's changes left to that chat, and a chat with nothing
   to record says so and still closes itself.
 
-  **What happens to an isolated chat's work at close.** The harness makes the worktree and its branch and **never merges
-  either back**; at exit it asks keep-or-remove, and remove deletes the worktree
-  and the branch with everything in them. So an isolated /close run commits, then says
-  which branch the work is on, that it is not merged, and that "remove" would
-  delete it. The merge itself cannot happen there — git refuses to update a branch
-  checked out in another working tree — so it is offered at the opening of
-  a **main-checkout** chat, where session_start reports worktrees carrying
-  unmerged commits. Offer the merge and let the user take it; on a conflict leave the
-  branch alone and say the work is safe on it.
+  **Where the session opening reports a worktree carrying unmerged commits, offer the merge and let the user take it; on a conflict leave the branch alone and say the work is safe on it.**
 
 ## Method problem reports and cross-project INBOX
 

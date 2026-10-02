@@ -73,6 +73,13 @@ _write_claude("# CLAUDE.md\n\nTask list: notes/Tasks.md\n")
 _check("relative path", pre_tool_use._task_list_path(_root), "",
        "a relative path names no list — setup refuses to write one")
 
+_write_claude("# CLAUDE.md\n\nTask list: none\n")
+_check("the word none", pre_tool_use._task_list_path(_root), "",
+       "a line reading none names no list, so no path outside the project "
+       "is permitted ([setup-left-task-list-line-blank])")
+_check("none, no file", pre_tool_use._is_task_list_file(LIST, _root), False,
+       "with the line reading none, no file is the task list")
+
 _write_claude(f"# CLAUDE.md\n\nTask list: {LIST}\n")
 _check("absolute path", pre_tool_use._task_list_path(_root), LIST,
        "the absolute path is read back as written")

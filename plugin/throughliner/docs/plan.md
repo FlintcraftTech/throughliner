@@ -26,7 +26,7 @@ gets built first — through discussion, not silently.
 - **process the accumulated unprocessed work** before any new planning work.
 - **Write to QUEUE.md first, then report what landed.** The full rule, including
   the one test that decides which moments still show first, is in
-  skill-nonspecific-rules.md's approval-time outputs.
+  skill-nonspecific-rules.md's bullet opening "Write first, then report".
 - **A planning session is scope-locked to a standing list, and a write outside it
   is denied.** Writable: QUEUE.md, SPEC.md, CYCLES.md, TOOLS.md, MAP.md,
   `LOG/`, `FAQ/`, the two FAQ templates (`faq-template.md`,
@@ -164,9 +164,7 @@ Runs alone
 
 - **Assign an uncommon execution marker only after re-reading its definition in
   that same turn, and name in the recommendation why this work matches it.**
-  `[freeform]` and `Runs alone` are the two: rare enough that nothing keeps
-  their difference fresh, close enough in shape to be reached for
-  interchangeably, and each carries a consequence the other does not. The common
+  `[freeform]` and `Runs alone` are the two. The common
   markers — no tag, `[audit]`, `[user]` — are exempt.
 
 
@@ -512,9 +510,7 @@ held item's digest line already names its blocker, and only a loop never resolve
 a contradiction is narrated and left standing.
 
 **Seed the queue from SPEC** [SILENT] when the trigger state is absent;
-[BRIEF, PROMPT] when it fires. A rich SPEC can describe buildable features with
-no path into the queue — the whole feature set "dies in SPEC" with nothing to
-build it.
+[BRIEF, PROMPT] when it fires.
 
 ```
 auto-trigger (narrow):  Processed is empty or near-empty
@@ -638,9 +634,7 @@ that the run ends after three.
 
 **Where mail is waiting, that question carries it instead: "There's mail waiting
 — process that first, or say go and I'll take the rest in the method's
-order."** Still one question, and
-it is what gives the mail step its teeth: a question the user answers, rather
-than a step that can be passed over.
+order."**
 
 (If Unprocessed is empty there's nothing to order, so offer seeding from SPEC by
 name instead — the step above. If SPEC is thin too, it's an ordinary conversation
@@ -711,9 +705,7 @@ way once the date has passed — the digest prints `Not before: <date> ->
 passed/ahead` on every entry.
 **The turn that takes such an entry up says what its premise rests on, and
 whether anything has verified it since it was written** — from its rests-on line
-where it has one, plainly where it has none. A dated capture waited on something
-outside the project, so the date passing says the wait is over and says nothing
-about whether the thing it waited for turned out as assumed.
+where it has one, plainly where it has none.
 
 **Pass over any Unprocessed entry whose `Blocked by:` names an entry not yet
 processed or built** [SILENT], on the same terms. So, per the always-loaded
@@ -730,9 +722,7 @@ project's cycles doc** [SILENT], on the same terms. The field says which cycle
 owns the entry as its material, so that cycle's turns draw from it and the
 ranking does not: it is not ranked, not presented and not counted toward the
 session's floor. A `Cycle:` naming a definition that is not in the doc ranks
-normally, so deleting a cycle releases its material by itself — the same
-self-lifting shape as the two arms above, and the digest prints the field. All
-three pass-overs read a field the digest prints, so none needs judgment.
+normally, so deleting a cycle releases its material by itself.
 
 **The fallback ladder — internal, and applied rather than offered.** When nothing
 meaningfully unblocks anything else, work down it:
@@ -783,8 +773,7 @@ per-item checkpoint then presents just the next item.
 
 **Re-check the rung at every pick.** A rung can change mid-session — a red
 flag arrives, the item holding
-everything up gets processed, or the long-and-old group empties into rung 5 —
-even though the bottom rung no longer runs out.
+everything up gets processed, or the long-and-old group empties into rung 5.
 
 **A rung can become live again rather than only run out, so re-check reads in
 both directions.**
@@ -874,7 +863,7 @@ lead with a one-line pointer instead of the pasted quote.
 
 **The opening specimen — the first item folded into the ordering answer:**
 
-> I'll work through these one at a time; say skip, stop, or run the done
+> I'll work through these one at a time; say skip, stop, or run the close
 > command whenever you like.
 >
 > First item — **[work-slug]** — is in [QUEUE.md](QUEUE.md) under Unprocessed.
@@ -964,14 +953,10 @@ summarised in one message for orientation, but the ask at its end covers exactly
 the first part, never the set. This is the operative statement of what counts as
 one item for `[SEQUENCE]`.
 
-**The ask names the act and never assigns authorship.** An ask framed "shall I
-write this in as your hypothesis?" records the user as author of the reasoning
-whatever they answer. Who authored which part is settled by the provenance rules' containment test and
+**The ask names the act and never assigns authorship.** Who authored which part is settled by the provenance rules' containment test and
 written into the item as mixed where it is mixed.
 
-**The question asks about the recommendation, never about the mechanics.** An ask
-that reads "move it into Processed, cleared to run?" asks about the filing, so a
-natural answer — "agreed", "as you recommend" — answers a question nobody put.
+**The question asks about the recommendation, never about the mechanics.**
 
 **The recommendation is never the move itself.** It is the substance stated
 immediately before it; the move to the cleared section is what happens on the
@@ -1003,8 +988,7 @@ described work touches `SPEC.md` — the root's or a part's — clears only wher
 not the line the safety check reads. Where the item's work is
 amending a queue entry's own wording, that is planning work: make the change
 now, at this decision step, or file it as a capture for the next planning
-session — never clear it as a build, which would sit skipped by every run with
-nothing reporting why. An item that can't pass both limbs gets sharpened
+session — never clear it as a build. An item that can't pass both limbs gets sharpened
 further in the interview, or skip-to-deferred with its design progress written
 in by rewriting the entry whole, per the rewrite-whole rule above. Those two
 are the only routes open to it. Where the item
@@ -1129,9 +1113,7 @@ stated in its own sentence apart from them.
 
 **A Files entry whose content depends on a decision not yet made fails the second
 limb**, rather than partly passing it. **Prose that schedules a design decision
-into the build fails the same way, however carefully phrased** — "to be settled
-at the start of the build rather than during it" reads as care about sequencing
-and does the opposite. Two things the clause tells apart:
+into the build fails the same way, however carefully phrased.** Two things the clause tells apart:
 - a decision — anything where two reasonable sessions would produce different
   work — made at planning;
 - a tunable constant — a single value inside otherwise fully described work,
@@ -1387,8 +1369,7 @@ by reading the FAQ index, the record of what has been announced — and confirm
 it is absent or unauthenticated; and ask whether a permission or a rule, rather
 than incapability, keeps Claude out — where it does, the step's text opens
 with the say-so offer the always-loaded rule's third answer names. Trying a tool
-is allowed where trying is quick: the user is in the room, which is what makes
-this the heavy site. Where no tool plausibly exists, that is itself the answer.
+is allowed where trying is quick. Where no tool plausibly exists, that is itself the answer.
 **Aim the check at the one job in hand.**
 
 Two failures this catches. **Reason from what the task would actually take, not
@@ -1454,7 +1435,7 @@ before `--move`, which `--move-section` does not.
 **`--position BOTTOM` with `--marker-after` sweeps the held region, whenever one
 exists.** `BOTTOM` means the bottom of the whole Processed section, which is
 *below* the held items — so the marker follows the item down there and every
-held item lands above it, cleared. The hazard grows with the held region.
+held item lands above it, cleared.
 
 ```
 held region EMPTY      ->  --position BOTTOM --marker-after <slug> is safe
@@ -1465,10 +1446,8 @@ held region NON-EMPTY  ->  place the item with BEFORE <first held item>, and
 
 **Read the mover's report after every run, and confirm the marker sits where you
 meant it to before continuing.** The tool says what it moved and where the
-readiness marker ended up; that report is the confirmation, and a second run
-fired without reading it can compound the first rather than correct it. **On a
-mismatch, read the tool's usage before any second attempt** — the hazards above
-are exactly the kind a re-guess repeats.
+readiness marker ended up; that report is the confirmation. **On a
+mismatch, read the tool's usage before any second attempt.**
 
 **Before clearing, apply close-plan.md's hold-back-unverified-work rule.** Where
 this item's prose names a slug that LOG records as built but not yet verified,
@@ -1738,7 +1717,7 @@ kept work in order; section headers intact.
 **Neutral end-of-queue gate** [PROMPT]. **Its precondition: it may fire only where
 Unprocessed holds nothing but items skipped this session.** Anything else and this
 gate is unavailable — with a full queue the only thing left to reach for is the
-checkpoint, which presents the next item, and that is the correct behaviour.
+checkpoint, which presents the next item.
 
 When the queue empties, do **not** presume the session is over. An empty
 Unprocessed is a resting state, not a stop signal. **The ask opens with the
@@ -1772,8 +1751,8 @@ Where the rescan command has not run in this chat:
 > builds, and [z], which blocks [w].
 >
 > Two commands close a session. Send the rescan command first if you want a
-> check that nothing said here was left out of the files. Then send the done
-> command, which records the session and commits it. Sending done on its own
+> check that nothing said here was left out of the files. Then send the close
+> command, which records the session and commits it. Sending close on its own
 > runs the same check.
 >
 > **Is there anything else to capture or discuss first?**
@@ -1795,13 +1774,9 @@ record this chat; build runs in a fresh chat after that."
 emptying it again is a new rest, and the gate fires there as it did at the first
 one — on a second refill as on any later one.
 
-**A plain ending names the route as information and asks nothing**, so it
-reads as neither an invitation to leave nor as though build could run here.
-
 **Where the user declares they want the chat kept open to capture in, the
 wrap-up ask is silenced for the rest of the chat**, refills included. Held in
-the conversation; nothing is stored. It silences this gate only — /close runs
-when it is invoked, so there is nothing there to silence.
+the conversation; nothing is stored. It silences this gate only.
 
 New items from conversation follow the same loop — check QUEUE.md for overlap
 first. If you notice a gap: "I notice [X] — want to hear a suggestion?"

@@ -74,15 +74,15 @@ of the two tick forms is true.
 
 ```
 1. read relevant existing code or context, and search SPEC.md and QUEUE.md
-   for the item's heading's distinctive words, listing the hits in the run's
-   working file under this item before the first edit — a hit that
+   for the item's heading's distinctive words, noting the hits before the
+   first edit, for the tick's bears-on field — a hit that
    contradicts the item fires the contradiction step at 4; a search reaches
    documents carrying the words tried, and a sentence saying the same thing
    in other words is missed
 2. make the changes                        # no point-form preview first
 3. if readable content -> reveal the new text (informational, no ask)
    if code             -> stay silent
-4. check what was built against SPEC       # SILENT unless it contradicts
+4. check what was built against SPEC — its result goes in the tick's SPEC-check field   # SILENT unless it contradicts
 5. tick it, in whichever of the two forms is true (see below)
 ```
 

@@ -89,7 +89,7 @@ since the two can coincide.
 **Record each `[user]` item the session touched under an outcome, and read that
 outcome off the session's own trail, never off what the item's presence in the
 queue suggests.** The values, and the arm for an outcome none of them fits, are
-next.md's walk-through outcomes provision — stated there once and cited here.
+build.md's walk-through outcomes provision — stated there once and cited here.
 A `[co-write]` item is recorded on the same terms — done, deferred or not
 reached — with the path of its one file in the record.
 
@@ -506,7 +506,7 @@ look-back window above. /plan has none, and gains none.**
 Commit core points here, so it runs at every /close run. The build working file
 and this session's scope file, `_freeform-<session-id>.md`, are deleted by
 /close — the scope file after close-plan.md's handmade-work step has read it,
-with no ask, since the method wrote both; this generalises that lifecycle to
+with no ask; this generalises that lifecycle to
 *other* throwaway files this session created.
 
 Offer to delete only files meeting **all** of these:
@@ -535,8 +535,7 @@ untracked, or outside the repo               ->  NOT recoverable. Give a clear
 
 If nothing session-created looks throwaway, say so in one line and move on.
 
-**The `temp/` pass, run here where the folder exists** — three moves, since
-the folder is disposable by definition and nothing else ever empties it:
+**The `temp/` pass, run here where the folder exists** — three moves:
 
 ```
 1. SENT DRAFTS    for each line in INBOX/sent.md whose pointer names a file
@@ -703,6 +702,8 @@ everything else, the method documents included, in the outer. Same message
 mechanics for each, the inner commit's message covering the product work
 alone. A session that touched only one side makes only that side's commit. A
 flat project — one repository — is unchanged by all of this.
+
+**An isolated /close run — one in a worktree the harness made — commits, then says which branch the work is on, that it is not merged, and that choosing remove at exit would delete the worktree and the branch with everything in them.**
 
 **Before a commit to a repository bound for publication — a nested project's
 inner repository, or a flat project's own where it has a remote — read what is

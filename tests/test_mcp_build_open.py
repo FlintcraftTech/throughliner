@@ -221,7 +221,8 @@ shutil.rmtree(d_tw, ignore_errors=True)
 # --- the tick tool ticks an item in a file this tool opened ------------------
 tick = call(d, "build_tick", {
     "slug": "alpha", "verdict": "confirmed", "depth": "short",
-    "index_candidate": "src/app.py: the greeting", "changes": "src/app.py: one line"})
+    "index_candidate": "src/app.py: the greeting", "changes": "src/app.py: one line",
+    "bears_on": "none found: greeting", "spec_check": "agrees"})
 w = read(d, "_build-s1.md")
 check("build_tick ticks an item in the opened file",
       "Wrote to _build-s1.md" in tick

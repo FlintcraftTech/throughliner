@@ -269,7 +269,7 @@ The check refuses, once, a clock time written into a record, the queue or the s
 
 ## What do the numbers after a queue edit mean?
 
-After every edit to QUEUE.md a note prints one line per item that grew or shrank, like `+119 words, now 916; work items median 525`. The first number is the change, the second the item's total, the third the median of its section as the queue stands now. It is a fact, not a threshold: an item well above the middle has usually accumulated history that belongs in the session record, leaving the item with its instructions. Nothing is enforced.
+After every edit to QUEUE.md a note prints one line per item that grew or shrank, like `+119 words, now 916`. The first number is the change, the second the item's total. It is a fact, not a threshold: an item that keeps growing has usually gathered history that belongs in its record, leaving the item with its reason and its instructions. Nothing is enforced.
 
 ## A note says a heading is wrong — how is it fixed?
 

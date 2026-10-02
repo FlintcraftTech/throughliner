@@ -1,13 +1,6 @@
 ---
 name: setup
 docset: current
-note: >
-  /setup procedure. It runs on two kinds of session: a fresh adoption, where the
-  always-loaded behaviour rules are absent, and a migration or top-up inside an
-  already-adopted project, where they are present. It states its own
-  plain-language guard, so that it holds on the run where nothing else governs
-  it, and each step's prose carries its behaviour in full so a tag never has to
-  be read to follow the step.
 ---
 
 # /setup procedure
@@ -35,10 +28,7 @@ Look for a file named `_build-<session-id>.md` in the project folder. That file
 means a build is in progress — either in this chat or another one — and /setup
 must not run alongside it.
 
-**Say so plainly and stop.** /setup creates and rewrites a lot of the project's
-files, and while a build is running the safety check refuses every write outside
-that build's own list. Starting anyway would not be blocked cleanly at the door;
-it would fail partway, file by file, leaving the setup half-finished. So:
+**Say so plainly and stop.**
 
 > There's a build running in this project at the moment, and setting up while it
 > runs would leave things half-changed. Finish it, or run the close command to
@@ -46,10 +36,7 @@ it would fail partway, file by file, leaving the setup half-finished. So:
 
 Then stop there — no scaffolding, no continue-anyway question, no workaround.
 
-**A planning session is different — it is not refused.** There is no build file
-there, and /setup's own marker (Step 0.5 below) is what lets its writes
-through. What /setup owes that situation is a description rather than a
-refusal, because the failure to avoid is silence, not permission. Say what is
+**A planning session is different — it is not refused.** Say what is
 about to happen and let the user choose:
 
 > You've got a planning session going here. I can set up now — setting up
@@ -72,16 +59,6 @@ stays until this chat's /close run deletes it as its last action: while it
 stands beside that run's own marker, the safety check lets the /close run
 correct the files setup scaffolded.
 
-It is what tells the safety check that this session is a setup run rather than a
-planning one. Without it, every write /setup makes outside QUEUE.md, SPEC.md,
-LOG/ and FAQ/ is refused: the version marker, the format-epoch marker, the
-`.gitignore` lines, the managed block in CLAUDE.md, and any scaffold file the
-run finds missing.
-
-The scratchpad is used because it is writable in every session type — so the
-marker can always be created — and because it clears itself, so a run that dies
-partway leaves nothing to tidy up by hand.
-
 ## Step 0.7: The GitHub CLI and git prerequisites  [SILENT] when every check passes; [BRIEF, PROMPT] otherwise
 
 **What the prerequisite turn carries.** Which of the checks — the two CLI
@@ -92,11 +69,7 @@ plain sentence about what the project will not receive. One ask, at the end.
 
 After the Python check the wrapper names, confirm the GitHub CLI and git: run
 `gh --version`, `gh auth status` and `git --version`, and all three must
-succeed. The CLI is how the
-project receives method updates — once a week the session opening reads the
-newest version on the user's channel through it — and it is the route for a
-problem report on the plugin's own repository. Git is what every session
-close commits with.
+succeed.
 
 ```
 all succeed           ->  nothing to say. Write the channel line to TOOLS.md
@@ -189,15 +162,11 @@ pre-answering PROPOSES the answer for confirmation:
     "From the brief, this is a tax-prep project for your 2025 return — right?"
 ```
 
-Ask cold and you miss context the folder already gave you; pre-answer and the spec
-fills with your words instead of the user's.
-
 **1b. Where the folder already holds more than one git repository — a clone, a
 fork, or a `git init` in a subfolder — say so and ask which root this project
 adopts** [PROMPT]. Name which repository would hold the method's documents under
 each answer, and record the choice as the standing visibility line described at
-the keep-private step. Without it, a fork splits the code from the documents and
-nothing later says which repository the project is actually in.
+the keep-private step.
 
 **2. Leave it untouched; name it at close.** Pre-existing content is not edited,
 moved, or reorganized during scaffolding — scaffolding only adds the method docs.
@@ -251,35 +220,24 @@ recorded epoch < FORMAT_EPOCH
             one, in order, drafting each conversion and getting approval
             before writing
 recorded epoch == FORMAT_EPOCH
-        ->  skip; open the checklist at all
+        ->  skip; the checklist is not opened
 no marker file
         ->  the project predates the marker: treat it as epoch 1 and run the
             whole checklist from the beginning
 ```
 
-**Read the epoch from the marker rather than inferring it from the documents** —
-inferring guesses about files users legitimately hand-edit. The epoch-6
+**Read the epoch from the marker rather than inferring it from the documents.** The epoch-6
 section runs the LOG summary backfill through the backlinks script, once,
 shown before it runs.
 
 **Where a conversion writes a build block — or any instruction text — under an
 existing queue item, it writes one more line beneath it:**
 `Build block written by the format migration on YYYY-MM-DD, not yet checked at planning`,
-the date read from the clock. A migration runs hands-off, and the buildability check
-needs the user present; the line is what lets the queue digest surface a
-cleared item nobody has checked, and the decision step removes it once the
-check is run.
-
-Showing each conversion before writing it is the general write-first test
-applied, not an exception to it: a project being adopted or migrated may not be
-a committed git repo, so its old documents may not be recoverable once
-overwritten.
+the date read from the clock.
 
 **1b. Reconcile the settings attached to the scaffold list**  [SILENT] for the
 settings added without an answer; [BRIEF, PROMPT] for the brevity-style offer
-and for INBOX files already in git history. Step 1 restores
-missing *files*. It does not re-run the *decisions* attached to them, so a
-migrated project can end up with a file and none of the setup that goes with it.
+and for INBOX files already in git history.
 Check each, and make it so if it isn't:
 
 ```
@@ -301,7 +259,7 @@ SPEC.md has no `## Goals` heading
                         ->  ask the interview's goals question once (Step 3),
                             in one line, and write the answer as the section,
                             add-only; "none" writes nothing
-CLAUDE.md has no `Task list:` line
+CLAUDE.md has no `Task list:` line, or a blank one
                         ->  ask once, in one line, in this shape: "Next: do
                             you already have the Throughliner unified to-do
                             list? If so please share the file's path.
@@ -319,7 +277,7 @@ CLAUDE.md has no `Task list:` line
                             block. A relative path is refused, since the list
                             sits outside the project and the safety check
                             reads the line for the one file it permits there;
-                            "none" writes nothing and is not asked again
+                            "none" writes `Task list: none` and is not asked again
 ```
 
 **Where the project has INBOX files already in git history, say so plainly.**
@@ -403,10 +361,6 @@ paragraph directly under `## Processed` or `## Unprocessed` in the project's
 QUEUE.md is ordinary prose, prefix each of its lines with `> ` so it becomes a
 blockquote. Leave the wording alone — this changes the shape, not the text.
 
-The queue lint reads any un-quoted, un-headed prose inside a section as an
-orphaned rationale and warns that an item's heading may have been overwritten —
-and a preamble legitimately has no heading.
-
 ```
 preamble is already a blockquote  ->  nothing to do
 preamble is plain prose           ->  quote it, wording untouched
@@ -417,11 +371,8 @@ no preamble under the heading     ->  nothing to do; the scaffold's own
 **3. Update `.throughliner-version`**  [SILENT] to the current plugin version.
 
 If the project instead carries the pre-rename marker `.si-version`, write the
-new file and delete the old one — the method was called Sovereign Implementer
-until epoch 3 and both marker files were named for it. Do the same for
-`.si-format-epoch` in step 3a. Leaving the old file behind means every later
-session reads a marker the plugin no longer writes to, so the two names drift
-apart silently.
+new file and delete the old one. Do the same for
+`.si-format-epoch` in step 3a.
 
 **3a. Write `.throughliner-format-epoch`**  [SILENT] when the conversion ran to
 completion; [BRIEF] when the user skipped it — the document-format number this migration
@@ -430,9 +381,7 @@ brings the project up to. Read it from `FORMAT_EPOCH` near the top of
 into `.throughliner-format-epoch` at the project root.
 
 Do this **last among the migration edits**, and **only when the conversions for
-that epoch ran to completion**. It is what clears the session-start halt that
-sent the user here, so writing it early would silence the warning while the
-project was still on the old shape — and nothing else would ever raise it again.
+that epoch ran to completion**.
 
 ```
 conversion ran to completion   ->  write the new epoch number
@@ -443,10 +392,6 @@ user skipped the conversion    ->  leave the marker at its old value, and say
 
 **3b. Read the project's own CLAUDE.md for retired terms, and report what you
 find**  [SILENT] when clean; [BRIEF] when reporting.
-
-A project's CLAUDE.md was written when it was set up and is read at the start of
-every session since; where it describes a piece of the method that has since
-been retired, every session reads that description as current.
 
 Search the file for each retired term the method carries, and for each hit say
 plainly what the term was and what replaced it.
@@ -468,16 +413,12 @@ the consumer's words — kept separately from the host register on purpose:
                                      is `/build`; what it does is unchanged
 ```
 
-**Also read the project's SPEC.md for a "Project docs" section** — the old
-scaffold wrote one describing the method's own machinery into the user's
-product truth, and it goes stale in a way no refresh repairs, because SPEC is
-the user's document and is never rewritten by a migration. Report it the same
+**Also read the project's SPEC.md for a "Project docs" section.** Report it the same
 way: say the section describes the method rather than their product, that the
 same description now lives in the managed block of their CLAUDE.md, and edit
 nothing — removing it is their call.
 
-**Report only — edit nothing.** The file is the user's, and reconciling its
-wording against the current template would clobber whatever they wrote into it.
+**Report only — edit nothing.**
 Tell them what is stale, what it means now, and leave the change to them.
 
 ```
@@ -504,13 +445,6 @@ regions differ         ->  say what will be replaced, then:
 no markers found       ->  report it like a retired term (3b): say the managed
                            block is missing and what it is, edit nothing
 ```
-
-This is the one deliberate exception to the add-only rule below: the
-block's own marker promises it is updated on /setup, and the method-owned text
-between the markers is exactly what goes stale as the method evolves — a stale
-queue model there is read as current at the start of every session. The move-
-then-replace order is what keeps the exception safe: nothing the user wrote is
-deleted, only relocated below the marker, and the narration names it.
 
 **4. Skip the interview**  [SILENT] — the project is already described in SPEC.md.
 
@@ -624,16 +558,12 @@ FAQ/index.md  <-  ${CLAUDE_PLUGIN_ROOT}/templates/faq-index-template.md
 **workshop/ folder, with `workshop/resources/research/` and
 `workshop/resources/supplied/` inside it** — create them
 empty, and the top-up adds them to an existing project. `workshop/` is where the project's working material lives — what it works
-with rather than what it ships — so someone landing on the repository sees the
-product and the method's own documents first, and everything they merely refer to
-sits in one folder that can be skipped. `workshop/resources/research/` is the home
+with rather than what it ships. `workshop/resources/research/` is the home
 for research notes (`workshop/resources/research/<topic>.md`),
 `workshop/resources/supplied/` is the home for material the user wrote or
 attached, written unchanged, and
 `workshop/resources/testing/` is the home for re-read-later testing evidence,
-created when there is something to put in it. Creating the research folder at setup
-means research notes have a place from day one rather than the folder being
-conjured on first use.
+created when there is something to put in it.
 
 **temp/ folder** — create it empty, and add `temp/` to `.gitignore` beside the
 `INBOX/` line. It is where a session puts what the project does not keep: a
@@ -653,11 +583,6 @@ Add `INBOX/` to `.gitignore`, and say so in one line  [BRIEF] — that mail from
 projects stays out of the repository, and they can remove the line if they want it
 committed. No question is asked.
 
-Why it isn't asked: anything committed is published, an un-ignored mailbox
-accumulates another project's raw text in the repository forever, and the safe
-outcome must not depend on a question being asked, because a question is
-skippable.
-
 **CLAUDE.md:**
 
 ```
@@ -666,20 +591,14 @@ no CLAUDE.md exists  ->  scaffold from
 one already exists   ->  APPEND the method block; never overwrite
 ```
 
-The template carries no rendering settings — how doc-bound text is surfaced is a
-default plus a session-opening offer, not a stored field (skill-nonspecific-rules.md,
-view-in-doc rendering).
+**Where CLAUDE.md was scaffolded here from the template, ask the task-list question once, in the words the top-up's row gives, and write the answer on the template's `Task list:` line** [BRIEF, PROMPT] — the absolute path, or `none`.
 
 **.throughliner-version** — write the current plugin version (from
 `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`). session_start reads it to
 detect when the plugin has been updated.
 
 **.throughliner-format-epoch** — write the document-format number, read from `FORMAT_EPOCH`
-near the top of `${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py`. Separate from the
-version on purpose: the version changes at every release, the format number only
-when a change makes older projects' documents structurally wrong. session_start
-compares the two and halts the session when the project is behind, so a project
-on an old shape finds out instead of quietly running on stale scaffolding.
+near the top of `${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py`.
 
 **.gitignore** — create it if absent, and make sure it carries an entry for
 `.throughliner/`, added only where it is missing.
@@ -708,9 +627,7 @@ setup in it.
 **Write the shape into the project CLAUDE.md's Visibility line as part of the
 scaffold**: which two repositories exist, which holds the product and goes
 public, which holds the documents and never gets a remote. The template's
-Visibility slot carries the pattern. This is the standing line every later
-session reads when weighing a git operation, so a nested scaffold that leaves
-it blank leaves "which repository am I in" unanswered.
+Visibility slot carries the pattern.
 
 **Only the approved set, in the right repository.** The structure
 conversation (Step 3) ends on a list the person approved: folders and `.md`
@@ -792,9 +709,7 @@ LOG/       what happened, session by session
 ```
 
 **It is ONE question with three answers, never three questions.** The yes takes
-all three; a user who names a document gets just that combination — a private
-queue with a public history is the one someone most plausibly wants, and a
-bundled choice would make it unreachable rather than merely un-defaulted. The
+all three; a user who names a document gets just that combination. The
 combinations are said only when the user names a document.
 
 **The trade is stated once, in the one sentence of why above**, never once per
@@ -819,9 +734,7 @@ LIMIT    those saved copies live on this machine and carry no history, so a
 They also do not travel with a clone.
 
 **Nothing here is asserted again later as a fault.** Every session opening
-reports which of the three are untracked and what follows, because this state
-can also arrive from an ignore file the user wrote themselves, or from a choice
-made weeks ago in a project nobody has looked at since.
+reports which of the three are untracked and what follows.
 
 ```
 user accepts, or names   ->  add exactly those paths to `.gitignore`, say in one
@@ -863,12 +776,8 @@ and `temp/` to an existing project.
 **Whichever arm the fork lands in, the proposed configuration is what a user
 who says nothing about it ends up with — private via the ignore in a flat
 project, private by architecture in a nested one.** Acceptance is the default
-here and nowhere else in scaffolding: the material is the most personal the
+here and at the style offer: the material is the most personal the
 method produces.
-
-**This adds no sixth interview question.** It is part of scaffolding, where the
-files are being created, and it is answerable without knowing anything about the
-project.
 
 **The brevity-style offer**  [BRIEF, PROMPT]. The plugin ships two output
 styles, and the offer names both in one message: Throughliner Brevity,
@@ -947,9 +856,7 @@ becomes a real question once the code is going somewhere public
 The method scans for things shaped like credentials and reads its own writing
 against a checklist, and neither can tell whether a sentence quietly identifies
 a real person — so this offer may set up the repository and may say nothing
-about the documents being checked, clean, or safe to publish. Any wording
-implying they have been checked contradicts a shipped rule, and it is the
-sentence most likely to slip in here.
+about the documents being checked, clean, or safe to publish.
 
 ## Step 3: Interview (adaptive discovery)  [SEQUENCE, PROMPT]
 
@@ -964,8 +871,7 @@ it's for, its core, and a first thing to build. Principles and the free-form
 
 **Where a scaffolding choice is the user's — which folder to adopt, whether
 existing content is a doc to leave alone, how to read an ambiguous answer — ask
-before acting.** The question costs one turn; a wrong guess makes the user undo a
-scaffold.
+before acting.**
 
 **The framing throughout is "adopt the folder":** the method is being applied to
 their project, not their project reorganised to suit the method.
@@ -982,8 +888,7 @@ are** — two in one message is bundling.
   generated from what's missing, not from a fixed position in a script.
 - **Recommend an answer to each question** rather than asking cold — offer a
   plausible answer the user can accept, correct, or replace ("My guess is this is for
-  personal use rather than a team — is that right?"). A no-code developer finds it far
-  easier to react to a proposal than to fill a blank.
+  personal use rather than a team — is that right?").
 - **Cover these topics** — a bank to draw on, not a checklist to recite:
 
 ```
@@ -1076,18 +981,10 @@ task list in the same turn, under the same provision as the goals question
 above.
 
 **Write the heading in the user's own words, and stop there.** Their words are
-the whole content of the item — anything added is Claude's scope decision wearing
-the user's voice, and the tempting case is a parenthetical example drawn from
-what they said, which reads as a commitment they agreed to.
+the whole content of the item.
 
 Scope decisions belong in /plan, which is where this item gets processed. If
 examples would clarify scope, ask a follow-up rather than smuggling them in.
-
-Discovery ends where it ends; there is no settings round after it.
-
-The editor and working-mode questions that used to sit here are **gone**,
-replaced by one default: point at the doc, with a plain-English summary inline
-where a discussion needs one.
 
 ## Step 3.5: The project's own tools  [BRIEF, PROMPT] for the ask; [SILENT] for the probe
 
@@ -1118,8 +1015,7 @@ the project's work needs no               ->  write nothing, and say so in
   command-line tool                           one clause
 ```
 
-Every later session reads `TOOLS.md` before handing over a manual walkthrough,
-so the answers land here before any work item exists to need them. The top-up
+The top-up
 does not carry this step: an existing project's `TOOLS.md` fills as sessions
 learn facts, any of which may write one the moment it is learned.
 
@@ -1164,10 +1060,10 @@ the LOG entry /close writes at close.
 
 **Teach the working rhythm in plain words** — a few short sentences:
 
-- **/setup** you've now run once; you won't run it again for this project.
+- **/setup** you've now run once; you'll run it again only when a session's opening says the project has fallen behind the method.
 - From here, two commands carry the work: **/plan** to think and organise, and
   **/build** to build the next thing on the list. Run /plan whenever planning is
-  needed, and /build once per item as you work down the queue.
+  needed, and /build to work through everything cleared, several items in one run.
 - However a session goes, end it with **/close**, which records what happened
   and saves it. After that the conversation can be cleared: **/clear** wipes
   the conversation on screen and touches none of the project's files, which is

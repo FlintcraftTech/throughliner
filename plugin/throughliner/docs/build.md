@@ -157,9 +157,7 @@ habit, not a rule with machinery behind it.
 ### 2. Find the run, and read SPEC  [SILENT]
 
 **Read the root SPEC.md once here, at run start** — not per item, and no other
-spec. It is the product truth each item is built against, and a build that
-never reads it cannot be checked against it. Reading it once per run is what
-makes the per-item check in build-work.md cost almost nothing.
+spec.
 
 **Then read the `LOG/index.md` lines newer than the most recent build run's
 record** — that record found by its body fields, a build's record carrying a
@@ -491,8 +489,9 @@ build item (no tag)  ->  read and follow build-work.md
 Between build items, keep going autonomously — the user confirmed the whole run
 at the Step 1 off-ramp, so there's no per-item re-confirmation.
 
-**As each item completes, make four writes in the working file, then remove the
-item:** tick it in Progress, record that item's depth field, write that item's
+**As each item completes, make six writes in the working file, then remove the
+item:** tick it in Progress, record that item's depth field, that item's
+bears-on line and its SPEC-check line, write that item's
 index-entry candidate, and write that item's `Changes:` entry — the files it
 touched, one line each — then remove that one item from QUEUE.md with the
 mechanical mover, addressed by its slug.
@@ -515,7 +514,7 @@ only describe what is already built.
 gives below: a bare positional line attaches to whichever tick it happens to sit
 under, and a later tick written above it silently takes it. The LOG-entry
 `Rule gate:` format is unchanged and stays slugless — that line describes the
-session, not one item, and `workshop/resources/rule_signals.py` reads it as it is.
+session, not one item.
 
 **The tick is the accumulation point for per-item writes.** `Progress:`,
 `Index entry candidates:`
@@ -548,10 +547,10 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> \
     --delete <slug> Processed
 ```
 
-Where the project's state server is registered, make the four writes and the
+Where the project's state server is registered, make the six writes and the
 removal with its `build_tick` tool, which writes the lines in the shapes above,
-refuses a missing verdict, a full depth with no trigger or a gate line the item
-does not carry, and removes the item in the same call.
+refuses a missing verdict, a full depth with no trigger, a gate line the item
+does not carry or an empty bears-on or SPEC-check field, and removes the item in the same call.
 
 Tick first, then remove. That order means an interruption between the two leaves
 the item in both files, which a resume can see and settle — the reverse order
@@ -608,7 +607,7 @@ judgment about whether its moment has come.
 walkthrough — is not driven: the run says in one clause that it is on the
 user's task list and carries on to the next item.** It completes when the user
 ticks the line in their notes app, which the planning opening reads; its
-outcome this run is `not reached`, since nothing was presented to be done.
+outcome this run is `not reached`.
 
 **Test a precondition inside the item's own drive, never as an outside filter.**
 Where a drive's first step cannot proceed — the thing it needs isn't there, the

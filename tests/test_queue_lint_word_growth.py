@@ -124,9 +124,8 @@ check(
     f"got {got!r}",
 )
 
-# --- the growth line carries the item's total and its section's median --------
-# ([lint-growth-line-shows-total-and-median]): the bound the authoring standard
-# reads off the corpus is printed beside the growth, per section.
+# --- the growth line carries the change and the item's total, no median -------
+# ([length-bound-by-content-not-median]).
 
 GAMMA = "#### Do a third thing [gamma]\nOne two three four five six seven eight nine ten eleven twelve.\n"
 before = queue(ALPHA + "\n" + BETA + "\n" + GAMMA)
@@ -135,30 +134,26 @@ after_text = queue(
     + "\n" + BETA + "\n" + GAMMA
 )
 lines = lint._growth_lines(lint._item_word_counts(before),
-                           lint._item_word_counts(after_text),
-                           lint._item_sections(after_text))
+                           lint._item_word_counts(after_text))
 # The counter splits the heading line too, `####` included: alpha is 5 + 9 =
-# 14 words, beta 6 + 5 = 11, gamma 6 + 12 = 18. The median over the three
-# Processed items is 14.
+# 14 words.
 check(
-    "the growth line names the item's total and its section's median",
-    lines == ["[alpha] +5 words, now 14; work items median 14"],
+    "the growth line names the change and the item's total, with no median",
+    lines == ["[alpha] +5 words, now 14"],
     f"got {lines!r}",
 )
 
-# The median is computed over the changed item's OWN section: a capture in
-# Unprocessed is measured against the captures, not the work items.
+# A capture in Unprocessed gets the same line shape.
 mixed_before = ("# QUEUE\n\n## Processed\n\n" + ALPHA + "\n" + GAMMA
                 + "\n## Unprocessed\n\n" + BETA)
 mixed_after = ("# QUEUE\n\n## Processed\n\n" + ALPHA + "\n" + GAMMA
                + "\n## Unprocessed\n\n"
                + "#### Do the other thing [beta]\nProse about the other thing, longer.\n")
 lines = lint._growth_lines(lint._item_word_counts(mixed_before),
-                           lint._item_word_counts(mixed_after),
-                           lint._item_sections(mixed_after))
+                           lint._item_word_counts(mixed_after))
 check(
-    "a capture's median is computed over the captures alone",
-    lines == ["[beta] +1 words, now 12; captures median 12"],
+    "a capture's growth line carries no median either",
+    lines == ["[beta] +1 words, now 12"],
     f"got {lines!r}",
 )
 

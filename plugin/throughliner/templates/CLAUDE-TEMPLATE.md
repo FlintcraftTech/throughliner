@@ -51,8 +51,7 @@ Language: English
      have ticked. Where the file opens with a header stating its line
      conventions, the line's fields are written as that header says. Claude
      keeps this project's lines current and changes any other line when you
-     ask. Leave the line
-     blank to keep no list. An absolute path, e.g.
+     ask. Write none to keep no list; setup asks and fills this line in. An absolute path, e.g.
      "Task list: C:\Users\you\Notes\Tasks.md" -->
 
 Task list:

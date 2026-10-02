@@ -1703,6 +1703,9 @@ WORKING_FILE_SECTIONS = ("Index entry candidates", "Run-level", "Files",
 _SECTION_HEADER_RE = re.compile(
     r"^(%s):\s*$" % "|".join(re.escape(s) for s in WORKING_FILE_SECTIONS))
 _ARTICLE_LEAD_RE = re.compile(r"^\s*(?:-\s*)?(?:a|an|the)\b", re.IGNORECASE)
+_SPEC_CHECK_RE = re.compile(
+    r"^(?:agrees\b|not applicable\b|contradicts:\s*\S|owes:\s*\S)",
+    re.IGNORECASE)
 
 
 def _build_working_file(root, session_id):
@@ -1749,8 +1752,8 @@ def _working_file_sections(lines):
 
 def tool_build_tick(arguments):
     """One checked call for a build item's completion: tick, depth, rule gate,
-    index candidate and changes lines into the working file, then the item
-    out of Processed."""
+    bears-on, SPEC-check, index candidate and changes lines into the working
+    file, then the item out of Processed."""
     root = project_root()
     queue = _queue_path(root)
     digest = _digest()
@@ -1768,9 +1771,26 @@ def tool_build_tick(arguments):
     rule_gate = (arguments.get("rule_gate") or "").strip()
     candidate = (arguments.get("index_candidate") or "").strip()
     changes = (arguments.get("changes") or "").strip("\r\n")
+    bears_on = " ".join((arguments.get("bears_on") or "").split())
+    spec_check = " ".join((arguments.get("spec_check") or "").split())
     session_id = (arguments.get("session_id") or "").strip()
 
     problems = []
+    if not bears_on:
+        problems.append("bears_on is missing — what the search of SPEC and "
+                        "the queue found for this item, as file and what it "
+                        "says, or `none found` followed by the words tried; "
+                        "`not applicable` for an [audit] or [user] item.")
+    if not spec_check:
+        problems.append("spec_check is missing — what the after-build check "
+                        "against SPEC found: `agrees`, `contradicts: <the "
+                        "SPEC sentence>`, or `owes: <the slug of the capture "
+                        "filed>`; `not applicable` for an [audit] or [user] "
+                        "item.")
+    elif not _SPEC_CHECK_RE.match(spec_check):
+        problems.append("spec_check opens `agrees`, `contradicts: <the SPEC "
+                        "sentence>`, `owes: <the slug of the capture filed>` "
+                        "or `not applicable`.")
     if not slug:
         problems.append("slug is missing — the item being ticked.")
     if verdict not in ("confirmed", "unconfirmed"):
@@ -1858,6 +1878,8 @@ def tool_build_tick(arguments):
     progress = [tick, depth_line]
     if rule_gate:
         progress.append("Rule gate: %s — %s" % (slug, rule_gate))
+    progress.append("Bears on: %s — %s" % (slug, bears_on))
+    progress.append("SPEC check: %s — %s" % (slug, spec_check))
     candidate_line = candidate if candidate.startswith("-") else "- " + candidate
     change_lines = [l.rstrip("\r\n") for l in changes.splitlines()]
     change_lines = [l if l.lstrip().startswith("-") else "- " + l
@@ -2670,6 +2692,7 @@ TOOLS = [
             "(`- [x] <description> — done, confirmed` or `— done, "
             "UNCONFIRMED: <reason>`), the slug-bound `Depth:` line, the "
             "slug-bound `Rule gate:` line where the queue item carries one, "
+            "the slug-bound `Bears on:` and `SPEC check:` lines, "
             "the index-entry candidate and the `Changes:` entry into this "
             "session's build working file in the exact shapes build.md's "
             "specimen shows, then removes the item from Processed through "
@@ -2677,11 +2700,14 @@ TOOLS = [
             "the working file's item list or already ticked, a missing "
             "verdict, an unconfirmed tick with no reason, a full depth with "
             "no trigger, a rule-gate line the item does not carry (or a "
-            "missing one it does), and an index candidate led by A/An/The.",
+            "missing one it does), an empty bears-on or SPEC-check field, "
+            "and an index candidate led by A/An/The. The two fields show "
+            "the search and the check were reported; they cannot show "
+            "either ran.",
         "inputSchema": {
             "type": "object",
             "required": ["slug", "verdict", "depth", "index_candidate",
-                         "changes"],
+                         "changes", "bears_on", "spec_check"],
             "properties": {
                 "slug": {"type": "string",
                          "description": "The item being ticked."},
@@ -2722,6 +2748,23 @@ TOOLS = [
                     "type": "string",
                     "description": "The files this item touched, one "
                                    "`- path: what changed` line each.",
+                },
+                "bears_on": {
+                    "type": "string",
+                    "description": "What the before-first-edit search of "
+                                   "SPEC and the queue found for this item, "
+                                   "as file and what it says, or `none "
+                                   "found` followed by the words tried. "
+                                   "`not applicable` for an [audit] or "
+                                   "[user] item.",
+                },
+                "spec_check": {
+                    "type": "string",
+                    "description": "What the after-build check against SPEC "
+                                   "found: `agrees`, `contradicts: <the SPEC "
+                                   "sentence>`, or `owes: <the slug of the "
+                                   "capture filed>`. `not applicable` for an "
+                                   "[audit] or [user] item.",
                 },
                 "session_id": {
                     "type": "string",
