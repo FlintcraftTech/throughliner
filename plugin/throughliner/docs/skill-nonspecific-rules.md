@@ -202,15 +202,13 @@ The work cycle. Every piece of work travels the same loop.
 - **When capturing something mid-skill, close by who raised it.** User raised it →
   ask "anything else?" before resuming. Claude noticed it → confirm and resume,
   naming what you filed ("I noticed X, filed it, resuming"), and carry straight
-  on. The /plan-time offer for an un-agreed idea lives in plan.md's process-now
-  section; the offer recommends, and where the lean is to process now,
-  processing proceeds.
+  on. In /plan a raised thing is discussed before anything is written, as
+  plan.md's raised-mid-planning section states.
   **A thing the user has already agreed to in this exchange is written without a
   filing question**, in every skill including /plan: report it in one line
   naming what landed, which the user can reject and have reverted. Delete asks
   and send asks are untouched, since they decide something other than whether
-  to file; the process-now offer belongs to an idea not yet agreed, before its
-  write.
+  to file.
 - **A verbatim-copy string is a paste target, and paste targets are rendered by
   the View-in-doc rendering section below.** Scope: genuine paste targets only —
   paste-ready prompts, and commands the user runs in a separate terminal. Commit
@@ -229,8 +227,8 @@ The work cycle. Every piece of work travels the same loop.
 YES -> write it, then report      queue items and captures · LOG entries ·
                                   SPEC edits · ordinary file edits in a build
 NO  -> show it, then wait         anything that LEAVES THE MACHINE (the
-                                  feedback report, an outbound INBOX message
-                                  to another project) · a wholesale conversion
+                                  feedback report, a capture sent to another
+                                  project) · a wholesale conversion
                                   of a document the user already owns, where
                                   git does not yet hold it
 SHOWN, then committed in the      a commit message — shown as the record of
@@ -594,7 +592,11 @@ This rule has a second firing site: the moment work is about to be tagged
 ### Where findings and records land — a three-way triage
 
 ```
-reveals work to do                    ->  capture in QUEUE.md Unprocessed
+reveals work to do                    ->  capture in QUEUE.md Unprocessed — or,
+                                          where the work is another project's,
+                                          a capture sent to that project on the
+                                          user's yes, offered as "send it to
+                                          <project> as a capture"
 a finding, or a clean pass            ->  the observing chat's LOG entry
     (no verbatim re-read needed)          # a PASS is a finding, not work
     # NEVER an [audit] run's output, which goes to Unprocessed whatever it
@@ -949,8 +951,8 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
   which of the two is settled at /plan's decision step, and the task line is
   appended to the user's task list the moment the item is kept, where the
   project's own CLAUDE.md names one in a `Task list:` line — a project with
-  no such line has no list, and Claude only ever appends to it, never
-  removing or reordering a line; and a task the user asks for, in any skill,
+  no such line has no list, and Claude keeps this project's own lines in it
+  current and changes any other line on the user's ask; and a task the user asks for, in any skill,
   is filed at that moment as a `[user]` capture carrying its task line and
   appended to the list in the same turn, the capture ranked at planning like
   any other.
@@ -1430,10 +1432,10 @@ a record or finding to be READ  ->  a LOG entry, or a workshop/resources/ file
 needed and minor        ->  recommend adding it, and ask
 needed and significant  ->  propose splitting
 NOT needed              ->  capture and continue    # the common case
-                            # INSIDE /plan: an un-agreed idea gets the offer
-                            # before the write; an already-agreed thing is
+                            # INSIDE /plan: an un-agreed idea is discussed
+                            # before any write; an already-agreed thing is
                             # written without a filing question — see
-                            # plan.md's process-now section
+                            # plan.md's raised-mid-planning section
 premise is broken       ->  halt and course-correct
 ```
 
@@ -1510,7 +1512,7 @@ mail waiting at the chat's opening.
 ```
 the discriminator:  which thing is misbehaving?
     my project   ->  an ordinary capture in my QUEUE
-    the method   ->  mail to the plugin's own project where this project's
+    the method   ->  a capture to the plugin's own project where this project's
                      address book records it as a correspondent — same
                      machine, nothing published, and it lands in the queue
                      that would fix it; otherwise a GitHub issue on the
@@ -1524,8 +1526,8 @@ the discriminator:  which thing is misbehaving?
 ```
 
 **A send or post goes out only after the user has seen the exact text and
-given an explicit yes** — feedback reports, GitHub issues, and outbound INBOX
-messages alike. Inbound INBOX mail is surfaced by session_start and routed
+given an explicit yes** — feedback reports, GitHub issues, and captures sent to
+another project alike. Inbound INBOX mail is surfaced by session_start and routed
 through the three-way triage, then archived.
 
 **When an inbound message asks a question, a reply is owed: draft it unprompted

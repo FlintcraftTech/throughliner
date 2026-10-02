@@ -255,29 +255,29 @@ def test_a_chain_is_computed_for_each_weekday():
     shutil.rmtree(d, ignore_errors=True)
 
 
-def test_a_chain_step_carries_its_task_line():
-    """A step whose own definition carries `Task line:` has that text on the
-    chain, keyed by the checklist's slug; a step with none is absent from the
-    dict rather than given an invented line."""
+def test_a_your_part_field_leaves_the_chain_dates_unchanged():
+    """A step whose definition carries a `Your part:` field parses, and the
+    chain's dates are what they are without it; nothing about a task line is
+    carried on the chain."""
     import datetime
     doc = CHAINED.replace(
         '## Release [release]\nTrigger: the word "release".',
         '## Release [release]\nTrigger: the word "release".\n\n'
-        '**Task line:** Run the plan command and say yes when it asks '
+        '**Your part:** Send the plan command and say yes when it asks '
         'whether to release the beta\n')
+    plain = project(CHAINED)
     d = project(doc)
-    chains = hook.cycle_chains(d, datetime.date(2026, 9, 3))
+    day = datetime.date(2026, 9, 3)
+    chains = hook.cycle_chains(d, day)
+    baseline = hook.cycle_chains(plain, day)
     shutil.rmtree(d, ignore_errors=True)
+    shutil.rmtree(plain, ignore_errors=True)
     check("the chain is still read with the field present",
           chains is not None and len(chains) == 1, repr(chains))
-    if chains:
-        task_lines = chains[0].get("task_lines") or {}
-        check("the release step carries its task line",
-              task_lines.get("release") == "Run the plan command and say yes "
-              "when it asks whether to release the beta", repr(task_lines))
-        check("a step with no field is not in the dict",
-              "maintenance-sweep" not in task_lines and "rezip" not in task_lines,
-              repr(task_lines))
+    check("the chain's dates are unchanged by the field",
+          chains == baseline, repr(chains))
+    check("no task-line key rides the chain",
+          bool(chains) and "task_lines" not in chains[0], repr(chains))
 
 
 DATED = """# CYCLES
@@ -347,7 +347,7 @@ def test_a_date_anchor_with_forward_leads_and_the_spent_state():
 if __name__ == "__main__":
     print("test_session_start_cycles_facts.py")
     test_a_chain_is_computed_for_each_weekday()
-    test_a_chain_step_carries_its_task_line()
+    test_a_your_part_field_leaves_the_chain_dates_unchanged()
     test_a_date_anchor_with_forward_leads_and_the_spent_state()
     test_a_doc_produces_a_definition_per_cycle()
     test_a_wrapped_field_reads_whole()

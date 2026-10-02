@@ -309,6 +309,10 @@ Follow close.md's **LOG entry files** section, using its **Plan / setup** body
 fields (`Queue changes`; `Work processed`). Planning sessions carry no
 index-entry candidate — author the index entry fresh.
 
+**Where an item's record was written when the item was kept, complete it by
+Edit — its `Queue changes` and `Work processed` fields, and anything the
+session added since — and write no second record for that item.**
+
 If a red flag was cleared this session, record **how** in the session's LOG
 entry. Clearing happens at processing, so /plan is where this record is written
 — /close **records** and does not re-decide:

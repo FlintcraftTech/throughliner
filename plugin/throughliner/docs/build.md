@@ -161,6 +161,13 @@ spec. It is the product truth each item is built against, and a build that
 never reads it cannot be checked against it. Reading it once per run is what
 makes the per-item check in build-work.md cost almost nothing.
 
+**Then read the `LOG/index.md` lines newer than the most recent build run's
+record** — that record found by its body fields, a build's record carrying a
+`Files touched` field, and where none exists, the current month's lines. Index
+lines, not the entries beneath them: open an entry only where an item's
+instructions are unclear or contradict something already read. The read is
+silent, like the SPEC read.
+
 Then read QUEUE.md's cleared region top-down, each item whole. That is the run.
 
 **A build carrying an `Assigned to:` line naming someone other than the person

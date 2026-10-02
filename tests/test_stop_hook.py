@@ -430,110 +430,15 @@ def transcript(root, command="plan", assistant_texts=(), name="transcript.jsonl"
     return path
 
 
-def test_process_now_offer_is_enforced_once_in_a_planning_chat():
-    """[process-now-offer-fixed-and-enforced], reshaped by
-    [process-now-offer-recommends-or-proceeds]: a planning-chat reply that
-    reports a filing with neither the file-for-later ask in reach nor the
-    item's own bold ask is blocked once; "File it for later?" in the reply,
-    or in a previous assistant turn, passes; a reply proceeding into the
-    item's own ask passes; a build working file present passes regardless."""
+def test_planning_chat_filing_report_owes_no_routing_ask():
+    """[stop-hook-file-later-formula-outdated]: the check that demanded a
+    routing ask after a filing report in a planning chat is gone, so a real
+    filing reported with no ask passes."""
     root = project()
-    t = transcript(root)
     code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed. Anything else?", transcript=t)
-    check("a filing report with neither ask is blocked",
-          "File it for later?" in out and '"decision": "block"' in out, out)
-    code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed. Anything else?", transcript=t)
-    check("the same check does not block twice in a session",
+                               "Unprocessed.", transcript=transcript(root))
+    check("a planning-chat filing report with no ask is not blocked",
           '"decision": "block"' not in out, out)
-
-    code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed. It already seems complete, so I "
-                               "would file it.\n\n**File it for later?**",
-                         session_id="s2", transcript=t)
-    check("the file-for-later ask in the reply passes",
-          '"decision": "block"' not in out, out)
-    code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed. Taking it now: it would change "
-                               "the cleared build.\n\n**Do that?**",
-                         session_id="s5", transcript=t)
-    check("a reply proceeding into the item's own ask passes",
-          '"decision": "block"' not in out, out)
-
-    t2 = transcript(root, assistant_texts=["I would file this one for later. "
-                                           "File it for later?"],
-                    name="t2.jsonl")
-    code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed.", session_id="s3", transcript=t2)
-    check("the ask in the previous assistant turn of the transcript passes",
-          '"decision": "block"' not in out, out)
-
-    with open(os.path.join(root, "_build-s4.md"), "w", encoding="utf-8") as f:
-        f.write("# Active Build\n\nRun: build still-queued\n\nFiles:\n")
-    code, out = run_with(root, "Filed [still-queued] at the bottom of "
-                               "Unprocessed.", session_id="s4", transcript=t)
-    check("a build working file present passes regardless",
-          '"decision": "block"' not in out, out)
-    shutil.rmtree(root, ignore_errors=True)
-
-
-def test_process_now_offer_owed_only_in_a_planning_chat():
-    """[process-now-check-fires-outside-planning]: the offer is plan.md's, so
-    a transcript whose last method command is build owes nothing; one whose
-    last is plan still owes; one with no command owes nothing."""
-    root = project()
-    report = "Filed [just-raised] at the bottom of Unprocessed."
-    code, out = run_with(root, report, transcript=transcript(root, "build"))
-    check("last method command build: nothing owed", '"decision": "block"' not in out, out)
-    code, out = run_with(root, report, session_id="s2",
-                         transcript=transcript(root, "plan", name="p.jsonl"))
-    check("last method command plan: still owed", '"decision": "block"' in out, out)
-    code, out = run_with(root, report, session_id="s3",
-                         transcript=transcript(root, None, name="n.jsonl"))
-    check("no method command invoked: nothing owed", '"decision": "block"' not in out, out)
-    code, out = run_with(root, report, session_id="s4")
-    check("no transcript at all: nothing owed", '"decision": "block"' not in out, out)
-    shutil.rmtree(root, ignore_errors=True)
-
-
-def test_process_now_check_skips_quoted_headings():
-    """[process-now-check-skips-quoted-headings]: a checkpoint pointer that
-    quotes the next item's heading, whose own words carry a filing verb,
-    owes no offer; a plain sentence with the verb still does."""
-    root = project()
-    t = transcript(root)
-    pointer = ("Deleted. Next up:\n\n**#### Server kept whole while its pieces "
-               "are built [just-raised]**\n\n**Take this one next?**")
-    code, out = run_with(root, pointer, transcript=t)
-    check("a quoted heading carrying 'kept … [slug]' owes no offer",
-          '"decision": "block"' not in out, out)
-    code, out = run_with(root, "Kept [just-raised] whole, as you asked.",
-                         session_id="s2", transcript=t)
-    check("a plain 'kept [slug]' sentence still owes",
-          '"decision": "block"' in out, out)
-    shutil.rmtree(root, ignore_errors=True)
-
-
-def test_mention_of_an_earlier_sessions_capture_owes_nothing():
-    """[stop-check-reads-mention-as-filing]: a slug whose capture's Filed
-    stamp predates the transcript's first timestamp is a mention, not this
-    chat's filing; one stamped after it still owes."""
-    root = project()
-    with open(os.path.join(root, "QUEUE.md"), "w", encoding="utf-8") as f:
-        f.write(QUEUE + "\n#### An older capture [older-one]\nProse.\n"
-                "Filed 2026-09-20 10:00, stamped by the capture tool.\n\n"
-                "#### A newer capture [newer-one]\nProse.\n"
-                "Filed 2026-09-24 23:00, stamped by the capture tool.\n")
-    t = transcript(root, first_timestamp="2026-09-24T02:00:00.000Z")
-    code, out = run_with(root, "That's filed as [older-one] already, from an "
-                               "earlier session.", transcript=t)
-    check("a slug stamped before the chat opened owes nothing",
-          '"decision": "block"' not in out, out)
-    code, out = run_with(root, "Filed [newer-one] at the bottom of "
-                               "Unprocessed.", session_id="s2", transcript=t)
-    check("a slug stamped after the chat opened still owes",
-          '"decision": "block"' in out, out)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -562,22 +467,6 @@ def test_tail_check_skips_git_ignored_paths():
                 + os.path.join(root, "SPEC.md") + "\ts1\n")
     code, out = run(root, "Reworded the sentence in SPEC.")
     check("a write to a tracked file still owes the tail", "marked tail" in out, out)
-    shutil.rmtree(root, ignore_errors=True)
-
-
-def test_bold_lead_in_on_a_blockquote_line_passes():
-    """[bold-check-collides-with-blockquote-lead-in]: the rendering rule's
-    bold lead-in at the head of a quoted line leads the line; a bold run
-    mid-sentence inside a quoted line still owes."""
-    root = project()
-    code, out = run(root, "Here it is.\n\n> **Message header:** the text of "
-                          "the message follows here.")
-    check("a bold lead-in opening a blockquote line passes",
-          '"decision": "block"' not in out, out)
-    code, out = run(root, "Here it is.\n\n> The text is **ready** to go.",
-                    session_id="s2")
-    check("a bold run mid-sentence inside a quoted line still owes",
-          '"decision": "block"' in out and "1 bold run" in out, out)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -677,69 +566,25 @@ def test_turn_length_is_fed_back_once():
     shutil.rmtree(root, ignore_errors=True)
 
 
-def test_last_command_read_returns_close():
-    """[done-doc-names-linger-in-method-tooling]: the last-command read names
-    close, the command that replaced done, so a close chat is never read as
-    a planning chat."""
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("stop_hook", HOOK)
-    stop = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(stop)
-    root = project()
-    t = transcript(root, command="close")
-    check("a chat whose last command is close reads as close",
-          stop._last_method_command(t) == "close",
-          repr(stop._last_method_command(t)))
-    shutil.rmtree(root, ignore_errors=True)
-
-
-def test_bold_mid_sentence_is_fed_back_once():
-    """The second trigger: bold inside a sentence is fed back once; bold at
-    line heads and list heads passes."""
+def test_bold_inside_a_sentence_is_not_blocked():
+    """[stop-check-bold-correction-repeats-pending-ask]: the bold check is
+    gone, so a reply with bold inside a sentence, under the word bound, is
+    not sent back."""
     root = project()
     code, out = run(root, "The item is **ready** to go and the **files** are "
                           "listed.")
-    check("two mid-sentence bold runs are blocked with the count",
-          '"decision": "block"' in out and "2 bold runs" in out, out)
-    code, out = run(root, "The item is **ready** to go.")
-    check("the check passes the second time", '"decision": "block"' not in out, out)
-    code, out = run(root, "**Files that change.** Two of them.\n\n- **plan.md** "
-                          "— one row\n- **done.md** — one row\n\n1. **First** "
-                          "step.\n\n**Ready to start?**", session_id="s2")
-    check("bold at line heads and list heads passes",
+    check("bold inside a sentence, under the word bound, is not blocked",
           '"decision": "block"' not in out, out)
-    shutil.rmtree(root, ignore_errors=True)
-
-
-def test_process_now_offer_not_owed_for_processed_slugs():
-    """[process-now-offer-skips-processed-slugs]: a reply naming a slug that
-    sits in Processed owes no offer; one in Unprocessed still does."""
-    root = project()
-    t = transcript(root)
-    code, out = run_with(root, "Moved [still-queued] into Processed on your "
-                               "word, as agreed.", transcript=t)
-    check("a slug in Processed owes no offer", '"decision": "block"' not in out, out)
-    code, out = run_with(root, "Filed [just-raised] at the bottom of "
-                               "Unprocessed.", session_id="s2", transcript=t)
-    check("a slug in Unprocessed with no offer is blocked once",
-          "File it for later?" in out and '"decision": "block"' in out,
-          out)
     shutil.rmtree(root, ignore_errors=True)
 
 
 if __name__ == "__main__":
     print("test_stop_hook")
-    test_process_now_offer_owed_only_in_a_planning_chat()
-    test_process_now_check_skips_quoted_headings()
-    test_mention_of_an_earlier_sessions_capture_owes_nothing()
+    test_planning_chat_filing_report_owes_no_routing_ask()
     test_tail_check_skips_git_ignored_paths()
-    test_bold_lead_in_on_a_blockquote_line_passes()
     test_turn_length_is_fed_back_once()
-    test_bold_mid_sentence_is_fed_back_once()
-    test_last_command_read_returns_close()
-    test_process_now_offer_not_owed_for_processed_slugs()
+    test_bold_inside_a_sentence_is_not_blocked()
     test_denoted_date_anywhere_in_the_reply_sources_the_word()
-    test_process_now_offer_is_enforced_once_in_a_planning_chat()
     test_checkpoint_with_clock_or_stop_offer_is_blocked_once()
     test_post_close_tail_offer_is_fed_back_once()
     test_post_close_write_to_log_only_owes_nothing()

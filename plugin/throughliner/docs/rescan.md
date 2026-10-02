@@ -96,7 +96,7 @@ dropped or reworked one at a time. The planning-chat arm is below.
 answered FILE          ->  the capture is written, exactly as now
 answered PROCESS NOW   ->  NOTHING is written. The item enters the planning
                            loop and is written once, as a work item, after
-                           the interview — plan.md's process-now rule
+                           the interview — plan.md's raised-mid-planning rule
 ```
 
   Writing a capture first and then processing it spends a write that is thrown

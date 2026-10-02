@@ -50,7 +50,8 @@ Language: English
      there is one — and reads the file at each planning opening for lines you
      have ticked. Where the file opens with a header stating its line
      conventions, the line's fields are written as that header says. Claude
-     only ever adds lines; it never removes or reorders one. Leave the line
+     keeps this project's lines current and changes any other line when you
+     ask. Leave the line
      blank to keep no list. An absolute path, e.g.
      "Task list: C:\Users\you\Notes\Tasks.md" -->
 

@@ -15,9 +15,7 @@ important features stand, in a few lines, and re-runs the return checks a
 fresh opening runs. **It moves nothing in the queue, and it files only what
 those checks file:** a due cycle's capture under the cycle's slug — or, for a
 chain step, under the checklist's own slug — where no open capture carries it,
-with the chain's task lines appended to the user's task list where the
-project's own CLAUDE.md names one, as plan.md's cycles due-ness check states
-it; and waiting mail read and routed through the three-way triage as the
+as plan.md's cycles due-ness check states it; and waiting mail read and routed through the three-way triage as the
 openings route it. The brief is chat only.
 
 ## What it reads  [SILENT]

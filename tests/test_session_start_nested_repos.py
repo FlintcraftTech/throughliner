@@ -16,6 +16,7 @@ sitting in a subfolder.
 """
 
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -92,9 +93,32 @@ def test_nested_shape_with_an_ignored_doc_still_reports_it():
               ignored == ["QUEUE.md"], f"got: {ignored}")
 
 
+def test_opening_naming_a_child_project_says_to_move_it_out():
+    """A folder not yet set up that holds a set-up project is told the child
+    works best moved out, and otherwise belongs in this project's ignore."""
+    with tempfile.TemporaryDirectory() as td:
+        child = os.path.join(td, "part")
+        os.makedirs(child)
+        with open(os.path.join(child, "SPEC.md"), "w", encoding="utf-8") as f:
+            f.write("# SPEC\n")
+        env = dict(os.environ, CLAUDE_PROJECT_DIR=td)
+        proc = subprocess.run(
+            [sys.executable, HOOK], input=json.dumps({"cwd": td}),
+            cwd=td, env=env, capture_output=True, text=True,
+            encoding="utf-8", timeout=60)
+        out = proc.stdout
+        check("the opening names the child project", "part" in out,
+              f"got: {out[:300]}")
+        check("the opening says the child works best moved out",
+              "works best moved out" in out, f"got: {out[:300]}")
+        check("the opening names the ignore file as the alternative",
+              ".gitignore" in out, f"got: {out[:300]}")
+
+
 if __name__ == "__main__":
     print("test_session_start_nested_repos")
     test_nested_shape_reports_no_untracked_docs()
     test_nested_shape_with_an_ignored_doc_still_reports_it()
+    test_opening_naming_a_child_project_says_to_move_it_out()
     print(f"\n{len(failures)} failure(s)" if failures else "\nall passed")
     sys.exit(1 if failures else 0)

@@ -399,7 +399,7 @@ Triage anything still sitting in this project's `INBOX/` as
 processing: deciding what a message raises stays /plan's.
 
 **Where a reply is owed, draft it here** and show the exact wording before
-anything is sent. This is the moment that draft belongs to — a run is unattended
+anything is sent; the reply goes out as a capture sent to that project. This is the moment that draft belongs to — a run is unattended
 in practice, so mid-run is the wrong place for text that leaves the machine.
 
 ## Wind-down re-scan (file-only)  [BRIEF, PROMPT]
@@ -424,8 +424,7 @@ so this arm reaches only the case where the window is genuinely empty.
 **Cycles due-ness check first** [SILENT] when no cycles doc exists; [BRIEF]
 whenever one does. Run the cycles due-ness check as plan.md's Step 1 states it
 ("Cycles due-ness check"), filing only — routing stays planning work — a
-chain step's capture under the checklist's own slug and the chain's task lines
-appended where the project names a task list, exactly as that check states,
+chain step's capture under the checklist's own slug,
 with one limb of this site's own: **read the project root for `CYCLES.md` here as
 well**, because a doc created this session carries no opening line and would
 otherwise be invisible to its own /close run.
@@ -543,6 +542,9 @@ the folder is disposable by definition and nothing else ever empties it:
 1. SENT DRAFTS    for each line in INBOX/sent.md whose pointer names a file
                   under temp/, delete that file and say so in one line —
                   the register line and the recipient's copy are the record
+   ATTACHMENTS    leave any file an open capture's `Attachment:` line names;
+                  remove, without asking, one whose `Attachment:` line is in
+                  no entry still in the queue
 2. THE REST       list every other file in the folder with its date, and
                   offer once to clear them; a file a [co-write] item's Files
                   line names, or one the user edited, is never deleted
@@ -701,6 +703,19 @@ everything else, the method documents included, in the outer. Same message
 mechanics for each, the inner commit's message covering the product work
 alone. A session that touched only one side makes only that side's commit. A
 flat project — one repository — is unchanged by all of this.
+
+**Before a commit to a repository bound for publication — a nested project's
+inner repository, or a flat project's own where it has a remote — read what is
+staged there against the scrub checklist** [SILENT] when nothing is found;
+[BRIEF, PROMPT] when something is: read `git diff --cached` in that repository
+for the checklist's kinds and for anything shaped like an email address; where
+one is found, hold that repository's commit, name each find by file and what
+kind it is without repeating it, and ask whether to rewrite it or commit as it
+stands; the other repository's commit proceeds. The owner's own name is theirs
+to keep and is named once as information, never held on.
+
+**What the publication-check turn carries.** Each find as file and kind, that
+the commit to that repository is held, and the one ask; nothing else.
 
 **Then leave the session-closed marker: write this session's record filename
 into `.throughliner/session-closed-<session-id>`.**

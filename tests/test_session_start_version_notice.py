@@ -138,6 +138,20 @@ def test_matching_version_also_says_nothing():
     shutil.rmtree(d, ignore_errors=True)
 
 
+def test_code_notes_style_draws_no_style_sentence():
+    """A project on the second shipped style opens with no style sentence at
+    all, so nothing has to be stripped before the no-/setup assertion."""
+    d = project()
+    os.makedirs(os.path.join(d, ".claude"), exist_ok=True)
+    with open(os.path.join(d, ".claude", "settings.local.json"), "w",
+              encoding="utf-8") as f:
+        json.dump({"outputStyle": "Throughliner Code Notes"}, f)
+    out = run(d)
+    check("a project on the Code Notes style recommends no /setup",
+          "/setup" not in out, out[:800])
+    shutil.rmtree(d, ignore_errors=True)
+
+
 def test_stale_epoch_still_halts():
     """The signal that genuinely means /setup is outstanding."""
     d = project(epoch=EPOCH - 1)
@@ -168,6 +182,7 @@ if __name__ == "__main__":
     print("test_session_start_version_notice")
     test_version_only_difference_says_nothing()
     test_matching_version_also_says_nothing()
+    test_code_notes_style_draws_no_style_sentence()
     test_stale_epoch_still_halts()
     test_missing_document_still_reports()
     test_flag_is_gone_from_the_source()

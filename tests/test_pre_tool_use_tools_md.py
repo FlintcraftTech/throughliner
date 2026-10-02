@@ -115,6 +115,38 @@ for rel, expected, what in [
         failures.append((rel, expected, got, what))
     print(f"[{status}] planning {rel!r} -> {got} ({what})")
 
+# MAP.md ([planning-writable-lists-agree-and-map-added]): the root map is
+# writable in a planning session, a nested one is not, and the refusal message
+# names what the check permits — FAQ/ and MAP.md among it.
+for rel, expected, what in [
+    ("MAP.md", "pass", "the root MAP.md is writable in a planning session"),
+    (os.path.join("src", "MAP.md"), "deny",
+     "a MAP.md in a subfolder is still denied"),
+]:
+    got = _decide(_plan_tmp, os.path.join(_plan_tmp, rel))
+    status = "ok" if got == expected else "FAIL"
+    if got != expected:
+        failures.append((rel, expected, got, what))
+    print(f"[{status}] planning {rel!r} -> {got} ({what})")
+
+_refusal = subprocess.run(
+    [sys.executable, HOOK],
+    input=json.dumps({
+        "cwd": _plan_tmp, "tool_name": "Write",
+        "tool_input": {"file_path": os.path.join(_plan_tmp, "README.md"),
+                       "content": "x"},
+        "session_id": "tools-md-test-session"}),
+    capture_output=True, text=True, encoding="utf-8",
+    env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+).stdout
+for needle in ("FAQ/", "MAP.md"):
+    got = needle in _refusal
+    status = "ok" if got else "FAIL"
+    if not got:
+        failures.append((needle, True, got,
+                         "the planning refusal message names it"))
+    print(f"[{status}] refusal names {needle!r}")
+
 # --- end to end, mid-build (a working file whose Files list omits TOOLS.md) ---
 #
 # The build branch is the one that matters most here: a build learns an

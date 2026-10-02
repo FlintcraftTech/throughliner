@@ -1073,7 +1073,7 @@ def locate(slug, items, kinds=None):
 #
 # Facts a planning opening reads for whether a project has grown too big for
 # one queue, each computed from the queue, the record or the project's Parts
-# block; every line a fact and none a verdict, and the pop-out stays the
+# block; every line a fact and none a verdict, and moving a part out stays the
 # user's choice. The one-read figure is CYCLES.md's: 60,000 characters is
 # what one read returns.
 ONE_READ_CHARS = 60000
@@ -1365,7 +1365,7 @@ def render(items, root="", queue_path="QUEUE.md"):
         "planning record that wrote one. A sign only a person can read — a queue with "
         "no builds, several people at once, work that must run continuously, "
         "records nobody reads — is in the FAQ and not here; none is a verdict, "
-        "and the pop-out stays the user's choice."
+        "and moving a part out stays the user's choice."
     )
     out.append(
         "- Placement flags match a fixed set of known phrases: a clean result "

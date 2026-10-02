@@ -31,3 +31,10 @@ A path is matched relative to the project root. A trailing slash means a folder.
   there. Retired 2026-09-17 when the plugin's own package began registering the
   server, so every project gets the tools through the plugin; a project-level
   copy now registers the server twice.
+
+## Retired with nothing left in a project
+
+The outbound-mail script, `scripts/inbox_send.py` inside the plugin, was
+retired 2026-10-02 when a send to another project became a capture added to
+that project's queue. It wrote into other projects' mailboxes and left no file
+of its own in any project, so nothing is listed for it above.

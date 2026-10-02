@@ -1587,11 +1587,6 @@ CYCLE_ANCHOR_RE = re.compile(r"^\s*\*{0,2}Anchor\s*:\*{0,2}\s*(.+?)\s*$",
                              re.IGNORECASE)
 CYCLE_CHAIN_RE = re.compile(r"^\s*\*{0,2}Chain\s*:\*{0,2}\s*(.*?)\s*$",
                             re.IGNORECASE)
-# A chained step's task line: the text the openings append to the user's task
-# list on the step's day, read from the step's own definition and carried on
-# the cycles line per step so no opening re-parses the doc for it.
-CYCLE_TASK_LINE_RE = re.compile(
-    r"^\s*\*{0,2}Task line\s*:\*{0,2}\s*(.+?)\s*$", re.IGNORECASE)
 CHAIN_ITEM_SPLIT_RE = re.compile(r"(?:^|\s)\d+\.\s+")
 CHAIN_SLUG_RE = re.compile(r"\[([a-z0-9][a-z0-9-]*)\]")
 CHAIN_LEAD_RE = re.compile(
@@ -1658,8 +1653,7 @@ def _parse_cycles_doc(cwd):
                        "observable": None,
                        "trigger": None,
                        "anchor": None,
-                       "chain": None,
-                       "task_line": None}
+                       "chain": None}
             cycles.append(current)
             pending = None
             continue
@@ -1684,11 +1678,6 @@ def _parse_cycles_doc(cwd):
         if anchor and current["anchor"] is None:
             current["anchor"] = anchor.group(1)
             pending = "anchor"
-            continue
-        task_line = CYCLE_TASK_LINE_RE.match(line)
-        if task_line and current["task_line"] is None:
-            current["task_line"] = task_line.group(1)
-            pending = "task_line"
             continue
 
         observable = CYCLE_OBSERVABLE_RE.match(line)
@@ -1833,9 +1822,7 @@ def cycle_chains(cwd, today=None):
     dicts: slug, anchor (the field as written), anchor_date (an ISO date: the
     next occurrence of the anchor's weekday on or after today, or the one
     booked date the field names), checklists — a list of (checklist_slug,
-    due_date_or_None), a forward lead landing after the anchor — task_lines,
-    a dict from checklist slug to the `Task line:` text its own definition
-    carries (absent from the dict where it carries none), and spent — True
+    due_date_or_None), a forward lead landing after the anchor — and spent — True
     for a date-anchored chain whose last step's date has passed, so the
     opening files nothing for it until planning rewrites the anchor. A cycle
     with no Chain: field is not listed. Dates only, never a verdict: whether a
@@ -1847,8 +1834,6 @@ def cycle_chains(cwd, today=None):
         return None
     if today is None:
         today = datetime.date.today()
-    task_lines_by_slug = {e["slug"]: e["task_line"] for e in entries
-                          if e["task_line"]}
     out = []
     for entry in entries:
         if _is_checklist(entry) or not entry["chain"]:
@@ -1874,10 +1859,7 @@ def cycle_chains(cwd, today=None):
                     "anchor": entry["anchor"],
                     "anchor_date": anchor_date.isoformat() if anchor_date else None,
                     "checklists": checklists,
-                    "spent": spent,
-                    "task_lines": {slug: task_lines_by_slug[slug]
-                                   for slug, _due in checklists
-                                   if slug in task_lines_by_slug}})
+                    "spent": spent})
     return out
 
 
@@ -2213,19 +2195,22 @@ CORE_DOCS = ("SPEC.md", "QUEUE.md", "LOG/")
 def _brevity_style_notice(cwd):
     """One short line when the project's brevity output style is not enabled.
 
-    The plugin ships an output style (Throughliner Brevity) offered at /setup
-    and written into the project's own settings file on acceptance. This checks
-    that setting at every opening: enabled -> nothing (silence is the enabled
-    state); not enabled -> one short line, so the state is visible without
-    nagging — the line states a fact and asks for nothing.
+    The plugin ships two output styles (Throughliner Brevity and Throughliner
+    Code Notes) offered at /setup, the chosen one written into the project's
+    own settings file. This checks that setting at every opening: either one
+    enabled -> nothing (silence is the enabled state); neither -> one short
+    line, so the state is visible without nagging — the line states a fact
+    and asks for nothing.
 
     Reads `.claude/settings.local.json` then `.claude/settings.json`, first
-    match wins — the same precedence Claude Code itself gives them. Matched on
-    the style name containing "throughliner" case-insensitively rather than an
-    exact string, so a namespaced value ("throughliner:Throughliner Brevity")
-    still reads as enabled. Never raises: an unreadable settings file reports
-    the notice, the direction that surfaces rather than hides.
+    match wins — the same precedence Claude Code itself gives them. The value
+    counts as enabled where it is `Throughliner Brevity` or
+    `Throughliner Code Notes`, bare or prefixed `throughliner:`, compared
+    case-insensitively.
+    Never raises: an unreadable settings file reports the notice, the
+    direction that surfaces rather than hides.
     """
+    enabled = ("throughliner brevity", "throughliner code notes")
     for name in ("settings.local.json", "settings.json"):
         path = os.path.join(cwd, ".claude", name)
         try:
@@ -2234,8 +2219,12 @@ def _brevity_style_notice(cwd):
         except (OSError, ValueError):
             continue
         style = settings.get("outputStyle")
-        if isinstance(style, str) and "throughliner" in style.lower():
-            return ""
+        if isinstance(style, str):
+            name_only = style.strip().lower()
+            if name_only.startswith("throughliner:"):
+                name_only = name_only[len("throughliner:"):].strip()
+            if name_only in enabled:
+                return ""
         if isinstance(style, str) and style:
             return (
                 "[Throughliner] The brevity output style is not enabled for "
@@ -2455,7 +2444,10 @@ def main() -> int:
                 "If you meant to work in one of those, open it directly rather than this "
                 "parent folder — running /setup here would adopt this parent folder, not "
                 "them. Tell the user this plainly so they can course-correct before "
-                "anything is adopted."
+                "anything is adopted. A project inside this folder works best "
+                "moved out to stand by itself; if it stays, this project needs "
+                "that folder in its .gitignore, or its close will commit those "
+                "files as its own."
             )
 
         # Everything a hook feeds back must be nested under hookSpecificOutput
@@ -2726,12 +2718,8 @@ def main() -> int:
             # checklist's computed due date — dates, never a verdict on whether
             # the checklist still needs running.
             for chain in cycle_chains(cwd) or []:
-                task_lines = chain.get("task_lines") or {}
                 checklists = ", ".join(
-                    "[%s] due %s%s" % (
-                        checklist, due or "no lead stated",
-                        (" (task line: %s)" % task_lines[checklist])
-                        if checklist in task_lines else "")
+                    "[%s] due %s" % (checklist, due or "no lead stated")
                     for checklist, due in chain["checklists"])
                 described.append(
                     "[%s] chain — anchor %s, next %s; checklists: %s%s"

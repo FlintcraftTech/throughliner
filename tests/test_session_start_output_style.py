@@ -80,6 +80,14 @@ def main():
         "namespaced value -> silence",
         NOTICE not in drive(make_project("throughliner:Throughliner Brevity")),
     )
+    check(
+        "code notes style -> silence",
+        NOTICE not in drive(make_project("Throughliner Code Notes")),
+    )
+    check(
+        "namespaced code notes -> silence",
+        NOTICE not in drive(make_project("throughliner:Throughliner Code Notes")),
+    )
 
     if _failures:
         print(f"\n{len(_failures)} FAILURE(S)")

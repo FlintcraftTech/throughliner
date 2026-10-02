@@ -149,9 +149,8 @@ Case B  content, no SPEC.md   the user's own files exist but no method docs.
 Case C  already set up,       SPEC.md exists.
         bring it up to date
 Case D  inside another        no SPEC.md here, but walking up the folders
-        project               finds one. Either a POP-OUT or a new project
-                              made here — setup does not know which; see
-                              below.
+        project               finds one. Say the one line below, then
+                              proceed as Case A.
 ```
 
 **Case D takes precedence over B for a folder inside an adopted project**: walk
@@ -172,46 +171,9 @@ version missing or outdated      ->  Step 2C (migration scaffolding)
 
 ## Case D: a folder inside an adopted project
 
-This folder sits inside a project that is already set up, and the user is
-adopting it separately. It is one of two things, and setup does not know
-which: a **pop-out** — a subpart that has outgrown the parent, one
-unmanageable piece of a large differentiated project, becoming a project of
-its own — or a **new project made here**, inside another project's folder
-and nothing more.
-
-**Ask that first, in clarifier form**  [PROMPT] — pop-out, or a new project
-made here? — inviting their answer rather than proposing one, exactly as
-Case B's peek does. On "new project", the ordinary interview runs, and the
-setup record and the project's `CLAUDE.md` say only that the project sits
-inside another project's folder, in the user's words where they gave any;
-nothing is inferred about its history.
-
-**On "pop-out", go on to which subpart:** read the parent's SPEC, infer which
-subpart this folder covers, and put it to the user in clarifier form
-[PROMPT]. **State the irreversibility in that same confirmation, plainly:
-there is no scripted way back in.** Popping out is a one-way move; folding
-the work back into the parent later is hand work nobody has written a path
-for.
-
-Then run the ordinary interview with that context, and write the ordinary docs.
-**The new project is an ordinary project in every respect and never reads
-outward** — it does not consult the parent's queue, spec or records while it
-runs.
-
-**Dependencies run upward only, one level deep.** Subproject work may hold
-parent work; parent work may never hold subproject work — that is what makes a
-cross-project loop structurally impossible. A child genuinely waiting on its
-parent uses the ordinary outside-the-project pattern instead: name what would
-show it done, or wait for the user to mention it.
-
-**No session ever writes another project's queue.** A dependency crossing the
-boundary travels as approval-gated mail, and the receiving project files it with
-its own hands.
-
-**At /close, where the answer was pop-out, draft the pop-out message to the
-parent's INBOX**  [PROMPT] — shown to the user in full, sent only on an
-explicit yes, like any other outbound mail. A new project made here sends
-nothing.
+"This folder sits inside another Throughliner project. It works best moved out
+to stand by itself; if it stays, that project needs this folder in its
+.gitignore, or its close will commit these files as its own."
 
 ## Case B: pre-existing content rules
 
@@ -331,9 +293,10 @@ INBOX/.address-book.md  ->  it parses to at least one correspondent, in
                             line naming the two shapes, and nothing is
                             rewritten
 no outputStyle set in the project's .claude/settings.local.json
-                        ->  make the brevity-style offer from Step 2, exactly
-                            as a fresh setup would — this project was set up
-                            before the style shipped
+                        ->  make the brevity-style offer from Step 2, naming
+                            both styles (Throughliner Brevity and Throughliner
+                            Code Notes) exactly as a fresh setup would — this
+                            project was set up before the style shipped
 SPEC.md has no `## Goals` heading
                         ->  ask the interview's goals question once (Step 3),
                             in one line, and write the answer as the section,
@@ -739,7 +702,8 @@ a remote, so the method's documents are tracked there — privately — and undo
 history and /close's read-back all work from ordinary git. /close
 commits both, the product commit into the inner repository and everything
 else into the outer. One product subfolder per project; a project with
-several outgrowing parts uses the subproject pop-out, which exists for that.
+several outgrowing parts is split by moving a part's folder out and running
+setup in it.
 
 **Write the shape into the project CLAUDE.md's Visibility line as part of the
 scaffold**: which two repositories exist, which holds the product and goes
@@ -874,7 +838,7 @@ CLAUDE.md**, in the slot the template carries for it, so every later session
 reads it — not only the setup session's record.
 
 **A public repository is set up only when the user asks** — the offer itself is
-"The public-repository offer — one subject, five provisions", below.
+"The public-repository offer — one subject, six provisions", below.
 
 **Cloud-sync folder, said once**  [SILENT] when no name matches; [BRIEF] when
 one does. Read the project's absolute path for these folder names,
@@ -906,10 +870,13 @@ method produces.
 files are being created, and it is answerable without knowing anything about the
 project.
 
-**The brevity-style offer**  [BRIEF, PROMPT]. The plugin ships an output style
-called Throughliner Brevity — a setting that keeps Claude's replies short and
-decision-led in this project. Offer it once, as part of scaffolding, opt-out
-with acceptance as the default.
+**The brevity-style offer**  [BRIEF, PROMPT]. The plugin ships two output
+styles, and the offer names both in one message: Throughliner Brevity,
+recommended, which keeps Claude's replies short and decision-led in this
+project; and Throughliner Code Notes, which is the same plus a short note
+after each piece of work on why the code is the way it is, read afterwards,
+with builds running the same and taking longer. Offer once, as part of
+scaffolding, opt-out with acceptance as the default.
 
 **What the brevity-offer turn carries.** The offer itself, the reason it is
 preferable, its scope, and the invitation to discuss — where the reason argues
@@ -928,9 +895,12 @@ a project that does not exist yet.
 4. Invite discussion, then act on the answer:
 
 ```
-user accepts (the default)  ->  write "outputStyle": "Throughliner Brevity"
-                                into the project's .claude/settings.local.json
-                                (creating the file if absent, merging if not)
+user accepts (the default)  ->  write whichever was chosen as "outputStyle" —
+                                "Throughliner Brevity" where the user accepts
+                                without choosing, "Throughliner Code Notes"
+                                where they chose it — into the project's
+                                .claude/settings.local.json (creating the
+                                file if absent, merging if not)
 the write is refused        ->  say in one line that the app is asking
                                 permission for that file, and retry once on
                                 the user's word; refused again -> the decline
@@ -945,7 +915,7 @@ user declines               ->  say nothing further; every session opening
 Say once that the style takes effect at the next session or /clear — styles
 never apply mid-conversation.
 
-**The public-repository offer — one subject, five provisions** [DISCUSS,
+**The public-repository offer — one subject, six provisions** [DISCUSS,
 PROMPT]. Make it only where the user asks for a public repository, and then:
 
 - where the project is flat, re-offer the nested conversion first — going
@@ -961,6 +931,12 @@ a licence is what says who may use the code and on what terms, and it only
 becomes a real question once the code is going somewhere public
 ```
 
+- before the repository is set up, search what will be published —
+  `scripts/scrub_sweep.py` over the repository's root, with each name the user
+  gives passed as `--name`, and `git log -p --all` searched for those names
+  and for email-address shapes; say what was found, that removing text from a
+  file does not remove it from history, and offer a fresh copy with no history
+  as the alternative to publishing the history as it stands;
 - set up the repository;
 - describe the contents as unscreened, and say what the only complete protection
   is — not publishing these documents, which is what the keep-everything-private

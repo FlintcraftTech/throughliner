@@ -74,8 +74,9 @@ Quick answers about how this project's workflow works. Each question links to a
 - **What is the "Last session advises" note at the top of my queue?** —
   advice that a planning opening reads and deletes in the same breath.
   [faq.md](faq.md)
-- **How do my projects send each other mail?** — the INBOX folder, what a
-  send checks and shows you, and what the other project sees. [faq.md](faq.md)
+- **How do my projects send each other work?** — a capture added to the other
+  project's queue on your yes, attachments, and what the other project sees.
+  [faq.md](faq.md)
 - **What does a build run do with my spec?** — read once at the start, the
   halt on a contradiction, and why a build never rewrites SPEC.
   [faq.md](faq.md)
@@ -118,14 +119,14 @@ Quick answers about how this project's workflow works. Each question links to a
   the door, what the refusal names, and what tells you it was written.
   [faq.md](faq.md)
 - **Claude's reply was sent back for being too long — what happened?** — the
-  stop check's word bound, the bold-in-a-sentence check, once per chat.
+  stop check's word bound, once per chat.
   [faq.md](faq.md)
 - **What is LOG/backlinks.md, and should I edit it?** — a generated map from
   every slug and plugin name to the records naming it, rebuilt at each close.
   [faq.md](faq.md)
 - **When has my project grown too big for one queue, and when is Throughliner
   the wrong tool?** — the signs the planning opening reads for itself, the
-  signs only you can read, and the pop-out route. [faq.md](faq.md)
+  signs only you can read, and moving a part out. [faq.md](faq.md)
 - **I typed /done and nothing happened — where did it go?** — the close
   command is `/close` now, what is unchanged, and what tells you it worked.
   [faq.md](faq.md)

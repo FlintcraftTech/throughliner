@@ -18,7 +18,7 @@ PreToolUse hook — enforces three rules:
    (_build-<session-id>.md) has a Files: section governing which files are
    editable (method docs — QUEUE.md, LOG/, that working file — plus the user's
    memory dir, workshop/resources/research/, the session scratchpad dir,
-   TOOLS.md, the file the project's `Task list:` line names (appends only), and
+   TOOLS.md, MAP.md, the file the project's `Task list:` line names (any edit, no whole-file overwrite), and
    any project's INBOX/ are always editable). Tri-state:
    no Files: section = no enforcement;
    section present but empty = method docs only; entries listed = only
@@ -840,6 +840,17 @@ def _is_tools_file(filepath: str, cwd: str) -> bool:
     return _normalise(filepath) == _normalise(os.path.join(cwd, "TOOLS.md"))
 
 
+def _is_map_file(filepath: str, cwd: str) -> bool:
+    """True for `MAP.md` at the project root.
+
+    The map of what the project's folders and human-used files are for. A
+    session that creates or moves a folder or such a file writes its line in
+    the same turn, so the map is writable wherever TOOLS.md is. Root-level and
+    exact, like `_is_tools_file`.
+    """
+    return _normalise(filepath) == _normalise(os.path.join(cwd, "MAP.md"))
+
+
 # --- The user's task list above every project ([task-list-above-projects]) ---
 #
 # A project's own CLAUDE.md may carry one line, `Task list: <absolute path>`,
@@ -847,8 +858,8 @@ def _is_tools_file(filepath: str, cwd: str) -> bool:
 # their day from, shared by every project they work on. Planning appends a
 # checkbox line there when it keeps a task-shaped [user] item, and reads the
 # file at every opening for ticked lines. It is the ONE permitted write outside
-# the project root, and it is append-only: Claude never removes or reorders a
-# line, because the person edits the file by hand in another app.
+# the project root: any edit to it passes, and only a whole-file overwrite is
+# refused, because the list sits where git cannot restore it.
 TASK_LIST_LINE_RE = re.compile(r"^Task list:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
 
 
@@ -877,29 +888,6 @@ def _is_task_list_file(filepath: str, cwd: str) -> bool:
     """True for the file the project's `Task list:` line names — exact match."""
     path = _task_list_path(cwd)
     return bool(path) and _normalise(filepath) == _normalise(path)
-
-
-def _is_task_list_append(tool_name: str, tool_input: dict, filepath: str) -> bool:
-    """True where this call only ADDS to the task list.
-
-    A Write passes only where the file does not exist yet (creating the list);
-    an Edit passes only where its new text begins with the text it replaces,
-    which is the shape an append takes. Anything else — a rewrite, a removed or
-    reordered line — is refused, because the list is the person's own and
-    Claude only ever appends to it.
-    """
-    if tool_name == "Write":
-        return not os.path.exists(filepath)
-    edits = [tool_input] if tool_name == "Edit" else \
-        [e or {} for e in (tool_input.get("edits") or [])]
-    if not edits:
-        return False
-    for edit in edits:
-        old = edit.get("old_string") or ""
-        new = edit.get("new_string") or ""
-        if not old or not new.startswith(old):
-            return False
-    return True
 
 
 def _is_inbox_dir(filepath: str) -> bool:
@@ -2591,10 +2579,11 @@ def main() -> int:
         # frequent queue write there is — would go unprotected in a project whose
         # queue has left git.
         #
-        # inbox_send.py is the other sanctioned script: it passes here for the
+        # send_capture.py is the other sanctioned script: it passes here for the
         # same reason the mover does — the command text is a script path and
         # carries no write call — and it needs no snapshot, since it writes
-        # into another project's INBOX/ and never into this project's files.
+        # into another project's queue and temp/ and never into this
+        # project's files.
         if "reorder_queue" in command:
             _snapshot_before_write(cwd, os.path.join(cwd, "QUEUE.md"))
 
@@ -2687,22 +2676,18 @@ def main() -> int:
             branch="overwrite guard: sent register",
         )
 
-    # The user's task list is append-only. A call that would rewrite, remove or
-    # reorder a line in it is refused whatever kind of session is running;
-    # an append passes through the scope branches below by name.
-    if _is_task_list_file(filepath, cwd) and not _is_task_list_append(
-            tool_name, tool_input, filepath):
+    # The user's task list takes any edit. A Write over a list that already
+    # exists is refused whatever kind of session is running; an Edit, and a
+    # Write creating the file, pass through the scope branches below by name.
+    if (_is_task_list_file(filepath, cwd) and tool_name == "Write"
+            and os.path.exists(filepath)):
         return _deny(
-            "[Throughliner] BLOCKED: this would change the user's task list "
-            "other than by adding to it.\n\n"
+            "[Throughliner] BLOCKED: this would replace the user's task list "
+            "whole.\n\n"
             f"File: {filepath}\n\n"
-            "The task list is the person's own, edited by hand in their notes "
-            "app, and this project's CLAUDE.md names it so Claude can APPEND "
-            "a task line when one is kept. Removing, rewording or reordering a "
-            "line is theirs to do. Use Edit with the file's last line as the "
-            "text to replace and that same line plus the new one as the "
-            "replacement.",
-            branch="task list: not an append",
+            "The list sits outside the project where git cannot restore it, "
+            "so change it line by line with Edit.",
+            branch="task list: whole-file overwrite",
         )
 
     # A cycles-doc definition the opening cannot read — neither a Cadence: nor
@@ -2811,7 +2796,7 @@ def main() -> int:
         # where its instructions and their reasoning live — and the only queue
         # WRITES a run makes, removing a ticked item and appending a capture, go
         # through reorder_queue.py, which the shell guard permits by name (as
-        # it does inbox_send.py, the outbound-mail script). A
+        # it does send_capture.py, the outbound-capture script). A
         # direct Edit or Write here is either a build rewriting an item's
         # rationale, or the awkward hand-editing the mover exists to replace.
         #
@@ -2870,6 +2855,7 @@ def main() -> int:
             ("temp folder", lambda: _is_temp_dir(filepath, cwd)),
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
+            ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("task list append", lambda: _is_task_list_file(filepath, cwd)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("close-phase file",
@@ -2986,6 +2972,7 @@ def main() -> int:
             ("temp folder", lambda: _is_temp_dir(filepath, cwd)),
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
+            ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("task list append", lambda: _is_task_list_file(filepath, cwd)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("checklist Writes: field",
@@ -3022,13 +3009,15 @@ def main() -> int:
                 "fixed set of files, and this isn't one of them.\n\n"
                 f"About to edit: {filepath}\n\n"
                 "A planning session may write QUEUE.md, any SPEC.md (the "
-                "root's or a part's), CYCLES.md, TOOLS.md, anything in "
-                "LOG/, research notes (under workshop/resources/research/ or "
+                "root's or a part's), CYCLES.md, TOOLS.md, MAP.md, anything "
+                "in LOG/ and FAQ/, the two FAQ templates, research notes "
+                "(under workshop/resources/research/ or "
                 "research/ at the project root — a research part named "
                 "otherwise goes through the user's door below), supplied "
                 "material the user wrote or attached (under "
                 "workshop/resources/supplied/), the temp/ "
-                "folder and its own scratch files — plus any "
+                "folder, the memory directory, the task list the project "
+                "names, its own scratch files, and any "
                 "path a checklist definition in CYCLES.md declares its steps "
                 "write. Everything "
                 "else is work, and work gets queued and built rather than done "

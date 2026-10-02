@@ -28,10 +28,12 @@ gets built first — through discussion, not silently.
   the one test that decides which moments still show first, is in
   skill-nonspecific-rules.md's approval-time outputs.
 - **A planning session is scope-locked to a standing list, and a write outside it
-  is denied.** Writable: QUEUE.md, SPEC.md, CYCLES.md, `LOG/`, `FAQ/`,
-  `workshop/resources/research/`, `workshop/resources/supplied/`, the
-  scratchpad, the memory directory, and the
-  two FAQ templates (`faq-template.md`, `faq-index-template.md`). Everything
+  is denied.** Writable: QUEUE.md, SPEC.md, CYCLES.md, TOOLS.md, MAP.md,
+  `LOG/`, `FAQ/`, the two FAQ templates (`faq-template.md`,
+  `faq-index-template.md`), `workshop/resources/research/`,
+  `workshop/resources/supplied/`, `temp/`, the scratchpad, the memory
+  directory, the task list the project names, and any path a checklist's
+  `Writes:` field declares. Everything
   else is work — including any other template, whose edit reaches every future
   consumer — and work is queued rather than done here. When the lock refuses a
   write, say in plain words what you were about to change and file it as a
@@ -201,8 +203,9 @@ session's close as a mentioned-done `[user]` item. After the ticked-line read,
 append one task line for every cleared task-shaped `[user]` item whose line is
 not on the list — matched by task text and project the same way — through the
 write the safety check permits for that file, and say so in one clause; a
-project with no `Task list:` line appends nothing. Never remove or reorder a
-line in the file.
+project with no `Task list:` line appends nothing. Where a cleared item's task
+or date has changed, or the item is closed or deleted, correct or remove its
+line in the same turn.
 
 **Read the runs-alone count as recession, not as staleness.** /build stops *before*
 such an item, so every planning run that adds ready work pushes it further
@@ -257,7 +260,7 @@ user's deferred run after run, the held region growing or a runs-alone item
 with a rising count ahead of it, the queue past one read, or
 successive planning records ending with the same number left to process —
 name it in one line of the opening narration, folded in the shape the other
-checks use, and name the pop-out — setup run inside the part's folder — as
+checks use, and name moving the part's folder out and running setup in it as
 the thing the user may choose; quiet otherwise.** The FAQ's entry on project
 size carries the signs only a person can read.
 
@@ -457,12 +460,6 @@ task-shaped `[user]` item gets its task line appended to the user's task list
 in the same turn, where the project's own CLAUDE.md names one, exactly as the
 keep at the decision step appends it.
 
-**Where an item's hold names work belonging to a subproject** — a project set
-up inside this one, which `session_start` detects and reports — check it by
-reading that subproject's log index rather than this project's. That is the one
-circumscribed cross-project read; nothing else about the child is consulted, and
-nothing here ever writes to it.
-
 A deleted blocker means the held item's premise may not survive, so re-examine
 it — **which is a fate decision, and therefore the user's.** That is the one
 branch here that is a question for them.
@@ -547,20 +544,6 @@ and a shell clock command otherwise, and no
 completed turn of this cycle is recorded since the previous anchor, and the
 capture filed names that checklist in its heading, under the checklist's own
 slug. A cycle with no chain is unchanged.
-
-**Where the project's own CLAUDE.md carries a `Task list:` line, the same check
-appends the chain's task lines:** for each chain step whose computed date is
-today or ahead and whose line is not yet on that list — matched by task text
-and project, the way the opening's list read matches — append one line in the
-task-line shape, `- [ ] <the step's task text> (<project name>) 📅 <YYYY-MM-DD>`,
-the task text read from the step's task line on the opening's cycles line (the
-`**Task line:**` field of the step's definition in the cycles doc), and where a
-definition carries none, `Run the <command> for <the checklist's name>`, the
-command being the one the step's definition says it runs in; appended through
-the same permitted write the kept task-shaped `[user]` item uses, the list
-file's header read first where it has one and the line's fields written as it
-says. A chain hung on one date writes its lines at the opening after planning
-sets the anchor.
 
 ```
 cycle due, no open capture with its slug  ->  file ONE capture in Unprocessed:
@@ -673,9 +656,17 @@ stop on the way to it.
 **Showing the one next item the user is about to act on is presentation, not a
 preview**, so the checkpoint below satisfies `[SEQUENCE]`.
 
-**/plan writes no working file.** Each item's disposition and reasoning go into
-that item's own rationale in QUEUE.md as it is processed, and into the
-session's record, one entry per item.
+**/plan writes no working file. At the moment an item is kept,
+write its record in `LOG/` first, under the name the close's entry-file rules
+give, and then the item:**
+  - the record carrying its summary line and how the item was decided — who
+    raised it and in what words, the dates, what an earlier draft said, how
+    entries were merged;
+  - the item carrying why the work exists, its instructions, and each refused
+    option with why it lost;
+  - the item naming its record by filename.
+A deleted entry's record is written the same way where its reasoning is worth
+keeping.
 
 **Run the scrub checklist before writing a kept item's text**
 (skill-nonspecific-rules.md, Scrub before writing).
@@ -694,8 +685,8 @@ fires at three moments:
 - a lift or re-hold at the opening's revisit of held work;
 - a skip that writes design progress, at the checkpoint or at this step's
   skip-to-defer.
-Where history is relocated, it goes to the session's record and the entry cites
-the record by filename.
+Where history is relocated, it goes to the item's record, written at that turn,
+and the entry cites the record by filename.
 
 **Process order.** Unprocessed top to bottom, then items raised in this session's
 own discussion. State the count upfront, counting both together ("5 items.
@@ -876,7 +867,7 @@ closing the interview:
 ```
 
 **The no-open-question case is the common one, for a keep as for a delete.** The
-process-now specimen's four-turn shape stands only while a question is open.
+raised-thing specimen's four-turn shape stands only while a question is open.
 
 **View-in-doc.** The item already exists in QUEUE.md, so pointing is the default:
 lead with a one-line pointer instead of the pasted quote.
@@ -1099,7 +1090,7 @@ written here.** Six things, one line each, in the item's text where the run
 reads them:
 
 ```
-which files change, and what changes inside each, a new path placed by the temporary-files rule and MAP.md where the project has one
+which files change, and what changes inside each, a new path placed by the temporary-files rule and MAP.md where the project has one, and a new file that a tool loads — a skill, a hook, a settings file — naming what loads it and the folder that loader reads, looked up at this step
 which files the work READS but does not change   # where any do
 the observation that shows the change landed
 the files that observation REACHES, named among the files that change
@@ -1214,6 +1205,15 @@ undefined checklist at the door, and with the editing tools otherwise. The
 openings and closes then compute due-ness from that observable and file a
 capture when a turn is due; nothing stores a position.
 
+**Where the project's own CLAUDE.md carries a `Task list:` line, the message
+proposing a cycle offers one recurring task on that list, written when the
+definition is:**
+  - naming the work itself in the user's words, never the command to send;
+  - carrying the recurrence the cadence gives and its first due date, in the
+    fields the list file's header names;
+  - written on the user's yes, and left unwritten on a no;
+  - saying, in that same message, what will tell the user to open the project.
+
 **A definition's steps, criteria and observable pass the same test a kept item's
 instructions do** — the buildability check's design-decision clause, applied at
 authoring: no open class, no decision scheduled into the turn, stated concretely
@@ -1257,6 +1257,10 @@ reads this field and permits exactly what it names:
 **Writes:** `build-output/`, `dist/manifest.json`
 ```
 
+**The field reaches paths inside the project folder only: a path outside it is
+refused whatever the field names, the one file outside a project that a
+session may write being the user's task list.**
+
 The cost is stated rather than hidden: a declared path is writable whenever the
 project is open, not only while its checklist runs. A checklist whose steps
 write nothing outside the standing list needs no field at all.
@@ -1269,6 +1273,7 @@ recurring-shaped   the same artifact worked repeatedly, a cadence visible
                    in the record            ->  offer a cycle
 procedure-shaped   the same multi-step sequence done on request more than
                    once, no cadence         ->  offer a checklist
+the user's alone      recurring work with no steps of Claude's in it   ->  offer a recurring task on the user's list, and no cycle
 material-shaped    many entries of one kind arriving over time for a
                    cycle's or checklist's turns
                                             ->  offer a pool file, named in
@@ -1328,9 +1333,6 @@ Absent that, the recommendation stands alone and WAITS.
 
 The checkpoint's "continue" answers *which item comes next*, never a disposition
 of that item.
-
-**Content belonging to a not-yet-presented entry is carried to that entry's own
-turn and written then.**
 
 ```
 into Processed ->  CAN fold. The item is written and then reported, and the
@@ -1544,7 +1546,24 @@ repairing two references it broke".
 
 **4. Checkpoint**  [PROMPT]
 
-After every item, present the next item. That is the whole checkpoint.
+**Once the item is sorted, read the queue for what the decision touches**
+[SILENT] when nothing is; [BRIEF, PROMPT] when something is:
+  - re-reading the headings of the whole queue — cleared work, held work and
+    waiting entries — and opening any entry that might be related;
+  - summarising briefly how the related entries interact with the decision,
+    saying plainly how many there are;
+  - where a simple drop, or one decision, answers several entries or parts of
+    them, naming it and asking once, each entry then written or deleted on the
+    yes;
+  - commenting on anything else noticed.
+An entry that needs a decision of its own waits for its turn.
+
+**What the related-entries turn carries.** The count, one line per related
+entry saying what the decision does to it, the one ask where a drop or a
+shared decision covers several, and any other comment; nothing else.
+
+After every item, present the next item. That, after the read above, is the
+whole checkpoint.
 
 **The specimen — this is the shape of the message:**
 
@@ -1562,6 +1581,8 @@ and nothing else. No menu of routes, no analysis.
 
 ```
 message order:
+    0. the related-entries summary, where there is one, precedes the pointer
+       to the next item, in its own turn
     1. where the just-finished entry landed, named as the outcome —
        "Deleted." / "Into Processed, cleared to run." / "Into Processed,
        held below the line." — so the user knows before meeting the next
@@ -1670,56 +1691,20 @@ on someone's attention is not this — that is an ordinary skip.
 **View-in-doc applies here too** — lead with a one-line pointer to the
 next item in place of its verbatim, off-ramps below it unchanged.
 
-### Process-now offer after a user raises something  [PROMPT]
+### A thing raised mid-planning is discussed, then written  [DISCUSS, PROMPT]
 
-When the *user* raises something fresh mid-/plan, offer the branch **before
-writing anything — and before any analysis, design, or other work on the raised
-thing: work delivered ahead of the offer spends the choice**. Close on the
-offer rather than on a bare "anything
-else?", which can read as parking their idea. The offer is made once per raised
-thing, on either branch below: a reply on the thing's substance counts as
-"process it now", and every later turn on it ends on that item's own
-recommend-and-ask, never on the routing question again:
+**Whatever the user or Claude raises mid-/plan that may be work is taken into
+present-and-interview in the reply that meets it, and nothing is written until
+the user has agreed to what would be written.** It is then written once: as a
+work item where it is kept, or as a capture carrying the discussion so far
+where the user says to leave it for later. Processing is done with the user.
+An applied correction that may be method work is raised the same way. What a
+procedure files by itself — waiting mail, a due cycle's capture, a check's
+finding — is not a raised thing.
 
-```
-Claude's lean decides, and the lean is stated:
-process it now   ->  where processing it would change this session's work,
-                     or the thing is not yet complete: PROCEED with no ask.
-                     The interview opens on it in the same reply. NO capture
-                     is written: the item goes into present-and-interview
-                     and is written once, as a work item. The user can add
-                     to it during processing, so nothing asks first.
-file it          ->  where the thing already seems complete: write the
-                     capture, then offer filing with the recommendation in
-                     the ask — "I would file this one for later, since it
-                     already seems complete; a no leaves it filed. Process
-                     now?" It waits in Unprocessed for its turn; a yes
-                     enters the interview.
-```
-
-**The ask, where one is made, is one fixed formula: "Process now?"**, with the
-recommendation to file and the file-it alternative in the sentence before it —
-a yes enters the interview, a no files the capture. Where the lean is to
-process now there is no ask: processing proceeds.
-
-**The turn that reports a filing in a planning session ends on the same
-formula**, where the thing filed was not already agreed: the one-line report
-of what landed, the recommendation, then "Process now?" — so the two
-moments a raised thing passes through, before the write and after it, both
-end on the same sentence.
-
-**What stays the user's:** whether to process it at all, and whether there is
-appetite to carry on.
-
-**When *Claude* raises something mid-/plan that may be work, decide once, at
-the moment it is raised, before any write and before any analysis, design, or
-other work on it, by the same lean — and lean to working it now.** **Processing
-is done with the user** — together, never as something Claude does alone. An
-applied correction that may be method work gets the same decision.
-Work-it-now runs the ordinary present-and-interview loop and, if kept, places the
-item straight into Processed.
-
-No anything-else clause on either branch.
+**What the raised-thing turn carries.** That it is being taken now, what the
+thing is, what it would change and what is still open, as questions and not
+conclusions, ending on the interview's own ask.
 
 **Either branch, once it loops into present-and-interview, is subject to the
 fold conditions above** — and a thing raised in this message has had no earlier
@@ -1731,8 +1716,7 @@ Proceeding answers *when*, and the recommendation on where it lands still has
 to be put and still has to wait:
 
 ```
-Claude   Taking this one now, since it would change what the cleared build
-         does. [interview turn: what the item is, what it would change, what
+Claude   Taking this one now. [interview turn: what the item is, what it would change, what
          is still open — questions, not conclusions]
 
 user     [answers]
