@@ -37,7 +37,9 @@ the record's window        LOG/index.md — and LOG/index-<previous month>.md
 the cycles doc             every definition with what its observable reads
                            — the state server's cycles_state tool where the
                            server is registered — and due-ness computed from
-                           it as plan.md's cycles due-ness check computes it
+                           it as plan.md's cycles due-ness check computes it,
+                           a sequential chain's due step read off the line
+                           the same way, with no date
 the mailbox                INBOX/, read and routed as plan.md's waiting-mail
                            step routes it
 the installed version      the plugin version this chat opened on, from the

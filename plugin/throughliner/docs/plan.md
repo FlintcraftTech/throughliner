@@ -539,7 +539,12 @@ date read from the state server's `clock` tool where the server is registered
 and a shell clock command otherwise, and no
 completed turn of this cycle is recorded since the previous anchor, and the
 capture filed names that checklist in its heading, under the checklist's own
-slug. A cycle with no chain is unchanged.
+slug. Where the chain is sequential, the opening's cycles line names the
+due step and what it fires after, read from the record with no date: that
+step is due until its own record exists, a step carrying a condition is
+reported as held until the record shows the condition holding, and a chain
+whose first step has no record is reported as waiting on the user's word and
+files nothing. A cycle with no chain is unchanged.
 
 ```
 cycle due, no open capture with its slug  ->  file ONE capture in Unprocessed:
@@ -1105,6 +1110,11 @@ them among the files that change.**
 **State what would be observed, not what would be asserted.** "The suite passes",
 "a grep for the old wording returns nothing", "the section's first step is the
 queue read" — each is something a build can check and either meets or does not.
+Where the observation is a search, it is
+run here against the files as they stand, and the expected result is written
+from its hits read against the item's instructions and its not-touched list —
+a hit the item's own edit will leave or create is named in the expected result
+rather than counted as a failure.
 
 **One line each is enough for a refusal: the option, and what defeated it.**
 
@@ -1213,7 +1223,10 @@ test reads for, subordinate to it:
     — each checklist counted back from the anchor or forward from it with its
     lead, "two days before, the day, the day after" — the anchor named as a
     weekday that recurs or as one booked date, which planning rewrites when
-    the next event is booked.
+    the next event is booked — or as a **sequential chain**, each step
+    named with what fires it, the first on the user's word and each later
+    one after the step before it, with no anchor and no date, and a
+    condition read from the record where a step carries one.
 
 **An observable read from the project's own `LOG/` must be distinguishable from
 the records planning itself writes.** The cheap form, written into the
@@ -1240,8 +1253,9 @@ reads this field and permits exactly what it names:
 ```
 
 **The field reaches paths inside the project folder only: a path outside it is
-refused whatever the field names, the one file outside a project that a
-session may write being the user's task list.**
+refused whatever the field names, the two files outside a project that a
+session may write being the user's task list and their global instructions
+file.**
 
 The cost is stated rather than hidden: a declared path is writable whenever the
 project is open, not only while its checklist runs. A checklist whose steps

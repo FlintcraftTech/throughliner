@@ -161,6 +161,40 @@ def test_stale_epoch_still_halts():
     shutil.rmtree(d, ignore_errors=True)
 
 
+def test_stale_epoch_with_a_leftover_build_names_close_first():
+    """[format-halt-names-setup-while-leftover-build-needs-close]: a
+    behind-epoch project carrying another session's build working file halts
+    naming close first and setup after it, and says close may run under the
+    halt; the same project without the file names setup as before."""
+    d = project(epoch=EPOCH - 1)
+    with open(os.path.join(d, "_build-other-session.md"), "w",
+              encoding="utf-8") as f:
+        f.write("# Active Build\n\nRun: build [x]\n\nFiles:\n")
+    out = run(d)
+    halt = out[out.find("PROJECT FORMAT OUT OF DATE"):]
+    check("with a leftover build file the halt names close before setup",
+          "STOP" in out and "running /close first" in halt
+          and halt.find("/close first") < halt.find("/setup after it"),
+          halt[:1500])
+    check("the halt names the leftover file",
+          "_build-other-session.md" in halt, halt[:1500])
+    check("the halt says close may run under it",
+          "close may run under this halt" in halt, halt[:1500])
+    shutil.rmtree(d, ignore_errors=True)
+    d = project(epoch=EPOCH - 1)
+    out = run(d)
+    halt = out[out.find("PROJECT FORMAT OUT OF DATE"):]
+    check("without a leftover build file the halt names setup as before",
+          "running /setup will do it" in halt and "/close first" not in halt,
+          halt[:1500])
+    with open(os.path.join(d, "_build.md"), "w", encoding="utf-8") as f:
+        f.write("# Active Build\n")
+    out = run(d)
+    check("a bare _build.md also routes the halt through close",
+          "running /close first" in out and "_build.md" in out, out[:1500])
+    shutil.rmtree(d, ignore_errors=True)
+
+
 def test_missing_document_still_reports():
     """The other genuine signal: presence-based drift."""
     d = project(drop=("FAQ",))
@@ -184,6 +218,7 @@ if __name__ == "__main__":
     test_matching_version_also_says_nothing()
     test_code_notes_style_draws_no_style_sentence()
     test_stale_epoch_still_halts()
+    test_stale_epoch_with_a_leftover_build_names_close_first()
     test_missing_document_still_reports()
     test_flag_is_gone_from_the_source()
     print(f"\n{len(failures)} failure(s)" if failures else "\nall passed")

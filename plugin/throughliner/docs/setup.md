@@ -24,7 +24,8 @@ migration," not "this is Case B."
 
 ## Step 0: Is a build running right now?  [SILENT] when no build and no planning session; [BRIEF] when refusing a build; [BRIEF, PROMPT] when describing a planning session
 
-Look for a file named `_build-<session-id>.md` in the project folder. That file
+Look for a file named `_build-<session-id>.md` in the project folder, or a bare
+`_build.md`, which an older build left. That file
 means a build is in progress — either in this chat or another one — and /setup
 must not run alongside it.
 

@@ -382,7 +382,8 @@ a queue item named ->  lead with its heading's opening words — what the
 
 **The method's own terms are the vocabulary spoken with the user — the words its
 artifacts and commands actually show: capture, work item, Processed,
-Unprocessed, cleared to run, red flag, `[user]` item, walkthrough.** Each is
+Unprocessed, cleared to run, red flag, walkthrough, and the flavor names —
+build, `[audit]`, `[user]` item, `[freeform]`, `[co-write]`.** Each is
 explained once, on first need, and then used. **No plain-English alias is minted
 for something the method already names.**
 
@@ -737,10 +738,12 @@ Cycle: [slug]                                  # the entry is that named cycle's
                                                # passes over it. CAPTURES ONLY —
                                                # it has no meaning on a work item
 Assigned to: <name>                            # whose the work is to do — one
-                                               # name, written at /plan's
-                                               # decision step beside the
-                                               # flavour, or at filing where
-                                               # the filer knows. Any flavour;
+                                               # name, written in a session
+                                               # holding more than one person,
+                                               # at /plan's decision step
+                                               # beside the flavour, or at
+                                               # filing where the filer knows.
+                                               # Any flavour;
                                                # it says nothing about who may
                                                # process — see below
 ```
@@ -842,8 +845,9 @@ a QUOTE claim     "your words", "in her own words", quotation marks
   chosen to share**, and the scrub checklist reads it: a detail not on the
   roster is rewritten away like any other personal detail — the published-
   identity arm for third parties on GitHub is unchanged. **Whose an item is to
-  do is its `Assigned to:` line**, written at /plan's decision step where
-  who-does-the-work is settled, or at filing where the filer knows:
+  do is its `Assigned to:` line**, written in a session holding more than one
+  person, at /plan's decision step where who-does-the-work is settled, or at
+  filing where the filer knows:
   - a walkthrough addresses the named person, and the hand-over of a `[user]`
     step — in a run or at planning — names them;
   - anyone present may reassign it at a hand-over — "not mine, it is
@@ -870,7 +874,7 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 
 ```
 (no tag)     ->  build   ->  /build routes to build-work.md
-[audit]      ->  review  ->  /build routes to build-work.md's audit section; findings become captures
+[audit]      ->  reads and reports  ->  /build routes to build-work.md's audit section; findings become captures
 [user]       ->  walk-through; /build walks the user through it, never builds it
                  — or, where it carries a task line in place of a walkthrough,
                  a task on the user's own list, which /build names as on the
@@ -934,10 +938,12 @@ The `[user]` tag is governed by a **matched pair** of rules. (How a
 - **A `[user]` item carries a walkthrough** — which steps, in what order, what to
   check — **or, where the work needs no walking through, one task line in its
   place**, which of the two is settled at /plan's decision step. The task line is:
-  - written as `- [ ] <task> (<project>) 📅 <YYYY-MM-DD where dated>`, with subtasks indented beneath it as their own checkboxes where they help, its fields, a recurrence among them, written as the list file's header says where the file opens with one;
+  - written as `- [ ] <task> (<project>) due <YYYY-MM-DD where dated>`, with subtasks indented beneath it as their own checkboxes where they help, its fields, a recurrence among them, written as the list file's header says where the file opens with one;
   - carrying what the user needs in order to act on it — a phone number, an email address, a place, a reference — taken from the source or looked up where the source lacks it, and never the user's own home address;
+  - searched for in the list before it is appended, ticked lines included, and where a line already covers the same action for the same project, nothing added, the existing line named in the one-line report and the choice left to the user — a project with no list appends nothing and reads nothing;
   - appended to the user's task list the moment the item is kept, where the project's own CLAUDE.md names one in a `Task list:` line, a project with no such line, or one reading `none`, having no list;
   - kept current by Claude where it is this project's own, any other line changed on the user's ask;
+  - held, among the project's own lines, in the order their items have in the project's queue — a line moved when its item moves, at the moments the list is already touched (the keep, the lift, the planning opening's read) and never across another project's lines — and able to end `after <task text> (<project>)`, naming the task it waits on in that task's own words, placed below that line where it is on the list and left in place with that said otherwise, the phrase written as the list's header says where the header states a dependency form; a session reads the list and its own queue only, so a dependency the other project removes is not seen, a drag the user makes within one project's lines is undone at the next keep-current unless the header says the order is the user's, and lines ticked and sunk by a notes-app plugin are not read for order;
   - filed at the moment the user asks for a task, in any skill, as a `[user]` capture carrying it and appended to the list in the same turn, the capture ranked at planning like any other.
   **Each step names the thing to click or type and the thing to look for**,
   so "Open your session list" becomes what to click to get there and what tells
@@ -1350,8 +1356,12 @@ Those are held by the approval rules and by nothing mechanical.
   - **Feedback about a behaviour the METHOD produced routes by the three-way
     discriminator**, not to memory — a skill's narration, a step that misfired,
     a rule with a bad outcome.
-  - **A preference no method rule governs stays memory's** — a name, a
-    timezone, a tool the user likes.
+  - **A fact about the user that no project owns — a name, pronouns, a
+    timezone, a tool they like — goes to their global instructions file,
+    `CLAUDE.md` in their home `.claude` folder, as one line, shown first and
+    written on their yes**, since every session on the machine reads it and
+    git does not hold it; memory keeps such a fact only where no such file
+    exists.
 - **Doc routing — four destinations, two confused lines:**
 
 ```

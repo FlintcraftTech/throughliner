@@ -165,6 +165,55 @@ _write_claude("# CLAUDE.md\n")
 _check("no line, planning append", _decide(_root, "Edit", APPEND), "deny",
        "with no Task list: line the permission never opens")
 
+# --- the global instructions file ([user-facts-to-global-instructions]) --------
+# The second permitted write outside a project: CLAUDE.md in the home .claude
+# folder. The hook finds home through expanduser, so the subprocess is given a
+# temporary home; an Edit passes in planning and mid-build, a Write over an
+# existing file is refused, and another file in the home folder stays denied.
+_home = tempfile.mkdtemp(prefix="task-list-home-")
+os.makedirs(os.path.join(_home, ".claude"))
+GLOBAL = os.path.join(_home, ".claude", "CLAUDE.md")
+with open(GLOBAL, "w", encoding="utf-8") as f:
+    f.write("# Global instructions\n\nI'm Sam.\n")
+_home_env = {"USERPROFILE": _home, "HOME": _home}
+
+
+def _decide_home(cwd, tool_name, tool_input, session_id="task-list-test-session"):
+    payload = {"cwd": cwd, "tool_name": tool_name, "tool_input": tool_input,
+               "session_id": session_id}
+    proc = subprocess.run(
+        [sys.executable, HOOK], input=json.dumps(payload),
+        capture_output=True, text=True,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1", **_home_env},
+    )
+    if not proc.stdout.strip():
+        return "pass"
+    try:
+        out = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return "pass"
+    return (out.get("hookSpecificOutput") or {}).get("permissionDecision", "pass")
+
+
+GLOBAL_EDIT = {"file_path": GLOBAL, "old_string": "I'm Sam.\n",
+               "new_string": "I'm Sam.\nMy timezone is UTC.\n"}
+GLOBAL_REWRITE = {"file_path": GLOBAL, "content": "# Global instructions\n"}
+HOME_OTHER = {"file_path": os.path.join(_home, ".claude", "settings.json"),
+              "old_string": "a", "new_string": "b"}
+
+_check("global edit, planning", _decide_home(_root, "Edit", GLOBAL_EDIT), "pass",
+       "an edit to the global instructions file passes in a planning session")
+_check("global rewrite, planning", _decide_home(_root, "Write", GLOBAL_REWRITE),
+       "deny", "a whole-file Write over the existing global file is refused")
+_check("other home file, planning", _decide_home(_root, "Edit", HOME_OTHER), "deny",
+       "another file in the home .claude folder is refused as before")
+_check("global edit, build", _decide_home(_root, "Edit", GLOBAL_EDIT, _sid), "pass",
+       "an edit to the global instructions file passes mid-build though unlisted")
+_check("global rewrite, build", _decide_home(_root, "Write", GLOBAL_REWRITE, _sid),
+       "deny", "a whole-file Write over the existing global file is refused mid-build")
+_check("other home file, build", _decide_home(_root, "Edit", HOME_OTHER, _sid), "deny",
+       "another file in the home .claude folder is refused mid-build")
+
 print()
 if failures:
     print(f"{len(failures)} failure(s):")

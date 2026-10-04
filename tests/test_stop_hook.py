@@ -563,6 +563,17 @@ def test_turn_length_is_fed_back_once():
     check("fenced and quoted text is not counted", '"decision": "block"' not in out, out)
     code, out = run(root, (word * 174).strip(), session_id="s4")
     check("a 174-word reply passes", '"decision": "block"' not in out, out)
+    # [length-check-counts-table-rows]: a short prose reply plus a table of
+    # enough rows to pass the bound if counted is not sent back.
+    table = "\n".join("| " + (word * 20).strip() + " | " + (word * 20).strip()
+                      + " |" for _ in range(8))
+    tabled = "Three sentences of prose here. " + word * 20 + "\n\n" \
+        + "| a | b |\n|---|---|\n" + table
+    code, out = run(root, tabled, session_id="s5")
+    check("table rows are not counted as prose", '"decision": "block"' not in out, out)
+    code, out = run(root, long_prose, session_id="s6")
+    check("the feed-back names tables among the shapes left out",
+          "table rows are not counted" in out, out)
     shutil.rmtree(root, ignore_errors=True)
 
 

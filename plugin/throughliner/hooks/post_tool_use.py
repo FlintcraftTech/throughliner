@@ -486,8 +486,11 @@ def _parse_not_before(raw):
         return None
 
 
-def _check_blocked_by(annotated, blocks, warnings):
+def _check_blocked_by(annotated, blocks, warnings, in_flight=frozenset()):
     """Check 5: below the line means blocked by a named queue item.
+
+    `in_flight` is the set of slugs this session's build working file names;
+    a blocker among them is the run's own ticked work, not a missing entry.
 
     Below-the-line used to mean "shelved for any reason", with the reason
     written as a prose lift-condition inside the item — a sentence like
@@ -590,6 +593,10 @@ def _check_blocked_by(annotated, blocks, warnings):
         # entry simply stops being offered, silently, forever.
         for slug in refs:
             target = known.get(slug)
+            if target is None and slug in in_flight:
+                # The run itself ticked this blocker: it is in the session's
+                # build working file, not in the queue, and nothing is wrong.
+                continue
             if target is None:
                 warnings.append(
                     f"line {b['idx'] + 1}: {b['heading'][:60]!r} is blocked by "
@@ -1185,13 +1192,42 @@ def _check_assigned_to(blocks, warnings, unassigned_default):
         )
 
 
+def _slugs_ticked_in_working_file(cwd: str, session_id: str) -> set:
+    """Slugs this session's build working file names — the run's own work.
+
+    Between an item's tick and /close it is in neither the queue (the run
+    removed it at the tick) nor LOG/ (/close writes the entry), so a held
+    item naming it as its blocker drew the missing-blocker flag after every
+    shell command for the rest of the run. Any bracketed slug in the file is
+    read as this run's own work, the same broad read stop.py makes; copied
+    rather than imported, since the hooks run standalone from the plugin
+    cache. A missing or unreadable working file returns an empty set.
+    """
+    if not session_id:
+        return set()
+    path = os.path.join(cwd, "_build-%s.md" % _safe_session_id(session_id))
+    found = set()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+    except (OSError, UnicodeDecodeError):
+        return found
+    for match in re.finditer(r"\[([a-z0-9][a-z0-9-]*)\]", text):
+        slug = match.group(1)
+        if "-" in slug:
+            found.add(slug)
+    return found
+
+
 def lint(content: str, gate_check: bool = True,
-         unassigned_default=None) -> list[str]:
+         unassigned_default=None, in_flight=None) -> list[str]:
     """Every structure check over a queue's text.
 
     `gate_check` is whether the cleared-item gate-disposition check runs —
     `_lint_queue` passes what `_project_has_rule_gate` read off the project's
-    CLAUDE.md; a direct caller keeps the check on. `unassigned_default` is
+    CLAUDE.md; a direct caller keeps the check on. `in_flight` is the set of
+    slugs this session's build working file names, for which the
+    missing-blocker check says nothing. `unassigned_default` is
     the name `_read_unassigned_default` read off the same file, or None.
     """
     annotated = _annotate(content)
@@ -1206,7 +1242,7 @@ def lint(content: str, gate_check: bool = True,
     _check_red_flag_states(annotated, warnings)
     _check_mid_line_markers(annotated, warnings)
     _check_readiness_marker(annotated, blocks, warnings)
-    _check_blocked_by(annotated, blocks, warnings)
+    _check_blocked_by(annotated, blocks, warnings, in_flight or set())
     _check_until_built_on_work_item(annotated, warnings)
     _check_orphaned_prose(annotated, warnings)
     _check_quote_claim_without_quote(blocks, warnings)
@@ -1573,7 +1609,8 @@ def _emit(message: str) -> int:
     return 0
 
 
-def _lint_queue(queue_path: str, with_growth: bool = True) -> int:
+def _lint_queue(queue_path: str, with_growth: bool = True,
+                session_id: str = "") -> int:
     """Lint QUEUE.md at `queue_path` and emit any warnings as advisory context.
 
     Shared by both entry paths — an edit that landed on QUEUE.md, and any shell
@@ -1584,10 +1621,15 @@ def _lint_queue(queue_path: str, with_growth: bool = True) -> int:
     which file was written, so a run of unrelated commands would otherwise
     re-emit an identical growth report after each one. The residual is stated
     rather than solved: a shell command CAN reach the queue through a script,
-    and that write now gets no growth report. Closing it needs remembered state
-    between fires, which is refused here on the project's own ground — a state
-    file must be maintained, and the first session that forgets makes the output
-    lie. The lint itself still runs on the shell path, so corruption is caught.
+    and that write now gets no growth report. The lint itself still runs on the
+    shell path, so corruption is caught. The one state the lint keeps between
+    fires is `.throughliner/queue-lint-last.json`, the warning bodies the
+    previous run found: a flag prints as new only where it is absent from both
+    the committed baseline and that previous run, so each flag prints once
+    while it stands and again only after it has gone and returned.
+
+    `session_id` names this session's build working file, whose slugs the
+    missing-blocker check treats as the run's own work rather than as missing.
     """
     try:
         with open(queue_path, "r", encoding="utf-8") as f:
@@ -1601,9 +1643,10 @@ def _lint_queue(queue_path: str, with_growth: bool = True) -> int:
 
     sections = []
     warnings = lint(content, gate_check=gate_check,
-                    unassigned_default=_read_unassigned_default(cwd))
-    # The gone direction's baseline is the previous lint RUN, not the commit;
-    # read before this run's bodies overwrite it.
+                    unassigned_default=_read_unassigned_default(cwd),
+                    in_flight=_slugs_ticked_in_working_file(cwd, session_id))
+    # Both directions read the previous lint RUN beside the commit; read it
+    # before this run's bodies overwrite it.
     last_run = _read_lint_state(cwd)
     _write_lint_state(cwd, warnings)
     if baseline_kind is None:
@@ -1621,6 +1664,16 @@ def _lint_queue(queue_path: str, with_growth: bool = True) -> int:
         new, pre_existing = [], list(warnings)
     else:
         new, pre_existing = _split_warnings(warnings, baseline_content)
+        # A flag the previous run already printed is standing, not new: once
+        # a run ticked an item others were held on, the missing-blocker flag
+        # printed after every shell command for the rest of the run, since
+        # the commit still held the blocker and the flag read as new each
+        # time. It prints once while it stands, and again only after it has
+        # gone and come back.
+        if last_run:
+            still_new = [w for w in new if _warning_body(w) not in last_run]
+            pre_existing += [w for w in new if _warning_body(w) in last_run]
+            new = still_new
     if new:
         baseline_name = ("the last commit" if baseline_kind == "commit"
                          else "the previous version")
@@ -1746,7 +1799,8 @@ def main() -> int:
     if tool_name in ("Bash", "PowerShell"):
         if not is_adopted:
             return 0
-        return _lint_queue(os.path.join(cwd, "QUEUE.md"), with_growth=False)
+        return _lint_queue(os.path.join(cwd, "QUEUE.md"), with_growth=False,
+                           session_id=data.get("session_id", ""))
 
     filepath = tool_input.get("file_path", "")
     if not filepath:
@@ -1772,7 +1826,7 @@ def main() -> int:
     # entries get the secret scan alone — they have no structure to lint, but
     # they are committed prose exactly like the queue.
     if _normalise(filepath) == _normalise(os.path.join(cwd, "QUEUE.md")):
-        return _lint_queue(filepath)
+        return _lint_queue(filepath, session_id=data.get("session_id", ""))
 
     messages = []
     identity = _setup_identity_advisory(filepath, cwd, data.get("session_id", ""))

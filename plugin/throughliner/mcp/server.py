@@ -222,6 +222,25 @@ def tool_cycles_state(_arguments):
                 checklist, due or "no lead stated"))
         lines.append("")
 
+    # A sequential chain ([sequential-release-chain]): no dates, each step
+    # firing on the one before it, the due step read from the record by the
+    # hook's own reader. The same facts the opening's cycles line carries.
+    sequential = getattr(hooks, "sequential_chains", None)
+    for chain in (sequential(root) if sequential else []) or []:
+        lines.append("[%s] chain — sequential%s" % (
+            chain["slug"],
+            " — MALFORMED" if chain["status"] == "malformed" else ""))
+        for step in chain["steps"]:
+            fires = ("on the user's word" if step["fires"] == "word"
+                     else "after [%s]" % step["fires"] if step["fires"]
+                     else "fires on nothing stated")
+            lines.append("  [%s] — %s%s" % (
+                step["slug"], fires,
+                "; condition: %s" % step["condition"]
+                if step["condition"] else ""))
+        lines.append("  %s" % chain["detail"])
+        lines.append("")
+
     checklists = hooks.checklists_facts(root)
     if checklists:
         lines.append("Checklists (fired by a word, never due):")
@@ -1100,7 +1119,8 @@ CYCLES_PREAMBLE = (
     "A checklist carries the word that fires it in place of a cadence and an "
     "observable, and runs when the user says that word. A chained cycle "
     "lists its checklists in order under Chain:, each with its lead counted "
-    "back from the anchor.\n"
+    "back from the anchor — or, in a sequential chain, each firing on the "
+    "one before it with no date, the first on the user's word.\n"
 )
 STEPS_SENTENCE = ("**Steps of one turn.** Each step fires on the one before "
                   "it and is Claude's unless the step says otherwise.")
@@ -1206,14 +1226,61 @@ def tool_cycle_define(arguments):
 
     if isinstance(chain, (str, dict)):
         chain = [chain]
+    # Two chain shapes, never mixed: dated items carry lead_days (or anchor:
+    # true); sequential items ([sequential-release-chain]) carry
+    # on_users_word: true for the first and after: <slug> for each later one,
+    # with an optional condition. A sequential chain takes no anchor.
+    sequential = any(isinstance(item, dict)
+                     and (item.get("after") or item.get("on_users_word"))
+                     for item in chain)
     chain_rows = []
+    seq_rows = []
     anchors = 0
+    earlier = []
     for item in chain:
+        item_slug = str(item.get("slug") or "").strip().strip("[]") \
+            if isinstance(item, dict) else ""
+        if sequential:
+            if not isinstance(item, dict):
+                problems.append("chain item %r is not an object with slug and "
+                                "after or on_users_word." % (item,))
+                continue
+            if item.get("lead_days") is not None or item.get("anchor") is True:
+                problems.append("chain item [%s] carries a lead beside "
+                                "sequential items — a chain is dated or "
+                                "sequential, never both." % item_slug)
+                continue
+            if not item_slug or not DEFINITION_SLUG_RE.match(item_slug):
+                problems.append("chain item slug %r is missing or malformed."
+                                % item_slug)
+                continue
+            if item_slug not in defined:
+                problems.append("chain names [%s], which is not defined in %s "
+                                "— define the checklist first, then chain it."
+                                % (item_slug, hook.CYCLES_DOC))
+            after = str(item.get("after") or "").strip().strip("[]")
+            on_word = item.get("on_users_word") is True
+            if not earlier and not on_word:
+                problems.append("the first item of a sequential chain fires "
+                                "on the user's word — set on_users_word: true "
+                                "on [%s]." % item_slug)
+            elif earlier and on_word:
+                problems.append("[%s] says on_users_word, which only the "
+                                "first item may — a later item names the step "
+                                "before it with after." % item_slug)
+            elif earlier and after not in earlier:
+                problems.append("[%s] fires after [%s], which is not a step "
+                                "earlier in the chain — each item names one "
+                                "of the items above it." % (item_slug, after))
+            condition = str(item.get("condition") or "").strip()
+            seq_rows.append((item_slug, "word" if on_word else after,
+                             condition))
+            earlier.append(item_slug)
+            continue
         days, problem = _lead_days(item)
         if problem:
             problems.append(problem)
             continue
-        item_slug = str(item.get("slug") or "").strip().strip("[]")
         if not item_slug or not DEFINITION_SLUG_RE.match(item_slug):
             problems.append("chain item slug %r is missing or malformed."
                             % item_slug)
@@ -1232,6 +1299,10 @@ def tool_cycle_define(arguments):
         problems.append("a chain was given with no anchor — the weekday that "
                         "recurs, or the one booked date, the leads count "
                         "from.")
+    if seq_rows and anchor:
+        problems.append("a sequential chain was given with an anchor — its "
+                        "steps fire on one another and no date, so leave the "
+                        "anchor out.")
     if anchor:
         booked = hook._anchor_date(anchor) if hasattr(hook, "_anchor_date") \
             else None
@@ -1287,6 +1358,17 @@ def tool_cycle_define(arguments):
                                                       "" if days == 1 else "s")
             block.append("%d. [%s] — %s" % (n, item_slug, lead))
         block.append("")
+    if seq_rows:
+        block.append("**Chain:** the steps of one turn, in order, each firing "
+                     "on the one before it and none on a date:")
+        for n, (item_slug, fires, condition) in enumerate(seq_rows, start=1):
+            line = "%d. [%s] — %s" % (
+                n, item_slug,
+                "on the user's word" if fires == "word" else "after [%s]" % fires)
+            if condition:
+                line += "; **Condition:** %s" % condition
+            block.append(line)
+        block.append("")
     if writes:
         block += ["**Writes:** %s" % ", ".join("`%s`" % p for p in writes),
                   ""]
@@ -1329,8 +1411,10 @@ def tool_cycle_define(arguments):
     lines = ["%s [%s] as a %s%s." % (
         "Created %s and wrote" % hook.CYCLES_DOC if created
         else "Appended to %s:" % hook.CYCLES_DOC,
-        slug, kind, ", chaining %d checklist(s)" % len(chain_rows)
-        if chain_rows else "")]
+        slug, kind,
+        ", chaining %d checklist(s)" % len(chain_rows) if chain_rows
+        else ", a sequential chain of %d step(s)" % len(seq_rows) if seq_rows
+        else "")]
     lines.append("Read back by the session-start parser: cadence %s; "
                  "observable %s; trigger %s; anchor %s; chain %s."
                  % (repr(entry["cadence"]), repr(entry["observable"]),
@@ -2496,7 +2580,9 @@ TOOLS = [
             "cadence and trigger, or neither; a cadence with no observable, "
             "or one naming no derivation (\"declared\" or \"derived\"); a "
             "chain item naming a checklist not defined in the doc, or "
-            "naming the anchor twice, or a chain with no anchor; a writes "
+            "naming the anchor twice, or a dated chain with no anchor; a "
+            "sequential chain item naming a step not earlier in the chain, "
+            "or a sequential chain given an anchor; a writes "
             "path that is absolute or resolves outside the project; an "
             "empty steps list. The cadence and the observable are the "
             "user's declaration, written as given — the tool composes and "
@@ -2546,7 +2632,8 @@ TOOLS = [
                 },
                 "anchor": {
                     "type": "string",
-                    "description": "Optional, required with a chain: the "
+                    "description": "Optional, required with a dated chain and "
+                                   "refused with a sequential one: the "
                                    "weekday that recurs, or one booked date "
                                    "YYYY-MM-DD (not already past), that the "
                                    "leads count from.",
@@ -2559,18 +2646,46 @@ TOOLS = [
                             "slug": {"type": "string"},
                             "lead_days": {
                                 "type": "integer",
-                                "description": "Days before the anchor; a "
-                                               "negative number for days "
-                                               "after it; 0 marks the anchor "
-                                               "itself.",
+                                "description": "Dated chain: days before the "
+                                               "anchor; a negative number for "
+                                               "days after it; 0 marks the "
+                                               "anchor itself.",
+                            },
+                            "on_users_word": {
+                                "type": "boolean",
+                                "description": "Sequential chain, first item "
+                                               "only: it fires on the user's "
+                                               "word.",
+                            },
+                            "after": {
+                                "type": "string",
+                                "description": "Sequential chain, later items: "
+                                               "the slug of the step before "
+                                               "this one, which must be "
+                                               "earlier in the chain.",
+                            },
+                            "condition": {
+                                "type": "string",
+                                "description": "Sequential chain, optional: a "
+                                               "clause the step waits on, read "
+                                               "from LOG/ — the form the "
+                                               "opening reads is \"one planning "
+                                               "record and one build-run record "
+                                               "dated after the chain's [slug] "
+                                               "record\".",
                             },
                         },
-                        "required": ["slug", "lead_days"],
+                        "required": ["slug"],
                     },
                     "description": "Optional: the checklists of one turn in "
                                    "order, each a checklist already defined "
-                                   "in the doc with its lead in days; "
-                                   "exactly one item at lead 0 is the anchor.",
+                                   "in the doc. A DATED chain gives each its "
+                                   "lead_days, exactly one at 0 as the anchor. "
+                                   "A SEQUENTIAL chain gives the first "
+                                   "on_users_word and each later one the step "
+                                   "it fires after, with no anchor and no "
+                                   "dates; the opening reads the due step from "
+                                   "the record. Never both shapes in one chain.",
                 },
                 "writes": {
                     "type": "array",

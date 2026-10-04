@@ -151,6 +151,65 @@ check("unreadable state file: no gone notice, no error",
 
 shutil.rmtree(d, ignore_errors=True)
 
+
+# --- [queue-lint-repeats-built-blocker-flags-every-command] -----------------
+# A flag introduced in the working tree is new against the commit at every
+# fire, so it printed after every shell command for the rest of the run. It
+# prints once, then counts as standing while the previous run also saw it.
+def run_lint_as(hook, d, session_id):
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        hook._lint_queue(os.path.join(d, "QUEUE.md"), with_growth=False,
+                         session_id=session_id)
+    raw = out.getvalue().strip()
+    return json.loads(raw)["hookSpecificOutput"]["additionalContext"] if raw else ""
+
+
+d = tempfile.mkdtemp(prefix="lint-repeat-")
+git(d, "init", "-q")
+git(d, "config", "user.email", "suite@example.invalid")
+git(d, "config", "user.name", "suite")
+with open(os.path.join(d, "SPEC.md"), "w", encoding="utf-8") as f:
+    f.write("# SPEC\n")
+write_queue(d, FIXED)                      # beta held on alpha, which exists
+git(d, "add", "QUEUE.md", "SPEC.md")
+git(d, "commit", "-q", "-m", "a clean queue")
+run_lint(hook, d)                          # the state file learns: no flags
+write_queue(d, FLAGGED)                    # the blocker now names nothing
+text_a = run_lint(hook, d)
+check("repeat: a flag new to the working tree prints the first time",
+      "not in the queue right now" in text_a and "[nope]" in text_a, repr(text_a))
+text_b = run_lint(hook, d)
+check("repeat: the same flag does not print on the next run",
+      "not in the queue right now" not in text_b, repr(text_b))
+check("repeat: it is counted among the standing flags instead",
+      text_b == "" or "already present" in text_b, repr(text_b))
+write_queue(d, FIXED)
+run_lint(hook, d)                          # gone, printed once
+write_queue(d, FLAGGED)
+text_c = run_lint(hook, d)
+check("repeat: a flag that went and came back prints again",
+      "not in the queue right now" in text_c, repr(text_c))
+
+# A blocker the run itself ticked: in this session's working file, not in the
+# queue, and nothing is wrong — so the missing-blocker flag says nothing.
+write_queue(d, FIXED)
+git(d, "add", "QUEUE.md")
+git(d, "commit", "-q", "-m", "a clean queue again")
+write_queue(d, FIXED.replace("Blocked by: [alpha]", "Blocked by: [built-one]"))
+with open(os.path.join(d, "_build-sess-1.md"), "w", encoding="utf-8") as f:
+    f.write("# Active Build\n\nRun: build [built-one]\n\nProgress:\n"
+            "- [x] Built one [built-one] — done, confirmed\n\nFiles:\n")
+os.remove(os.path.join(d, ".throughliner", "queue-lint-last.json"))
+text_d = run_lint_as(hook, d, "other-session")
+check("in flight: another session's working file does not quiet the flag",
+      "[built-one]" in text_d, repr(text_d))
+os.remove(os.path.join(d, ".throughliner", "queue-lint-last.json"))
+text_e = run_lint_as(hook, d, "sess-1")
+check("in flight: a blocker ticked in this session's working file prints nothing",
+      "[built-one]" not in text_e, repr(text_e))
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

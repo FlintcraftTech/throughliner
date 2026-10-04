@@ -434,12 +434,15 @@ def _already_blocked(cwd, session_id, slug):
 # same exemption for structured content that [BRIEF] carries. The check
 # blocks once per session, then passes.
 TURN_PROSE_BOUND = 175
-_LIST_OR_STRUCTURE_LEAD = re.compile(r"^\s*(?:[-*+]\s|\d+[.)]\s|>|#)")
+_LIST_OR_STRUCTURE_LEAD = re.compile(r"^\s*(?:[-*+]\s|\d+[.)]\s|>|#|\|)")
 
 
 def _prose_lines(message):
     """The reply's prose lines: outside fenced blocks, not opening with a
-    list marker, a numbered-list marker, `>` or `#`."""
+    list marker, a numbered-list marker, `>`, `#` or a table row's `|` — a
+    measurement belongs in a table under the always-loaded rules, and a
+    three-row table was once counted as prose and sent back
+    ([length-check-counts-table-rows])."""
     lines = []
     in_fence = False
     for line in message.splitlines():
@@ -466,7 +469,8 @@ def _turn_length_owed(cwd, session_id, message):
         return None
     return (
         "[Throughliner] This reply runs %d words of prose against a bound of "
-        "%d. The earlier message stays on screen: reply with the correction "
+        "%d (list lines, fenced blocks, quotes, headings and table rows are "
+        "not counted). The earlier message stays on screen: reply with the correction "
         "alone, one or two lines carrying nothing from it, and carry the "
         "shape into the replies that follow — lead with the decision, one "
         "item per line where more than two things are named, reasoning on "

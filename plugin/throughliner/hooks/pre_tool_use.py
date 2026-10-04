@@ -890,6 +890,29 @@ def _is_task_list_file(filepath: str, cwd: str) -> bool:
     return bool(path) and _normalise(filepath) == _normalise(path)
 
 
+def _global_instructions_path() -> str:
+    """The user's global instructions file, `CLAUDE.md` in the `.claude`
+    folder of their home directory — the file the harness loads in every
+    session on the machine. Home is read from the environment the way the
+    harness reads it (USERPROFILE on Windows, HOME otherwise), through
+    expanduser; a machine with no home folder names nothing.
+    """
+    home = os.path.expanduser("~")
+    if not home or home == "~":
+        return ""
+    return os.path.join(home, ".claude", "CLAUDE.md")
+
+
+def _is_global_instructions_file(filepath: str) -> bool:
+    """True for the user's global instructions file — exact match. The second
+    permitted write outside the project root, beside the task list: a fact
+    about the user that no project owns goes there as one line on their yes
+    ([user-facts-to-global-instructions]), so an edit passes and only a
+    whole-file overwrite of an existing file is refused, as for the list."""
+    path = _global_instructions_path()
+    return bool(path) and _normalise(filepath) == _normalise(path)
+
+
 def _is_inbox_dir(filepath: str) -> bool:
     """Check if a path is inside any project's INBOX folder.
 
@@ -2690,6 +2713,22 @@ def main() -> int:
             branch="task list: whole-file overwrite",
         )
 
+    # The user's global instructions file takes an edit, in planning and in a
+    # build alike, and refuses a whole-file Write where the file exists — the
+    # same shape as the task list, for the same reason: it sits where git
+    # cannot restore it, and a line there changes every session's behaviour.
+    if (_is_global_instructions_file(filepath) and tool_name == "Write"
+            and os.path.exists(filepath)):
+        return _deny(
+            "[Throughliner] BLOCKED: this would replace the user's global "
+            "instructions file whole.\n\n"
+            f"File: {filepath}\n\n"
+            "The file sits outside every project where git cannot restore "
+            "it, and every session on the machine reads it, so change it "
+            "line by line with Edit, on the user's yes to the line.",
+            branch="global instructions: whole-file overwrite",
+        )
+
     # A cycles-doc definition the opening cannot read — neither a Cadence: nor
     # a Trigger: line — is refused at the write, naming the slug and the tool
     # that writes the field the hook reads. Reaches the definition this call
@@ -2857,6 +2896,8 @@ def main() -> int:
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("task list append", lambda: _is_task_list_file(filepath, cwd)),
+            ("global instructions edit",
+             lambda: _is_global_instructions_file(filepath)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("close-phase file",
              lambda: _is_close_phase_file(filepath, cwd, sid)),
@@ -2974,6 +3015,8 @@ def main() -> int:
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("task list append", lambda: _is_task_list_file(filepath, cwd)),
+            ("global instructions edit",
+             lambda: _is_global_instructions_file(filepath)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("checklist Writes: field",
              lambda: _is_checklist_declared_path(filepath, cwd)),
@@ -3017,7 +3060,9 @@ def main() -> int:
                 "material the user wrote or attached (under "
                 "workshop/resources/supplied/), the temp/ "
                 "folder, the memory directory, the task list the project "
-                "names, its own scratch files, and any "
+                "names, the user's global instructions file (CLAUDE.md in "
+                "their home .claude folder, one line on their yes), its own "
+                "scratch files, and any "
                 "path a checklist definition in CYCLES.md declares its steps "
                 "write. Everything "
                 "else is work, and work gets queued and built rather than done "

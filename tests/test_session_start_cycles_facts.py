@@ -15,6 +15,7 @@ said a cycles doc was there — so the absence of this line is exactly the
 failure, and a project with no doc getting no line is the other half of it.
 """
 
+import datetime
 import importlib.util
 import os
 import shutil
@@ -344,8 +345,171 @@ def test_a_date_anchor_with_forward_leads_and_the_spent_state():
     shutil.rmtree(d, ignore_errors=True)
 
 
+SEQUENTIAL = """# CYCLES
+
+## Release chain [release-chain]
+
+**Cadence:** on the user's word, declared by the user 2026-10-03.
+
+**Chain:** the steps of one turn, in order, each firing on the one before it:
+1. **Beta pick [beta-pick]** — on the user's word.
+2. **Maintenance sweep [maintenance-sweep]** — after [beta-pick].
+3. **Rezip [rezip]** — after [maintenance-sweep].
+4. **Release [release]** — after [rezip]; **Condition:** one planning record
+   and one build-run record dated after the chain's [rezip] record.
+
+**Observable:** the published date of the latest GitHub release.
+
+## Beta pick [beta-pick]
+Trigger: the user's word.
+
+## Maintenance sweep [maintenance-sweep]
+Trigger: its place in the chain.
+
+## Rezip [rezip]
+Trigger: its place in the chain.
+
+## Release [release]
+Trigger: its place in the chain.
+"""
+
+
+def _record(d, name, when, kind=""):
+    os.makedirs(os.path.join(d, "LOG"), exist_ok=True)
+    body = "---\nsummary: x\n---\n# r\n\nRecorded %s, read from the clock.\n\n" % when
+    if kind == "processed":
+        body += "**Work processed:** kept — [x].\n"
+    elif kind == "built":
+        body += "**Files touched:** `x`.\n"
+    with open(os.path.join(d, "LOG", name), "w", encoding="utf-8") as f:
+        f.write(body)
+
+
+def test_a_sequential_chain_reads_its_due_step_from_the_record():
+    """[sequential-release-chain]: no dates; each step fires on the one
+    before it, the first on the user's word, and a conditioned step waits
+    until the record shows the condition holding."""
+    d = project(SEQUENTIAL)
+    state = hook.sequential_chains(d)
+    check("a sequential chain is read", state is not None and len(state) == 1
+          and state[0]["slug"] == "release-chain", repr(state))
+    check("it is kept out of the dated chains",
+          hook.cycle_chains(d, datetime.date(2026, 10, 4)) == [],
+          repr(hook.cycle_chains(d, datetime.date(2026, 10, 4))))
+    if state:
+        check("with no records the chain waits on the user's word",
+              state[0]["status"] == "waiting" and state[0]["due"] is None
+              and "user's word" in state[0]["detail"], repr(state[0]))
+        check("the steps parse with what fires them",
+              [(s["slug"], s["fires"]) for s in state[0]["steps"]]
+              == [("beta-pick", "word"), ("maintenance-sweep", "beta-pick"),
+                  ("rezip", "maintenance-sweep"), ("release", "rezip")],
+              repr(state[0]["steps"]))
+        check("the condition clause travels on its step",
+              state[0]["steps"][3]["condition"].startswith(
+                  "one planning record"), repr(state[0]["steps"][3]))
+    check("nothing is due while the chain waits",
+          hook.checklists_due_on(d, datetime.date(2026, 10, 4)) == [],
+          repr(hook.checklists_due_on(d, datetime.date(2026, 10, 4))))
+
+    _record(d, "2026-10-01-beta-pick.md", "2026-10-01 12:21")
+    state = hook.sequential_chains(d)[0]
+    check("a pick record makes the next step due",
+          state["status"] == "due" and state["due"] == "maintenance-sweep",
+          repr(state))
+    check("the due step is listed as due on any day",
+          hook.checklists_due_on(d, datetime.date(2026, 10, 9))
+          == [("release-chain", "maintenance-sweep")],
+          repr(hook.checklists_due_on(d, datetime.date(2026, 10, 9))))
+
+    _record(d, "2026-09-28-maintenance-sweep.md", "2026-09-28 10:00")
+    state = hook.sequential_chains(d)[0]
+    check("a step's record older than the chain's start does not count",
+          state["due"] == "maintenance-sweep", repr(state))
+    _record(d, "2026-10-02-maintenance-sweep.md", "2026-10-02 10:00")
+    _record(d, "2026-10-03-rezip.md", "2026-10-03 09:43", "built")
+    _record(d, "2026-10-03-some-item.md", "2026-10-03 00:46", "built")
+    state = hook.sequential_chains(d)[0]
+    check("with a rezip record and no later planning record the release is held",
+          state["status"] == "held" and state["due"] is None
+          and "a planning record" in state["detail"]
+          and "a build-run record" in state["detail"], repr(state))
+    _record(d, "2026-10-04-plan.md", "2026-10-04 17:34", "processed")
+    state = hook.sequential_chains(d)[0]
+    check("one later planning record alone still holds the release",
+          state["status"] == "held" and "a build-run record" in state["detail"]
+          and "a planning record" not in state["detail"], repr(state))
+    _record(d, "2026-10-05-build.md", "2026-10-05 09:00", "built")
+    state = hook.sequential_chains(d)[0]
+    check("with both records after the rezip the release is due",
+          state["status"] == "due" and state["due"] == "release", repr(state))
+    _record(d, "2026-10-06-release.md", "2026-10-06 09:00")
+    state = hook.sequential_chains(d)[0]
+    check("every step recorded reads as complete, the next chain on the user's word",
+          state["status"] == "complete" and state["due"] is None
+          and "user's word" in state["detail"], repr(state))
+    _record(d, "2026-10-07-beta-pick.md", "2026-10-07 09:00")
+    state = hook.sequential_chains(d)[0]
+    check("a new pick starts a new chain, the old records not counted",
+          state["status"] == "due" and state["due"] == "maintenance-sweep",
+          repr(state))
+
+    both = project(SEQUENTIAL.replace(
+        "**Chain:**", "**Anchor:** Wednesday.\n\n**Chain:**"))
+    state = hook.sequential_chains(both)
+    check("a chain with both an anchor and sequential items is malformed",
+          state and state[0]["status"] == "malformed"
+          and "Anchor" in state[0]["detail"], repr(state))
+    check("a malformed chain files nothing",
+          hook.checklists_due_on(both, datetime.date(2026, 10, 4)) == [])
+    bad = project(SEQUENTIAL.replace("after [maintenance-sweep]",
+                                     "after [release]"))
+    state = hook.sequential_chains(bad)
+    check("a step firing after a step not earlier in the chain is malformed",
+          state and state[0]["status"] == "malformed"
+          and "[rezip] fires after [release]" in state[0]["detail"],
+          repr(state))
+    anchored = project(CHAINED)
+    check("a dated chain is not read as sequential",
+          hook.sequential_chains(anchored) == [], repr(hook.sequential_chains(anchored)))
+    for folder in (d, both, bad, anchored):
+        shutil.rmtree(folder, ignore_errors=True)
+
+
+def test_the_opening_names_a_sequential_chain():
+    """Driven whole: the cycles line carries the chain's steps and its state."""
+    import json
+    import subprocess
+    d = project(SEQUENTIAL)
+    for name in ("SPEC.md", "QUEUE.md"):
+        with open(os.path.join(d, name), "w", encoding="utf-8") as f:
+            f.write("# QUEUE\n\n## Processed\n\n## Unprocessed\n"
+                    if name == "QUEUE.md" else "# SPEC\n")
+    _record(d, "2026-10-01-beta-pick.md", "2026-10-01 12:21")
+    proc = subprocess.run(
+        [sys.executable, HOOK],
+        input=json.dumps({"cwd": d, "session_id": "sequential-test"}),
+        capture_output=True, text=True, encoding="utf-8", cwd=d, timeout=120)
+    try:
+        out = json.loads(proc.stdout) if proc.stdout.strip() else {}
+        context = (out.get("hookSpecificOutput") or {}).get(
+            "additionalContext") or out.get("additionalContext") or ""
+    except ValueError:
+        context = proc.stdout
+    check("the cycles line names the chain as sequential with its due step",
+          "[release-chain] chain — sequential" in context
+          and "[maintenance-sweep] is due, after [beta-pick]" in context,
+          context[-1500:])
+    check("no anchor or date is reported for it",
+          "anchor" not in context.split("[release-chain] chain")[1].split(";")[0]
+          if "[release-chain] chain" in context else False, context[-1500:])
+    shutil.rmtree(d, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("test_session_start_cycles_facts.py")
+    test_a_sequential_chain_reads_its_due_step_from_the_record()
+    test_the_opening_names_a_sequential_chain()
     test_a_chain_is_computed_for_each_weekday()
     test_a_your_part_field_leaves_the_chain_dates_unchanged()
     test_a_date_anchor_with_forward_leads_and_the_spent_state()

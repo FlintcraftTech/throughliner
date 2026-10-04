@@ -301,6 +301,54 @@ check("the date anchor computes the step after the anchor",
       == "2099-11-04", repr(chains.get("cohort")))
 shutil.rmtree(d, ignore_errors=True)
 
+# --- [sequential-release-chain]: a chain with no dates --------------------------
+SEQ = {"heading": "Release chain", "slug": "release-chain", "artifact": "x",
+       "cadence": "on the user's word, declared by the user 2026-10-03",
+       "observable": "the latest release's date",
+       "chain": [{"slug": "rezip", "on_users_word": True},
+                 {"slug": "sweep", "after": "rezip"},
+                 {"slug": "ship", "after": "sweep",
+                  "condition": "one planning record and one build-run record "
+                               "dated after the chain's [sweep] record"}],
+       "steps": ["Go."]}
+d = project()
+call(d, CHECKLIST)
+call(d, SHIP)
+text = call(d, SEQ)
+after = doc_text(d) or ""
+check("a sequential chain is accepted with no anchor",
+      "as a cycle, a sequential chain of 3 step(s)" in text, repr(text))
+check("the first step is written as firing on the user's word",
+      "1. [rezip] — on the user's word" in after, after[-700:])
+check("a later step is written as firing after the step before it",
+      "2. [sweep] — after [rezip]" in after, after[-700:])
+check("the condition rides its step",
+      "3. [ship] — after [sweep]; **Condition:** one planning record" in after,
+      after[-700:])
+state = {c["slug"]: c for c in (hook.sequential_chains(d) or [])}
+check("the hook reads the written chain back as sequential and waiting",
+      state.get("release-chain", {}).get("status") == "waiting",
+      repr(state))
+check("the dated-chain reader lists nothing for it",
+      hook.cycle_chains(d) == [], repr(hook.cycle_chains(d)))
+shutil.rmtree(d, ignore_errors=True)
+
+refused("a sequential step naming a step not earlier in the chain",
+        dict(SEQ, chain=[{"slug": "rezip", "on_users_word": True},
+                         {"slug": "ship", "after": "sweep"},
+                         {"slug": "sweep", "after": "ship"}]),
+        "not a step earlier in the chain")
+refused("a sequential chain given an anchor",
+        dict(SEQ, anchor="Wednesday"), "sequential chain was given with an anchor")
+refused("a sequential chain whose first step is not on the user's word",
+        dict(SEQ, chain=[{"slug": "rezip", "after": "ship"},
+                         {"slug": "ship", "after": "rezip"}]),
+        "fires on the user's word")
+refused("a lead beside sequential items",
+        dict(SEQ, chain=[{"slug": "rezip", "on_users_word": True},
+                         {"slug": "ship", "lead_days": 0}]),
+        "dated or sequential, never both")
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

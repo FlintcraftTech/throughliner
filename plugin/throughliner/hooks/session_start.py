@@ -1596,7 +1596,30 @@ CHAIN_LEAD_RE = re.compile(
 CHAIN_DAY_AFTER_RE = re.compile(r"\bthe\s+day\s+after\s+the\s+anchor\b",
                                 re.IGNORECASE)
 CHAIN_IS_ANCHOR_RE = re.compile(r"\bthe\s+anchor\b(?!\s*\))", re.IGNORECASE)
-WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday",
+# A SEQUENTIAL chain ([sequential-release-chain]): a Chain: field in a
+# definition carrying no Anchor:, whose items say what fires them — the first
+# "on the user's word", each later one "after [slug]" naming the step before
+# it — with an optional Condition: clause on an item. No step carries a date;
+# the due step is the first in chain order with no record newer than the
+# chain's start, the start being the newest LOG record under the first step's
+# slug. A chain carrying both an Anchor: and sequential items is malformed.
+CHAIN_ON_WORD_RE = re.compile(r"\bon\s+the\s+user'?s\s+word\b", re.IGNORECASE)
+CHAIN_AFTER_STEP_RE = re.compile(r"\bafter\s+\[([a-z0-9][a-z0-9-]*)\]",
+                                 re.IGNORECASE)
+CHAIN_CONDITION_RE = re.compile(r"\*{0,2}Condition\s*:\*{0,2}\s*(.+?)\s*$",
+                                re.IGNORECASE)
+# The one condition form the hook reads: "one planning record and one
+# build-run record dated after the chain's [slug] record".
+CHAIN_EXERCISED_RE = re.compile(
+    r"one\s+planning\s+record\s+and\s+one\s+build-run\s+record\s+dated\s+"
+    r"after\s+the\s+chain'?s\s+\[([a-z0-9][a-z0-9-]*)\]\s+record",
+    re.IGNORECASE)
+# A record's filename: <date>-<slug>.md, with the kind suffix or the legacy
+# number /close adds to a slug's second record — the digest's own shapes,
+# copied because the hook runs standalone.
+LOG_RECORD_NAME_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9][a-z0-9-]*)\.md$")
+LOG_RECORD_SUFFIX_RE = re.compile(r"-(?:plan|build|\d+)$")
+WEEKDAYS =["monday", "tuesday", "wednesday", "thursday", "friday",
             "saturday", "sunday"]
 NUMBER_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
                 "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
@@ -1838,6 +1861,8 @@ def cycle_chains(cwd, today=None):
     for entry in entries:
         if _is_checklist(entry) or not entry["chain"]:
             continue
+        if _parse_sequential_chain(entry["chain"]) is not None:
+            continue        # reported by sequential_chains(), with no dates
         booked = _anchor_date(entry["anchor"])
         weekday = None if booked else _anchor_weekday(entry["anchor"])
         anchor_date = booked
@@ -1873,9 +1898,211 @@ def checklists_due_on(cwd, today=None):
         today = datetime.date.today()
     chains = cycle_chains(cwd, today) or []
     iso = today.isoformat()
-    return [(chain["slug"], checklist) for chain in chains
-            if not chain.get("spent")
-            for checklist, due in chain["checklists"] if due == iso]
+    due = [(chain["slug"], checklist) for chain in chains
+           if not chain.get("spent")
+           for checklist, due in chain["checklists"] if due == iso]
+    # A sequential chain's due step has no date: it is due from the moment the
+    # step before it has its record until its own record exists.
+    for chain in sequential_chains(cwd) or []:
+        if chain.get("due"):
+            due.append((chain["slug"], chain["due"]))
+    return due
+
+
+def _parse_sequential_chain(text):
+    """The steps of a sequential Chain: field, or None where the field is not
+    one — no item fires "after [slug]". That phrase alone is the
+    discriminator: a dated chain's first step may also say the user's word
+    names the beta, so "on the user's word" by itself makes nothing
+    sequential, and a one-step sequential chain is not readable.
+
+    Each step is a dict: slug, fires ("word" for the first, or the slug of
+    the step before it), and condition (the Condition: clause's text, or
+    None). An item naming no checklist is skipped, as the anchored parser
+    skips it.
+    """
+    steps = []
+    sequential = False
+    for item in CHAIN_ITEM_SPLIT_RE.split(text or ""):
+        slug = CHAIN_SLUG_RE.search(item)
+        if not slug:
+            continue
+        after = CHAIN_AFTER_STEP_RE.search(item)
+        if after:
+            fires = after.group(1)
+            sequential = True
+        elif CHAIN_ON_WORD_RE.search(item):
+            fires = "word"
+        else:
+            fires = None
+        condition = CHAIN_CONDITION_RE.search(item)
+        steps.append({"slug": slug.group(1), "fires": fires,
+                      "condition": condition.group(1).strip()
+                      if condition else None})
+    return steps if sequential else None
+
+
+def _strip_front_matter_text(text):
+    """A record's text after its leading `---` front-matter block. Copied from
+    the digest, since the hook runs standalone."""
+    if not text.startswith("---"):
+        return text
+    lines = text.split("\n")
+    if lines[0].strip() != "---":
+        return text
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[i + 1:])
+    return text
+
+
+def _record_kind(body):
+    """"built" where the body carries `Files touched:`, "processed" where it
+    carries `Work processed:` and not `Files touched:`, "unknown" otherwise —
+    the digest's classifier, copied because the hook runs standalone."""
+    body = _strip_front_matter_text(body)
+    if "Files touched:" in body:
+        return "built"
+    if "Work processed:" in body:
+        return "processed"
+    return "unknown"
+
+
+def _log_records(cwd):
+    """Every record in LOG/ as (slug, kind, (date, time), filename), the slug
+    read off the filename with its kind suffix stripped, the time from the
+    record's own Recorded or Date line and the filename's date otherwise."""
+    folder = os.path.join(cwd, "LOG")
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return []
+    out = []
+    for name in names:
+        m = LOG_RECORD_NAME_RE.match(name)
+        if not m:
+            continue
+        slug = LOG_RECORD_SUFFIX_RE.sub("", m.group(2))
+        try:
+            with open(os.path.join(folder, name), "r", encoding="utf-8") as f:
+                body = f.read()
+        except OSError:
+            continue
+        when = _RECORD_TIME.search(body)
+        key = (when.group(1), when.group(2)) if when else (m.group(1), "00:00")
+        out.append((slug, _record_kind(body), key, name))
+    return out
+
+
+def _newest_record(records, slug, after=None):
+    """The newest (key, name) of the records under `slug`, dated after `after`
+    where one is given; None where there is none."""
+    best = None
+    for rec_slug, _kind, key, name in records:
+        if rec_slug != slug or (after is not None and key <= after):
+            continue
+        if best is None or key > best[0]:
+            best = (key, name)
+    return best
+
+
+def _condition_holds(condition, records, start):
+    """(holds, why) for a conditioned step. The one form read is "one
+    planning record and one build-run record dated after the chain's [slug]
+    record"; any other wording is reported as unreadable and never holds."""
+    m = CHAIN_EXERCISED_RE.search(condition or "")
+    if not m:
+        return False, "its condition is not in a form the opening reads"
+    ref = _newest_record(records, m.group(1), after=start)
+    if ref is None:
+        return False, "no [%s] record in this chain yet" % m.group(1)
+    planning = any(kind == "processed" and key > ref[0]
+                   for _s, kind, key, _n in records)
+    built = any(kind == "built" and key > ref[0]
+                for _s, kind, key, _n in records)
+    missing = [what for what, have in (("a planning record", planning),
+                                       ("a build-run record", built))
+               if not have]
+    if missing:
+        return False, "%s dated after LOG/%s" % (" and ".join(missing), ref[1])
+    return True, "both records dated after LOG/%s are on file" % ref[1]
+
+
+def sequential_chains(cwd):
+    """Each sequential chain's state, read from LOG/ with no dates computed.
+
+    Returns None where the project has no cycles doc, otherwise a list of
+    dicts: slug, steps (the parsed items), status — one of "malformed",
+    "waiting" (the first step has no record), "due" (a step is due), "held"
+    (the due step carries a condition that does not hold), "complete" (every
+    step has a record since the chain's start) — due (the due step's slug or
+    None), and detail (one plain clause). The start is the newest record
+    under the first step's slug, and a step is done where a record under its
+    slug is newer than that start. Facts for the opening; filing is the
+    skill's.
+    """
+    entries = _parse_cycles_doc(cwd)
+    if entries is None:
+        return None
+    records = None
+    out = []
+    for entry in entries:
+        if _is_checklist(entry) or not entry["chain"]:
+            continue
+        steps = _parse_sequential_chain(entry["chain"])
+        if steps is None:
+            continue
+        chain = {"slug": entry["slug"], "steps": steps, "due": None}
+        if entry["anchor"]:
+            chain.update(status="malformed", detail=(
+                "carries both an Anchor: and steps firing on the step "
+                "before them — a chain is dated or sequential, never both, "
+                "so nothing is computed from it"))
+            out.append(chain)
+            continue
+        earlier = []
+        bad = None
+        for step in steps:
+            if step["fires"] not in ("word", None) and step["fires"] not in earlier:
+                bad = step
+                break
+            earlier.append(step["slug"])
+        if bad is not None:
+            chain.update(status="malformed", detail=(
+                "[%s] fires after [%s], which is not a step earlier in the "
+                "chain, so nothing is computed from it"
+                % (bad["slug"], bad["fires"])))
+            out.append(chain)
+            continue
+        if records is None:
+            records = _log_records(cwd)
+        first = steps[0]["slug"]
+        start = _newest_record(records, first)
+        if start is None:
+            chain.update(status="waiting", detail=(
+                "waiting on the user's word — no [%s] record yet" % first))
+            out.append(chain)
+            continue
+        status, detail = "complete", (
+            "every step has a record since LOG/%s; the next chain starts "
+            "on the user's word" % start[1])
+        for step in steps[1:]:
+            if _newest_record(records, step["slug"], after=start[0]):
+                continue
+            if step["condition"]:
+                holds, why = _condition_holds(step["condition"], records,
+                                              start[0])
+                if not holds:
+                    status, detail = "held", (
+                        "[%s] waits on its condition: %s" % (step["slug"], why))
+                    break
+            status, detail = "due", (
+                "[%s] is due, after [%s]" % (step["slug"], step["fires"]))
+            chain["due"] = step["slug"]
+            break
+        chain.update(status=status, detail=detail)
+        out.append(chain)
+    return out
 
 
 def checklists_facts(cwd):
@@ -2487,21 +2714,46 @@ def main() -> int:
     # red-flag scan over a format it cannot parse does not report a risk, it
     # reports nothing — which reads exactly like "no risks found".
     if format_stale:
+        # Where another session's build working file sits in the project,
+        # /setup refuses to run beside it and the halt used to send the user
+        # round a loop — setup named, setup refusing, nothing saying close may
+        # run ([format-halt-names-setup-while-leftover-build-needs-close]).
+        # The same read the opening makes to name the leftover is reused here.
+        leftover_builds = [name for name, kind, _ in
+                           leftover_working_files(cwd, session_id)
+                           if kind == "build"]
+        if leftover_builds:
+            route = (
+                "Tell the user plainly, in everyday language, that their "
+                "project files were set up under an older version of the "
+                "workflow and need bringing up to date, and that an unfinished "
+                "build from another session (%s) sits in the project: running "
+                "/close first records that build, and running /setup after it "
+                "does the update — it migrates the existing documents rather "
+                "than replacing them, and their work is not lost. /setup "
+                "refuses to run while that build file is there, which is why "
+                "close comes first. " % ", ".join(leftover_builds[:3]))
+        else:
+            route = (
+                "Tell the user plainly, in everyday language, that their "
+                "project files were set up under an older version of the "
+                "workflow and need bringing up to date, and that running "
+                "/setup will do it — it migrates the existing documents "
+                "rather than replacing them, and their work is not lost. ")
         context_parts.append(
             "PROJECT FORMAT OUT OF DATE — this project's documents are on an "
             f"older shape (format {project_epoch}) than the installed plugin "
             f"expects (format {FORMAT_EPOCH}). STOP and say so in your first "
             "reply, before running any skill and before answering anything else. "
-            "Tell the user plainly, in everyday language, that their project "
-            "files were set up under an older version of the workflow and need "
-            "bringing up to date, and that running /setup will do it — it "
-            "migrates the existing documents rather than replacing them, and "
-            "their work is not lost. Do NOT run /plan or /build first: both would "
+            + route +
+            "Do NOT run /plan or /build first: both would "
             "spend the session reasoning over documents in a shape this version "
             "no longer reads correctly, and would report a confidently wrong "
-            "picture rather than an error. If the user tells you to carry on "
-            "anyway, that is their call — do it, and say once that the results "
-            "may be unreliable until the migration runs."
+            "picture rather than an error; /close may run under this halt, "
+            "since it records and commits and reasons over nothing. If the "
+            "user tells you to carry on anyway, that is their call — do it, "
+            "and say once that the results may be unreliable until the "
+            "migration runs."
         )
 
     # Uncleared red flags first-thing: the two-section model has no pinned Red
@@ -2729,6 +2981,17 @@ def main() -> int:
                        "; SPENT — its last step's date has passed, so "
                        "nothing is filed until planning rewrites the anchor"
                        if chain.get("spent") else ""))
+            # A sequential chain has no dates: each step fires on the one
+            # before it, read from the record, and the line names the due
+            # step and what it waits on — or that the first step waits on the
+            # user's word, or that the definition is malformed.
+            for chain in sequential_chains(cwd) or []:
+                steps = " -> ".join("[%s]" % s["slug"] for s in chain["steps"])
+                described.append(
+                    "[%s] chain — sequential, %s; %s%s"
+                    % (chain["slug"], steps, chain["detail"],
+                       " — MALFORMED" if chain["status"] == "malformed"
+                       else ""))
             context_parts.append(
                 "[Throughliner] Cycles on file (%d): %s. Facts, not verdicts — "
                 "the hook reports what each definition says and what its "
