@@ -1298,9 +1298,12 @@ audit and nobody has weighed it yet.
 
 Part of moving an entry into Processed is settling who does it and how: Claude-work by default or
 `[user]`; where the project holds more than one person, whose it is to do,
-written as the entry's `Assigned to:` line; and for Claude-work, its flavor — a capture asking for a check is a
-build where every hit has one fix and the search is written into the item, so
-the build derives its sites from it, and an `[audit]` otherwise. Claude places the item in Processed by
+written as the entry's `Assigned to:` line; and for Claude-work, its flavor — a capture asking for a check is
+run here, in this planning session, where the check is a bounded read whose
+lookups can be written out before they are done, its findings filed as captures
+and a clean pass noted in the session's record, the capture then deleted as
+done; a build where every hit has one fix and the search is written into the
+item, so the build derives its sites from it; and an `[audit]` otherwise. Claude places the item in Processed by
 relationship judgment and reports where it went.
 
 **Where an item's build produces a tool that measures or reports, file the

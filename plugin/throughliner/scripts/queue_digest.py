@@ -1587,6 +1587,8 @@ def _entry_holds(items, slug, shipped, until_built=False):
     uses — and an entry still in the queue, in either section, holds it.
     """
     if until_built:
+        if any(i["slug"] == slug for i in items):
+            return True
         return shipped.get(slug) != "built"
     for i in items:
         if i["slug"] == slug:

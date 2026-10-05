@@ -1111,6 +1111,48 @@ def test_capture_held_until_built_waits_for_the_build_record():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_until_built_holds_while_a_reused_slug_is_back_in_the_queue():
+    """A slug built before and in the queue again — a recurring cycle step —
+    holds an `until built` capture while its entry stands, whatever its older
+    build record says; with the entry gone the record releases it
+    ([until-built-hold-on-recurring-slug-reads-old-record])."""
+    root = project(
+        processed=(
+            "#### Kept item [kept]\nProse.\n" + BLOCK + "\n" + MARKER + "\n"
+        ),
+        unprocessed=(
+            "#### Waiting for the build [waits-build]\nProse.\n"
+            "Blocked by: [kept] until built\n"
+        ),
+        log_entries=["2026-09-12-kept.md"],
+    )
+    queue = os.path.join(root, "QUEUE.md")
+    items = digest.parse(queue)
+    pool = [i["slug"] for i in digest.offerable(items, root)]
+    check("an old build record does not release the capture while the entry stands",
+          pool == [], str(pool))
+    _, _, item = digest.whats_next(items, root, queue)
+    check("--next passes over it",
+          item is None or item["slug"] != "waits-build",
+          str(item and item["slug"]))
+    shutil.rmtree(root, ignore_errors=True)
+
+    root = project(
+        unprocessed=(
+            "#### Waiting for the build [waits-build]\nProse.\n"
+            "Blocked by: [kept] until built\n"
+        ),
+        log_entries=["2026-09-12-kept.md"],
+    )
+    queue = os.path.join(root, "QUEUE.md")
+    items = digest.parse(queue)
+    _, _, item = digest.whats_next(items, root, queue)
+    check("with the entry removed from the queue, --next offers it",
+          item is not None and item["slug"] == "waits-build",
+          str(item and item["slug"]))
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_capture_held_on_an_unprocessed_item_still_bows_out():
     """A named entry still in Unprocessed holds the capture, as before."""
     root = project(
@@ -1564,6 +1606,7 @@ if __name__ == "__main__":
     test_capture_held_on_a_processed_item_is_offerable()
     test_capture_held_on_an_unprocessed_item_still_bows_out()
     test_capture_held_until_built_waits_for_the_build_record()
+    test_until_built_holds_while_a_reused_slug_is_back_in_the_queue()
     test_full_print_names_how_many_cite_a_capture()
     test_incoming_citations_are_computed_not_guessed()
     test_copied_finding_flags_the_item_as_resting_on_a_snapshot()

@@ -13,6 +13,7 @@ Every project keeps a written record of *why* things are built a certain way (`S
 - **Seamless handoffs:** easily pick up where you left off after a break, or hand the project to someone else.
 - **Checked writes:** a small local server, accepted once per project, files captures and moves queue work with every field checked before anything lands.
 - **One task list across projects:** name a markdown task list once per project, and Claude adds a checkbox line there for each step of yours that needs no walkthrough, with the project in brackets and a due date where there is one, and keeps it current; tick a line and the next planning session closes the item. The list is read best in Obsidian with the Tasks plugin, whose fields the task line uses; any markdown editor works.
+- **Your own edits are noticed:** change a draft, a project file or a post by hand and the next session that reads it sorts the change — a plain fix is accepted and noted, while an edit that reverses a decision or contradicts something is asked about, with every place it now disagrees with named.
 
 ## Installation
 

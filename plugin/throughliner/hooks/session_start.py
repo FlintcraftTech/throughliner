@@ -960,6 +960,123 @@ def _dirty_paths(cwd):
     return paths
 
 
+# The tools whose allowed decisions mean Claude wrote the file named in the
+# decision log's target column ([user-edits-noticed-sorted-and-cross-checked]).
+_WRITING_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
+
+
+def _last_commit_time(cwd):
+    """The last commit's time as the decision log writes stamps, or None."""
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--date=format-local:%Y-%m-%d %H:%M:%S",
+             "--format=%cd"],
+            cwd=cwd, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    stamp = result.stdout.strip()
+    if result.returncode != 0 or not stamp:
+        return None
+    return stamp
+
+
+def _claude_written_paths(cwd, since):
+    """Project-relative paths the safety check's decision log records Claude
+    writing through its editing tools at or after `since`.
+
+    Reads the live log and its monthly archives. A write made through a shell
+    script or a state-server tool logs no file path, so it is not reached.
+    """
+    folder = os.path.join(cwd, ".throughliner")
+    try:
+        names = [n for n in os.listdir(folder)
+                 if n.startswith("pre-tool-use") and n.endswith(".log")]
+    except OSError:
+        return set()
+    root = os.path.normcase(os.path.normpath(cwd))
+    written = set()
+    for name in names:
+        try:
+            with open(os.path.join(folder, name), "r", encoding="utf-8",
+                      errors="replace") as f:
+                lines = f.read().splitlines()
+        except OSError:
+            continue
+        for line in lines:
+            cols = line.split("\t")
+            if len(cols) < 5 or cols[1] not in _WRITING_TOOLS:
+                continue
+            if cols[2] != "allow" or (since and cols[0] < since):
+                continue
+            target = os.path.normcase(os.path.normpath(cols[4]))
+            if not target.startswith(root + os.sep):
+                continue
+            written.add(target[len(root) + 1:].replace("\\", "/"))
+    return written
+
+
+_UNPROCESSED_SLUG = re.compile(r"^####\s.*\[([a-z0-9][a-z0-9-]*)\]\s*$")
+
+
+def _unprocessed_slugs(text):
+    """Slugs of the entries under QUEUE.md's `## Unprocessed`, in order."""
+    slugs = []
+    inside = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == "## Unprocessed"
+            continue
+        if inside:
+            m = _UNPROCESSED_SLUG.match(line)
+            if m:
+                slugs.append(m.group(1))
+    return slugs
+
+
+def _arrived_captures(cwd):
+    """Unprocessed slugs in the working QUEUE.md that the last commit's copy
+    does not carry, or [] where either cannot be read."""
+    try:
+        result = subprocess.run(
+            ["git", "show", "HEAD:QUEUE.md"],
+            cwd=cwd, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if result.returncode != 0:
+        return []
+    try:
+        with open(os.path.join(cwd, "QUEUE.md"), "r", encoding="utf-8",
+                  errors="replace") as f:
+            current = f.read()
+    except OSError:
+        return []
+    committed = set(_unprocessed_slugs(result.stdout))
+    return [s for s in _unprocessed_slugs(current) if s not in committed]
+
+
+def _split_by_author(cwd, paths):
+    """Split uncommitted paths into those the decision log shows Claude writing
+    since the last commit, and those it does not."""
+    written = _claude_written_paths(cwd, _last_commit_time(cwd))
+    folded = {os.path.normcase(p).replace("\\", "/") for p in written}
+    claude, other = [], []
+    for p in paths:
+        key = os.path.normcase(p).replace("\\", "/")
+        (claude if key in folded else other).append(p)
+    return claude, other
+
+
+def _named(items, limit=8):
+    shown = ", ".join(items[:limit])
+    if len(items) > limit:
+        shown += f", and {len(items) - limit} more"
+    return shown
+
+
 def _is_hash_backfill_diff(cwd, relpath):
     """True where this file's whole diff is placeholders becoming real hashes.
 
@@ -3400,12 +3517,38 @@ def main() -> int:
                 "runs by itself at every session start and is normal; /close "
                 "commits it along with everything else."
             )
-        if remaining:
+        # Which of the rest the safety check's decision log shows Claude
+        # writing, and which it does not — the second set is read as the
+        # user's own edits ([user-edits-noticed-sorted-and-cross-checked]).
+        # Git cannot say whose a change is, and a write made through a script
+        # logs no path, so the line names what the log does not show rather
+        # than claiming authorship.
+        claude_made, not_logged = _split_by_author(cwd, remaining)
+        if claude_made:
             context_parts.append("")
             context_parts.append(
-                f"[Throughliner] {len(remaining)} file(s) have uncommitted "
-                "changes from a previous session — /close will pick them up."
+                f"[Throughliner] {len(claude_made)} file(s) have uncommitted "
+                "changes Claude made in a previous session — /close will pick "
+                "them up."
             )
+        if not_logged:
+            context_parts.append("")
+            context_parts.append(
+                f"[Throughliner] {len(not_logged)} file(s) have uncommitted "
+                "changes the safety check's log does not show Claude making — "
+                f"read them as the user's own edits: {_named(not_logged)}. "
+                "Sort each as the rules on the user's own changes say; /close "
+                "will pick them up."
+            )
+        if "QUEUE.md" in remaining:
+            arrived = _arrived_captures(cwd)
+            if arrived:
+                context_parts.append("")
+                context_parts.append(
+                    f"[Throughliner] {len(arrived)} capture(s) arrived in "
+                    "Unprocessed since the last commit: "
+                    + _named(["[" + s + "]" for s in arrived]) + "."
+                )
 
     backfill_report = backfill_log_hashes(cwd)
     if backfill_report:

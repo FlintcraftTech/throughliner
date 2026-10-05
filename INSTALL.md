@@ -84,7 +84,7 @@ Once Claude Code is installed and the user is on a paid plan, the plugin install
 claude plugin marketplace add FlintcraftTech/throughliner#stable
 ```
 
-When it works, it prints that the marketplace `flintcraft` was added. The `#stable` on the end matters: it points at the weekly release rather than the day-to-day development line, so the user installs a version that has been tested for a week. Keep it exactly as written. (Anyone who wants to test the coming week's release a week ahead of it can write `#beta` instead — that is the release candidate, and it is where testers' bug reports go.)
+When it works, it prints that the marketplace `flintcraft` was added. The `#stable` on the end matters: it points at the newest release rather than the day-to-day development line, so the user installs a version that has been tested for a week. Keep it exactly as written. (Anyone who wants to test the coming week's release a week ahead of it can write `#beta` instead — that is the release candidate, and it is where testers' bug reports go.)
 
 ```
 claude plugin install throughliner@flintcraft
@@ -114,7 +114,7 @@ A note for real use later: `/setup` is also the command that sets up a real proj
 
 ### Updating later
 
-An update is two commands, run in that order, then a full restart. First refresh the marketplace: `claude plugin marketplace update flintcraft`, which prints "Refreshing marketplace cache" — the app keeps a cached copy of the marketplace and does not re-fetch it on its own, so without this step nothing looks newer and the update is a no-op. Then `claude plugin update throughliner@flintcraft`, which prints the old version updated to the new (for example, 1.21.1 updated to 1.22.0). Where the update command runs from Claude's shell rather than a terminal the user is typing in, add `-y` to it, because the update asks for confirmation otherwise. Then fully restart the app so the new version loads. Because the marketplace is pinned to `#stable`, each update brings the newest weekly release rather than whatever is on the development line that day (a marketplace added with `#beta` brings the newest release candidate instead).
+An update is two commands, run in that order, then a full restart. First refresh the marketplace: `claude plugin marketplace update flintcraft`, which prints "Refreshing marketplace cache" — the app keeps a cached copy of the marketplace and does not re-fetch it on its own, so without this step nothing looks newer and the update is a no-op. Then `claude plugin update throughliner@flintcraft`, which prints the old version updated to the new (for example, 1.21.1 updated to 1.22.0). Where the update command runs from Claude's shell rather than a terminal the user is typing in, add `-y` to it, because the update asks for confirmation otherwise. Then fully restart the app so the new version loads. Because the marketplace is pinned to `#stable`, each update brings the newest release rather than whatever is on the development line that day (a marketplace added with `#beta` brings the newest release candidate instead).
 
 ## Step 2 — First-run pointer
 

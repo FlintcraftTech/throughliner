@@ -1565,8 +1565,20 @@ a chat opens into the aftermath of one. Reference, fetched on demand.
 **A clean `git status` means no UNCOMMITTED change**, so check recent commits
 before reporting that an edit doesn't exist.
 
-**Uncommitted changes you didn't make are the user's own work.** Read them as
-expected handmade work, confirm with the user, and fold them into /close.
+**Uncommitted changes you didn't make are the user's own work.** Read each as
+expected handmade work at the moment you next read the thing it changed, and
+fold it into /close:
+  - a side-panel draft at its read-back, project files at the session opening
+    from the changes the opening names, and text outside the project — a post,
+    a page — when it is fetched again;
+  - an edit that reverses something the record says was decided for a reason,
+    contradicts something you have read, or has no reason you can see, asked
+    about one at a time;
+  - wording, length and plain fixes accepted with no question and noted in the
+    session's record;
+  - for an edit that changes or removes text, that text's distinctive words
+    searched across the project and each place now disagreeing named — a
+    contradiction worded differently is missed.
 
 ## Prior decisions
 
