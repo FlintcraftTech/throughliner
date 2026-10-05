@@ -143,5 +143,5 @@ Quick answers about how this project's workflow works. Each question links to a 
   kept is the decision at planning, cleared is the position above the line, and
   a lift is how a held item becomes cleared later. [faq.md](faq.md)
 - **Can a cycle run as a chain of steps with no dates?** — the sequential chain: the first step on your word, each later one after the step before, a condition read from the records, and what the opening says about it. [faq.md](faq.md)
-- **Where does Claude keep facts about me, like my pronouns?** — the global instructions file in your home .claude folder, written one line at a time on your yes, read by every session on the machine. [faq.md](faq.md)
+- **Where does Claude keep facts about me, like my pronouns?** — the global instructions file in your home .claude folder, written one line at a time on your yes, with the safety check asking you before each edit, read by every session on the machine. [faq.md](faq.md)
 - **I changed something Claude wrote — will it notice?** — the three moments it reads your edit, which edits it asks about, and the search that names what your edit now contradicts. [faq.md](faq.md)

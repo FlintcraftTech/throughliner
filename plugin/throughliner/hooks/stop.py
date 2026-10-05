@@ -150,8 +150,11 @@ def _strip_quoted(message, spans=False):
 #
 # A COPY of pre_tool_use.py's TIME_WORD_PATTERN and _QUOTED_SPAN: the hooks run
 # standalone from a copied plugin cache and cannot import a shared module.
-# Change one, change both. pre_tool_use.py scans text written into a record,
-# the queue or SPEC; this scans the finished reply. Each distinct phrase blocks
+# The copies differ by two words: this one leaves out "today" and "just now",
+# which in a reply most often mean currently or within this turn
+# ([time-word-check-stops-today-meaning-currently]); "earlier today" stays.
+# Change anything else in one, change both. pre_tool_use.py scans text written
+# into a record, the queue or SPEC; this scans the finished reply. Each distinct phrase blocks
 # once per session, then passes, through the same marker mechanism as the
 # filing-claim check. The limit, stated: a bare wrong clock time or a wrong
 # date is not a phrase and is not reached.
@@ -159,8 +162,8 @@ TIME_WORD_PATTERN = re.compile(
     r"\b(?:"
     r"(?:\d+|a|an|one|two|three|four|five|few|a few|couple of|several)"
     r"\s+(?:minutes?|hours?|days?|weeks?|months?)\s+ago"
-    r"|just now|moments ago|earlier today|this morning|this afternoon"
-    r"|this evening|tonight|yesterday|today|tomorrow|last week|next week"
+    r"|moments ago|earlier today|this morning|this afternoon"
+    r"|this evening|tonight|yesterday|tomorrow|last week|next week"
     r"|last night"
     r")\b",
     re.IGNORECASE,
@@ -202,9 +205,10 @@ def _is_name_mid_sentence(text, start, word):
 # ([time-word-check-passes-denoted-date]): where that date appears anywhere
 # in the reply — before or after the word, in brackets or not — the word is
 # sourced and passes. Words with no computable date keep the sentence-source
-# rule. A COPY of pre_tool_use.py's; change one, change both.
+# rule. A COPY of pre_tool_use.py's, less "today", which this copy's pattern
+# no longer matches; change anything else in one, change both.
 _DENOTED_OFFSETS = {
-    "yesterday": -1, "today": 0, "tonight": 0, "this morning": 0,
+    "yesterday": -1, "tonight": 0, "this morning": 0,
     "this afternoon": 0, "this evening": 0, "earlier today": 0, "tomorrow": 1,
 }
 # A sentence carrying this many distinct phrases from the check's own list is

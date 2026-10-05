@@ -11,9 +11,10 @@ Every project keeps a written record of *why* things are built a certain way (`S
 - **Settled decisions stay settled:** rejected ideas retain their reasoning so they don't resurface.
 - **Silent regressions are caught:** historical context prevents unwanted changes.
 - **Seamless handoffs:** easily pick up where you left off after a break, or hand the project to someone else.
-- **Checked writes:** a small local server, accepted once per project, files captures and moves queue work with every field checked before anything lands.
-- **One task list across projects:** name a markdown task list once per project, and Claude adds a checkbox line there for each step of yours that needs no walkthrough, with the project in brackets and a due date where there is one, and keeps it current; tick a line and the next planning session closes the item. The list is read best in Obsidian with the Tasks plugin, whose fields the task line uses; any markdown editor works.
+- **Checked writes:** a small local server, connected when the plugin is installed, files captures and moves queue work with every field checked before anything lands.
+- **One task list across projects:** name a markdown task list once per project, and Claude adds a checkbox line there for each step of yours that needs no walkthrough, with the project in brackets and a due date where there is one, and keeps it current; tick a line and the next planning session closes the item. The default line depends on no plugin; any markdown editor works, and a header at the top of your list can give the line a plugin's fields, such as Obsidian's Tasks plugin.
 - **Your own edits are noticed:** change a draft, a project file or a post by hand and the next session that reads it sorts the change — a plain fix is accepted and noted, while an edit that reverses a decision or contradicts something is asked about, with every place it now disagrees with named.
+- **Recurring work on a cycle:** ask for something you do repeatedly — a release, a posting rhythm, a review — to go on a cycle, and every session's opening says when a turn is due; a named step list runs when you say its name.
 
 ## Installation
 
@@ -42,7 +43,7 @@ The plugin splits your project into a structured build queue managed by six main
 
 - **`/setup`** — interviews you about your project, works out with you the smallest set of folders and documents your work actually uses before creating any of them, scaffolds text documents (`SPEC.md`, `QUEUE.md`, etc.), checks your machine for the command-line tools your project's work will need and records what it finds in `TOOLS.md`, and offers two styles for Claude's replies: Throughliner Brevity, which keeps them short, and Throughliner Code Notes, which adds a short note after each piece of work on why the code is the way it is.
 - **`/plan`** — organizes the queue, captures new ideas, and resolves design questions. Its opening also reads the signs that a project has outgrown one queue and names moving a part out where one holds.
-- **`/build`** — builds the next piece of ready work, staying locked to relevant files.
+- **`/build`** — builds the cleared work from the top, several items in one run, walks you through any steps that are yours, and stays locked to the files that work names.
 - **`/rescan`** — reviews past conversation history to capture unrecorded decisions or notes into the queue.
 - **`/close`** — records session outcomes, commits changes to Git, and tees up next steps. Always run this before `/clear`.
 - **`/catchup`** — summarizes feature statuses (shipped, ready, waiting) when returning after time away, and re-runs the return checks a fresh chat runs: a cycle due now, mail waiting, the plugin version changed under the chat, the date moved.

@@ -907,8 +907,8 @@ def _is_global_instructions_file(filepath: str) -> bool:
     """True for the user's global instructions file — exact match. The second
     permitted write outside the project root, beside the task list: a fact
     about the user that no project owns goes there as one line on their yes
-    ([user-facts-to-global-instructions]), so an edit passes and only a
-    whole-file overwrite of an existing file is refused, as for the list."""
+    ([user-facts-to-global-instructions]), so an edit asks the user and a
+    whole-file overwrite of an existing file is refused."""
     path = _global_instructions_path()
     return bool(path) and _normalise(filepath) == _normalise(path)
 
@@ -2713,10 +2713,9 @@ def main() -> int:
             branch="task list: whole-file overwrite",
         )
 
-    # The user's global instructions file takes an edit, in planning and in a
-    # build alike, and refuses a whole-file Write where the file exists — the
-    # same shape as the task list, for the same reason: it sits where git
-    # cannot restore it, and a line there changes every session's behaviour.
+    # The user's global instructions file refuses a whole-file Write where the
+    # file exists, in planning and in a build alike: it sits where git cannot
+    # restore it, and a line there changes every session's behaviour.
     if (_is_global_instructions_file(filepath) and tool_name == "Write"
             and os.path.exists(filepath)):
         return _deny(
@@ -2727,6 +2726,15 @@ def main() -> int:
             "it, and every session on the machine reads it, so change it "
             "line by line with Edit, on the user's yes to the line.",
             branch="global instructions: whole-file overwrite",
+        )
+    # Any other write to it, in planning and in a build alike, asks the user
+    # first ([global-instructions-write-gated-by-procedure-only]).
+    if _is_global_instructions_file(filepath):
+        return _ask(
+            "[Throughliner] This edits the user's global instructions file "
+            f"({filepath}), which is loaded by every session on the machine, "
+            "in every project. Approve only a line the user has said yes to.",
+            branch="global instructions: edit asks",
         )
 
     # A cycles-doc definition the opening cannot read — neither a Cadence: nor
@@ -2896,8 +2904,6 @@ def main() -> int:
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("task list append", lambda: _is_task_list_file(filepath, cwd)),
-            ("global instructions edit",
-             lambda: _is_global_instructions_file(filepath)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("close-phase file",
              lambda: _is_close_phase_file(filepath, cwd, sid)),
@@ -3015,8 +3021,6 @@ def main() -> int:
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("task list append", lambda: _is_task_list_file(filepath, cwd)),
-            ("global instructions edit",
-             lambda: _is_global_instructions_file(filepath)),
             ("INBOX", lambda: _is_inbox_dir(filepath)),
             ("checklist Writes: field",
              lambda: _is_checklist_declared_path(filepath, cwd)),

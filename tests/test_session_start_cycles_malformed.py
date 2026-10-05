@@ -112,6 +112,44 @@ check("the checklists line carries [rezip] and not [prep]",
       "Checklists on file (1): [rezip]" in context, context[-1500:])
 shutil.rmtree(d, ignore_errors=True)
 
+
+def opening_context(doc):
+    """Write `doc` as a project's CYCLES.md and return the opening's context."""
+    p = project()
+    with open(os.path.join(p, "CYCLES.md"), "w", encoding="utf-8") as f:
+        f.write(doc)
+    run = subprocess.run(
+        [sys.executable, HOOK],
+        input=json.dumps({"cwd": p, "session_id": "malformed-test"}),
+        capture_output=True, text=True, encoding="utf-8", cwd=p, timeout=120)
+    shutil.rmtree(p, ignore_errors=True)
+    try:
+        got = json.loads(run.stdout) if run.stdout.strip() else {}
+        return (got.get("hookSpecificOutput") or {}).get("additionalContext") \
+            or got.get("additionalContext") or ""
+    except ValueError:
+        return run.stdout
+
+
+# Headings that parse but carry no field lines are malformed, not misshapen:
+# the opening names all five and does not blame the heading shape
+# ([cycles-opening-blames-heading]).
+SLUGS = ["checkin", "review", "backup", "budget", "garden"]
+FIELDLESS = "# CYCLES\n\n" + "".join(
+    "## Cycle — fortnightly %s [%s]\n\nSome prose about it.\n\n" % (s, s)
+    for s in SLUGS)
+context = opening_context(FIELDLESS)
+check("five field-less definitions are all named as malformed",
+      "5 definition(s)" in context
+      and all("[%s]" % s in context for s in SLUGS), context[-1500:])
+check("field-less definitions get no heading-shape line",
+      "matched the expected shape" not in context, context[-1500:])
+
+# A doc where no heading parses still gets the heading-shape line.
+context = opening_context("# CYCLES\n\nJust prose, no definitions at all.\n")
+check("a doc with no parsing heading still gets the heading-shape line",
+      "matched the expected shape" in context, context[-1500:])
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

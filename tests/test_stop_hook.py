@@ -329,9 +329,25 @@ def test_time_word_inside_a_quotation_passes():
 def test_day_words_and_elapsed_forms_block():
     root = project()
     for phrase in ("yesterday", "tomorrow", "last week", "3 minutes ago",
-                   "just now", "tonight"):
+                   "tonight"):
         code, out = run(root, f"I did that {phrase}.")
         check(f"'{phrase}' blocks", time_blocked(out), out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_today_and_just_now_pass_in_a_reply():
+    """[time-word-check-stops-today-meaning-currently]: in a reply "today"
+    most often means currently and "just now" within this turn, so neither is
+    checked; a bare "yesterday" still is. pre_tool_use.py's record check keeps
+    both words."""
+    root = project()
+    code, out = run(root, "What exists today is narrower.")
+    check("'today' meaning currently passes", not time_blocked(out), out)
+    code, out = run(root, "I ran that test just now.")
+    check("'just now' passes", not time_blocked(out), out)
+    code, out = run(root, "We settled it yesterday.")
+    check("a bare 'yesterday' with no source is still blocked",
+          time_blocked(out), out)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -344,7 +360,7 @@ def test_sourced_sentence_passes_and_bare_word_still_blocks():
     code, out = run(root, "It is 14:30 today, read from the clock.")
     check("a time word beside 'read from the clock' passes",
           not time_blocked(out), out)
-    code, out = run(root, "The sweep ran on 2026-09-14. Nothing is due today.")
+    code, out = run(root, "The sweep ran on 2026-09-14. Nothing is due tomorrow.")
     check("a source in a DIFFERENT sentence does not cover the word",
           time_blocked(out), out)
     check("the block asks for a correction line",
@@ -361,7 +377,7 @@ def test_capitalised_name_mid_sentence_passes():
     code, out = run(root, "The test task added from Tomorrow appeared on Today "
                           "straight away.")
     check("capitalised page names mid-sentence pass", not time_blocked(out), out)
-    code, out = run(root, "Today the build ran.")
+    code, out = run(root, "Yesterday the build ran.")
     check("a sentence-initial capital still blocks", time_blocked(out), out)
     check("the reason names the mid-sentence capital as passing",
           "capital mid-sentence" in out, out)
@@ -603,6 +619,7 @@ if __name__ == "__main__":
     test_bare_time_word_blocks_once_with_the_phrase_named()
     test_time_word_inside_a_quotation_passes()
     test_day_words_and_elapsed_forms_block()
+    test_today_and_just_now_pass_in_a_reply()
     test_capitalised_name_mid_sentence_passes()
     test_claim_inside_a_blockquote_does_not_block()
     test_claim_inside_a_fence_does_not_block()

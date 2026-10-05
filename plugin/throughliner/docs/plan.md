@@ -2,16 +2,13 @@
 name: plan
 docset: current
 note: >
-  /plan procedure. The method's one docset, originally authored by subtraction
-  from the now-retired heavy docset.
+  /plan procedure. The method's one docset.
   Register: structure in typed blocks, everything else in prose, tags inline.
 ---
 
 # /plan procedure
 
-/plan is where the user's intent gets written down well enough to outlive the
-conversation — the reasoning agreed here is what every later session builds
-from. /plan is where unprocessed work becomes processed work through discussion. **No
+/plan is where unprocessed work becomes processed work through discussion. **No
 building happens here.** Claude owns sequencing — the order work sits in, what
 gets built first — through discussion, not silently.
 
@@ -32,7 +29,8 @@ gets built first — through discussion, not silently.
   `LOG/`, `FAQ/`, the two FAQ templates (`faq-template.md`,
   `faq-index-template.md`), `workshop/resources/research/`,
   `workshop/resources/supplied/`, `temp/`, the scratchpad, the memory
-  directory, the task list the project names, and any path a checklist's
+  directory, the task list the project names,
+  the user's global instructions file, and any path a checklist's
   `Writes:` field declares. Everything
   else is work — including any other template, whose edit reaches every future
   consumer — and work is queued rather than done here. When the lock refuses a
@@ -47,9 +45,6 @@ gets built first — through discussion, not silently.
   the user present and approving. When a change touches no SPEC sentence, none of this
   applies. One other route exists: a large SPEC rework is its own piece of work,
   naming SPEC.md among its files like any other build.
-
-  **Product truth is written here, at planning time** — the sentence is written
-  ahead of the build.
 
   **So the decision step asks, on every item: does this change what SPEC says?** If
   yes, write the sentence now, with the user present, into the root
@@ -95,8 +90,6 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
     surfaces a structural question whose answer would gate the work
 ```
 
-  The test is "can /plan resolve this with what it has right now."
-
 ## Capture and processing discipline
 
 - **The one move, Unprocessed → Processed, is made here by discussing an entry
@@ -131,9 +124,7 @@ capture instead ONLY when /plan genuinely can't resolve it this session:
   skill-nonspecific-rules.md; this is the moment it is applied.
 
 - **`[freeform]` placement, for the uncommon case where one reaches the queue at
-  all.** Either the user or Claude may designate it,
-  typically as a stopgap or as the nuclear option for something too big to fix
-  stepwise. **Place it at one end of the cleared
+  all.** **Place it at one end of the cleared
   region, clear of the Claude-work:** first when it is a prerequisite or
   repairs machinery /build uses, last when it is unrelated so the run clears the
   buildable work before stopping. Both ends satisfy the rule; narrate which end and
@@ -158,9 +149,7 @@ Runs alone
   /build reads the marker as a
   run bound and ends the run before it — except that an item the run finds already done,
   its observable check satisfied before any step is driven, closes and the run
-  continues, since the bound keys on the run performing the work; the marker
-  binds /build and nothing else, so it does
-  not stop the work being done alongside other work by hand.
+  continues.
 
 - **Assign an uncommon execution marker only after re-reading its definition in
   that same turn, and name in the recommendation why this work matches it.**
@@ -205,9 +194,7 @@ project with no `Task list:` line appends nothing. Where a cleared item's task
 or date has changed, or the item is closed or deleted, correct or remove its
 line in the same turn.
 
-**Read the runs-alone count as recession, not as staleness.** /build stops *before*
-such an item, so every planning run that adds ready work pushes it further
-back. It is a fact like every other digest line, and moving the item is the
+**Read the runs-alone count as recession, not as staleness.** It is a fact like every other digest line, and moving the item is the
 user's decision.
 
 **The rationale prose the digest omits comes from the read of the file** — an
@@ -298,8 +285,7 @@ What was read and what it touched rides the opening narration, and where
 nothing in the window bears on today's queue the read joins the quiet clause:
 **produce no separate output and no summary of the log for its own sake.**
 
-Index lines, not the entries beneath them. This is the orientation read, never a
-replacement for opening the entry that matters.
+Index lines, not the entries beneath them.
 
 **Read the forward-recommendation advisory, and surface it as the FIRST LINE of
 the opening narration — above a horizontal rule, with the narration and the
@@ -503,9 +489,6 @@ item in Processed, cleared, whose block   ->  surface it. Re-run the buildabilit
   planning"                                   the check has run
 ```
 
-**A chain that terminates is not reported, and that is not an omission** — each
-held item's digest line already names its blocker, and only a loop never resolves.
-
 **Flag it and leave it.** Moving an item out of Processed is the user's call, so
 a contradiction is narrated and left standing.
 
@@ -519,12 +502,10 @@ auto-trigger (narrow):  Processed is empty or near-empty
 manual:                 the user can ask to seed any time
 ```
 
-Deliberately does **not** fire whenever SPEC merely outruns the queue. Outside the
-trigger state, say nothing.
+Outside the trigger state, say nothing.
 
 On either entry, ask whether to derive **coarse milestones** or **granular
-per-feature items** — the user's call. Output goes to **Unprocessed**, which is
-what keeps seeding from greenlighting a build. Write the items as ordinary
+per-feature items** — the user's call. Output goes to **Unprocessed**. Write the items as ordinary
 captures, then report what was seeded.
 
 **Cycles due-ness check** [SILENT] when the project has no cycles doc; [BRIEF]
@@ -576,9 +557,7 @@ no cycles doc                             ->  nothing, silently — a project
 A due cycle gets its sentence ("weekly release: due, filed"); cycles with
 nothing due join the opening's quiet clause.
 
-The capture then ranks by the ladder like any other work. The same check runs at
-/build's pre-flight and /close's wind-down, filing only — this is the one site
-that also processes what it files.
+The capture then ranks by the ladder like any other work.
 
 **Goals check** [SILENT] when nothing fires; [BRIEF] when something does. Read
 each goal's "reached when" line in SPEC's Goals section against what it names —
@@ -622,9 +601,6 @@ alternative in the sentence before it.**
 
 **Beat 2 — the ordering ask** [PROMPT]. One question: **"Anything you want to
 process first? Otherwise say go and I'll take them in the method's order."**
-One question, not a menu —
-the only alternative offered is the user's own priorities. A user with something
-on their mind answers it here.
 
 **Where an uncleared red flag tops the order, the flag is the recommendation
 and the ask is "Start with the flag?"**, with naming something definitely more
@@ -651,9 +627,6 @@ If the user raises something to discuss, handle it via the Step 2 loop, then ask
 stop on the way to it.
 
 ## Step 2: Process work  [SEQUENCE]
-
-**Showing the one next item the user is about to act on is presentation, not a
-preview**, so the checkpoint below satisfies `[SEQUENCE]`.
 
 **/plan writes no working file. At the moment an item is kept,
 write its record in `LOG/` first, under the name the close's entry-file rules
@@ -691,9 +664,6 @@ and the entry cites the record by filename.
 own discussion. State the count upfront, counting both together ("5 items.
 First: …"). Position in the file *is* the order — an item placed next to its
 relatives is processed there by design.
-
-The droppable set was already handled at Step 1's opening (beat 1), so the
-survivors are what's left to order.
 
 **Start-of-processing reorder** [SILENT]. Apply the order the
 user chose at beat 2 — their own priorities if they named any, otherwise the
@@ -780,9 +750,6 @@ per-item checkpoint then presents just the next item.
 flag arrives, the item holding
 everything up gets processed, or the long-and-old group empties into rung 5.
 
-**A rung can become live again rather than only run out, so re-check reads in
-both directions.**
-
 ### For each item
 
 **1. Present and interview**  [DISCUSS, PROMPT]
@@ -844,8 +811,7 @@ is the [PROMPT] at the end of the interview.
 
 Read the item's entry whole from QUEUE.md before its summary is written, and
 write the summary from that read — at the opening for the first item, and at
-the prior checkpoint for every one after. The whole read is what confirms the
-pointer resolves.
+the prior checkpoint for every one after.
 
 Engage with the item's substance: ask follow-ups to sharpen it or surface missing
 context, depth scaling with the item, until the picture is clear.
@@ -930,8 +896,7 @@ A search reaches lines carrying the words tried, so an earlier attempt indexed
 under other phrasing is missed, and this narrows the repeat rather than
 closing it.
 
-**Bold the recommendation's first sentence**, so the recommendation is findable
-without reading the turn to locate it. The shape, for a change touching three
+**Bold the recommendation's first sentence.** The shape, for a change touching three
 things:
 
 > **The close would empty the temp folder of drafts already sent, so the pile
@@ -963,14 +928,8 @@ written into the item as mixed where it is mixed.
 
 **The question asks about the recommendation, never about the mechanics.**
 
-**The recommendation is never the move itself.** It is the substance stated
-immediately before it; the move to the cleared section is what happens on the
-user's agreeing response. Where agreement does not land, processing simply
-continues.
-
 The words are the method's own — the ones the queue itself shows — explained on
-first use and then used (skill-nonspecific-rules.md's Vocabulary section). **The
-delete ask is unchanged**: it already asks the fate question directly.
+first use and then used (skill-nonspecific-rules.md's Vocabulary section).
 
 **A recommendation to process an entry into Processed must describe what would
 actually get built**, in terms
@@ -1040,10 +999,6 @@ no match
     -> nothing further
 ```
 
-**File the correction line rather than assuming one will be written.**
-
-**Trace the ripple here rather than in the run.**
-
 **An item whose completion happens outside this project names what would show it
 done — or states plainly that nothing observable exists.** A URL that would
 respond, a file that would appear, a branch that would be gone.
@@ -1103,10 +1058,6 @@ a nested project's repositories names only commits from that repository's log. *
 one plain-language sentence saying what its subject is, before the rationale**,
 a `[user]` item most of all.
 
-**An observation reaches files of its own, routinely different ones — the test
-suite that has to pass, the sibling document an acceptance check greps — so name
-them among the files that change.**
-
 **State what would be observed, not what would be asserted.** "The suite passes",
 "a grep for the old wording returns nothing", "the section's first step is the
 queue read" — each is something a build can check and either meets or does not.
@@ -1115,11 +1066,6 @@ run here against the files as they stand, and the expected result is written
 from its hits read against the item's instructions and its not-touched list —
 a hit the item's own edit will leave or create is named in the expected result
 rather than counted as a failure.
-
-**One line each is enough for a refusal: the option, and what defeated it.**
-
-**Name only files that change**, with a file the item has decided NOT to touch
-stated in its own sentence apart from them.
 
 **A Files entry whose content depends on a decision not yet made fails the second
 limb**, rather than partly passing it. **Prose that schedules a design decision
@@ -1169,8 +1115,7 @@ finding in its own words prints nothing.
 
 **When one item is mixed — half fully specified, half not designable yet —
 surface it as a choice about DESIGNING.** Ask *"shall we design the remainder
-now, or split it off?"* — a filing question like "shall I split this item or keep
-it whole?" hides the decision that is actually the user's.
+now, or split it off?"*
 
 ```
 design it now  ->  design the remainder in-session; keep the item whole
@@ -1240,8 +1185,8 @@ paths its steps write**. A checklist's trigger is a chain date or a condition
 its definition names, which the openings and closes read; a bare word is
 admitted only where the definition says the moment is the user's own. A
 checklist runs when the user says its word, or, where a cycle chains it, when
-its chain date arrives — the openings computing that date and filing its
-capture under the checklist's slug.
+its chain date arrives or the step before it has its record — the openings
+filing its capture under the checklist's slug.
 
 **Write the paths as a `Writes:` field, and name them narrowly.** A planning
 session may write only the project's own documents, and a checklist's steps often
@@ -1308,7 +1253,7 @@ relationship judgment and reports where it went.
 
 **Where an item's build produces a tool that measures or reports, file the
 `[audit]` that runs it in the same planning run, placed immediately after
-it.** The tool is the build; reading its output is the audit. Ordering works by
+it.** Ordering works by
 placement and needs no `Blocked by:` line.
 
 Stop and wait. The user decides.
@@ -1413,16 +1358,14 @@ Below the line means one of two things: a named queue item blocks this one, or a
 date it must not be built before has not yet passed. Before writing the field,
 ask whether this item and the one it waits on could simply run in order in one
 run; where they could, the ordering is placement plus a sentence in the item's
-prose naming what it follows, and the field is not written — the field hides
-the entry from the run.
+prose naming what it follows, and the field is not written.
 
 **Where the holding fact is a date, write the date and stop there** — a
-`Not before: YYYY-MM-DD` line on the item, and no blocker item at all. The date
-resolves itself.
+`Not before: YYYY-MM-DD` line on the item, and no blocker item at all.
 
 Otherwise name the blocker, and **if that blocker is not already a queue item,
 write it into Unprocessed first**, then write the held item with its
-`Blocked by: [slug]` line — a reference resolves only once its target exists. If
+`Blocked by: [slug]` line. If
 nothing in the queue blocks the item, it belongs **above** the line. Write
 either hold with the state server's `hold_entry` tool, which composes the line,
 refuses a dangling slug or a spent date, and moves a cleared item below the
@@ -1431,8 +1374,7 @@ with the editing tools and moves the item with the mover below.
 
 **Move the item with the state server's `queue_move_section` tool where the
 server is registered, and otherwise with the mover — never by hand.** Rewrite
-the item's rationale where it sits, then move the block with one call — it
-travels byte-for-byte, so nothing is retyped. The mover's form, for a project
+the item's rationale where it sits, then move the block with one call. The mover's form, for a project
 with no server:
 
 ```
@@ -1442,8 +1384,7 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> \
     [--marker-after <slug>|TOP|BOTTOM]
 ```
 
-`--marker-after` places the readiness marker in the same call, so keeping an
-item and clearing it is one command rather than two. The below-the-line lift
+`--marker-after` places the readiness marker in the same call. The below-the-line lift
 and skip-to-defer are the server's `queue_move` tool where it is registered;
 the same script does both otherwise (`--move` within Processed, and
 `--move <slug> BOTTOM`) — note that those two forms take the section name
@@ -1621,9 +1562,6 @@ on skip:
     LEAVE THE FILE ALONE — no move, no edit to QUEUE.md
 ```
 
-A skipped item is neither deleted nor processed, and returns as ordinary
-Unprocessed next session.
-
 Skipping the last item leaves Unprocessed non-empty, which is fine. On the last
 item there's no next verbatim, so the message is just the off-ramps — worded
 **neutrally** — the closing paragraph as the end-of-queue gate's specimen
@@ -1658,15 +1596,6 @@ Unprocessed, and:
   the line and refuses a dangling slug or a spent date at the door — and with
   the editing tools only in a project with no server registered.
 
-**The `Blocked by:` blocker on a capture** [SILENT]. The trigger is that
-something already in the queue has to be settled first — a decision another
-entry carries, a build this one is scoped against. Write the field naming that
-entry; it needs no approval, because the queue can check it and the capture
-returns by itself the moment the blocker is processed or built. Say which of
-the two it waits for: a capture waiting on the decision another entry carries
-is written bare and returns when that entry is kept; one waiting on the build
-ends its line `until built` and returns when the entry has a build record.
-
 **Where nothing in the queue blocks it yet, file the blocker as a capture first,
 then write the field.**
 
@@ -1681,11 +1610,7 @@ news, and say plainly it will not be offered again before then
     user declines   ->  ordinary skip; it returns next session
 ```
 
-**Write a date only on the user's approval, asked for in the moment.** Waiting
-on someone's attention is not this — that is an ordinary skip.
-
-**View-in-doc applies here too** — lead with a one-line pointer to the
-next item in place of its verbatim, off-ramps below it unchanged.
+Waiting on someone's attention is not this — that is an ordinary skip.
 
 ### A thing raised mid-planning is discussed, then written  [DISCUSS, PROMPT]
 
@@ -1724,20 +1649,14 @@ Claude   [recommendation turn: what would be written, in plain words, then
 user     [agrees, or doesn't]
 ```
 
-Four turns and two separate asks.
-
 ### After all items
-
-Unprocessed should be empty except items skipped this session; Processed holds the
-kept work in order; section headers intact.
 
 **Neutral end-of-queue gate** [PROMPT]. **Its precondition: it may fire only where
 Unprocessed holds nothing but items skipped this session.** Anything else and this
 gate is unavailable — with a full queue the only thing left to reach for is the
 checkpoint, which presents the next item.
 
-When the queue empties, do **not** presume the session is over. An empty
-Unprocessed is a resting state, not a stop signal. **The ask opens with the
+**The ask opens with the
 ready work counted by kind, read from the digest — "N builds, N audits and N
 steps of yours are cleared to run" — and then says in one line what was
 passed over and why** — how many entries wait for a cycle's turn, how
@@ -1780,12 +1699,17 @@ the bold ask beneath it unchanged:
 > One command closes the session now: send the close command, which records
 > the session and commits it.
 
-**Ask once per rest.** The gate fires when the queue first empties. If the user
-raises a further capture, file it and return to this same gate, but end plainly
-this time — with the queue clear and one line of route, that sending the
-close command records this chat and build runs in a fresh chat after it, with
-no ask. The specimen line: "The queue is clear. Send the close command to
-record this chat; build runs in a fresh chat after that."
+**Ask once per rest.** The gate fires when the queue first empties. A thing
+raised after it is taken through the raised-mid-planning section like any
+other; once the queue is clear again, end plainly — with one line of route,
+that sending the close command records this chat and build runs in a fresh
+chat after it, with no ask, the rescan command named before close where it has
+not run in this chat, as the gate's first closing paragraph names it. The
+specimen lines: "The queue is clear. Send the rescan command if you want a
+check that nothing said here was left out of the files, then the close command
+to record this chat; build runs in a fresh chat after that." — and, where the
+rescan command has run: "The queue is clear. Send the close command to record
+this chat; build runs in a fresh chat after that."
 
 **Each refill-and-emptying re-arms the ask.** Further work filling the queue and
 emptying it again is a new rest, and the gate fires there as it did at the first

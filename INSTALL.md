@@ -84,7 +84,7 @@ Once Claude Code is installed and the user is on a paid plan, the plugin install
 claude plugin marketplace add FlintcraftTech/throughliner#stable
 ```
 
-When it works, it prints that the marketplace `flintcraft` was added. The `#stable` on the end matters: it points at the newest release rather than the day-to-day development line, so the user installs a version that has been tested for a week. Keep it exactly as written. (Anyone who wants to test the coming week's release a week ahead of it can write `#beta` instead — that is the release candidate, and it is where testers' bug reports go.)
+When it works, it prints that the marketplace `flintcraft` was added. The `#stable` on the end matters: it points at the newest release rather than the day-to-day development line, so the user installs a version that has been through a full planning session and build run before release. Keep it exactly as written. (Anyone who wants to test the next release before it ships can write `#beta` instead — that is the release candidate, and it is where testers' bug reports go.)
 
 ```
 claude plugin install throughliner@flintcraft

@@ -3063,11 +3063,17 @@ def main() -> int:
     cycles = cycles_facts(cwd)
     if cycles is not None:
         if not cycles:
-            context_parts.append(
-                "[Throughliner] Cycles: CYCLES.md is present but no definition "
-                "matched the expected shape (a heading ending in [slug]). "
-                "Nothing is being computed from it — read it directly."
-            )
+            # Headings that parse but carry no fields are named by the
+            # malformed-definitions line below, which is the whole truth then;
+            # the heading-shape line is for a doc where no heading parses
+            # ([cycles-opening-blames-heading]).
+            if not malformed_definitions(cwd):
+                context_parts.append(
+                    "[Throughliner] Cycles: CYCLES.md is present but no "
+                    "definition matched the expected shape (a heading ending "
+                    "in [slug]). Nothing is being computed from it — read it "
+                    "directly."
+                )
         else:
             described = []
             for slug, description, cadence, observable, last_date in cycles:

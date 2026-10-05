@@ -8,8 +8,7 @@ note: >
 
 # /close procedure
 
-/close is what lets the next session start from nothing and still know why —
-the record it writes is where this session's reasoning survives. Close the
+Close the
 current session — record what happened, update docs, commit.
 
 ## Declare /close  [SILENT]
@@ -22,8 +21,7 @@ chat and left it.** While
 both stand, the scope-lock also permits the files setup scaffolds, so a
 correction to what setup just wrote lands here rather than as a queue item. While it exists the scope-lock
 permits the few files the method's own close obligations name — `README.md`
-today. Outside /close those paths are denied exactly as before. A /close run
-that dies before removing the marker leaves it in the working folder.
+today.
 
 ## Route by session shape  [SILENT]
 
@@ -43,8 +41,7 @@ running in another chat. **The check is automatic: route on what you find,
 silently.**
 
 **Run every judgment step the routed sub-doc calls for, whatever the user says
-about committing.** "Just commit" asks for /close to be quick, not for its
-checks to be dropped.
+about committing.**
 
 **Read the build working file in full before /close's close-out runs, whatever you
 remember of the session.** Conversation memory enriches the LOG entry — the
@@ -71,9 +68,7 @@ NO build working file          ->  close-plan.md, which carries all three
          session didn't make)
 ```
 
-**The freeform /close run is this third shape.** A freeform session is work done by
-hand rather than by /build, so most never pass through /plan at all and there is
-no queue item and no build working file. **Read the edits as the user's expected
+**The freeform /close run is this third shape.** **Read the edits as the user's expected
 work, and split them across separate log entries by judgment where they cover
 several distinct changes.**
 
@@ -95,12 +90,6 @@ reached — with the path of its one file in the record.
 
 The sub-doc runs /close's close-out. When it reaches its Commit step, run the commit
 core below, then return to the sub-doc for the recommendation.
-
-**There is no test close-out** — the test flavor is retired. A check Claude can
-run is part of building, closed by close-build.md. A check only the user can run is
-a `[user]` work item, which never enters a build working file — so /close doesn't close it
-*as a build*, but once the user has run it, /close records its completion and
-removes it from the queue through close-plan.md.
 
 ## /close's checks report as one narration  [BRIEF]
 
@@ -150,16 +139,14 @@ a pure pointer drift                     ->  mechanical. Fix it HERE, report in
 Every sub-doc's entry-writing step points here.
 
 **Run the scrub checklist before writing** (skill-nonspecific-rules.md, Scrub before
-writing). A LOG entry gets committed, and a session that ran on someone's real
-situation is where a name or a case detail arrives without anyone noticing. Fix
+writing). Fix
 what you find at the same level of usefulness rather than dropping the fact.
 Describe the entry afterwards as checked against that checklist and the
 credential scan, and as nothing more.
 
 **Read the entry and its index line for whether they carry their own weight**
 (skill-nonspecific-rules.md, Authoring standard), subject to the length rules
-below. It rides the scrub's read, since both look at the same text at the same
-moment.
+below.
 
 **How long an entry or an index line runs — one subject, four provisions.**
 
@@ -183,8 +170,8 @@ the rationale  ->  the entry body
                    the commit body
 ```
 
-The user approves both once, at the entry-writing step, and the commit step reuses
-them verbatim — nothing new to read.
+Both are written once, at the entry-writing step, and the commit step reuses
+them verbatim as the record shown — nothing new to read.
 
 **Entry template** (placeholder hash — this /close run replaces it with the real
 hash right after the commit, when the hash first exists):
@@ -269,9 +256,6 @@ living in QUEUE.md rather than in a file of its own.
                          item. Omit the section when there is nothing.
 ```
 
-`/rescan` covers the same class on demand; this section covers it arriving at
-/close, which always runs.
-
 **Where the section goes depends on how many entries this /close run writes**, which
 /close already knows:
 
@@ -284,9 +268,8 @@ close writes SEVERAL        ->  the chat-level record becomes its OWN entry,
 ```
 
 **The frame, identical for every flavor.** Write the entry, then report in one
-line what landed and where. A revert undoes a LOG entry, so it doesn't wait on
-approval — the commit message does, because a commit is harder to unwind and
-its message lands in no file.
+line what landed and where. A LOG entry does not wait; the commit message is
+shown as the record of what is committed.
 
 ```
 run shipped ONE item     ->  the commit message derives from this entry: title
@@ -294,7 +277,7 @@ run shipped ONE item     ->  the commit message derives from this entry: title
                              that message at the commit step — short, and the
                              user has the entry to read behind it
 run shipped SEVERAL      ->  the commit message is a one-line summary of the
-                             whole run, shown and approved at the commit step;
+                             whole run, shown as the record at the commit step;
                              each item's entry still stands on its own
 ```
 
@@ -347,8 +330,7 @@ is what distinguishes it.
 **Every date written at /close is the date /close runs** — today's date, at the moment
 you are closing. That covers the filename prefix and every date written into the
 words of a session record or a queue item alike ("processed 2026-08-12",
-"cleared 2026-08-12"). It is not the commit date, and the filename prefix is not
-a second copy of the hash; its only job is the name sort. **The record's own
+"cleared 2026-08-12"). **The record's own
 date field carries date and time, read from the clock at the moment of
 writing, never recalled** — a bare date leaves same-day relative-time claims
 with no source finer than a day. The filename prefix stays date-only.
@@ -358,15 +340,12 @@ sentence in its record, and change no filename or datestamp:**
 
 > This session ran across 2026-08-11 and 2026-08-12.
 
-**Write the hash into the entry heading only** — the commit hash doesn't
-exist yet when the file is written, which is why the placeholder pattern
-exists, and the filename carries the date instead; the index line takes the
+**Write the hash into the entry heading only** — the filename carries the
+date instead; the index line takes the
 hash from the heading when it is regenerated. /close itself fills the
 placeholder right after the commit (the commit step below says how).
 
-**Write the literal placeholder token in hash position only**, where the
-automatic backfill treats any match mechanically, so a prose mention is one
-find-replace away from corrupting the entry. Describe the mechanism indirectly
+**Write the literal placeholder token in hash position only.** Describe the mechanism indirectly
 where an entry needs to ("the placeholder", "the unfilled hash").
 
 Pre-split entries live in `LOG/log.md` and `LOG/log-v*.md` — untouched, found by
@@ -378,8 +357,6 @@ just-written entry — edit its "Routed to Captures:" line to include it, as a
 working-tree edit with no separate commit.
 
 ## Checks the closing session couldn't run
-
-The deferred-tests section is retired — there is no separate test queue.
 
 ```
 a verification only the user can run  ->  a [user] capture
@@ -399,8 +376,7 @@ Triage anything still sitting in this project's `INBOX/` as
 processing: deciding what a message raises stays /plan's.
 
 **Where a reply is owed, draft it here** and show the exact wording before
-anything is sent; the reply goes out as a capture sent to that project. This is the moment that draft belongs to — a run is unattended
-in practice, so mid-run is the wrong place for text that leaves the machine.
+anything is sent; the reply goes out as a capture sent to that project.
 
 ## Wind-down re-scan (file-only)  [BRIEF, PROMPT]
 
@@ -409,17 +385,14 @@ type. **This section is the canonical statement of the memory-limit machinery �
 the limit sentence, the artifact cross-check, the asymmetry, the no-proxy rule
 — and rescan.md applies it by reference at its own depth.**
 
-**Look back only as far as the last /rescan in this chat.** /rescan is the same
-step with its own trigger, and it can be run as often as the user likes; the
+**Look back only as far as the last /rescan in this chat.** The
 close picks up whatever came after the last one. Invoke it shortly before
 closing and this costs a line. With no /rescan run, /close does the full job,
 scanning the whole chat.
 
 **Where nothing has happened since that rescan — no work, no decisions, only the
 close being invoked — perform no second pass, and write one line into the record:
-"covered by the rescan just run."** Conversation
-between the rescan and /close is still scanned under the window rule above,
-so this arm reaches only the case where the window is genuinely empty.
+"covered by the rescan just run."**
 
 **Cycles due-ness check first** [SILENT] when no cycles doc exists; [BRIEF]
 whenever one does. Run the cycles due-ness check as plan.md's Step 1 states it
@@ -438,27 +411,19 @@ captures — things the user thought out loud but never flagged.
            this session, recording the amendment in the LOG entry under
            that item's name
        ->  never ROUTES them (keep / delete)
-# filing is capture-making, allowed in any session;
-# amending is carrying out a direction the user has already given;
-# routing is planning, /plan's alone
 ```
 
 **Where the defect in a cleared item is one you noticed rather than one the
 user directed, file it as a capture AND name the collision**: that item runs
 before the next planning session unless the user directs the amendment now.
-Saying so is what gives them the chance to; a capture alone leaves the item to
-be built as it stands.
 
 **Show the candidate set as ONE numbered message before anything is written**
 [PROMPT], **opening by naming itself as /close's standing look-back over the
-conversation** — in the user's words, before what it found — so the step reads
-as the rule it is rather than as an improvised idea.
+conversation** — in the user's words, before what it found.
 **End the message with what each answer does, and the ask names what it
 counts:** one candidate, "Say go to file it, or say no" with no numbering; two,
 "Say go to file both, or contest by number"; three or more, "Say go to file them
-all, or contest by number." Numbering explains contesting on its own for the
-two-or-more arms; "go" explains nothing unless the sentence says it files the
-whole set. The writes then land,
+all, or contest by number." The writes then land,
 and a contested item is dropped or reworked one at a time. The set
 holds writes only — captures and record edits — and a candidate deletion is
 presented after it as its own ask, under the session-file cleanup step's own
@@ -495,9 +460,6 @@ to discount the result by a factor that is fictional.
 
 One thing to state, not fix: a fresh-chat /close has none of the session's
 thinking in view, so there is nothing to re-scan.
-
-**The only other re-scan in the method is /rescan, coordinated with by the
-look-back window above. /plan has none, and gains none.**
 
 > "Re-read our discussion — nothing came up that isn't already captured."
 
@@ -552,9 +514,6 @@ If nothing session-created looks throwaway, say so in one line and move on.
                   names; a draft never sent stays until the user says
 ```
 
-The temporary-files block in skill-nonspecific-rules.md says what the folder
-is for; this pass is what empties it.
-
 ## Commit core  [BRIEF]
 
 Every sub-doc's Commit step points here.
@@ -579,8 +538,7 @@ same step. Machinery — scripts, configuration, anything wired to other files
 
 **Shipped-slug cross-check (work-item closes).** When this session shipped work
 items, cross-check each shipped slug named in this session's LOG entries against
-Processed and confirm it's been removed. A work item is normally removed when
-/build locks scope, so the slug should already be gone — this is the safety net. If
+Processed and confirm it's been removed. If
 a shipped slug is still sitting in Processed as active work, surface it in one line
 and remove it (or halt and ask) before committing.
 
@@ -621,9 +579,7 @@ any OTHER out-of-scope dirty path
 
 **Where the staged paths include a method doc, name them in one line before
 committing** — "staging QUEUE.md, SPEC.md and two log entries". One sentence, no
-diff, no file-by-file account. The check above compares dirty paths against the
-build's file list, so it cannot see anything inside a file the session already
-owns — and QUEUE.md is the file a planning run edits by design.
+diff, no file-by-file account.
 
 **Two limits, and neither may be softened.** Naming the staged files makes a
 swept edit **visible**, not **detected** — nothing cheap will ever tell the user
@@ -647,7 +603,7 @@ SEVERAL work items shipped   ->  title = a one-line summary of what the run
                                  body  = each shipped item's one-liner, one
                                          per line
                                  # this roll-up IS genuinely new text — show
-                                 # it for approval
+                                 # it as the record of what is committed
 
 staged extras (backfills,    ->  the body appends ONE line naming them
 sweep edits, rolled-in user
@@ -681,9 +637,7 @@ is the one rule, and no sub-doc overrides it.
 
 **5. Pass the message shell-agnostically.** Write it to a file in the session
 scratchpad (e.g. `COMMIT_MSG.tmp` there), commit with
-`git commit -F <scratchpad>/COMMIT_MSG.tmp`, then delete the file. One mechanism
-on every machine — it sidesteps inline-quoting fragility, and the scratchpad is
-on the scope-lock's standing list, so the write passes in every session type.
+`git commit -F <scratchpad>/COMMIT_MSG.tmp`, then delete the file.
 
 **5a. A staging step that partly failed is a STOP, not something to commit
 around** [BRIEF, PROMPT]. Check that every path this /close run meant to stage is
@@ -723,10 +677,7 @@ into `.throughliner/session-closed-<session-id>`.**
 
 **Then write the commit hash into the headings this /close run just wrote,
 and regenerate the index files with the backlinks script so their lines
-carry it** — /close is the one moment the hash exists and the files are at
-hand, and it is one convention for tracked and untracked projects alike (an
-untracked log never appears in any commit, so nothing later can attribute it
-from git). Read the hash from the commit just made, replace each placeholder
+carry it**. Read the hash from the commit just made, replace each placeholder
 this session wrote, and stop there — say nothing about older placeholders.
 The session-start backfill is the safety net for a fill this step missed, in
 a tracked project from git's own record of the file and in an untracked one
@@ -741,7 +692,9 @@ and nothing else.** (1) The commit hash and the record's link. (2) The cleared
 count and the first few cleared items by name, read from the digest run after
 the session's last queue write — the state server's checkpoint counts where
 the server is registered, `queue_digest.py` otherwise. (3) The count waiting
-to be sorted, counted as the narration below defines, and the overlap scan's
+to be sorted, counted as the narration below defines, read from the same source
+as slot (2) — the checkpoint counts' left-to-process figure, or the digest's
+offerable count where no server is registered — never counted from a read of the file, and the overlap scan's
 verdict. (4) The run-alone announcement, where the digest's count-ahead for
 the marked item reads zero, per the announce step below. (5) The one
 recommendation the queue-state ladder's rung yields, always with the sentence
@@ -760,9 +713,7 @@ cannot reach.
 ```
 advisory FILED       ->  the closing message carries ONE line naming it and
                          pointing at the queue, plus any due cycle by name,
-                         and nothing else from the ladder below. The advisory
-                         already says what to do
-                         next; restating it in chat duplicates the record.
+                         and nothing else from the ladder below.
                          The overlap scan still runs — and what it finds is
                          written INTO the advisory before it is filed rather
                          than narrated alongside it.
@@ -824,7 +775,7 @@ as a hedge.
     the top)
        ->  say the next work still needs vetting, and recommend planning
            next: running the plan command in a fresh session is what vets
-           it. A build run would soft-stop here, costing a round trip.
+           it.
 3. Processed empty
        ->  say the queue is clear, and recommend planning next: running the
            plan command in a fresh session is where more work comes from.
@@ -852,14 +803,11 @@ the post-commit tail     ->  writes files, commits NOTHING:
 ```
 
 **The cost, stated rather than discovered: the tree is dirty between one /close run
-and the next, always.** That is accepted, and it is what makes the dirt
-*legible* — uncommitted changes at a session's opening mean one thing, the
-previous session's tail plus its post-commit hash write, so a session
-recognises the signature instead of investigating it.
+and the next, always.**
 
 **Read tail-shaped dirt as the previous session's LOG entry, a capture at the
 bottom of Unprocessed, or a filled-in hash, and give anything else the full
-treatment** — which is what keeps /close's staging check its teeth.
+treatment**.
 
 **Announce an item the next run must take alone, where Processed holds one —
 a `[freeform]` item, or a cleared build marked `Runs alone` whose count-ahead

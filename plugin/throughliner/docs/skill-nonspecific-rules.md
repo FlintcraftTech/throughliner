@@ -8,21 +8,9 @@ note: >
 
 # Throughliner — skill-nonspecific rules
 
-**A rule belongs in this file only if it fires in all four skills — /setup, /plan,
-/build and /close — or in conversation with no skill running.** A rule that fires
+**A rule belongs in this file only if it fires in every skill — /setup, /plan, /build, /rescan, /close and /catchup — or in conversation with no skill running.** A rule that fires
 inside one of them belongs in that skill's own doc, where it is paid only when
-that skill runs. This test is what the filename states, and it is the admission
-control: check a candidate rule against the four, and against the no-skill case,
-before writing it here.
-
-**A rule in this file is written as a bullet, as a paragraph whose bold leads the
-line, or as a line inside a typed block** — the three shapes this file already
-uses throughout. Anything else is a defect at authoring time.
-
-Active in every chat where the plugin is installed and the project is set up.
-/setup is the one skill that also runs *before* that point — adopting a fresh
-folder — and these rules are not loaded there; they govern its migration and
-top-up runs, which happen in projects already set up.
+that skill runs.
 
 ## What the method is for
 
@@ -118,10 +106,7 @@ The work cycle. Every piece of work travels the same loop.
   **At the method's own decision turns, the governing specification is that
   turn's own content line, in the skill's doc.** This bullet says how a message
   is shaped; those lines say what a particular turn carries, which is what
-  shaping alone cannot settle. Six turns have one: the item summary, the
-  recommendation and the checkpoint in plan.md, the walkthrough step in
-  build.md, /close's Recommend-next turn in close.md, and the hand-back turn
-  in rescan.md.
+  shaping alone cannot settle.
 
   **Alternatives are delivered together and asked singly:** recommend one, and
   let the other be declined — the ask stays the one fixed formula, never a
@@ -184,9 +169,6 @@ The work cycle. Every piece of work travels the same loop.
   and the request does not carry through it.
 
   **The warning is a turn of its own, so the request can be withdrawn.**
-
-  **Asking a second time is not what unlocks this** — one warning, then the
-  work.
 
   **Where the thing held back is a write the scope-lock refused in a session
   with no build running, the mechanics are these:** on the user's next word,
@@ -407,8 +389,7 @@ features are announced on the project's Discord
 asked, in the form that answers it.
 
 Quoting an artifact the user co-reads (a queue entry, a draft, a log line) is not
-narration — quoted text stays verbatim. Processed and Unprocessed are
-*user-facing* structure.
+narration — quoted text stays verbatim.
 
 ## Two repositories in one project
 
@@ -890,9 +871,6 @@ a QUOTE claim     "your words", "in her own words", quotation marks
 The tag **leads** the description. One leading tag at most. Flavor is settled
 when the item moves into Processed.
 
-**A flavor names how a work item is executed, and `[freeform]` is a flavor like
-the rest, not a mode a session is in.**
-
 The `[user]` tag is governed by a **matched pair** of rules. (How a
 `[user]` item is then *run* is the walk-through lifecycle in build.md.)
 
@@ -1043,11 +1021,6 @@ it by hand in a chat of its own, and /close reads the resulting edits as their
 expected work. Where one *is* filed as a queue item, it is ready work with nothing
 blocking it, so it sits **above** the cleared-to-run line and /build halts on it.
 
-A repair to the machinery /build itself uses — the queue mover, the scope-lock, the
-lint — is **one example** of work that cannot run inside a run, since running the
-broken mechanism to build past it is the failure. It is an example and not the
-definition.
-
 ### Scrub before writing, and state the limit
 
 **When filing a capture, read what you're about to write against this list**
@@ -1108,11 +1081,6 @@ a DELIVERABLE written to disk — a report, a summary, a document for a reader
 - an index line is bounded by its content requirement, per Index entries below.
 
 **`scripts/measure_written_shape_length.py` reports how long each shape runs in this project, as fact.**
-
-**The lever is where text lives as much as how much of it there is.** A work item
-is divided into the instructions a build reads and the decision history a person
-reads; history is relocated to the record and cited from the item rather than
-carried inside it.
 
 **Placement: append to the bottom of Unprocessed, always.** No judgment call, no
 narration line. **A capture filed mid-run follows the same rule and gets no
@@ -1247,10 +1215,6 @@ An item reaches Processed only with its flag cleared; a flag that can't be
 cleared returns its item to the bottom of Unprocessed. So every risk ends
 cleared, or its item is deleted. A marker always sits on an item carrying real
 remaining work, and it leaves only when that item does.
-
-/build builds a red-flagged item like any other; /close carries the cleared
-flag into the LOG entry. **Backstop:** an uncleared flag in Processed should be
-impossible, so if /build or /close meets one, it stops and surfaces it.
 
 ## The throughline
 
@@ -1540,8 +1504,7 @@ than later.**
 **A mechanically generated digest satisfies this rule for the fields it computes,
 and for nothing else.** So where a skill provides one, run it
 **and** read the file: the script gives computed facts, the read gives the
-reasoning. A digest is generated from the whole file, by a script; one
-assembled by whoever is reading is the partial read this rule exists to stop.
+reasoning.
 
 ## Check our own conformance before blaming the tool
 

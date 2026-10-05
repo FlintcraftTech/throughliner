@@ -1251,9 +1251,33 @@ def test_assign_writes_and_replaces_the_line():
     check("an unknown slug is refused", rc != 0 and "not an entry" in err, err)
 
 
+def test_append_refuses_a_body_carrying_queue_structure():
+    """A body carrying `## Processed`, `## Unprocessed` or the readiness
+    marker is refused with the queue unchanged; any other `## ` line is still
+    item text ([sent-capture-body-can-carry-queue-structure-lines])."""
+    text = build_queue("#### First [first]\nRationale one.\n\n" + MARKER + "\n")
+    d = tempfile.mkdtemp(prefix="reorder-test-")
+    body_path = os.path.join(d, "body.md")
+    for bad in ("## Processed", "## Unprocessed", MARKER):
+        with open(body_path, "w", encoding="utf-8", newline="") as f:
+            f.write("#### Pasted excerpt [pasted]\nSome text.\n" + bad
+                    + "\nMore text.\n")
+        rc, err, out = run(text, "--append", "Unprocessed", "--body", body_path)
+        check("a body carrying %r is refused with the queue unchanged" % bad,
+              rc != 0 and "queue structure" in err and out == text, err)
+    with open(body_path, "w", encoding="utf-8", newline="") as f:
+        f.write("#### Quotes a heading [quoted]\nSome text.\n"
+                "## 2026-10-05 — some heading\nMore text.\n")
+    rc, err, out = run(text, "--append", "Unprocessed", "--body", body_path)
+    check("a body carrying any other `## ` line is still appended",
+          rc == 0 and "## 2026-10-05 — some heading" in out
+          and "[quoted]" in out, err)
+
+
 def main():
     print("reorder_queue.py regression tests")
     for fn in (
+        test_append_refuses_a_body_carrying_queue_structure,
         test_queue_named_in_a_reads_line_still_clears,
         test_conflict_marker_refuses_every_write,
         test_assign_writes_and_replaces_the_line,

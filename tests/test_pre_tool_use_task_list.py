@@ -168,7 +168,8 @@ _check("no line, planning append", _decide(_root, "Edit", APPEND), "deny",
 # --- the global instructions file ([user-facts-to-global-instructions]) --------
 # The second permitted write outside a project: CLAUDE.md in the home .claude
 # folder. The hook finds home through expanduser, so the subprocess is given a
-# temporary home; an Edit passes in planning and mid-build, a Write over an
+# temporary home; an Edit asks the user in planning and mid-build
+# ([global-instructions-write-gated-by-procedure-only]), a Write over an
 # existing file is refused, and another file in the home folder stays denied.
 _home = tempfile.mkdtemp(prefix="task-list-home-")
 os.makedirs(os.path.join(_home, ".claude"))
@@ -201,14 +202,14 @@ GLOBAL_REWRITE = {"file_path": GLOBAL, "content": "# Global instructions\n"}
 HOME_OTHER = {"file_path": os.path.join(_home, ".claude", "settings.json"),
               "old_string": "a", "new_string": "b"}
 
-_check("global edit, planning", _decide_home(_root, "Edit", GLOBAL_EDIT), "pass",
-       "an edit to the global instructions file passes in a planning session")
+_check("global edit, planning", _decide_home(_root, "Edit", GLOBAL_EDIT), "ask",
+       "an edit to the global instructions file asks the user in a planning session")
 _check("global rewrite, planning", _decide_home(_root, "Write", GLOBAL_REWRITE),
        "deny", "a whole-file Write over the existing global file is refused")
 _check("other home file, planning", _decide_home(_root, "Edit", HOME_OTHER), "deny",
        "another file in the home .claude folder is refused as before")
-_check("global edit, build", _decide_home(_root, "Edit", GLOBAL_EDIT, _sid), "pass",
-       "an edit to the global instructions file passes mid-build though unlisted")
+_check("global edit, build", _decide_home(_root, "Edit", GLOBAL_EDIT, _sid), "ask",
+       "an edit to the global instructions file asks the user mid-build")
 _check("global rewrite, build", _decide_home(_root, "Write", GLOBAL_REWRITE, _sid),
        "deny", "a whole-file Write over the existing global file is refused mid-build")
 _check("other home file, build", _decide_home(_root, "Edit", HOME_OTHER, _sid), "deny",

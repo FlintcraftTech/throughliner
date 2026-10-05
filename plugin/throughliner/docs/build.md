@@ -276,6 +276,8 @@ stop after the first few — is a guess dressed as prudence, because Claude has 
 gauge of context filling at all, and a previous session's advisory to that
 effect is not inherited either. A run stops early only on observed behaviour —
 the no-progress halt — not on a number chosen up front.
+  - any count the presentation states — items, builds, steps of the user's —
+    is read off the queue digest's cleared lines, never counted from the read.
 
 **Two things may drop an item from the run, and neither is a cap** [BRIEF]. Both
 rest on something specific and checkable rather than on a guess about how large a

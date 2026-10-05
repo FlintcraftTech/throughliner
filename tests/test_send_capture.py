@@ -180,6 +180,13 @@ refused("a missing address book is refused", "address book", run(sender),
 shutil.rmtree(top, ignore_errors=True)
 
 top, sender, recipient = fixture()
+with open(os.path.join(sender, "body.md"), "w", encoding="utf-8") as f:
+    f.write("A pasted queue excerpt.\n## Processed\nMore text.\n")
+refused("a body carrying a section heading is refused", "queue structure",
+        run(sender), recipient, QUEUE)
+shutil.rmtree(top, ignore_errors=True)
+
+top, sender, recipient = fixture()
 os.makedirs(os.path.join(recipient, "temp"))
 with open(os.path.join(recipient, "temp", "notes.txt"), "w",
           encoding="utf-8") as f:

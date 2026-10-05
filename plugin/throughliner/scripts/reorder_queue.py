@@ -660,6 +660,14 @@ def append_item(queue_path, section, body_path):
         die("--body holds %d '#### ' headings. Append one entry per call, so "
             "each one's placement is checked on its own." % len(headings))
 
+    # A section heading or the readiness marker inside a body would restructure
+    # the queue it lands in. Any other `## ` line stays legal item text.
+    for line in body_lines:
+        if SECTION_RE.match(line) or MARKER_RE.match(line):
+            die("--body carries the line %r, which is queue structure. A capture "
+                "cannot carry queue structure — reword or quote that line."
+                % line.rstrip('\r\n'))
+
     new_slug = heading_slug(body_lines[0])
     if not new_slug:
         die("--body heading carries no [slug]. The slug sits at the END of the "
