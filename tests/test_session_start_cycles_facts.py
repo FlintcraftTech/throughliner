@@ -476,6 +476,64 @@ def test_a_sequential_chain_reads_its_due_step_from_the_record():
         shutil.rmtree(folder, ignore_errors=True)
 
 
+def _untimed_record(d, name, kind=""):
+    """A record carrying no Recorded or Date line, as the step-2 record of
+    2026-10-05 did."""
+    os.makedirs(os.path.join(d, "LOG"), exist_ok=True)
+    body = "---\nsummary: x\n---\n# r\n\nNo time line here.\n\n"
+    if kind == "processed":
+        body += "**Work processed:** kept — [x].\n"
+    elif kind == "built":
+        body += "**Files touched:** `x`.\n"
+    with open(os.path.join(d, "LOG", name), "w", encoding="utf-8") as f:
+        f.write(body)
+
+
+def test_an_untimed_record_on_the_start_date_is_named_not_placed_at_midnight():
+    """[opening-reports-done-chain-step-due]: a step record with no time line
+    on the chain start's date has an unreadable order, so the step is held
+    with both files named; on a later date it is ordered by its date."""
+    d = project(SEQUENTIAL)
+    _record(d, "2026-10-05-beta-pick.md", "2026-10-05 01:17")
+    _untimed_record(d, "2026-10-05-maintenance-sweep.md")
+    state = hook.sequential_chains(d)[0]
+    check("an untimed step record on the start's date holds the chain",
+          state["status"] == "held" and state["due"] is None, repr(state))
+    check("the detail names both files and the line to add",
+          "LOG/2026-10-05-maintenance-sweep.md" in state["detail"]
+          and "LOG/2026-10-05-beta-pick.md" in state["detail"]
+          and "carries no time line" in state["detail"]
+          and "Recorded <date> <time>" in state["detail"], repr(state))
+    check("the detail says which record is the step's and which the start",
+          state["detail"].startswith(
+              "[maintenance-sweep]'s record LOG/2026-10-05-maintenance-sweep.md")
+          and "the chain's start LOG/2026-10-05-beta-pick.md" in state["detail"],
+          repr(state))
+    shutil.rmtree(d, ignore_errors=True)
+
+    d = project(SEQUENTIAL)
+    _record(d, "2026-10-05-beta-pick.md", "2026-10-05 01:17")
+    _untimed_record(d, "2026-10-06-maintenance-sweep.md")
+    state = hook.sequential_chains(d)[0]
+    check("an untimed step record on a later date counts as done",
+          state["status"] == "due" and state["due"] == "rezip", repr(state))
+    shutil.rmtree(d, ignore_errors=True)
+
+    d = project(SEQUENTIAL)
+    _record(d, "2026-10-05-beta-pick.md", "2026-10-05 01:17")
+    _record(d, "2026-10-05-maintenance-sweep.md", "2026-10-05 15:38")
+    _record(d, "2026-10-05-rezip.md", "2026-10-05 21:59", "built")
+    _untimed_record(d, "2026-10-05-plan-3.md", "processed")
+    _record(d, "2026-10-06-build.md", "2026-10-06 09:00", "built")
+    state = hook.sequential_chains(d)[0]
+    check("a condition missing a planning record names the untimed one",
+          state["status"] == "held"
+          and "a planning record dated after LOG/2026-10-05-rezip.md" in state["detail"]
+          and "LOG/2026-10-05-plan-3.md carries no time line" in state["detail"],
+          repr(state))
+    shutil.rmtree(d, ignore_errors=True)
+
+
 def test_the_opening_names_a_sequential_chain():
     """Driven whole: the cycles line carries the chain's steps and its state."""
     import json
@@ -509,6 +567,7 @@ def test_the_opening_names_a_sequential_chain():
 if __name__ == "__main__":
     print("test_session_start_cycles_facts.py")
     test_a_sequential_chain_reads_its_due_step_from_the_record()
+    test_an_untimed_record_on_the_start_date_is_named_not_placed_at_midnight()
     test_the_opening_names_a_sequential_chain()
     test_a_chain_is_computed_for_each_weekday()
     test_a_your_part_field_leaves_the_chain_dates_unchanged()

@@ -3,8 +3,8 @@
 PreToolUse hook — enforces three rules:
 
 4. With NO build running (a planning or freeform session), a write outside
-   the standing list — QUEUE.md, SPEC.md, CYCLES.md, LOG/, FAQ/, the
-   session's own notes, plus the always-editable paths — is DENIED, never asked: an ask
+   the standing list — QUEUE.md, SPEC.md, CYCLES.md, LOG/, the two FAQ
+   templates, the session's own notes, plus the always-editable paths — is DENIED, never asked: an ask
    that gets waved through is not consent, and a planning session is where
    a change becomes queued work instead of an edit. A session extends the
    standing list by declaring a scope file (_freeform-<session-id>.md)
@@ -370,6 +370,26 @@ def _bare_path(entry: str) -> str:
     return entry.strip().strip("`").strip()
 
 
+def _unmarked_files_header(stripped: str) -> str | None:
+    """The text after the colon of a `Files:` line, stripped, with any
+    markdown it wears removed — leading `#` characters and the spaces after
+    them, and a surrounding pair of `**`, `*` or `_`, the closing mark sitting
+    directly after the colon. None where the line is not a `Files:` line."""
+    text = stripped.lstrip("#").lstrip() if stripped.startswith("#") else stripped
+    mark = ""
+    for candidate in ("**", "*", "_"):
+        if text.startswith(candidate):
+            mark = candidate
+            text = text[len(candidate):]
+            break
+    if not text.lower().startswith("files:"):
+        return None
+    rest = text[len("files:"):]
+    if mark and rest.startswith(mark):
+        rest = rest[len(mark):]
+    return rest.strip()
+
+
 def _parse_build_files(build_path: str) -> list[str] | None:
     """Extract file paths from the build working file's Files: section.
 
@@ -408,6 +428,9 @@ def _parse_build_files(build_path: str) -> list[str] | None:
     spans everywhere else in the method's documents, and a bullet copied in
     that shape used to carry the backtick characters into the stored entry
     and never match a real path.
+
+    A header written as a markdown heading or in bold — `## Files:`,
+    `**Files:**` — counts as a `Files:` line ([files-section-heading-not-matched]).
     """
     files = []
     try:
@@ -420,9 +443,10 @@ def _parse_build_files(build_path: str) -> list[str] | None:
     found_section = False
     for line in content.splitlines():
         stripped = line.strip()
-        if stripped.lower().startswith("files:"):
+        header = _unmarked_files_header(stripped)
+        if header is not None:
             found_section = True
-            inline = stripped[len("files:"):].strip()
+            inline = header
             if inline:
                 # Content-bearing line: take the comma-separated paths after
                 # the colon. It does not open a bullet section — any bullets
@@ -979,11 +1003,8 @@ def _is_snapshot_subject(filepath: str, cwd: str) -> bool:
     for name in ("SPEC.md", "QUEUE.md", "CYCLES.md", "TOOLS.md", "CLAUDE.md"):
         if norm == _normalise(os.path.join(cwd, name)):
             return True
-    for folder in ("LOG", "FAQ"):
-        base = _normalise(os.path.join(cwd, folder))
-        if norm.startswith(base + os.sep):
-            return True
-    return False
+    base = _normalise(os.path.join(cwd, "LOG"))
+    return norm.startswith(base + os.sep)
 
 
 def _is_untracked(filepath: str, cwd: str) -> bool:
@@ -1181,7 +1202,7 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
 
     This is the planning session's STANDING list — QUEUE.md, SPEC.md (the
     root's, and a part's SPEC.md at any depth), CYCLES.md, LOG/ and
-    FAQ/, plus the memory directory, `workshop/resources/research/`, the scratchpad and
+    the two FAQ templates, plus the memory directory, `workshop/resources/research/`, the scratchpad and
     any INBOX (checked by their own helpers at the call site). Everything else
     is DENIED.
 
@@ -1266,11 +1287,9 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
         return True
     if rel.startswith(os.path.normcase("LOG") + "/"):
         return True
-    # FAQ/ is on the list for the same reason workshop/resources/research/ is: /close
-    # REQUIRES an FAQ disposition, so denying the path would break a mandated
-    # step rather than merely inconvenience a session. Recovered from the
-    # pre-reversion version of this gate, which carried it and said so; the
-    # 2026-08-15 design was authored without it and would have shipped the break.
+    # A project FAQ folder is NOT on the list: a project carries no copy of the FAQ, the
+    # session opening pointing at the plugin's own templates instead
+    # ([faq-read-from-plugin-not-copied]).
     #
     # templates/ is deliberately NOT here, and that asymmetry is a decision.
     # Editing a template changes what every future consumer receives, which is
@@ -1280,12 +1299,11 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     # EXCEPT the two FAQ templates, widened 2026-08-28 by exactly that pair and
     # no further. The announcement-time FAQ rule requires the entry to be
     # written in the same turn as the sent-register line, and the FAQ template
-    # is canonical while FAQ/ is a copy of it — so under the unwidened list the
-    # rule and this lock were two standing laws in direct collision, which fired
-    # at every bot-posted announcement and did so twice in two days. Same
-    # ground as FAQ/ itself: denying the path breaks a mandated step rather
-    # than merely inconveniencing a session. The rest of templates/ stays
-    # denied.
+    # is the FAQ — so under the unwidened list the rule and this lock were two
+    # standing laws in direct collision, which fired at every bot-posted
+    # announcement and did so twice in two days. Denying the path breaks a
+    # mandated step rather than merely inconveniencing a session. The rest of
+    # templates/ stays denied.
     #
     # CLAUDE.md is NOT here either, and that is intended behaviour rather than
     # an oversight — recorded because the question has now been raised three
@@ -1310,8 +1328,6 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     # rezip's plugin.json, /close's README.md, and /setup's markers. Each of
     # those was a required write with no permitted moment anywhere in the method.
     # This write has a proper home.
-    if rel.startswith(os.path.normcase("FAQ") + "/"):
-        return True
     # Literals written lowercase with forward slashes, matching how `rel` was
     # built above. Passing them through os.path.normcase would swap in
     # backslashes on Windows and never match — the same inversion the comment
@@ -1615,8 +1631,8 @@ def _version_change_notice(cwd: str, session_id: str) -> str:
 SETUP_DONE_MARKER_NAME = ".throughliner-setup-done"
 
 # The files /setup scaffolds, which its own chat's close may correct. Relative
-# to the project root; SPEC.md matches at any depth (a part's spec), FAQ/ as a
-# folder. `.claude/settings.local.json` is where the brevity style is written.
+# to the project root; SPEC.md matches at any depth (a part's spec).
+# `.claude/settings.local.json` is where the brevity style is written.
 SETUP_SCAFFOLD_FILES = (
     "CLAUDE.md", ".gitignore", ".throughliner-version",
     ".throughliner-format-epoch", ".claude/settings.local.json",
@@ -1755,9 +1771,7 @@ def _is_setup_close_file(filepath: str, cwd: str, session_id: str) -> bool:
     rel = os.path.normcase(rel).replace("\\", "/")
     if rel in tuple(os.path.normcase(n) for n in SETUP_SCAFFOLD_FILES):
         return True
-    if rel == os.path.normcase("SPEC.md") or rel.endswith("/" + os.path.normcase("SPEC.md")):
-        return True
-    return rel.startswith(os.path.normcase("FAQ") + "/")
+    return rel == os.path.normcase("SPEC.md") or rel.endswith("/" + os.path.normcase("SPEC.md"))
 
 
 def _is_close_phase_file(filepath: str, cwd: str, session_id: str) -> bool:
@@ -3057,7 +3071,7 @@ def main() -> int:
                 f"About to edit: {filepath}\n\n"
                 "A planning session may write QUEUE.md, any SPEC.md (the "
                 "root's or a part's), CYCLES.md, TOOLS.md, MAP.md, anything "
-                "in LOG/ and FAQ/, the two FAQ templates, research notes "
+                "in LOG/, the two FAQ templates, research notes "
                 "(under workshop/resources/research/ or "
                 "research/ at the project root — a research part named "
                 "otherwise goes through the user's door below), supplied "

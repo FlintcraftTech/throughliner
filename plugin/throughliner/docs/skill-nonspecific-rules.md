@@ -379,7 +379,7 @@ one explanation.
 
 **A "how does this work?" question is answered from the procedure rules; a
 "why?" or "what is this for?" question is answered from the FAQ first.** Open
-`FAQ/index.md` and use the matching entry where one exists; where none does,
+the FAQ index the session opening names and use the matching entry where one exists; where none does,
 answer honestly from what you can read and say that is what you are doing. For
 what the plugin does as a whole, the plugin's README is the reference, and new
 features are announced on the project's Discord

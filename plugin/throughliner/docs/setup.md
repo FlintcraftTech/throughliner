@@ -548,14 +548,6 @@ time — and the preamble says so, so a line written later at a file's creation
 carries the same two facts. The migration path and the top-up add the map to
 an existing project the same way.
 
-**FAQ/ folder** — create the directory **first**, then copy the templates in (the
-folder must exist before the copies, or they fail):
-
-```
-FAQ/faq.md    <-  ${CLAUDE_PLUGIN_ROOT}/templates/faq-template.md
-FAQ/index.md  <-  ${CLAUDE_PLUGIN_ROOT}/templates/faq-index-template.md
-```
-
 **workshop/ folder, with `workshop/resources/research/` and
 `workshop/resources/supplied/` inside it** — create them
 empty, and the top-up adds them to an existing project. `workshop/` is where the project's working material lives — what it works

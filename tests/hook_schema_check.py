@@ -301,10 +301,17 @@ def test_session_start_points_at_the_rules_rather_than_pasting_them():
           "rules body detected in payload")
     # The FAQ pointer follows the rules directive: truncation ordering only
     # protects what sits earlier, and the rules are the thing that must arrive.
-    faq = ctx.find("This project has an FAQ")
+    # The pointer names the plugin's own FAQ templates in every adopted
+    # project ([faq-read-from-plugin-not-copied]), so it is always present.
+    faq = ctx.find("The workflow FAQ is the installed plugin's own")
+    check("SessionStart: the FAQ pointer is present",
+          faq != -1, "no FAQ pointer in the payload")
     if faq != -1:
         check("SessionStart: FAQ pointer sits after the rules directive",
               faq > at, f"faq at {faq}, rules at {at}")
+        check("SessionStart: the pointer names both plugin FAQ templates",
+              "faq-index-template.md" in ctx and "faq-template.md" in ctx,
+              "a template path is missing from the pointer")
         check("SessionStart: the FAQ index is pointed at, not pasted",
               "](faq.md#" not in ctx, "FAQ index body detected in payload")
 

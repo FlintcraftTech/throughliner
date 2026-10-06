@@ -240,6 +240,36 @@ def main():
         repr(drive_edit(d5, sibling)),
     )
 
+    # 8. [files-section-heading-not-matched]: a header written as a markdown
+    # heading or in bold is read like a plain one — in a scope file, where a
+    # missed header refused every path, and in a build working file, where it
+    # meant no lock at all.
+    sys.path.insert(0, os.path.dirname(HOOK))
+    import pre_tool_use as hook
+    for header in ("## Files:", "**Files:**"):
+        d7 = make_project(scope_files=None)
+        scope = os.path.join(d7, f"_freeform-{SESSION}.md")
+        with open(scope, "w", encoding="utf-8") as f:
+            f.write("# Freeform scope\n\n" + header
+                    + "\n- `CLAUDE.md`\n- `plugin/docs/a.md`\n")
+        listed = hook._parse_build_files(scope)
+        check(
+            "a scope file headed %s gives its backticked paths" % header,
+            listed == ["CLAUDE.md", "plugin/docs/a.md"],
+            repr(listed),
+        )
+        build = os.path.join(d7, f"_build-{SESSION}.md")
+        with open(build, "w", encoding="utf-8") as f:
+            f.write("# Active Build\n\nRun: x\n\n" + header
+                    + "\n- `QUEUE.md`\n- plugin/docs/b.md\n\nProgress:\n")
+        listed = hook._parse_build_files(build)
+        check(
+            "a build working file headed %s gives its paths rather than None"
+            % header,
+            listed == ["QUEUE.md", "plugin/docs/b.md"],
+            repr(listed),
+        )
+
     if _failures:
         print(f"\n{len(_failures)} FAILURE(S)")
         return 1
