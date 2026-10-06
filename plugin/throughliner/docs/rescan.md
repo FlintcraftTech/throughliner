@@ -1,190 +1,25 @@
 ---
 name: rescan
 docset: current
-note: >
-  /rescan procedure. Split out of close.md's wind-down re-scan on 2026-08-15 so
-  the step has its own trigger and can run repeatedly in one chat.
-  Register: structure in typed blocks, everything else in prose, tags inline.
+note: The /rescan procedure. Looks back over the chat for anything decided, noticed or asked for that was never written to a file, and files it. Commits nothing.
 ---
 
-# /rescan procedure
+# /rescan
 
-/rescan exists because a conversation ends and takes everything unwritten with
-it — filing is how a decision outlives the chat that made it. Look back over
-the conversation for things decided, noticed or asked for that
-were never written into a file, and file them.
+A conversation ends and takes everything unwritten with it. /rescan looks back over the chat for things decided, noticed or asked for that never reached a file, and files them by the three-way triage: work still to do becomes a capture in Unprocessed; what already happened is appended to this chat's LOG entry as a marked tail; evidence a future chat must re-read verbatim goes under `workshop/resources/`. It never routes (keep or delete), never builds, and never commits; the tail rides the next /close's commit. It can run as often as wanted.
 
-## What it does, and the one thing it does not
+**Scan back only as far as the last /rescan in this chat**, or the whole conversation on the first run; where the conversation has been summarised, use the captures filed earlier today as the boundary. First say one sentence on what the files prove ran that is no longer in view (a queue diff for a planning run, a working file's ticks for a build run), and never add that nothing was lost.
 
-**Route what it finds by the standard three-way triage**, rather than filing
-everything as a capture:
+**Work still to do.** Show the candidate set as one numbered message before anything is written, ending with what each answer does: "Say go to file it, or say no" for one, "Say go to file both, or contest by number" for two, "Say go to file them all, or contest by number" for more. Then write them as captures, appended to the bottom of Unprocessed. Where /plan was invoked earlier in this chat, the same message offers to process the surfaced items with the user now, one at a time, through plan.md's interview, with Claude's call per item in one clause: process now where it bears on cleared work, settles in one turn, or touches a queued entry; file for later otherwise. An item answered "process now" is not written as a capture; it is written once, as a work item, after the interview.
 
-```
-reveals work still to do          ->  a capture in QUEUE.md Unprocessed
-what already HAPPENED             ->  appended to THIS chat's LOG entry, as a
-    — including work done after       marked tail
-    /close
-evidence a future chat must       ->  a durable file under workshop/resources/
-    re-read word for word
-```
-
-```
-/rescan  ->  FILES what it finds, by that triage
-         ->  never ROUTES it (keep / delete / where it sits)
-         ->  never BUILDS it
-         ->  never COMMITS. The tail rides the next /close run's commit.
-```
-
-**The tail is what makes this the one-word route for post-close work**, which is
-common and otherwise has to be asked for in prose every time. Mark it as a tail
-rather than blending it in, so what was recorded at /close stays visible as
-what /close recorded.
-
-Filing is capture-making and is open to every skill. Routing and building are
-/plan's and /build's, and this skill stays on the filing side of that line.
-
-**It does not build, and the reason is worth keeping.** The complaint that
-produced this skill is a real one: a finding about the machinery being used right
-now waits for a /plan to process it, a /build to build it, and a reinstall before
-it is live. Building on the spot would not answer that, because the installed
-plugin is a frozen copy — a fix made now does not reach the chat that made it
-until the plugin is reinstalled and the app restarted. And a skill that could
-route and build would let any chat change the project without the user having
-agreed to the work.
-
-## Step 1: Find the stopping point  [SILENT]
-
-Scan back only as far as the last /rescan in this chat, not to the beginning.
-That is what lets the skill run several times in one chat without re-surfacing
-what it already surfaced.
-
-```
-/rescan already ran in this chat  ->  scan back to where it stopped
-first /rescan of the chat         ->  scan the whole conversation
-can't tell (the conversation      ->  read the captures filed earlier today and
-  has been summarised)                use those as the boundary
-```
-
-**The stopping point is held in the conversation, and nothing is written to a
-file for it.** Where the conversation has
-been summarised the memory of it is gone, so the fallback is the captures
-already filed. A stretch that yielded nothing yields nothing again, so the cost
-of re-reading it is re-reading, not duplicate items.
-
-**Run the memory-limit machinery as close.md's wind-down re-scan states it —
-that section is the canonical copy, and this skill applies it at this scan's
-own depth.** It carries the runs-in-view check — which runs the files prove
-happened, read against the runs still visible in the conversation — the one
-sentence that reports what the check found, the asymmetry that keeps that
-sentence from ever adding an all-clear, and the no-proxy rule. Read them there
-and apply them here — the one difference is depth: this scan reaches back to
-the stopping point above, which on a first run is the whole conversation.
-
-## Step 2: File what you find  [BRIEF]
-
-**Sort each candidate by the triage above before writing anything** — work still
-to do, or something that already happened. Both get written; they go to different
-files.
-
-**Work still to do → Unprocessed** [PROMPT]. Show the candidate set as ONE
-numbered message before anything is written, and wait. **End it with what each
-answer does, and the ask names what it counts.** A contested item is then
-dropped or reworked one at a time. The planning-chat arm is below.
-**What happens then depends on the answer:**
-
-```
-answered FILE          ->  the capture is written, exactly as now
-answered PROCESS NOW   ->  NOTHING is written. The item enters the planning
-                           loop and is written once, as a work item, after
-                           the interview — plan.md's raised-mid-planning rule
-```
-
-  Writing a capture first and then processing it spends a write that is thrown
-  away, and process-now is the common answer. The offer below is what asks.
-
-Placement is the standing one — appended to the bottom of Unprocessed, no
-judgment, no narration of the mechanics.
-
-**Where /plan was invoked earlier in this chat, the same message also offers to
-process the surfaced items with you now, one at a time** — entering plan.md's
-ordinary present-and-interview loop on the user's yes. The offer says "with
-you": processing is done together, and wording it as something Claude does alone
-primes the user for the wrong interaction. In any other chat the offer is not
-made and this skill files only. In that same message, Claude makes a call per
-candidate — process now, or file for later — on three grounds, naming the
-ground in one clause beside each item: the item bears on cleared work, read
-from the digest's flag or from the entry's own words; it settles in one turn,
-a fix with nothing left to design; or it blocks or reshapes an entry already
-in the queue. An item meeting none is the one to file for later. **The
-planning-chat arm of the ask is written in bold, opens on the recommendation
-that call yields, and go means process now**, with filing for later written as
-the alternative — the count of items in the words. The call is Claude's
-judgment and the user's answer still decides. Where no item meets a ground:
-"None of these bears on cleared work, settles in one turn or touches a queued
-entry, so I recommend filing them for later. File these for later? Otherwise
-say go to process them now." Where some do: "Item 2 bears on cleared work and
-item 3 is a one-turn fix, so I recommend processing those two now. Process
-them now, filing item 1 for later? Otherwise say go to process all three now."
-
-**What already happened → this chat's LOG entry, as a marked tail.** Append rather
-than rewrite — with the state server's `append_tail` tool where the server is
-registered, which finds the record and stamps the time — under a heading that
-says what it is:
+**What already happened.** Append to this chat's LOG entry, with the state server's `append_tail` tool, under:
 
 ```
 ## After /close
 
-<what was done, and why — the same authoring standard as the entry above it>
+<what was done, and why>
 ```
 
-**Where this chat has no LOG entry yet**, there is nothing to append to: the work
-is recorded by /close when it runs, so say that and file only the captures.
+Where this chat has no LOG entry yet, say that /close will record it and file only the captures. A candidate that is both gets both halves. Nothing found takes one line: "Read back over our discussion — nothing came up that isn't already captured."
 
-Say so when reporting that nothing is committed here, so the user is not left
-thinking the record is saved. A second
-`/close` typed in a chat that has already closed reaches this same tail rather
-than a second /close run — close.md's router carries that arm.
-
-**Where a candidate is genuinely both** — work that was done AND revealed more to
-do — write both, each carrying its own half: the tail records what happened, the
-capture records what is left.
-
-**State the limit sentence and the files-disagree wording as close.md's
-wind-down re-scan gives them** — canonical there, applied here, per Step 1's
-reference.
-
-**Nothing found is a result, and it takes one line.**
-
-> Read back over our discussion — nothing came up that isn't already captured.
-
-## Step 3: Say what happens next, then hand back  [BRIEF]
-
-Name what the captures are waiting for — **the planning run this chat is in,
-where one is running, and otherwise the next one.** Processing a capture is
-exactly what /plan does, so a session still open can settle what was just filed.
-Say it once, plainly.
-
-**Then resume whatever was running and carry on from where it was.** A scan run
-inside a build or a planning run interrupts that work and returns it; the
-hand-back is a return, not a /close run, and nothing has to be restarted — the skill's
-instructions are still in the conversation.
-
-**Content line for the hand-back turn — three things, in this order:** what was
-filed, named; that running /close — named in words — is what records and commits
-it; and the resumed work's own pending question, put back in bold as the
-message's last line, so the message ends on the ask the user was in the middle
-of. Where nothing was running, or the run has finished and not closed — the hand-back to the /close step —
-the third part is the closing paragraph's one-command arm from plan.md's
-end-of-queue gate — running /close, named in words and clear of the sentence's
-end — in bold as the last line, since that step is the pending one. Where the
-conversation carried an outcome-shaped statement of the user's that no goal in
-SPEC's Goals section names — a sentence about where the project should get to,
-or when it would count as arrived — the turn also proposes it as a goal in one
-line, in their words, and writes it only on their yes.
-
-**Recommend nothing else.** This skill exists partly because close machinery
-accumulating at the end of a chat pulls the whole chat toward ending. A /rescan
-that finishes by suggesting /close would rebuild that pull at a new site.
-Naming the command that commits the captures is a fact about where they go,
-stated the way /close's own Recommend-next turn states its continuations,
-and is not a recommendation.
+**Then hand back.** Say what was filed, that running /close is what records and commits it, and put the resumed work's own pending question back in bold as the last line; where nothing was running, the last line is that sending the close command records the session. Where the user said something outcome-shaped that no goal in SPEC names, propose it as a goal in one line in their words, written on their yes. Recommend nothing else.

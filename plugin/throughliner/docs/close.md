@@ -1,870 +1,125 @@
 ---
 name: close
 docset: current
-note: >
-  /close procedure. Routes to a per-flavor close-out and states the
-  shared close core once; the sub-docs carry the flavor-specific steps.
+note: The /close procedure. Records what the chat did, cleans up, commits once, and says what comes next.
 ---
 
-# /close procedure
+# /close
 
-Close the
-current session — record what happened, update docs, commit.
+/close records everything the chat did, cleans up, commits once, and recommends what comes next. It takes on no new build scope; a fix completing the just-built work's own verification folds in, and anything else routes out as a capture.
 
-## Declare /close  [SILENT]
+## Declare and route
 
-**First action of every /close run: write an empty file named
-`close-active-<session-id>` into the project's `.throughliner/` working
-folder, and delete it as the last action before /close finishes — together with
-`.throughliner-setup-done` in the session scratchpad where setup ran in this
-chat and left it.** While
-both stand, the scope-lock also permits the files setup scaffolds, so a
-correction to what setup just wrote lands here rather than as a queue item. While it exists the scope-lock
-permits the few files the method's own close obligations name — `README.md`
-today.
+**First action:** write an empty file `.throughliner/close-active-<session-id>`, and delete it as the last action, together with `.throughliner-setup-done` in the scratchpad where setup ran in this chat. While it stands the safety check permits the files close itself must write.
 
-## Route by session shape  [SILENT]
+**Already closed?** Where `.throughliner/session-closed-<session-id>` exists, this is the post-close tail, not a second close: file what it finds by the three-way triage, append what happened to this session's existing entry as a marked tail under a `## After /close` heading with the state server's `append_tail` tool, commit nothing, and say so in one line, naming the fresh-chat route where handmade work would be committed as a session of its own.
 
-**First arm: this chat has already closed** [BRIEF]. Where this conversation
-already holds its own /close run — the entry written and the commit made, which
-the `session-closed-<session-id>` marker in `.throughliner/` records — a second
-`/close` is the post-close tail, not a second /close run: file what it finds through
-the three-way triage, append what happened to this session's existing entry as
-a marked tail, and commit nothing. The one line carries which files were
-appended to, that nothing was committed, and where the fresh-chat route leads:
-open a fresh chat and run `/close` there, where /close's no-build close-out commits
-handmade work as a session of its own.
-
-Otherwise check for **this session's** build working file,
-`_build-<session-id>.md` — not any other session's, which belongs to a build
-running in another chat. **The check is automatic: route on what you find,
-silently.**
-
-**Run every judgment step the routed sub-doc calls for, whatever the user says
-about committing.**
-
-**Read the build working file in full before /close's close-out runs, whatever you
-remember of the session.** Conversation memory enriches the LOG entry — the
-tradeoffs, the colour the file doesn't capture — and the read still happens in
-full alongside it.
+Otherwise check for **this session's** `_build-<session-id>.md`, no other session's, and route silently:
 
 ```
-the build working file EXISTS  ->  read it, then route by the run's work-item flavors:
-    build items (no tag)  ->  close-build.md
-                              # a build that changed SPEC.md closes here like
-                              # any other build — same steps, same commit core
-    [audit] items         ->  close-build.md, applying its audit delta
-    mixed run             ->  each item closes through its OWN flavor's
-                              close-out, one LOG entry per item, sharing the
-                              single end-of-session commit
-
-NO build working file          ->  close-plan.md, which carries all three
-                                   no-build shapes and picks between them:
-    a planning session
-        (queue managed, captures processed, readiness line moved)
-    a completed [user] item
-    standalone handmade work — the FREEFORM /close run
-        (no planning either, and the tree holds uncommitted edits the
-         session didn't make)
+working file exists   ->  the build close below, one LOG entry per item, build and [audit] alike
+no working file       ->  the no-build close: a planning session, a completed [user] item,
+                          or standalone handmade work, which overlap freely
 ```
 
-**The freeform /close run is this third shape.** **Read the edits as the user's expected
-work, and split them across separate log entries by judgment where they cover
-several distinct changes.**
+Read the working file whole before anything else. Record every `[user]` or `[co-write]` item the session touched under build.md's outcome values, read off the session's own trail. Where the opening named waiting mail, triage it as `${CLAUDE_PLUGIN_ROOT}/docs/feedback-and-inbox.md` states, filing only; where a reply is owed, draft it and show the exact wording.
 
-A no-build /close run writes the method documents, the close-obligation files
-the Declare step permits, and its two markers.
+## The build close
 
-Detect a completed `[user]` item from what the session can already see — a
-task-shaped item whose line the planning opening found ticked on the user's
-task list among them. The detection rules and /close itself are in
-close-plan.md, which handles a completed item and a planning session together,
-since the two can coincide.
+1. **Verify completion.** Where some items are unticked, ask: finish the rest with /build, or close partial, which deletes the working file and leaves the queue alone. Before deleting, confirm every ticked item is gone from QUEUE.md and every unticked one is still there, and fix any mismatch. Where memory and the file disagree, file that as a finding.
+2. **Route findings** from the working file's notes and `Run-level:` section to Unprocessed as captures, each written then reported, the set as one numbered report.
+3. **Check the run against SPEC** and leave SPEC unedited: where the run contradicts a sentence, name it and let the user decide which is wrong; where the build filed a capture for a sentence SPEC owes, say SPEC lags until the next planning run.
+4. **Red flags.** For each built item carrying a marker, carry "cleared" into its entry; a marker still reading `uncleared` is a stop. An audit never clears a flag.
+5. **Write one LOG entry per built item**, named after its slug, by the entry rules below, with the build fields `Files touched` (from `Changes:`) and `Routed to Captures` (or "none"), and for an audit `Findings routing` (filed, and any dropped on re-reading, with why). Read each item's reasoning from the queue as it stood before the run, `git show HEAD:QUEUE.md`, taking its whole block from its `#### ` heading to the next; where QUEUE.md is untracked, write from `Changes:` alone and say the history could not be recovered. Read each item's `Depth:` and `Rule gate:` lines by slug; a slug with no depth line is short, noted as a slip. Transcribe the tick form verbatim and announce every `UNCONFIRMED` item in the close narration. Where one decision settled several items, one entry carries the reasoning and the others cite it, each still named for its slug. A `[user]` entry the walk-through opened is continued, not duplicated; on the done arm, run any observable check the item names and remove it from Processed with the mover.
+6. **Staleness sweep**, below. Then delete the working file, silently, only after everything above.
+7. **Commit core**, below. Then recommend next.
 
-**Record each `[user]` item the session touched under an outcome, and read that
-outcome off the session's own trail, never off what the item's presence in the
-queue suggests.** The values, and the arm for an outcome none of them fits, are
-build.md's walk-through outcomes provision — stated there once and cited here.
-A `[co-write]` item is recorded on the same terms — done, deferred or not
-reached — with the path of its one file in the record.
+## The no-build close
 
-The sub-doc runs /close's close-out. When it reaches its Commit step, run the commit
-core below, then return to the sub-doc for the recommendation.
-
-## /close's checks report as one narration  [BRIEF]
-
-Several checks fire across a /close run — verify completion, the staleness sweep, the
-red-flag lifecycle, the wind-down re-scan. Combine what they turn up into one
-"here's what came up: …" rather than letting each speak in turn.
-
-**What the narration carries: every subject named outright, never a referring
-expression only the scrollback resolves** — "the item above", "that fix", "the
-same file" name nothing to a reader who is not holding the messages before
-this one, and the user is deciding whether to let the commit happen on this
-report alone.
-
-**The wind-down re-scan's numbered set is its own message**, being something the
-user must act on.
-
-## Staleness sweep  [SILENT] when clean; [BRIEF] when flagging
-
-The build and audit close-outs point here. Quick check of the remaining work items
-— any staleness from any cause, not just what this session changed:
+- **Spec-sync gate.** This is the only close that syncs SPEC. Read `git diff HEAD -- SPEC.md '**/SPEC.md'` (in the inner repository too, in a nested project) and `git diff HEAD -- QUEUE.md`; where a file is gitignored, read the safety check's snapshot copy. For every SPEC sentence written this session, read the item it was written for as it now stands and correct the sentence where they came apart; for every kept item, check for a product-truth change with no sentence. On drift, stop before committing, name the sentence, and fix it in this same commit on the user's yes. A sentence describing decided-but-unbuilt behaviour is the designed lead, not drift.
+- **Handmade work.** Uncommitted changes the session did not make are the user's own expected work: confirm they are theirs, leave them intact, and record them, one entry for a coherent change (`LOG/<date>-handmade.md`) or one per logical change. Where they add, rename or remove product folders, record the move as the user's structural decision, grep SPEC.md and MAP.md for the old names, and correct them on the user's yes. Where a scope file `_freeform-<session-id>.md` exists with no queue item behind it, name the paths the safety check's log shows the door admitted (`.throughliner/pre-tool-use.log`, branch `freeform scope file`, this session's id).
+- **Batch the human stops.** One pass over Processed: `[user]` and `[audit]` items go after contiguous build work, ahead of any `Runs alone` item, which stays last, with `[co-write]` after them. Leave a `[user]` item that names dependent builds by slug ahead of them, and an `[audit]` that reads a tool's output right after that tool. Use the mover with the full desired order:
 
 ```
-do any remaining items reference files since renamed or deleted?
-do any reference behaviour or rules a shift since has moved past?
-are any sitting long enough that surrounding code or rules have drifted away?
+python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> <Processed|Unprocessed> <slug1> <slug2> … [--marker-after <slug|TOP|BOTTOM>]
 ```
 
-If so, flag it — and **split by fix path**:
+  A non-zero exit means nothing was written; re-read and re-run. Narrate a change to what /build would pick next; say nothing where nothing moved.
+- **Position the cleared-to-run line** just below the last item the user agreed is ready. Hold back an item whose prose depends by slug on work built but not verified, read from that entry's transcribed tick, with an entry carrying no tick field treated as unconfirmed; the one exception is an item that is itself its blocker's only verification. Every item below the line names what holds it: `Blocked by:`, `Not before:`, with `Assigned to:` carried beside. Ready `[user]` work goes above the line. Narrate only what moves.
+- **Completed `[user]` items.** Where the session saw one completed (the user said so, its observable check passes, or its task line was ticked at the opening), write a LOG entry under its slug and remove it from Processed with the mover. Say nothing about the others.
+- **Write the LOG entry** with the fields `Queue changes:` and `Work processed:` (kept and deleted, with slugs, or "none"), read off `git diff HEAD -- QUEUE.md`, not memory; skipped items leave no trace and are not recorded. Where an item's record was written at its keep, complete that record by edit rather than writing a second. Where a red flag was cleared this session, record how: designed out, or the informed-consent trail.
+- **Commit core**, then recommend next. A fresh setup session whose only item is the rough first build recommends /plan to scope it, never /build.
 
-```
-a fate decision (drop / rewrite / keep)  ->  /plan's. Defer it.
-a pure pointer drift                     ->  mechanical. Fix it HERE, report in
-    (a file reference whose target             one line, riding this commit,
-     content is unchanged)                     with no approval ask. At a build
-                                               close the route is the queue
-                                               tool's literal replace —
-                                               reorder_queue.py --replace-in
-                                               <slug> --old <literal> --new
-                                               <literal> — which edits one
-                                               entry, refuses a non-unique
-                                               match, and passes the
-                                               scope-lock.
-```
+## Staleness sweep
+
+Check the remaining work items for references to files since renamed or deleted, or to behaviour since moved past. A fate decision (drop, rewrite, keep) is /plan's: defer it. A pure pointer drift is fixed here in one line, with the queue tool's literal replace in a build close: `reorder_queue.py --replace-in <slug> --old <literal> --new <literal>`.
 
 ## LOG entry files
 
-Every sub-doc's entry-writing step points here.
-
-**Run the scrub checklist before writing** (skill-nonspecific-rules.md, Scrub before
-writing). Fix
-what you find at the same level of usefulness rather than dropping the fact.
-Describe the entry afterwards as checked against that checklist and the
-credential scan, and as nothing more.
-
-**Read the entry and its index line for whether they carry their own weight**
-(skill-nonspecific-rules.md, Authoring standard), subject to the length rules
-below.
-
-**How long an entry or an index line runs — one subject, four provisions.**
-
-- an entry splits per unit of work, not by length: per item built in a build
-  session, per item processed in a planning session;
-- where one decision settles several items, one entry carries the reasoning and
-  its siblings cite it rather than restating it — each still named for its own
-  slug, so `<date>-<slug>.md` resolves for every one of them;
-- an index line carries enough to decide open-or-skip;
-- an index line that restates the entry it points at is wrong at any length;
-- no figure decides any of it — the requirement in the behaviour rules' Index
-  entries section is the whole bound.
-
-**One text, several positions.** The session authors **two** texts, not four:
+Run the scrub checklist on the text. The session authors two texts: the one-liner, which is the entry heading's summary, the index line and the commit title; and the rationale, which is the entry body and the commit body. One file per entry under `LOG/`:
 
 ```
-the one-liner  ->  the entry heading's summary
-                   the index line's body
-                   the commit title
-the rationale  ->  the entry body
-                   the commit body
+work item closed          ->  LOG/<YYYY-MM-DD>-<slug>.md      (full slug, never shortened)
+session with no slug      ->  LOG/<YYYY-MM-DD>-<type>.md      (plan, setup, handmade)
+name taken                ->  LOG/<YYYY-MM-DD>-<slug>-<kind>.md  (-plan / -build), then -2, -3
 ```
-
-Both are written once, at the entry-writing step, and the commit step reuses
-them verbatim as the record shown — nothing new to read.
-
-**Entry template** (placeholder hash — this /close run replaces it with the real
-hash right after the commit, when the hash first exists):
-
-````markdown
-# [HASH] — [one-line summary]
-
-[Prose rationale — re-authored from the work's rationale in the build working file (or, for a
-planning session, what motivated these queue changes), expanded with what was
-learned along the way. Inline prose, no `Why:` label. Re-authoring is where
-reasoning gets re-attributed by accident (skill-nonspecific-rules.md, rationale
-provenance).]
-
-[per-flavor body fields]
-````
-
-```
-per-flavor body fields — the only delta between flavors:
-
-plan/setup  **Queue changes:**       work processed, reordered, or modified
-                                     (for setup: the first rough build item and
-                                     the docs scaffolded)
-            **Work processed:**      kept / deleted, with slugs, or "none"
-
-build and audit body fields live in close-build.md, beside the entry-writing
-steps that use them.
-```
-
-**The forward-recommendation advisory — one field on every flavor, and five
-provisions under it.**
-
-- write the disposition into this /close run's entry, in one of two forms:
-
-```
-Advisory: filed — <slug>
-Advisory: not needed — <why>
-```
-
-- write the label plain, matching the other /close obligations that produce a
-  recorded line;
-- complete /close only once the line is written;
-- file the advisory itself as a capture at the top of Unprocessed, worded as
-  advice, where the Recommend-next step made a *concrete* recommendation — a
-  generic one files nothing, and the disposition line says which; any held
-  item the advisory names is read off the digest's held-item lines exactly as
-  the Recommend-next narration's subordinate line says;
-- **where this is a planning session's /close and its wind-down look-back filed one
-  or more captures, the advisory names them by slug as what to open on**, in
-  addition to any recommendation it carries — so the next planning session
-  opens on them rather than meeting them in queue order; the disposition line
-  above is unchanged;
-- **where the reserved slot already holds a spent advisory, replace it**: delete
-  the spent note and file this /close run's own in the freed slot, with the new note
-  saying it replaced one. The reserved slug must be unique — filing alongside a
-  spent note stops the queue mover dead;
-- head the capture with the fixed, reserved slug, always that literal string —
-  the heading is handed to the capture tool without the slug, which the tool
-  appends as `forward-advisory`:
-
-```
-#### Last session advises processing <slug> next
-```
-
-- state conditions in the prose beneath it, rather than counts.
-
-```
-write:      a /build run will halt on this item and build nothing past it
-never:      it sits ninth, with eight items ahead of it
-```
-
-**The advisory is a transient orientation handoff, not work.** It is read and
-cleared at the next /plan's opening (plan.md), so the only one this /close run clears
-is one it is replacing. It is never processed and never reaches Processed,
-living in QUEUE.md rather than in a file of its own.
-
-**One more section, on every flavor: what the chat did outside its work items.**
-
-```
-**Also in this chat:**   corrections the user gave, decisions reached in
-                         conversation, errors made and fixed, work done by hand
-                         between runs — anything real that belongs to no work
-                         item. Omit the section when there is nothing.
-```
-
-**Where the section goes depends on how many entries this /close run writes**, which
-/close already knows:
-
-```
-close writes ONE entry      ->  `Also in this chat:` stays inline, unchanged.
-                                Every planning session's /close is this case.
-close writes SEVERAL        ->  the chat-level record becomes its OWN entry,
-  entries                       named for the chat rather than for a slug, with
-                                its own line in LOG/index.md.
-```
-
-**The frame, identical for every flavor.** Write the entry, then report in one
-line what landed and where. A LOG entry does not wait; the commit message is
-shown as the record of what is committed.
-
-```
-run shipped ONE item     ->  the commit message derives from this entry: title
-                             from the one-liner, body from the rationale. Show
-                             that message at the commit step — short, and the
-                             user has the entry to read behind it
-run shipped SEVERAL      ->  the commit message is a one-line summary of the
-                             whole run, shown as the record at the commit step;
-                             each item's entry still stands on its own
-```
-
-This entry is the session's summary — **there is no separate chat recap.** Before
-writing it, check whether this session raised and resolved a concern or weighed an
-alternative that lost; if so, carry it with why it lost.
-
-**Reuse the item's candidate.** A ticked build item always carries one, written
-at its tick and so describing what the build actually did rather than predicting
-it — reuse it. Planning sessions have no candidate; author fresh against the same
-rule.
-
-**Write the entry's index line into the entry itself**, as a front-matter
-block at the very top of the file — the line's text after the hash, and
-nothing is appended to `LOG/index.md` by hand:
 
 ```
 ---
-summary: [index entry]
+summary: <the index line: the artifact touched and the nature of the change, enough to decide open-or-skip>
 ---
-# [HASH] — [entry heading]
+# [HASH] — <one-line summary>
+
+Date: <YYYY-MM-DD HH:MM, read from the clock at the moment of writing>
+
+<prose rationale, re-authored from the work's reasoning, carrying any concern raised and resolved and any alternative that lost, with why>
+
+<the flavor's body fields>
+
+Advisory: filed — <slug>        or   Advisory: not needed — <why>
+
+**Also in this chat:** <corrections, decisions reached in conversation, errors made and fixed, work done by hand; omitted when empty, and its own entry named for the chat where the close writes several entries>
 ```
 
-**Then regenerate the index files and `LOG/backlinks.md` together** with
-`python <plugin-root>/scripts/log_backlinks.py <project root>`, after every
-record is written, and stage them with the records — `LOG/index.md` (the
-current month) and each `LOG/index-YYYY-MM.md` (a completed month) are
-written from the records' summary fields, newest first by each record's own
-date field, in the line shape `- <hash> — <summary> → <filename>`, so the
-month rollover happens in the generator; none of these files is edited by
-hand, and a record with no summary field is indexed from its heading.
+Every date written at close is today's, read from the clock; where the session ran across more than one day, say so in one sentence. Write the literal placeholder in hash position only. Then regenerate `LOG/index.md`, each `LOG/index-YYYY-MM.md` and `LOG/backlinks.md` with `python <plugin-root>/scripts/log_backlinks.py <project root>`; none is edited by hand. Report in one line what landed. A check only the user can run is filed as a `[user]` capture, never left as LOG prose.
 
-**Each entry is its own file under `LOG/`, date-prefixed** so the folder sorts
-newest-first on a name sort, each in its own file rather than a shared log:
+**The advisory.** Where recommend-next makes a concrete recommendation, file it as a capture at the top of Unprocessed with the heading `Last session advises processing <slug> next`, the tool appending the reserved slug `forward-advisory`, conditions stated in prose; where a planning close's look-back filed captures, the advisory names them as what to open on. A spent advisory already in the slot is deleted first. A generic recommendation files nothing, and the entry's line says which.
 
-```
-session closing work items    ->  LOG/<YYYY-MM-DD>-<slug>.md
-    (build, audit)                # one entry file per item, all sharing the date
-session with no slug          ->  LOG/<YYYY-MM-DD>-<type>.md
-    (planning, setup, handmade)   # e.g. 2026-06-09-plan.md
-name already taken            ->  LOG/<YYYY-MM-DD>-<slug>-<kind>.md
-                                  # -plan / -build
-that name taken too           ->  append -2, -3, …
-```
+## Wind-down look-back
 
-**A record about a queue item carries that item's full slug in its filename,
-never shortened or reworded.** Where the bare name is taken, the record's kind
-is what distinguishes it.
+Before committing, look back over the chat only as far as the last /rescan, and surface candidate captures: things the user thought out loud but never flagged. An amendment to a work item the user directed this session is made to the item and recorded under its name; a problem Claude noticed in a cleared item stays a capture, with the collision named. Where nothing happened since a rescan, write "covered by the rescan just run". Run the cycles check as plan.md states it, reading the project root for a `CYCLES.md` created this session. First say one sentence on what the files prove ran that is no longer in view (a queue diff, a working file's ticks), and never add that nothing was lost. Show the candidate set as one numbered message, opening by naming itself as the close's look-back, ending "Say go to file it, or say no" (one), "Say go to file both, or contest by number" (two), or "Say go to file them all, or contest by number" (more). Write them on the yes and add them to the entry's `Routed to Captures` line.
 
-**Every date written at /close is the date /close runs** — today's date, at the moment
-you are closing. That covers the filename prefix and every date written into the
-words of a session record or a queue item alike ("processed 2026-08-12",
-"cleared 2026-08-12"). **The record's own
-date field carries date and time, read from the clock at the moment of
-writing, never recalled** — a bare date leaves same-day relative-time claims
-with no source finer than a day. The filename prefix stays date-only.
+## Session-file cleanup
 
-**Where a session ran across more than one calendar day, say so in one plain
-sentence in its record, and change no filename or datestamp:**
+Delete the working file and this session's scope file. Offer to delete, one at a time, only files Claude created this session with no future use, warning where one is untracked. In `temp/`: delete each file a line in `INBOX/sent.md` points at, saying so; remove an attachment no open capture names; list the rest with dates and offer once to clear them, never deleting a `[co-write]` file or one the user edited without a yes.
 
-> This session ran across 2026-08-11 and 2026-08-12.
+## Commit core
 
-**Write the hash into the entry heading only** — the filename carries the
-date instead; the index line takes the
-hash from the heading when it is regenerated. /close itself fills the
-placeholder right after the commit (the commit step below says how).
+Run the mail triage, the look-back and the cleanup first so their writes ride this commit. Where `MAP.md` exists, grep this session's new folders and human-used files against it and write missing lines on the user's yes. Where work items shipped, confirm each shipped slug is gone from Processed.
 
-**Write the literal placeholder token in hash position only.** Describe the mechanism indirectly
-where an entry needs to ("the placeholder", "the unfilled hash").
+1. **Stage explicitly by path:** the files `Changes:` names, the method docs, the working file's deletion. Where another chat is open on the same project, stage only what this session wrote and leave the other's changes to it. The safety check refuses a commit while any tracked file carries a conflict marker.
+2. **Read `git status --porcelain` for dirty paths outside the run's list.** The previous session's tail (a marked tail section, a capture at the bottom of Unprocessed) and a hash backfill fold in with at most a one-line note; any other path is named in one line and offered for staging. Name the staged method docs in one sentence; this makes a swept edit visible, not detected.
+3. **The commit message derives from the entry:** one item shipped, the title is the index line and the body the rationale verbatim; several, a one-line summary of the run with each item's one-liner as the body; staged extras get one appended line. Show it verbatim as the record and commit in the same turn: running close was the consent. Write it to a scratchpad file and commit with `git commit -F <that file>`. Check every intended path is staged first; a partial staging holds the commit.
+4. **In a nested project commit both repositories**, the product's changes in the inner and everything else in the outer. Before a commit to a repository with a remote, read `git diff --cached` there against the scrub checklist and anything shaped like an email address; on a find, hold that repository's commit, name the file and kind, and ask whether to rewrite it. A `Co-authored-by:` trailer only for a roster participant whose recorded consent covers it.
+5. **Offer the push only where `git remote` shows one:** "Committed. Also push to the remote?" With no remote, say nothing about pushing.
+6. **Write this session's record filename into `.throughliner/session-closed-<session-id>`**, then write the commit hash into the headings this close wrote and regenerate the index files.
 
-Pre-split entries live in `LOG/log.md` and `LOG/log-v*.md` — untouched, found by
-hash or title search.
+A session makes one commit; the tail makes none. Work arriving after the close is written to the tree and carried by the next close.
 
-**Captures filed after the commit.** When a capture comes up in the post-commit
-tail, the same move that appends it to QUEUE.md also updates this session's
-just-written entry — edit its "Routed to Captures:" line to include it, as a
-working-tree edit with no separate commit.
+## Recommend next
 
-## Checks the closing session couldn't run
+Five things, each from a computed fact: the commit hash and the record's link; the cleared count and the first few cleared items by name, from the digest or `queue_checkpoint_counts` run after the last queue write; the count waiting to be sorted, counting only what the next planning session would present; the run-alone announcement where a `[freeform]` item or a `Runs alone` item with zero cleared items ahead sits in Processed; and one recommendation, naming a fresh session as where it runs and the command in words mid-sentence. Where the run stopped at a held item whose blocker it shipped, say in product terms what of the intended change is not yet on screen. Where this close filed a concrete advisory, the closing message is one line naming it, plus any due cycle, and nothing else.
+
+Where a held item's every blocker was built in this run with its tick confirmed, lift it above the line with `queue_move` or the mover, drop its `Blocked by:` line, rewrite it whole, append its task line where it is task-shaped, and say so in one line; a blocker built but unconfirmed leaves the item held.
+
+Scan the still-unprocessed work for overlap with the top cleared item and state the result either way. Then: captures filed this session that affect the next work, work needing vetting, or an empty Processed: recommend /plan. Work above the marker: name the next cleared item and recommend /build. An audit session with findings appended recommends /plan, naming the count.
+
+For a run-alone item, hand over the starter prompt verbatim in a fenced block, filling `<slug>` and `<heading>` from `queue_next_pick` or the digest:
 
 ```
-a verification only the user can run  ->  a [user] capture
-a check Claude can run                ->  just part of building
-```
-
-So the only thing /close does with a check it couldn't run is the ordinary capture
-move: if the closing session discovers a needed verification that isn't already a
-`[user]` item, file it as a `[user]` capture appended to Unprocessed. Nothing
-tracks it in a dedicated section, and **no LOG-only prose stands in for the queue
-line** — an unrun check recorded only in a log entry never surfaces again.
-
-## Triage any waiting mail  [SILENT] when the mailbox is empty; [BRIEF] when mail is triaged with nothing to send; [PROMPT] where a reply is drafted
-
-Triage anything still sitting in this project's `INBOX/` as
-`${CLAUDE_PLUGIN_ROOT}/docs/feedback-and-inbox.md` states — filing, not
-processing: deciding what a message raises stays /plan's.
-
-**Where a reply is owed, draft it here** and show the exact wording before
-anything is sent; the reply goes out as a capture sent to that project.
-
-## Wind-down re-scan (file-only)  [BRIEF, PROMPT]
-
-Commit core points here, so it runs at **every** /close close regardless of session
-type. **This section is the canonical statement of the memory-limit machinery —
-the limit sentence, the artifact cross-check, the asymmetry, the no-proxy rule
-— and rescan.md applies it by reference at its own depth.**
-
-**Look back only as far as the last /rescan in this chat.** The
-close picks up whatever came after the last one. Invoke it shortly before
-closing and this costs a line. With no /rescan run, /close does the full job,
-scanning the whole chat.
-
-**Where nothing has happened since that rescan — no work, no decisions, only the
-close being invoked — perform no second pass, and write one line into the record:
-"covered by the rescan just run."**
-
-**Cycles due-ness check first** [SILENT] when no cycles doc exists; [BRIEF]
-whenever one does. Run the cycles due-ness check as plan.md's Step 1 states it
-("Cycles due-ness check"), filing only — routing stays planning work — a
-chain step's capture under the checklist's own slug,
-with one limb of this site's own: **read the project root for `CYCLES.md` here as
-well**, because a doc created this session carries no opening line and would
-otherwise be invisible to its own /close run.
-
-Before committing, re-read that stretch of the chat and surface candidate
-captures — things the user thought out loud but never flagged.
-
-```
-/close  ->  may FILE the surfaced captures
-       ->  may AMEND an existing work item, on the user's direction given
-           this session, recording the amendment in the LOG entry under
-           that item's name
-       ->  never ROUTES them (keep / delete)
-```
-
-**Where the defect in a cleared item is one you noticed rather than one the
-user directed, file it as a capture AND name the collision**: that item runs
-before the next planning session unless the user directs the amendment now.
-
-**Show the candidate set as ONE numbered message before anything is written**
-[PROMPT], **opening by naming itself as /close's standing look-back over the
-conversation** — in the user's words, before what it found.
-**End the message with what each answer does, and the ask names what it
-counts:** one candidate, "Say go to file it, or say no" with no numbering; two,
-"Say go to file both, or contest by number"; three or more, "Say go to file them
-all, or contest by number." The writes then land,
-and a contested item is dropped or reworked one at a time. The set
-holds writes only — captures and record edits — and a candidate deletion is
-presented after it as its own ask, under the session-file cleanup step's own
-rules.
-
-Add them to this session's LOG entry's "Routed to Captures:" line as a
-working-tree edit riding this commit.
-
-**Run the memory check first, and say one sentence — never two — reporting what
-it found.** The check reads what the artifacts prove ran: a queue diff (`git
-diff HEAD -- QUEUE.md`, or the snapshot folder where the queue is untracked)
-showing entries deleted, moved or kept means a planning run; a build working
-file's ticks mean a build run. It then looks for each such run's invocation and
-opening lines in the conversation.
-
-```
-a run the files prove happened is    ->  "Earlier parts of our conversation have
-  missing from the conversation          dropped out of view — the files show a
-                                         <planning | build> run I can no longer
-                                         see."
-every run the files record is        ->  "Every run the files record is still in
-  still in view                          view."
-```
-
-**The asymmetry is a rule for Claude, not a sentence for the user.** A run
-missing from view is positive evidence that earlier material dropped out; a run
-still in view proves only that stretch, and a discussion that touched no file
-leaves nothing to check against. So the report says what the check found and
-never adds that nothing was lost.
-
-**Name no proxy.** Session length, duration and message count are observable
-proxies for compaction rather than the thing itself, and each invites the user
-to discount the result by a factor that is fictional.
-
-One thing to state, not fix: a fresh-chat /close has none of the session's
-thinking in view, so there is nothing to re-scan.
-
-> "Re-read our discussion — nothing came up that isn't already captured."
-
-## Session-file cleanup (throwaway artifacts)  [BRIEF, PROMPT]
-
-Commit core points here, so it runs at every /close run. The build working file
-and this session's scope file, `_freeform-<session-id>.md`, are deleted by
-/close — the scope file after close-plan.md's handmade-work step has read it,
-with no ask; this generalises that lifecycle to
-*other* throwaway files this session created.
-
-Offer to delete only files meeting **all** of these:
-
-```
-Claude created or wrote them THIS session
-    # established from the build working file Changes and this session's own edits.
-    # A file Claude did not create this session is NEVER presumed rubbish —
-    # uncommitted changes the session didn't make are the user's own work,
-    # and where they add, rename or remove folders of the product, the close
-    # reads the move as a structural decision of the user's, records it as
-    # one, and corrects the spec sentences and map lines that now read wrong
-    # on the user's yes (close-plan.md's handmade-work step carries the read).
-they have NO future use
-    # not a deliverable, not a research finding, not evidence a later session
-    # must re-read. Purely throwaway.
+We're doing the freeform work item [<slug>] by hand in this chat — it's work done by hand rather than run from the queue. Its entry is in QUEUE.md (in this project's root folder), at the end of the cleared-to-run region of the Processed section; read that entry first — it says what the work is and where its recipe lives. When we're finished, the close command records and commits it.
 ```
 
 ```
-one at a time, user approves each  [PROMPT]  ->  never auto-delete
-git-tracked file                             ->  recoverable from history;
-                                                 say so plainly (low stakes)
-untracked, or outside the repo               ->  NOT recoverable. Give a clear
-                                                 warning before removing it.
+Run the build command. The top cleared item is "<heading>" [<slug>], marked Runs alone, so this run builds that item and nothing else — the run ends after it. Its entry is in QUEUE.md (in this project's root folder), at the top of the cleared-to-run region of the Processed section; read that entry first — it says what changes and where. When it is built, the close command records and commits it.
 ```
-
-If nothing session-created looks throwaway, say so in one line and move on.
-
-**The `temp/` pass, run here where the folder exists** — three moves:
-
-```
-1. SENT DRAFTS    for each line in INBOX/sent.md whose pointer names a file
-                  under temp/, delete that file and say so in one line —
-                  the register line and the recipient's copy are the record
-   ATTACHMENTS    leave any file an open capture's `Attachment:` line names;
-                  remove, without asking, one whose `Attachment:` line is in
-                  no entry still in the queue
-2. THE REST       list every other file in the folder with its date, and
-                  offer once to clear them; a file a [co-write] item's Files
-                  line names, or one the user edited, is never deleted
-                  without that yes
-3. THE LIMIT      the close deletes on its own only what a register line
-                  names; a draft never sent stays until the user says
-```
-
-## Commit core  [BRIEF]
-
-Every sub-doc's Commit step points here.
-
-**Run the mail triage before staging** — anything it files, and the archive
-moves it makes, belong in this same commit.
-
-**Run the wind-down re-scan before staging** — it files any un-flagged captures
-from this session's discussion so they land in this same commit. File-only.
-
-**Run the session-file cleanup before staging too**, so any deletions the user
-accepts fold into this same commit.
-
-**Run the map check before staging, where `MAP.md` exists at the root:** take
-this session's new and moved paths from `git status --porcelain`, grep each
-folder and each human-used file among them against `MAP.md`, and name in one
-line every folder and human-used file with no line there, writing the missing
-lines on the user's yes before the commit, under the criterion the map's own
-preamble states; a hand-made folder move rewrites the lines it moves at the
-same step. Machinery — scripts, configuration, anything wired to other files
-— earns no line and draws no question.
-
-**Shipped-slug cross-check (work-item closes).** When this session shipped work
-items, cross-check each shipped slug named in this session's LOG entries against
-Processed and confirm it's been removed. If
-a shipped slug is still sitting in Processed as active work, surface it in one line
-and remove it (or halt and ask) before committing.
-
-A planning session's /close names no shipped slug, so there's nothing to check. **Silent
-unless a stray slug is found.**
-
-**1. Stage explicitly — name each path:** files this session changed (from
-the build working file Changes), method docs updated during the session or close-out (QUEUE.md,
-SPEC.md, LOG/), and the build working file's deletion where one was removed.
-
-**The safety check refuses the commit while any tracked file in the
-repository carries a git conflict marker, naming the file.** Resolve it first
-and commit again.
-
-**2. Detect out-of-scope dirty paths.** Run `git status --porcelain` and compare
-against the active build's file list. Any dirty path outside it is a user edit no
-build staged.
-
-```
-RECOGNISE THE INHERITED TAIL FIRST — and skip the investigation:
-    a dirty LOG entry from a PREVIOUS session carrying a marked tail section,
-    or a capture at the bottom of Unprocessed that no session here filed
-        -> the previous session's post-commit tail, which by design commits
-           nothing and rides into this commit
-        -> fold it in with at most a one-line note
-
-RECOGNISE THE HASH-BACKFILL SIGNATURE TOO — and skip the investigation:
-    a dirty LOG/index.md or LOG/<slug>.md whose ONLY change is a placeholder
-    hash becoming a real hash, in an entry heading or the start of an index line
-        -> the previous /close run's own post-commit hash write (or, in a tracked
-           project, the session-start backfill's safety-net fill)
-        -> fold it in with at most a one-line note, no diff opened
-
-any OTHER out-of-scope dirty path
-        -> full treatment: surface it in a one-line summary and offer to stage
-           it, investigating where the change isn't self-evident
-```
-
-**Where the staged paths include a method doc, name them in one line before
-committing** — "staging QUEUE.md, SPEC.md and two log entries". One sentence, no
-diff, no file-by-file account.
-
-**Two limits, and neither may be softened.** Naming the staged files makes a
-swept edit **visible**, not **detected** — nothing cheap will ever tell the user
-that a particular line inside QUEUE.md was theirs rather than Claude's. And
-against the worst case it does almost nothing: where another session has already
-*committed* this session's in-progress work under its own message, this line
-produces the word "QUEUE.md" — true, useless, and silent about whose work is
-inside. Describe it as making a swept edit visible, and as nothing further.
-
-**3. The commit message is not drafted fresh** — it derives from the LOG entry
-already written at the entry step. It is shown before the commit either way.
-
-```
-ONE work item shipped        ->  the message IS that entry:
-(and plan/setup closes)          title = the index line's one-liner, verbatim
-                                 body  = the written rationale, verbatim
-                                 # show it, stating that identity plainly
-
-SEVERAL work items shipped   ->  title = a one-line summary of what the run
-(a multi-item /build run)                 shipped across all its items
-                                 body  = each shipped item's one-liner, one
-                                         per line
-                                 # this roll-up IS genuinely new text — show
-                                 # it as the record of what is committed
-
-staged extras (backfills,    ->  the body appends ONE line naming them
-sweep edits, rolled-in user
-edits from step 2)
-```
-
-**Show the message itself, verbatim, and nothing else about it.**
-
-**4. Show the message as the record, and commit in the same turn, saying so.**
-Running /close is the consent: the message is shown as the record of what is
-being committed, the turn says it is committing, and the commit follows with
-no ask between — the user is never left between a shown message and an unmade
-ask. Only the push is optional.
-
-**Where the session held more than one person, the commit may add a
-`Co-authored-by:` trailer for a roster participant whose recorded consent
-covers it** — using only the name and email details they chose to share, never
-details looked up on their behalf. No roster, or no consent recorded: no
-trailer.
-
-```
-commit first (the safe, local action), THEN gate the outward push on consent:
-    run one `git remote` check
-        remote exists  ->  "Committed. Also push to the remote?"  (plain yes/no)
-        no remote      ->  say it's committed; push goes unmentioned
-```
-
-These commit-first mechanics are canonical for every /close shape — planning,
-setup, method-doc-only, handmade and completed-`[user]` alike; the remote test
-is the one rule, and no sub-doc overrides it.
-
-**5. Pass the message shell-agnostically.** Write it to a file in the session
-scratchpad (e.g. `COMMIT_MSG.tmp` there), commit with
-`git commit -F <scratchpad>/COMMIT_MSG.tmp`, then delete the file.
-
-**5a. A staging step that partly failed is a STOP, not something to commit
-around** [BRIEF, PROMPT]. Check that every path this /close run meant to stage is
-actually staged — `git status --porcelain` and read what is in the index — before
-running the commit. Where anything intended is missing, say plainly what did not
-stage and why, and **hold the commit** until the staging is fixed and re-checked,
-or the user decides.
-
-**6. Commit with `git commit -F`, then offer push** [PROMPT] where the
-repository has a remote; [SILENT] where it has none. Push only if the user
-accepts; with no remote, the offer is omitted and push goes unmentioned.
-
-**In a nested project /close commits both repositories** — the product's
-changes as a commit in the inner repository (the product subfolder's own), and
-everything else, the method documents included, in the outer. Same message
-mechanics for each, the inner commit's message covering the product work
-alone. A session that touched only one side makes only that side's commit. A
-flat project — one repository — is unchanged by all of this.
-
-**An isolated /close run — one in a worktree the harness made — commits, then says which branch the work is on, that it is not merged, and that choosing remove at exit would delete the worktree and the branch with everything in them.**
-
-**Before a commit to a repository bound for publication — a nested project's
-inner repository, or a flat project's own where it has a remote — read what is
-staged there against the scrub checklist** [SILENT] when nothing is found;
-[BRIEF, PROMPT] when something is: read `git diff --cached` in that repository
-for the checklist's kinds and for anything shaped like an email address; where
-one is found, hold that repository's commit, name each find by file and what
-kind it is without repeating it, and ask whether to rewrite it or commit as it
-stands; the other repository's commit proceeds. The owner's own name is theirs
-to keep and is named once as information, never held on.
-
-**What the publication-check turn carries.** Each find as file and kind, that
-the commit to that repository is held, and the one ask; nothing else.
-
-**Then leave the session-closed marker: write this session's record filename
-into `.throughliner/session-closed-<session-id>`.**
-
-**Then write the commit hash into the headings this /close run just wrote,
-and regenerate the index files with the backlinks script so their lines
-carry it**. Read the hash from the commit just made, replace each placeholder
-this session wrote, and stop there — say nothing about older placeholders.
-The session-start backfill is the safety net for a fill this step missed, in
-a tracked project from git's own record of the file and in an untracked one
-from each record's own time against the commit history.
-
-## Recommend next  [BRIEF, PROMPT]
-
-Every sub-doc's final step points here, adding only its flavor delta.
-
-**Content line for this turn: five slots, each filled from a computed fact,
-and nothing else.** (1) The commit hash and the record's link. (2) The cleared
-count and the first few cleared items by name, read from the digest run after
-the session's last queue write — the state server's checkpoint counts where
-the server is registered, `queue_digest.py` otherwise. (3) The count waiting
-to be sorted, counted as the narration below defines, read from the same source
-as slot (2) — the checkpoint counts' left-to-process figure, or the digest's
-offerable count where no server is registered — never counted from a read of the file, and the overlap scan's
-verdict. (4) The run-alone announcement, where the digest's count-ahead for
-the marked item reads zero, per the announce step below. (5) The one
-recommendation the queue-state ladder's rung yields, always with the sentence
-that a fresh session is where it runs — the command named in words
-mid-sentence. Any cycle whose turn is due is named whether or not a capture
-was filed for it; where the run this /close run records stopped at a held item
-whose blocker it shipped, what of the intended change is not yet on screen is
-said in product terms; the held-item lift proposal stays where the narration
-below places it. The close names no rescan, its own look-back having just
-run; it names no check that found nothing — the push where there is no
-remote, the scrub, the credential scan — and no cleared item the next run
-cannot reach.
-
-**Two arms, decided by whether this /close run filed a concrete advisory:**
-
-```
-advisory FILED       ->  the closing message carries ONE line naming it and
-                         pointing at the queue, plus any due cycle by name,
-                         and nothing else from the ladder below.
-                         The overlap scan still runs — and what it finds is
-                         written INTO the advisory before it is filed rather
-                         than narrated alongside it.
-no advisory filed    ->  the full narration below, unchanged.
-```
-
-**Narrate the queue situation in everyday words**, and say how much work is
-waiting to be sorted wherever any is — counting only what the next planning
-session would actually present, which is the same set plan.md's own pass-overs
-leave in play: a capture dated out, one bowed out behind an open blocker, and
-cycle-owned material are not waiting, and are not counted or described as
-available.
-  - any held item the narration names, and what it says holds it or lifts it,
-    is read off the digest's held-item lines — the state server's checkpoint
-    counts where the server is registered, `queue_digest.py` otherwise — run
-    after the session's last queue write, never from memory of the opening;
-  - where a held item's every `Blocked by:` entry was built in this run and
-    its tick confirmed, this /close run moves the item above the line with
-    the state server's `queue_move`, or the mover, naming it as the last item
-    that should stay cleared, drops its `Blocked by:` line and rewrites it
-    whole per plan.md's rewrite-whole rule, and names the move and what the
-    item rests on — its rests-on line, or that it has none — in one line of
-    the closing message, asking nothing, and where the lifted item is a task-shaped
-    `[user]` item and the project's own CLAUDE.md names a task list, appends
-    its task line to that list in the same turn; a blocker
-    built but not confirmed is named and the item left held, per close-plan.md's
-    hold-back rule. The advisory's clearing is untouched.
-
-**Overlap scan.** Before recommending, scan the still-unprocessed work for overlap
-with the top processed item — work that contradicts, invalidates, or would benefit
-it if sorted first. It runs in both arms. **State the result either way, not only
-when it blocks** (in the advisory-filed arm, state it inside the advisory):
-
-```
-nothing unprocessed              ->  say nothing's waiting for /plan
-unprocessed but no overlap       ->  name what's waiting, give the plain verdict
-                                     that nothing blocks it
-overlap found                    ->  recommend /plan first, and name the overlap
-```
-
-Give the clean case as a plain assessment — "Three items are waiting to be
-sorted; none touches the next piece of work, so nothing blocks it" — rather than
-as a hedge.
-
-**Queue-state ladder.** When nothing blocks:
-
-```
-1. captures appended this session that affect the next work
-       ->  name the blocker, and recommend planning next: running the plan
-           command in a fresh session is where it is sorted
-2. work sits ABOVE the readiness marker
-       ->  name the next cleared item and how much work is waiting to be
-           sorted (counted as the narration above defines), and recommend a
-           build next: running the build command in a fresh session is where
-           it runs. The command is named in words, as the communication rule
-           defines it, mid-sentence, with no command string at the message's
-           end
-2b. Processed holds work but the cleared region is EMPTY (the marker is at
-    the top)
-       ->  say the next work still needs vetting, and recommend planning
-           next: running the plan command in a fresh session is what vets
-           it.
-3. Processed empty
-       ->  say the queue is clear, and recommend planning next: running the
-           plan command in a fresh session is where more work comes from.
-```
-
-**A session makes exactly one commit, and the tail makes none.** That is the
-whole shape, and everything below follows from it. /close commits; work
-arriving afterwards is written to the working tree and left there, to be carried
-by the next /close run. No amendment commit, no delta commit, no second /close run — and
-a second `/close` is the tail, not a /close run.
-
-```
-/close                ->  ONE commit. Everything the session did.
-the post-commit tail     ->  writes files, commits NOTHING:
-                               a capture appended to QUEUE.md
-                               an append to this session's LOG entry
-                               the hash this /close run wrote in after its commit
-                             all of it rides into the NEXT /close run's commit
-/rescan                  ->  the one-word route to the same tail. Files by the
-                             three-way triage — work to Unprocessed, what
-                             HAPPENED to this session's entry as a marked tail
-                             — and commits nothing, so it is not a second /close run
-                             under another name. Repeatable, so nothing has to
-                             judge when the tail has ended.
-```
-
-**The cost, stated rather than discovered: the tree is dirty between one /close run
-and the next, always.**
-
-**Read tail-shaped dirt as the previous session's LOG entry, a capture at the
-bottom of Unprocessed, or a filled-in hash, and give anything else the full
-treatment**.
-
-**Announce an item the next run must take alone, where Processed holds one —
-a `[freeform]` item, or a cleared build marked `Runs alone` whose count-ahead
-in the queue digest reads zero.** The digest is run after the session's last
-queue write — the state server's checkpoint counts where the server is
-registered, `queue_digest.py` otherwise — and its count of cleared items ahead
-of each `Runs alone` item is the trigger: the run-alone arm fires only where
-that count is zero, and otherwise the closing message says how many cleared
-items sit ahead of the marked item and that its run comes after them. /build
-halts on a freeform item and never builds it, and ends the run before a
-run-alone item, building it in a run of its own; say plainly which it is and
-that it needs a session of its own.
-
-**Hand over the words to start it.** With the announcement, give the starter
-prompt for that case verbatim in a fenced block — a paste target, rendered per
-the view-in-doc rules — substituting only the item's slug for `<slug>` and,
-in the second, its heading for `<heading>`, both filled from the state
-server's `queue_next_pick` answer where the server is registered and the
-digest's next-pick read otherwise, never typed from memory of the run:
-
-```
-We're doing the freeform work item [<slug>] by hand in this chat — it's work
-done by hand rather than run from the queue. Its entry is in QUEUE.md (in this
-project's root folder), at the end of the cleared-to-run region of the
-Processed section; read that entry first — it says what the work is and where
-its recipe lives. When we're finished, the close command records and commits it.
-```
-
-```
-Run the build command. The top cleared item is "<heading>" [<slug>], marked
-Runs alone, so this run builds that item and nothing else — the run ends after
-it. Its entry is in QUEUE.md (in this project's root folder), at the top of the
-cleared-to-run region of the Processed section; read that entry first — it
-says what changes and where. When it is built, the close command records and
-commits it.
-```
-
-Verbatim, not a template to adapt: fresh composition by an immersed session is
-the recorded failure — every referring word must resolve inside the prompt
-itself, because the session it's pasted into knows the queue exists and nothing
-else about this conversation.
-
-**Whether this step's recommendation was concrete decides the forward-advisory
-disposition**, which is written in the LOG entry files section above, along with
-the advisory's own wording and reserved slug. A concrete recommendation is filed;
-a generic one is not, and the entry says which.
-
-```
-flavor deltas:
-    build session ->  the shared ladder is the whole recommendation
-    audit session ->  findings appended this session sit unprocessed, so the
-                      DEFAULT is /plan, to sort them into work — name the count.
-                      Only when nothing was appended does the overlap scan run
-                      and the ladder apply (steps 2–3).
-    plan/setup    ->  a fresh setup session whose only work item is the rough
-                      first build item recommends /plan to scope it, NEVER
-                      /build — the interview wrote that item deliberately
-                      unscoped. Otherwise the shared scan + ladder apply.
-```
-
