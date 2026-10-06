@@ -67,14 +67,14 @@ CASES = [
      "the retired planning working file is denied"),
     (os.path.join("LOG", "index.md"), True, "the log index"),
     (os.path.join("LOG", "2026-08-11-entry.md"), True, "a log entry file"),
-    # FAQ/ is on the list because the close REQUIRES an FAQ disposition, so a
-    # denial there would break a mandated step. templates/ is deliberately off
-    # it — a template edit changes what every future consumer receives — EXCEPT
-    # the two FAQ templates, on the same mandated-step ground: the FAQ template
-    # is canonical and FAQ/ is a copy of it, so the announcement-time rule
-    # cannot be obeyed without writing it.
-    (os.path.join("FAQ", "faq.md"), True, "the FAQ the close must be able to write"),
-    (os.path.join("FAQ", "index.md"), True, "the FAQ index"),
+    # FAQ/ came off the list when a project stopped carrying a copy of the FAQ
+    # ([faq-read-from-plugin-not-copied]). templates/ is deliberately off it —
+    # a template edit changes what every future consumer receives — EXCEPT the
+    # two FAQ templates, on mandated-step ground: the FAQ template is the FAQ,
+    # so the announcement-time rule cannot be obeyed without writing it.
+    (os.path.join("FAQ", "faq.md"), False,
+     "a project's retired FAQ copy is no longer on the list"),
+    (os.path.join("FAQ", "index.md"), False, "nor its index"),
     (os.path.join("plugin", "throughliner", "templates", "faq-template.md"), True,
      "the FAQ template passes — widened 2026-08-28, since the announcement-time "
      "FAQ rule requires this write in the same turn as the sent-register line"),
@@ -190,8 +190,8 @@ E2E = [
     # filed as part of using it, so denying this path would break a shipped duty.
     (os.path.join("workshop", "resources", "research", "a-finding.md"), "pass",
      "research is writable in a planning session"),
-    (os.path.join("FAQ", "faq.md"), "pass",
-     "the FAQ is writable — the close is required to dispose of it"),
+    (os.path.join("FAQ", "faq.md"), "deny",
+     "a project FAQ copy is denied at planning — the FAQ is the plugin's own"),
 ]
 
 for rel, expected, what in E2E:

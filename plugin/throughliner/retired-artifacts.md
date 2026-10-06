@@ -31,6 +31,7 @@ A path is matched relative to the project root. A trailing slash means a folder.
   there. Retired 2026-09-17 when the plugin's own package began registering the
   server, so every project gets the tools through the plugin; a project-level
   copy now registers the server twice.
+- `FAQ/` — copied from the plugin's FAQ templates at setup; retired 2026-10-05, the session opening now points at the plugin's own copy.
 
 ## Retired with nothing left in a project
 

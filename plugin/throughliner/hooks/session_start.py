@@ -2086,9 +2086,12 @@ def _record_kind(body):
 
 
 def _log_records(cwd):
-    """Every record in LOG/ as (slug, kind, (date, time), filename), the slug
-    read off the filename with its kind suffix stripped, the time from the
-    record's own Recorded or Date line and the filename's date otherwise."""
+    """Every record in LOG/ as (slug, kind, (date, time), filename, timed),
+    the slug read off the filename with its kind suffix stripped, the time
+    from the record's own Recorded or Date line. A record with no such line
+    is untimed: its key carries the filename's date and a placeholder time,
+    and `timed` is False, so a comparison with a record of the same date is
+    read as unreadable rather than as midnight (see _order)."""
     folder = os.path.join(cwd, "LOG")
     try:
         names = os.listdir(folder)
@@ -2106,42 +2109,95 @@ def _log_records(cwd):
         except OSError:
             continue
         when = _RECORD_TIME.search(body)
-        key = (when.group(1), when.group(2)) if when else (m.group(1), "00:00")
-        out.append((slug, _record_kind(body), key, name))
+        timed = when is not None
+        key = (when.group(1), when.group(2)) if timed else (m.group(1), "00:00")
+        out.append((slug, _record_kind(body), key, name, timed))
     return out
 
 
+def _order(key, timed, ref_key, ref_timed):
+    """Whether a record keyed `key` falls after one keyed `ref_key`: True,
+    False, or None where the order cannot be read — the two share a date and
+    either carries no time line. Records on different dates are ordered by
+    date, timed or not."""
+    if key[0] != ref_key[0]:
+        return key[0] > ref_key[0]
+    if not (timed and ref_timed):
+        return None
+    return key > ref_key
+
+
+def _untimed_clash(name, timed, ref_name, ref_timed):
+    """The clause naming which of two same-dated records carries no time
+    line, in the form the opening prints."""
+    if not timed:
+        return ("LOG/%s carries no time line and shares its date with "
+                "LOG/%s, so its order cannot be read — add a `Recorded "
+                "<date> <time>` line" % (name, ref_name))
+    return ("LOG/%s carries no time line and shares its date with LOG/%s, "
+            "so its order cannot be read — add a `Recorded <date> <time>` "
+            "line" % (ref_name, name))
+
+
 def _newest_record(records, slug, after=None):
-    """The newest (key, name) of the records under `slug`, dated after `after`
-    where one is given; None where there is none."""
+    """The newest (key, name, timed) of the records under `slug`, dated after
+    `after` — a (key, name, timed) — where one is given; None where there is
+    none. A record whose order against `after` cannot be read is not after
+    it; _unreadable_record names it."""
     best = None
-    for rec_slug, _kind, key, name in records:
-        if rec_slug != slug or (after is not None and key <= after):
+    for rec_slug, _kind, key, name, timed in records:
+        if rec_slug != slug:
+            continue
+        if after is not None and not _order(key, timed, after[0], after[2]):
             continue
         if best is None or key > best[0]:
-            best = (key, name)
+            best = (key, name, timed)
     return best
+
+
+def _unreadable_record(records, ref, slug=None, kind=None):
+    """The first record under `slug` (or of `kind`) whose order against `ref`
+    — a (key, name, timed) — cannot be read; None where there is none."""
+    for rec_slug, rec_kind, key, name, timed in sorted(records,
+                                                       key=lambda r: r[3]):
+        if slug is not None and rec_slug != slug:
+            continue
+        if kind is not None and rec_kind != kind:
+            continue
+        if name == ref[1]:
+            continue
+        if _order(key, timed, ref[0], ref[2]) is None:
+            return (key, name, timed)
+    return None
 
 
 def _condition_holds(condition, records, start):
     """(holds, why) for a conditioned step. The one form read is "one
     planning record and one build-run record dated after the chain's [slug]
-    record"; any other wording is reported as unreadable and never holds."""
+    record"; any other wording is reported as unreadable and never holds.
+    `start` is the chain's start as (key, name, timed)."""
     m = CHAIN_EXERCISED_RE.search(condition or "")
     if not m:
         return False, "its condition is not in a form the opening reads"
     ref = _newest_record(records, m.group(1), after=start)
     if ref is None:
         return False, "no [%s] record in this chain yet" % m.group(1)
-    planning = any(kind == "processed" and key > ref[0]
-                   for _s, kind, key, _n in records)
-    built = any(kind == "built" and key > ref[0]
-                for _s, kind, key, _n in records)
-    missing = [what for what, have in (("a planning record", planning),
-                                       ("a build-run record", built))
-               if not have]
+    have = {}
+    for kind in ("processed", "built"):
+        have[kind] = any(rec_kind == kind and _order(key, timed, ref[0], ref[2])
+                         for _s, rec_kind, key, _n, timed in records)
+    missing = [(what, kind) for what, kind in (("a planning record", "processed"),
+                                               ("a build-run record", "built"))
+               if not have[kind]]
     if missing:
-        return False, "%s dated after LOG/%s" % (" and ".join(missing), ref[1])
+        why = "%s dated after LOG/%s" % (" and ".join(w for w, _k in missing),
+                                         ref[1])
+        for _what, kind in missing:
+            clash = _unreadable_record(records, ref, kind=kind)
+            if clash is not None:
+                why += " — " + _untimed_clash(clash[1], clash[2], ref[1], ref[2])
+                break
+        return False, why
     return True, "both records dated after LOG/%s are on file" % ref[1]
 
 
@@ -2204,11 +2260,24 @@ def sequential_chains(cwd):
             "every step has a record since LOG/%s; the next chain starts "
             "on the user's word" % start[1])
         for step in steps[1:]:
-            if _newest_record(records, step["slug"], after=start[0]):
+            if _newest_record(records, step["slug"], after=start):
                 continue
+            clash = _unreadable_record(records, start, slug=step["slug"])
+            if clash is not None:
+                untimed = "[%s]'s record LOG/%s" % (step["slug"], clash[1])
+                other = "the chain's start LOG/%s" % start[1]
+                if clash[2]:
+                    untimed, other = ("the chain's start LOG/%s" % start[1],
+                                      "[%s]'s record LOG/%s"
+                                      % (step["slug"], clash[1]))
+                status, detail = "held", (
+                    "%s carries no time line and shares its date with %s, so "
+                    "its order cannot be read — add a `Recorded <date> "
+                    "<time>` line" % (untimed, other))
+                break
             if step["condition"]:
                 holds, why = _condition_holds(step["condition"], records,
-                                              start[0])
+                                              start)
                 if not holds:
                     status, detail = "held", (
                         "[%s] waits on its condition: %s" % (step["slug"], why))
@@ -2258,6 +2327,21 @@ def _working_file(cwd: str, kind: str, session_id: str) -> str:
 
 RETIRED_ARTIFACTS_DOC = "retired-artifacts.md"
 RETIRED_ARTIFACT_RE = re.compile(r"^\s*-\s+`([^`]+)`\s*[—-]\s*(.+?)\s*$")
+
+
+def _faq_pointer() -> str:
+    """The opening's one-line pointer at the workflow FAQ: the installed
+    plugin's own two template files, by absolute path computed from this
+    hook's location, so the FAQ a session reads is current at every update
+    and no project carries a copy ([faq-read-from-plugin-not-copied])."""
+    templates = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates")
+    return (
+        "The workflow FAQ is the installed plugin's own — the question list is "
+        "at " + os.path.join(templates, "faq-index-template.md") + " and the "
+        "answers at " + os.path.join(templates, "faq-template.md") + ". Open it "
+        "when a workflow question comes up."
+    )
 
 
 def retired_artifacts_present(cwd: str) -> list:
@@ -2664,7 +2748,6 @@ def main() -> int:
     # working file and conclude it is inside a build.
     session_id = data.get("session_id", "")
     build_path = _working_file(cwd, "build", session_id)
-    faq_index_path = os.path.join(cwd, "FAQ", "index.md")
     si_version_path = os.path.join(cwd, VERSION_FILE)
     if not os.path.isfile(si_version_path):
         legacy_version_path = os.path.join(cwd, LEGACY_VERSION_FILE)
@@ -2674,16 +2757,7 @@ def main() -> int:
     has_spec = os.path.isfile(spec_path)
     has_queue = os.path.isfile(queue_path)
     has_active_build = os.path.isfile(build_path)
-    has_faq_index = os.path.isfile(faq_index_path)
 
-    # `has_faq_index` is read for two jobs: the one-line pointer near the end of
-    # this function, and the scaffold-drift check further down (a project with no
-    # FAQ folder is behind). The index's CONTENTS used to be appended whole —
-    # 2.3KB of question titles and anchors, larger than the whole surviving
-    # preview once the payload was truncated. Unlike the behaviour rules, the FAQ
-    # genuinely has a trigger: a session that needs an answer can open faq.md. So
-    # the only thing the injection has to do is make the session aware the FAQ
-    # exists, and that is one sentence.
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
     behaviour_directive = _behaviour_rules_directive(plugin_root)
 
@@ -3327,8 +3401,6 @@ def main() -> int:
         missing_scaffold.append("QUEUE.md (your work queue)")
     if not os.path.isfile(os.path.join(cwd, "LOG", "index.md")):
         missing_scaffold.append("the LOG folder (your session records)")
-    if not has_faq_index:
-        missing_scaffold.append("the FAQ folder (workflow help)")
     if not os.path.isfile(si_version_path):
         missing_scaffold.append(
             "the .throughliner-version marker (records which plugin version set "
@@ -3570,13 +3642,8 @@ def main() -> int:
         context_parts.append("")
         context_parts.append(behaviour_directive)
 
-    if has_faq_index:
-        context_parts.append("")
-        context_parts.append(
-            "This project has an FAQ covering how the workflow works — the "
-            "question list is in FAQ/index.md and the answers in FAQ/faq.md. "
-            "Open it when a workflow question comes up, or point the user there."
-        )
+    context_parts.append("")
+    context_parts.append(_faq_pointer())
 
     map_pointer = _map_pointer(cwd)
     if map_pointer:

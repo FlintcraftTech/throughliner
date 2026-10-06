@@ -26,7 +26,7 @@ gets built first — through discussion, not silently.
   skill-nonspecific-rules.md's bullet opening "Write first, then report".
 - **A planning session is scope-locked to a standing list, and a write outside it
   is denied.** Writable: QUEUE.md, SPEC.md, CYCLES.md, TOOLS.md, MAP.md,
-  `LOG/`, `FAQ/`, the two FAQ templates (`faq-template.md`,
+  `LOG/`, the two FAQ templates (`faq-template.md`,
   `faq-index-template.md`), `workshop/resources/research/`,
   `workshop/resources/supplied/`, `temp/`, the scratchpad, the memory
   directory, the task list the project names,

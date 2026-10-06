@@ -117,7 +117,7 @@ for rel, expected, what in [
 
 # MAP.md ([planning-writable-lists-agree-and-map-added]): the root map is
 # writable in a planning session, a nested one is not, and the refusal message
-# names what the check permits — FAQ/ and MAP.md among it.
+# names what the check permits — MAP.md among it.
 for rel, expected, what in [
     ("MAP.md", "pass", "the root MAP.md is writable in a planning session"),
     (os.path.join("src", "MAP.md"), "deny",
@@ -139,7 +139,7 @@ _refusal = subprocess.run(
     capture_output=True, text=True, encoding="utf-8",
     env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
 ).stdout
-for needle in ("FAQ/", "MAP.md"):
+for needle in ("MAP.md",):
     got = needle in _refusal
     status = "ok" if got else "FAIL"
     if not got:

@@ -82,7 +82,7 @@ def project(recorded_version="0.0.1", epoch=None, drop=()):
             continue
         with open(os.path.join(d, name), "w", encoding="utf-8") as f:
             f.write(body)
-    for folder, index in (("LOG", "index.md"), ("FAQ", "index.md")):
+    for folder, index in (("LOG", "index.md"),):
         if folder in drop:
             continue
         os.makedirs(os.path.join(d, folder), exist_ok=True)
@@ -197,10 +197,41 @@ def test_stale_epoch_with_a_leftover_build_names_close_first():
 
 def test_missing_document_still_reports():
     """The other genuine signal: presence-based drift."""
-    d = project(drop=("FAQ",))
+    d = project(drop=("LOG",))
     out = run(d)
     check("a missing scaffolded document is still reported",
           "/setup" in out, out[:1200])
+    shutil.rmtree(d, ignore_errors=True)
+
+
+def test_faq_pointer_names_the_plugins_own_templates():
+    """[faq-read-from-plugin-not-copied]: every adopted project's opening
+    points at the plugin's own two FAQ templates, a project with no FAQ/ is not
+    behind, and a project still carrying FAQ/ is told it is a retired copy."""
+    d = project()
+    out = run(d)
+    templates = os.path.join(PLUGIN_ROOT, "templates")
+    # The payload is JSON, so a path's backslashes arrive escaped.
+    as_emitted = lambda path: json.dumps(path)[1:-1]
+    check("the pointer names the plugin's FAQ index template",
+          as_emitted(os.path.join(templates, "faq-index-template.md")) in out,
+          out[-1500:])
+    check("the pointer names the plugin's FAQ answers template",
+          as_emitted(os.path.join(templates, "faq-template.md")) in out,
+          out[-1500:])
+    check("a project with no FAQ/ gets no missing-scaffold line for it",
+          "the FAQ folder" not in out, out[:1500])
+    check("and no retired-artifact line",
+          "FAQ/ is still in this project" not in out, out[:1500])
+    shutil.rmtree(d, ignore_errors=True)
+
+    d = project()
+    os.makedirs(os.path.join(d, "FAQ"))
+    with open(os.path.join(d, "FAQ", "index.md"), "w", encoding="utf-8") as f:
+        f.write("# index\n")
+    out = run(d)
+    check("a project carrying FAQ/ gets the retired-artifact line",
+          "FAQ/ is still in this project" in out, out[:2000])
     shutil.rmtree(d, ignore_errors=True)
 
 
@@ -220,6 +251,7 @@ if __name__ == "__main__":
     test_stale_epoch_still_halts()
     test_stale_epoch_with_a_leftover_build_names_close_first()
     test_missing_document_still_reports()
+    test_faq_pointer_names_the_plugins_own_templates()
     test_flag_is_gone_from_the_source()
     print(f"\n{len(failures)} failure(s)" if failures else "\nall passed")
     sys.exit(1 if failures else 0)
