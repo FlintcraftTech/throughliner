@@ -6,7 +6,7 @@ note: The /catchup procedure. A returning user's brief: where each goal and feat
 
 # /catchup
 
-For a user coming back after time away. It says where the project's goals and features stand, in a few lines, and re-runs the return checks an opening runs. It moves nothing, and files only what those checks file: a due cycle's capture, and waiting mail routed by the triage.
+**/catchup is for a user coming back after time away.** It says where the project's goals and features stand, in a few lines, and re-runs the return checks an opening runs. It moves nothing, and files only what those checks file: a due cycle's capture, and waiting mail routed by the triage.
 
 **Read:** SPEC's Goals section and every heading under "How it works" (each heading is one feature); both queue sections; the LOG index window a planning opening reads (`LOG/index.md`, and the previous month's where the current month does not reach the last planning record); the cycles doc through `cycles_state`, due-ness computed as plan.md's opening computes it; `INBOX/`; the installed version against the one this chat opened on; and the clock, against the opening's date line. Where a session already opened in this chat, read only what is missing.
 
@@ -21,4 +21,4 @@ For a user coming back after time away. It says where the project's goals and fe
 >
 > Next build: search across notes. Waiting on you: nothing. Held on a date: the launch post, until the sixteenth.
 
-Out by rule: slugs, rationale, counts beyond the three lines, the reasoning behind any stage, and anything not asked about. A feature is named by its SPEC heading's words, never by a slug.
+**Out by rule:** slugs, rationale, counts beyond the three lines, the reasoning behind any stage, and anything not asked about. A feature is named by its SPEC heading's words.
