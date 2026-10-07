@@ -135,6 +135,44 @@ def test_mixed_changes_separate():
           remaining == ["SPEC.md"], repr(remaining))
 
 
+BACKLINKS_PLACEHOLDER = ("# Backlinks\n\n## [some-slug]\n\n"
+                         "- 2026-10-07-entry.md — [HASH] — A session entry\n"
+                         "- 2026-10-06-other.md — 9f8e7d6 — Another entry\n")
+BACKLINKS_FILLED = ("# Backlinks\n\n## [some-slug]\n\n"
+                    "- 2026-10-07-entry.md — a1b2c3d — A session entry\n"
+                    "- 2026-10-06-other.md — 9f8e7d6 — Another entry\n")
+BACKLINKS_REWORDED = ("# Backlinks\n\n## [some-slug]\n\n"
+                      "- 2026-10-07-entry.md — a1b2c3d — A session entry, reworded\n"
+                      "- 2026-10-06-other.md — 9f8e7d6 — Another entry\n")
+
+
+def test_a_backlinks_row_with_only_its_hash_filled_is_a_backfill():
+    """The backlink row puts the filename first and the hash second, so the
+    record-and-index slot test never reached it and the opening named the
+    file as the user's own edit ([hash-fill-read-as-user-edit])."""
+    d = repo()
+    write(os.path.join(d, "LOG", "backlinks.md"), BACKLINKS_PLACEHOLDER)
+    git(d, "add", "-A")
+    git(d, "commit", "-m", "first")
+    write(os.path.join(d, "LOG", "backlinks.md"), BACKLINKS_FILLED)
+    result = hook._is_hash_backfill_diff(d, "LOG/backlinks.md")
+    shutil.rmtree(d, ignore_errors=True)
+    check("a backlinks diff of hash-only rows is the backfill",
+          result is True, repr(result))
+
+
+def test_a_backlinks_row_reworded_is_not_a_backfill():
+    d = repo()
+    write(os.path.join(d, "LOG", "backlinks.md"), BACKLINKS_PLACEHOLDER)
+    git(d, "add", "-A")
+    git(d, "commit", "-m", "first")
+    write(os.path.join(d, "LOG", "backlinks.md"), BACKLINKS_REWORDED)
+    result = hook._is_hash_backfill_diff(d, "LOG/backlinks.md")
+    shutil.rmtree(d, ignore_errors=True)
+    check("a backlinks diff that also rewords a summary is not the backfill",
+          result is False, repr(result))
+
+
 def test_a_clean_tree_reports_nothing():
     d = repo()
     write(os.path.join(d, "LOG", "entry.md"), ENTRY_FILLED)
@@ -150,6 +188,8 @@ if __name__ == "__main__":
     test_a_pure_backfill_is_recognised()
     test_a_real_edit_in_the_same_file_fails_back_to_the_count()
     test_mixed_changes_separate()
+    test_a_backlinks_row_with_only_its_hash_filled_is_a_backfill()
+    test_a_backlinks_row_reworded_is_not_a_backfill()
     test_a_clean_tree_reports_nothing()
     print()
     if _failures:

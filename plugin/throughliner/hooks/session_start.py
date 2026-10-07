@@ -931,6 +931,32 @@ _HASH_FILLED = re.compile(
     r"^(?P<prefix>#{1,6}\s+|-\s+)(?P<hash>[0-9a-f]{7,40})(?P<sep>\s+[—–-]\s+)"
 )
 
+# A row of LOG/backlinks.md, as scripts/log_backlinks.py writes it: the
+# record's filename first, then the hash slot, then the record's summary.
+# The hash sits second here, so the slot test for records and index lines
+# (hash first) never reaches it.
+_BACKLINK_ROW = re.compile(
+    r"^-\s+(?P<name>\S+\.md)\s+[—–-]\s+(?P<token>\S+)\s+[—–-]\s+(?P<rest>.*)$"
+)
+
+
+def _backlink_row_backfilled(old, new):
+    """True where `old` and `new` are one backlink row whose only change is
+    its placeholder becoming a hash: same filename, same summary."""
+    was = _BACKLINK_ROW.match(old)
+    now = _BACKLINK_ROW.match(new)
+    if not was or not now:
+        return False
+    if was.group("name") != now.group("name"):
+        return False
+    if was.group("rest") != now.group("rest"):
+        return False
+    if not _HEX_HASH.match(now.group("token")):
+        return False
+    # The same placeholder test the index lines get, applied to the token
+    # alone by standing it in an index line's hash slot.
+    return _placeholder_in_slot("- %s — x" % was.group("token"), True) is not None
+
 
 def _dirty_paths(cwd):
     """Paths with uncommitted changes, or None where git could not be read."""
@@ -1115,6 +1141,9 @@ def _is_hash_backfill_diff(cwd, relpath):
     if not removed or len(removed) != len(added):
         return False
     base = os.path.basename(relpath)
+    if base == "backlinks.md":
+        return all(_backlink_row_backfilled(old, new)
+                   for old, new in zip(removed, added))
     for old, new in zip(removed, added):
         was = _placeholder_in_slot(old, base.startswith("index"),
                                    base.startswith("log"))
