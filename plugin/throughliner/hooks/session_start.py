@@ -473,6 +473,15 @@ def backfill_log_hashes(cwd):
         misplaced_flagged = False
         is_index_file = name.startswith("index")
         is_legacy_log = name.startswith("log")
+        # A record file git holds no commit for is skipped whole, its
+        # placeholder left as it is ([hash-fill-stamps-uncommitted-record]).
+        # Its title can already sit on a committed index line — another chat's
+        # close regenerates the index and commits it — and the git route
+        # matches the commit that introduced the title anywhere under LOG/, so
+        # an untracked record was stamped with a commit that never held it.
+        # Index files keep both routes: they are always committed.
+        if not is_index_file and not _file_is_committed(cwd, relpath):
+            continue
         # A record's leading front-matter block — `---`, `summary: …`, `---`
         # — carries the summary the index is generated from and never a hash
         # slot, so the fill starts after it ([log-index-generated-from-front-matter]).
@@ -1082,6 +1091,53 @@ def _arrived_captures(cwd):
         return []
     committed = set(_unprocessed_slugs(result.stdout))
     return [s for s in _unprocessed_slugs(current) if s not in committed]
+
+
+def _queue_diff_is_arrivals_only(cwd, arrived):
+    """True where QUEUE.md's whole diff against the last commit is the arrived
+    capture blocks and nothing else ([sent-captures-read-as-user-edits]).
+
+    A capture sent from another project's session is appended by that
+    project's tool, so this project's decision log never shows the write and
+    the opening named QUEUE.md as the user's own edit in the same breath as it
+    named the arrivals. Read strictly: no line removed, and every added line
+    blank or inside a block whose heading carries one of the arrived slugs.
+    Anything else in the diff fails the file back to the author split.
+    """
+    if not arrived:
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "diff", "-U0", "HEAD", "--", "QUEUE.md"],
+            cwd=cwd, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    if result.returncode != 0:
+        return False
+    inside = False
+    added = 0
+    for line in result.stdout.splitlines():
+        if line.startswith("+++") or line.startswith("---"):
+            continue
+        if line.startswith("-"):
+            return False
+        if not line.startswith("+"):
+            continue
+        body = line[1:]
+        if not body.strip():
+            continue
+        added += 1
+        m = _UNPROCESSED_SLUG.match(body)
+        if m:
+            inside = m.group(1) in arrived
+            if not inside:
+                return False
+            continue
+        if not inside:
+            return False
+    return added > 0
 
 
 def _split_by_author(cwd, paths):
@@ -3630,6 +3686,12 @@ def main() -> int:
         # Git cannot say whose a change is, and a write made through a script
         # logs no path, so the line names what the log does not show rather
         # than claiming authorship.
+        # A queue whose only change is captures sent in from another project
+        # is the arrivals line's to report, not the author split's
+        # ([sent-captures-read-as-user-edits]).
+        arrived = _arrived_captures(cwd) if "QUEUE.md" in remaining else []
+        if arrived and _queue_diff_is_arrivals_only(cwd, arrived):
+            remaining = [p for p in remaining if p != "QUEUE.md"]
         claude_made, not_logged = _split_by_author(cwd, remaining)
         if claude_made:
             context_parts.append("")
@@ -3647,15 +3709,13 @@ def main() -> int:
                 "Sort each as the rules on the user's own changes say; /close "
                 "will pick them up."
             )
-        if "QUEUE.md" in remaining:
-            arrived = _arrived_captures(cwd)
-            if arrived:
-                context_parts.append("")
-                context_parts.append(
-                    f"[Throughliner] {len(arrived)} capture(s) arrived in "
-                    "Unprocessed since the last commit: "
-                    + _named(["[" + s + "]" for s in arrived]) + "."
-                )
+        if arrived:
+            context_parts.append("")
+            context_parts.append(
+                f"[Throughliner] {len(arrived)} capture(s) arrived in "
+                "Unprocessed since the last commit: "
+                + _named(["[" + s + "]" for s in arrived]) + "."
+            )
 
     backfill_report = backfill_log_hashes(cwd)
     if backfill_report:

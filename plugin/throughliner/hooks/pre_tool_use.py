@@ -1201,8 +1201,8 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     """True for the files a session with no build working file may write.
 
     This is the planning session's STANDING list — QUEUE.md, SPEC.md (the
-    root's, and a part's SPEC.md at any depth), CYCLES.md, LOG/ and
-    the two FAQ templates, plus the memory directory, `workshop/resources/research/`, the scratchpad and
+    root's, and a part's SPEC.md at any depth), CYCLES.md, LOG/, any
+    `slips.md` inside the project and the two FAQ templates, plus the memory directory, `workshop/resources/research/`, the scratchpad and
     any INBOX (checked by their own helpers at the call site). Everything else
     is DENIED.
 
@@ -1286,6 +1286,13 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     if re.match(r"^_(build|freeform)-[a-z0-9._-]+\.md$", rel):
         return True
     if rel.startswith(os.path.normcase("LOG") + "/"):
+        return True
+    # The slip list, at any depth ([slip-list-not-writable-at-planning]). A
+    # slip in Claude's behaviour is one line appended to `slips.md`, and the
+    # session most likely to notice one is a planning session; setup places a
+    # self-hosting project's list "where the project keeps its notes", so the
+    # folder varies per project and the filename is the one fixed thing.
+    if rel.split("/")[-1] == os.path.normcase("slips.md"):
         return True
     # A project FAQ folder is NOT on the list: a project carries no copy of the FAQ, the
     # session opening pointing at the plugin's own templates instead

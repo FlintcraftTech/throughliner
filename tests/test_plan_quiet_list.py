@@ -111,6 +111,15 @@ CASES = [
     (os.path.join("plugin", "throughliner", "docs", "plan.md"), False,
      "a shipped doc is denied"),
     ("QUEUEQ.md", False, "a near-miss name is not on the list"),
+    # The slip list ([slip-list-not-writable-at-planning]): matched by filename
+    # at any depth, because setup places a self-hosting project's list where
+    # that project keeps its notes, so the folder varies and the name does not.
+    (os.path.join("method", "slips.md"), True,
+     "the slip list is writable in a planning session"),
+    (os.path.join("notes", "slips.md"), True,
+     "the slip list in any folder"),
+    (os.path.join("method", "method-map.md"), False,
+     "a file of another name in the same folder is still denied"),
 ]
 
 failures = []
@@ -192,6 +201,10 @@ E2E = [
      "research is writable in a planning session"),
     (os.path.join("FAQ", "faq.md"), "deny",
      "a project FAQ copy is denied at planning — the FAQ is the plugin's own"),
+    (os.path.join("method", "slips.md"), "pass",
+     "the slip list passes with no build working file present"),
+    (os.path.join("method", "notes.md"), "deny",
+     "a sibling of the slip list is still denied"),
 ]
 
 for rel, expected, what in E2E:

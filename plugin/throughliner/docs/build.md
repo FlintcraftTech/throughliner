@@ -97,14 +97,15 @@ Tick first, then remove, so that an interruption leaves the item visible in both
 
 **A step that has the user edit text Claude drafted** writes the draft to the file the item names, hands it over as a relative link that opens it in the side panel, offering in the same breath to display it inline or send the file, waits, reads it back when they say to, asks whether there is anything else, and repeats until they say they are finished. A `[co-write]` item's whole walkthrough is this loop on its one file; where the text is the user's, Claude reads and responds on their word.
 
-**Before a step goes out**: name the tool that would do that step instead and confirm it is absent; perform every part Claude can; check that a named file still has the property the step needs; verify any command the user will paste by running it safely or reading its help; and read the words back as a no-code developer would. Give the first concrete step, what to do and what to look for, and **wait**. Then the next. Where the step's reasoning is already on record, the step is the ask alone. /close is named once the item is finished or left. Where the user leaves one step, each later hand-over leads with leaving as the recommendation: "Leave this one too?", saying that sending close leaves it and ends the session. A step requiring action in another project is filed as a capture. Where the item carries `Assigned to:`, address that person, and take "not mine, it is <name>'s" from anyone present, rewriting the line with `hold_entry`'s `assigned_to` field or the queue tool's `--assign`.
+**Before a step goes out**: name the tool that would do that step instead and confirm it is absent; apply the rules file's sentence on what Claude performs and what is handed over; check that a named file still has the property the step needs; verify any command the user will paste by running it safely or reading its help; look up on the web any path, setting or fact Claude is unsure of before it goes out, the step naming the source; and read the words back as a no-code developer would. Give the first concrete step, what to do and what to look for, and **wait**. Then the next. Where the step's reasoning is already on record, the step is the ask alone. /close is named once the item is finished or left. Where the user leaves one step, each later hand-over leads with leaving as the recommendation: "Leave this one too?", saying that sending close leaves it and ends the session. A step requiring action in another project is filed as a capture. Where the item carries `Assigned to:`, address that person, and take "not mine, it is <name>'s" from anyone present, rewriting the line with `hold_entry`'s `assigned_to` field or the queue tool's `--assign`.
 
 Where the user volunteers that an item is done, take their word and recommend /close. Where the walkthrough names an observable check, run it and report a failure as what was found.
 
 **Every `[user]` item the run touched ends on a recorded outcome:**
 
 ```
-done          walked to its end, or the user said so, or its observable check passed
+done          walked to its end, or the user said so, or its observable check passed;
+              its task line, where it has one, is ticked at the close that removes it
 deferred      the user said to leave it, their word quoted
 not reached   never presented, or presented with no answer
 anything else what actually happened, in one plain sentence

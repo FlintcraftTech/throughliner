@@ -173,6 +173,34 @@ def test_a_backlinks_row_reworded_is_not_a_backfill():
           result is False, repr(result))
 
 
+def test_an_untracked_record_keeps_its_placeholder_until_committed():
+    """The fill resolved a record from a committed index line, or from the
+    oldest commit carrying its title anywhere under LOG/, before asking
+    whether git held the record at all — so an untracked record whose index
+    line another close had already committed was stamped with a commit that
+    never held it ([hash-fill-stamps-uncommitted-record])."""
+    d = repo()
+    index_filled = "# Index\n\n- a1b2c3d — A session entry → entry.md\n"
+    write(os.path.join(d, "LOG", "index.md"), index_filled)
+    git(d, "add", "-A")
+    git(d, "commit", "-m", "first")
+    entry = os.path.join(d, "LOG", "entry.md")
+    write(entry, ENTRY_PLACEHOLDER)
+    hook.backfill_log_hashes(d)
+    with open(entry, encoding="utf-8") as f:
+        untracked = f.read()
+    git(d, "add", "-A")
+    git(d, "commit", "-m", "second")
+    hook.backfill_log_hashes(d)
+    with open(entry, encoding="utf-8") as f:
+        committed = f.read()
+    shutil.rmtree(d, ignore_errors=True)
+    check("an untracked record keeps its placeholder despite a committed index line",
+          untracked == ENTRY_PLACEHOLDER, repr(untracked))
+    check("the same record once committed is filled from the index line",
+          committed == ENTRY_FILLED, repr(committed))
+
+
 def test_a_clean_tree_reports_nothing():
     d = repo()
     write(os.path.join(d, "LOG", "entry.md"), ENTRY_FILLED)
@@ -190,6 +218,7 @@ if __name__ == "__main__":
     test_mixed_changes_separate()
     test_a_backlinks_row_with_only_its_hash_filled_is_a_backfill()
     test_a_backlinks_row_reworded_is_not_a_backfill()
+    test_an_untracked_record_keeps_its_placeholder_until_committed()
     test_a_clean_tree_reports_nothing()
     print()
     if _failures:

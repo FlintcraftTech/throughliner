@@ -156,8 +156,48 @@ def test_untracked_queue_reports_nothing():
           repr(arrived))
 
 
+SENT_BLOCK = ("\n#### Sent capture [sent-capture]\nWhat was noticed.\n"
+              "From: other project, sent 2026-10-08 12:17\n"
+              "Filed 2026-10-08 12:17, stamped by the queue tool.\n")
+
+
+def test_queue_whose_only_change_is_a_sent_capture_is_not_the_users_edit():
+    """A capture another project's tool appended logs no write here, so the
+    author split named QUEUE.md as the user's edit in the same breath as the
+    arrivals line ([sent-captures-read-as-user-edits])."""
+    d = repo()
+    write(os.path.join(d, "QUEUE.md"), QUEUE)
+    git(d, "add", "-A")
+    git(d, "commit", "-m", "first")
+    write(os.path.join(d, "QUEUE.md"), QUEUE + SENT_BLOCK)
+    arrived = hook._arrived_captures(d)
+    only = hook._queue_diff_is_arrivals_only(d, arrived)
+    shutil.rmtree(d, ignore_errors=True)
+    check("the appended capture is named as arrived",
+          arrived == ["sent-capture"], repr(arrived))
+    check("a queue whose whole diff is the arrived block is not a user edit",
+          only is True, repr(only))
+
+
+def test_queue_with_a_reworded_line_is_still_the_users_edit():
+    d = repo()
+    write(os.path.join(d, "QUEUE.md"), QUEUE)
+    git(d, "add", "-A")
+    git(d, "commit", "-m", "first")
+    write(os.path.join(d, "QUEUE.md"),
+          QUEUE.replace("#### Old capture", "#### Old capture, reworded")
+          + SENT_BLOCK)
+    arrived = hook._arrived_captures(d)
+    only = hook._queue_diff_is_arrivals_only(d, arrived)
+    shutil.rmtree(d, ignore_errors=True)
+    check("a reworded existing line keeps the file on the author-split side",
+          only is False, repr(only))
+
+
 if __name__ == "__main__":
     print("test_session_start_user_changes.py")
+    test_queue_whose_only_change_is_a_sent_capture_is_not_the_users_edit()
+    test_queue_with_a_reworded_line_is_still_the_users_edit()
     test_split_by_what_the_log_shows()
     test_archived_log_is_read_too()
     test_arrived_captures_named()
