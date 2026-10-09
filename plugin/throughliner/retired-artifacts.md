@@ -32,6 +32,7 @@ A path is matched relative to the project root. A trailing slash means a folder.
   server, so every project gets the tools through the plugin; a project-level
   copy now registers the server twice.
 - `FAQ/` — copied from the plugin's FAQ templates at setup; retired 2026-10-05, the session opening now points at the plugin's own copy.
+- `INBOX/` — the project's mailbox, scaffolded at setup with its `archive/` subfolder; retired 2026-10-10, when the outbound register and the address book moved into `.throughliner/` and sends became captures. Setup moves the two files; the folder and any archived mail are the user's to delete.
 
 ## Retired with nothing left in a project
 

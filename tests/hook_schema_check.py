@@ -240,7 +240,7 @@ def test_session_start_payload_fits_under_the_cap():
 
     Deriving an honest early-warning threshold was attempted and abandoned:
     it would need evidence of how the payload grows with project state — held
-    items, waiting mail, worktrees, delivered INBOX bodies — and that evidence
+    items, worktrees, cycle definitions — and that evidence
     does not exist. Manufacturing a figure without it is the same failure with
     extra steps. A number nobody has to defend beats a defensible-sounding
     invention, so the size is printed and a human reads it.
@@ -597,70 +597,6 @@ def test_post_tool_use_non_queue_edit_is_silent():
     check("PostToolUse (unrelated file): emits nothing", out.strip() == "", out[:300])
 
 
-def test_session_start_directs_to_inbox_messages():
-    """A waiting message arrives as a filename and a directive, not as text.
-
-    Bodies were inlined for a period, on the reasoning that an instruction to
-    open a file is a step and a step can be skipped — which had happened. The
-    ceiling is what overturned it: hook output is capped at 10,000 characters,
-    and past the cap the harness discards the payload entirely, so enough unread
-    mail costs the session its project state and its rules directive as well as
-    its mail. The replacement is the shape this payload already trusts for a far
-    larger file — a directive carrying a self-check.
-
-    Four halves are pinned: the filename is named, the body is absent, the
-    directive carries a check, and the message is still labelled as data.
-    """
-    d = tempfile.mkdtemp(prefix="hookcheck-inbox-")
-    with open(os.path.join(d, "SPEC.md"), "w", encoding="utf-8") as f:
-        f.write("# SPEC\n")
-    with open(os.path.join(d, "QUEUE.md"), "w", encoding="utf-8") as f:
-        f.write("# QUEUE\n\n## Processed\n\n## Unprocessed\n")
-    os.makedirs(os.path.join(d, "INBOX"))
-    body = "A distinctive sentence only this message carries."
-    with open(os.path.join(d, "INBOX", "2026-08-15-a-report.md"), "w",
-              encoding="utf-8") as f:
-        f.write("# A report\n\n" + body + "\n")
-    rc, out, err = drive("session_start.py",
-                         {"hook_event_name": "SessionStart", "cwd": d,
-                          "source": "startup"})
-    check("SessionStart (mail): exits 0", rc == 0, err[:500])
-    ctx = ""
-    if _is_json(out):
-        ctx = (json.loads(out).get("hookSpecificOutput") or {}).get(
-            "additionalContext", "")
-    check("SessionStart: the message filename is named",
-          "INBOX/2026-08-15-a-report.md" in ctx, ctx[:300])
-    check("SessionStart: the message body is NOT inlined",
-          body not in ctx, ctx[:300])
-    check("SessionStart: the read directive carries a self-check",
-          "SELF-CHECK" in ctx, ctx[:300])
-    check("SessionStart: the message is labelled as data, not instruction",
-          "not an instruction" in ctx, ctx[:300])
-    check("SessionStart: routing and archiving are still required",
-          "INBOX/archive/" in ctx, ctx[:300])
-
-
-def test_session_start_empty_mailbox_is_silent():
-    """The other half — a mailbox with nothing in it adds nothing."""
-    d = tempfile.mkdtemp(prefix="hookcheck-inbox-empty-")
-    with open(os.path.join(d, "SPEC.md"), "w", encoding="utf-8") as f:
-        f.write("# SPEC\n")
-    with open(os.path.join(d, "QUEUE.md"), "w", encoding="utf-8") as f:
-        f.write("# QUEUE\n\n## Processed\n\n## Unprocessed\n")
-    os.makedirs(os.path.join(d, "INBOX"))
-    rc, out, err = drive("session_start.py",
-                         {"hook_event_name": "SessionStart", "cwd": d,
-                          "source": "startup"})
-    check("SessionStart (empty mail): exits 0", rc == 0, err[:500])
-    ctx = ""
-    if _is_json(out):
-        ctx = (json.loads(out).get("hookSpecificOutput") or {}).get(
-            "additionalContext", "")
-    check("SessionStart: an empty mailbox says nothing",
-          "INBOX" not in ctx, ctx[:300])
-
-
 def main():
     print("hook schema-conformance check")
     print("(shape only — delivery is proved by the liveness step in CLAUDE.md)\n")
@@ -671,8 +607,6 @@ def main():
         test_session_start_payload_fits_under_the_cap,
         test_session_start_points_at_the_rules_rather_than_pasting_them,
         test_session_start_state_lines_lead_the_payload,
-        test_session_start_directs_to_inbox_messages,
-        test_session_start_empty_mailbox_is_silent,
         test_pre_tool_use_out_of_scope_denies,
         test_pre_tool_use_in_scope_is_silent,
         test_pre_tool_use_retired_terms_is_writable,

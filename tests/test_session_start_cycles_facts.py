@@ -58,7 +58,7 @@ Observable: the newest GitHub release's date — last turn 2026-07-01.
 ## Posting rhythm [posting-rhythm]
 Steps: draft, approve, post, write the register line.
 Cadence: fortnightly, derived from the sent register.
-Observable: the newest line in INBOX/sent.md
+Observable: the newest line in .throughliner/sent.md
 """
 
 

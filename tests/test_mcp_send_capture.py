@@ -48,12 +48,12 @@ def fixture(book=True, queue=QUEUE):
     top = tempfile.mkdtemp(prefix="mcp-send-capture-")
     sender = os.path.join(top, "sender")
     recipient = os.path.join(top, "Recipient Project")
-    os.makedirs(os.path.join(sender, "INBOX"))
+    os.makedirs(os.path.join(sender, ".throughliner"))
     os.makedirs(recipient)
     with open(os.path.join(sender, "SPEC.md"), "w", encoding="utf-8") as f:
         f.write("# SPEC\n")
     if book:
-        with open(os.path.join(sender, "INBOX", ".address-book.md"), "w",
+        with open(os.path.join(sender, ".throughliner", "address-book.md"), "w",
                   encoding="utf-8") as f:
             f.write("# Address book\n\n- Recipient — `%s`\n" % recipient)
     if queue is not None:
@@ -93,7 +93,7 @@ def call(cwd, arguments):
 
 
 def register(sender):
-    path = os.path.join(sender, "INBOX", "sent.md")
+    path = os.path.join(sender, ".throughliner", "sent.md")
     if not os.path.isfile(path):
         return None
     with open(path, "rb") as f:
@@ -202,8 +202,10 @@ shutil.rmtree(top, ignore_errors=True)
 
 top, sender, recipient = fixture(book=False)
 answer = call(sender, GOOD)
-check("a missing address book is refused",
+check("a missing address book is refused, naming the book's path and the row shape",
       answer.startswith("Refused") and "address book" in answer
+      and ".throughliner/address-book.md" in answer
+      and "| <name> | <path> |" in answer and "- <name> — <path>" in answer
       and register(sender) is None and queue_text(recipient) == QUEUE,
       f"tool answered: {answer!r}")
 shutil.rmtree(top, ignore_errors=True)

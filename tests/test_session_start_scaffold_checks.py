@@ -51,10 +51,10 @@ print("test_session_start_scaffold_checks")
 
 d = tempfile.mkdtemp(prefix="scaffold-checks-")
 os.makedirs(os.path.join(d, "temp"))
-write(d, ".gitignore", "INBOX/\n.throughliner/\n")
+write(d, ".gitignore", ".throughliner/\n")
 check("temp/ present with no ignore line is reported",
       hook._missing_ignore_lines(d) == ["temp/"], repr(hook._missing_ignore_lines(d)))
-write(d, ".gitignore", "INBOX/\n.throughliner/\ntemp/\n")
+write(d, ".gitignore", ".throughliner/\ntemp/\n")
 check("with the line present nothing is reported",
       hook._missing_ignore_lines(d) == [], repr(hook._missing_ignore_lines(d)))
 os.remove(os.path.join(d, ".gitignore"))
@@ -63,13 +63,13 @@ check("no .gitignore at all reads as nothing to report",
 shutil.rmtree(d, ignore_errors=True)
 
 d = tempfile.mkdtemp(prefix="scaffold-checks-")
-write(d, "INBOX/.address-book.md", "# Address book\n\nOther Project: C:/x\n")
+write(d, ".throughliner/address-book.md", "# Address book\n\nOther Project: C:/x\n")
 check("a book in neither shape is reported", hook._address_book_unreadable(d))
-write(d, "INBOX/.address-book.md", "# Address book\n\n- Other Project — `C:/x`\n")
+write(d, ".throughliner/address-book.md", "# Address book\n\n- Other Project — `C:/x`\n")
 check("a bullet book is readable", not hook._address_book_unreadable(d))
-write(d, "INBOX/.address-book.md", "| Correspondent | Folder |\n| --- | --- |\n| Other | `C:/x` |\n")
+write(d, ".throughliner/address-book.md", "| Correspondent | Folder |\n| --- | --- |\n| Other | `C:/x` |\n")
 check("a table book is readable", not hook._address_book_unreadable(d))
-write(d, "INBOX/.address-book.md", "# Address book\n\n")
+write(d, ".throughliner/address-book.md", "# Address book\n\n")
 check("an empty book is not reported", not hook._address_book_unreadable(d))
 shutil.rmtree(d, ignore_errors=True)
 

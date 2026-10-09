@@ -10,7 +10,7 @@ writes are most frequent: filing a capture. It refuses only what is checkably
 wrong, echoing the reason so the retry is instant, and appends to the bottom
 of Unprocessed and nowhere else, so placement cannot go wrong by construction.
 Slice three adds `append_sent_line`, which composes one outbound-register line
-from its fields and appends it at the end of `INBOX/sent.md` — the one file
+from its fields and appends it at the end of `.throughliner/sent.md` — the one file
 with no history to restore from, where an edit anchored on whatever a session
 last read has landed a line out of order. Slice five adds the queue tool's
 three moves — `queue_move`, `queue_move_section`, `queue_delete` — each checked
@@ -732,7 +732,7 @@ INTENTS = ("for completion", "for continuation")
 
 def tool_append_sent_line(arguments):
     """Compose one register line from its fields and append it at the end of
-    INBOX/sent.md, changing nothing else.
+    .throughliner/sent.md, changing nothing else.
 
     The register is append-only by design and has no git history, so a line
     written by an edit anchored on a stale read can land above the end and
@@ -742,8 +742,8 @@ def tool_append_sent_line(arguments):
     It refuses only what is checkably wrong, echoing the reason.
     """
     root = project_root()
-    inbox = os.path.join(root, "INBOX")
-    register = os.path.join(inbox, "sent.md")
+    working = os.path.join(root, ".throughliner")
+    register = os.path.join(working, "sent.md")
 
     fields = {}
     for name in ("destination", "intent", "claim", "pointer", "message_id"):
@@ -768,14 +768,13 @@ def tool_append_sent_line(arguments):
         problems.append("message_id %r is not a run of digits — a Discord "
                         "message or topic id is digits only; leave it empty "
                         "for a send that has none." % fields["message_id"])
-    if not os.path.isdir(inbox):
-        problems.append("this project has no INBOX/ folder — the mailbox is "
-                        "not scaffolded, so there is no register to append to.")
-
     if problems:
         return "Refused — nothing was written:\n" + \
                "\n".join("- " + p for p in problems)
 
+    # The working folder is the hooks' own and is created by the first hook
+    # that fires in a project; a register appended before then creates it.
+    os.makedirs(working, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     head = fields["destination"]
     if fields["message_id"]:
@@ -793,8 +792,9 @@ def tool_append_sent_line(arguments):
                 f.write("\n")
         f.write(line + "\n")
 
-    return "%s the register line at the end of INBOX/sent.md:\n%s" % (
-        "Created INBOX/sent.md and wrote" if created else "Appended", line)
+    return "%s the register line at the end of .throughliner/sent.md:\n%s" % (
+        "Created .throughliner/sent.md and wrote" if created else "Appended",
+        line)
 
 
 def _send_capture_module():
@@ -847,9 +847,6 @@ def tool_send_capture(arguments):
     if not isinstance(attachments, list) or any(not isinstance(p, str)
                                                 for p in attachments):
         problems.append("attachments must be a list of paths.")
-    if not os.path.isdir(os.path.join(root, "INBOX")):
-        problems.append("this project has no INBOX/ folder — the mailbox is "
-                        "not scaffolded, so there is no register to append to.")
     if problems:
         return "Refused — nothing was written:\n" + \
                "\n".join("- " + p for p in problems)
@@ -2379,15 +2376,14 @@ TOOLS = [
         "name": "append_sent_line",
         "description":
             "Append one line to the project's outbound register, "
-            "INBOX/sent.md, for a send or post that has just been approved. "
+            ".throughliner/sent.md, for a send or post that has just been approved. "
             "Takes the line's fields — destination, intent, claim, pointer, "
             "and an optional Discord message id — stamps the date and time "
             "from the clock, composes the canonical line and appends it at "
             "the end of the file, changing nothing else. Refuses a missing "
             "field, an intent other than 'for completion' or 'for "
-            "continuation', a line break inside a field, or a project with "
-            "no INBOX/ folder, echoing the reason. Creates sent.md where "
-            "INBOX/ exists and the file does not.",
+            "continuation', or a line break inside a field, echoing the "
+            "reason. Creates sent.md where the file does not exist.",
         "inputSchema": {
             "type": "object",
             "required": ["destination", "intent", "claim", "pointer"],
@@ -2432,7 +2428,7 @@ TOOLS = [
             "through the queue tool's own append, with a `From:` line naming "
             "this project and the time, copies any attachments into that "
             "project's temp/ folder byte-for-byte with an `Attachment:` line "
-            "each, and appends the register line to INBOX/sent.md through "
+            "each, and appends the register line to .throughliner/sent.md through "
             "the register tool's own path. Checks first — the correspondent "
             "is in the address book, the recipient has a QUEUE.md with an "
             "Unprocessed section, the slug is free there, each attachment "

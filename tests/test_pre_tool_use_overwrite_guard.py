@@ -141,15 +141,15 @@ def main():
 
     # --- the outbound register ------------------------------------------
     #
-    # `INBOX/sent.md` is the index of everything the project has sent, and the
-    # mailbox is gitignored on every path — so unlike every other project
-    # document it has no history and an overwrite is final. Write-only, like
-    # its LOG sibling: the register is appended to and edited at every approved
-    # send, and both go through Edit.
+    # `.throughliner/sent.md` is the index of everything the project has sent,
+    # and the working folder is gitignored on every path — so unlike every
+    # other project document it has no history and an overwrite is final.
+    # Write-only, like its LOG sibling: the register is appended to and edited
+    # at every approved send, and both go through Edit.
 
     d = make_project()
-    os.makedirs(os.path.join(d, "INBOX"), exist_ok=True)
-    register = os.path.join("INBOX", "sent.md")
+    os.makedirs(os.path.join(d, ".throughliner"), exist_ok=True)
+    register = os.path.join(".throughliner", "sent.md")
     with open(os.path.join(d, register), "w", encoding="utf-8") as f:
         f.write("- 2026-08-01 — somewhere — a claim\n")
 
@@ -173,12 +173,12 @@ def main():
           edit_out.get("permissionDecision") != "deny", str(edit_out))
 
     for command, expected, what in (
-        ("rm INBOX/sent.md", "deny", "removal"),
-        ("echo x > INBOX/sent.md", "deny", "a truncating redirect"),
-        ("mv INBOX/sent.md elsewhere.md", "deny", "a rename away"),
-        ("echo x >> INBOX/sent.md", "pass", "an append"),
-        ("grep tips INBOX/sent.md", "pass", "a read"),
-        ("rm INBOX/archive/old-message.md", "pass", "an unrelated mailbox file"),
+        ("rm .throughliner/sent.md", "deny", "removal"),
+        ("echo x > .throughliner/sent.md", "deny", "a truncating redirect"),
+        ("mv .throughliner/sent.md elsewhere.md", "deny", "a rename away"),
+        ("echo x >> .throughliner/sent.md", "pass", "an append"),
+        ("grep tips .throughliner/sent.md", "pass", "a read"),
+        ("rm .throughliner/snapshots/old-snapshot.md", "pass", "an unrelated working-folder file"),
     ):
         shell = drive_tool(d, "Bash", {"command": command})
         got = shell.get("permissionDecision", "pass")
@@ -191,7 +191,7 @@ def main():
     # create left no working route — while a Write over an existing one stays
     # refused (asserted above).
     d = make_project()
-    os.makedirs(os.path.join(d, "INBOX"), exist_ok=True)
+    os.makedirs(os.path.join(d, ".throughliner"), exist_ok=True)
     out = drive_write(d, register)
     check("a Write creating an absent register passes",
           out.get("permissionDecision") != "deny", str(out))

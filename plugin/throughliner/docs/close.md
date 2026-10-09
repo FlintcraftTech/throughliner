@@ -22,8 +22,7 @@ no working file       ->  the no-build close: a planning session, a completed [u
                           or standalone handmade work, which overlap freely
 ```
 
-Read the working file whole before anything else. Record every `[user]` or `[co-write]` item the session touched under build.md's outcome values, read off the session's own trail. Where the opening named waiting mail, triage it as `${CLAUDE_PLUGIN_ROOT}/docs/feedback-and-inbox.md` states, filing only; where a reply is owed, draft it and show the exact wording.
-
+Read the working file whole before anything else. Record every `[user]` or `[co-write]` item the session touched under build.md's outcome values, read off the session's own trail.
 ## The build close
 
 1. **Verify completion.** Where some items are unticked, ask: finish the rest with /build, or close partial, which deletes the working file and leaves the queue alone. Before deleting, confirm every ticked item is gone from QUEUE.md and every unticked one is still there, and fix any mismatch. Where memory and the file disagree, file that as a finding.
@@ -91,11 +90,11 @@ Advisory: filed — <slug>        or   Advisory: not needed — <why>
 
 ## Session-file cleanup
 
-**Delete the working file and this session's scope file.** Offer to delete, one at a time, only files Claude created this session with no future use, warning where one is untracked. In `temp/`: delete each file a line in `INBOX/sent.md` points at, saying so; remove an attachment no open capture names; list the rest with dates and offer once to clear them. A `[co-write]` file, or one the user edited, is deleted on a yes alone.
+**Delete the working file and this session's scope file.** Offer to delete, one at a time, only files Claude created this session with no future use, warning where one is untracked. In `temp/`: delete each file a line in `.throughliner/sent.md` points at, saying so; remove an attachment no open capture names; list the rest with dates and offer once to clear them. A `[co-write]` file, or one the user edited, is deleted on a yes alone.
 
 ## Commit core
 
-**Run the mail triage, the look-back and the cleanup first so that their writes ride this commit.** Where `MAP.md` exists, grep this session's new folders and human-used files against it and write missing lines on the user's yes. Where work items shipped, confirm each shipped slug is gone from Processed.
+**Run the look-back and the cleanup first so that their writes ride this commit.** Where `MAP.md` exists, grep this session's new folders and human-used files against it and write missing lines on the user's yes. Where work items shipped, confirm each shipped slug is gone from Processed.
 
 1. **Stage explicitly by path:** the files `Changes:` names, the method docs, the working file's deletion. Where another chat is open on the same project, stage only what this session wrote and leave the other's changes to it. The safety check refuses a commit while any tracked file carries a conflict marker.
 2. **Read `git status --porcelain` for dirty paths outside the run's list.** The previous session's tail (a marked tail section, a capture at the bottom of Unprocessed) and a hash backfill fold in with at most a one-line note; any other path is named in one line and offered for staging. Name the staged method docs in one sentence; this makes a swept edit visible.

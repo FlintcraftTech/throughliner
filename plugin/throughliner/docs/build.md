@@ -29,8 +29,8 @@ Everything these checks find folds into one narration, delivered with the run at
    - An item carries `Red flag · State: uncleared`: stop before it, name the risk plainly, recommend /plan to clear it, wait.
    - The top item is `[freeform]`: say what it is and that it needs a session of its own, stop.
    - The run has no build or `[audit]` item: skip step 2 and go to the walk-through branch.
-3. **Mail and cycles.** Where the opening names waiting mail, triage it as `${CLAUDE_PLUGIN_ROOT}/docs/feedback-and-inbox.md` states before presenting the run: anything it raises becomes a capture, and a message bearing on a cleared item is named at step 4 with a recommendation to drop that item from this run only. Run the cycles check as plan.md's opening states it, filing only.
-4. **Present the run and offer the off-ramp, in one message.** A one-line pointer naming the items, linked to QUEUE.md, counts read off the digest. The whole cleared region is the run. Two things may drop an item from this run only, the queue untouched: waiting mail bearing on it, and a /setup outstanding (the opening reports the format epoch behind, or a missing document) where the item names a file /setup rewrites from a template. End with **"Say go and I'll start, or say the word to change scope or reorder first."** A change routes to /plan.
+3. **Cycles.** Run the cycles check as plan.md's opening states it, filing only.
+4. **Present the run and offer the off-ramp, in one message.** A one-line pointer naming the items, linked to QUEUE.md, counts read off the digest. The whole cleared region is the run. One thing may drop an item from this run only, the queue untouched: a /setup outstanding (the opening reports the format epoch behind, or a missing document) where the item names a file /setup rewrites from a template. End with **"Say go and I'll start, or say the word to change scope or reorder first."** A change routes to /plan.
 
 ## Step 2: Lock scope
 

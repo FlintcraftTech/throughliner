@@ -104,7 +104,7 @@ Quick answers about how this project's workflow works. Each question links to a 
   keeps the slug and touches nothing else. [faq.md](faq.md)
 - **What does /catchup show me?** — goals first, one line per feature with
   its stage, then what is next, what is yours and what is held, then the
-  return checks: a cycle due, mail waiting, a version change, the date moved.
+  return checks: a cycle due, a version change, the date moved.
   [faq.md](faq.md)
 - **A draft I'm asked to edit — where is it and how do I hand it back?** —
   who drafts first, the `.txt` in `temp/`, the side-panel link and save

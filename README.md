@@ -56,7 +56,7 @@ Setup adds plain-text documentation and folders to your repository:
 - **`LOG/` and `workshop/`** — historical session records, research, and testing drafts. Each record carries its own one-line summary, and the index is generated from those at every close.
 - **`MAP.md`** — a map of what the project's folders and human-used files are for, written for Claude to read first each session, so nothing sits in a folder it never opens.
 - **`TOOLS.md`** — persistent memory of what Claude has learned about your machine.
-- **`INBOX/`** — holds the register of everything the project has sent. Projects send each other captures, added straight to the other project's queue on your yes.
+- **`.throughliner/`** — the plugin's working folder, kept out of git. It holds the register of everything the project has sent; projects send each other captures, added straight to the other project's queue on your yes.
 
 ## Getting started
 

@@ -55,10 +55,10 @@ def fixture(queue=QUEUE, book=True):
     top = tempfile.mkdtemp(prefix="send-capture-")
     sender = os.path.join(top, "Sender Project")
     recipient = os.path.join(top, "Recipient Project")
-    os.makedirs(os.path.join(sender, "INBOX"))
+    os.makedirs(os.path.join(sender, ".throughliner"))
     os.makedirs(recipient)
     if book:
-        with open(os.path.join(sender, "INBOX", ".address-book.md"), "w",
+        with open(os.path.join(sender, ".throughliner", "address-book.md"), "w",
                   encoding="utf-8") as f:
             f.write("# Address book\n\n- Recipient — `%s`\n" % recipient)
     if queue is not None:
@@ -177,6 +177,11 @@ shutil.rmtree(top, ignore_errors=True)
 top, sender, recipient = fixture(book=False)
 refused("a missing address book is refused", "address book", run(sender),
         recipient, QUEUE)
+_missing = run(sender)
+check("the refusal names the book's path and the row shape",
+      ".throughliner/address-book.md" in _missing.stderr
+      and "| <name> | <path> |" in _missing.stderr
+      and "- <name> — <path>" in _missing.stderr, _missing.stderr)
 shutil.rmtree(top, ignore_errors=True)
 
 top, sender, recipient = fixture()

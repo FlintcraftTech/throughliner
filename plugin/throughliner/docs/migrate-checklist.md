@@ -41,6 +41,10 @@ python <plugin-root>/scripts/log_backlinks.py <project root> --backfill-summarie
 
 Afterwards compare the regenerated `LOG/index.md` with the previous one and name any line that differs.
 
+## Epoch 7: the INBOX folder is retired
+
+**The outbound register and the address book move into the plugin's working folder.** Where `INBOX/` exists: read any message file still waiting in it once, in full, surfacing each as a relative link with its substance in one line and triaging it (work to do becomes a capture, a finding goes to the LOG, evidence to re-read goes under `workshop/resources/`); then move `INBOX/sent.md` to `.throughliner/sent.md` and `INBOX/.address-book.md` to `.throughliner/address-book.md`, creating the folder where it is missing, and say that the folder with its `archive/` is now a leftover for the user to delete, the plugin deleting nothing. Nothing is reformatted. With no `INBOX/`, nothing moves. Then re-point any instruction (the project's CLAUDE.md, a queue item's Files line) that names the old paths, leaving records alone.
+
 ## At every epoch
 
 **Prefix a plain-prose preamble under `## Processed` or `## Unprocessed` with `> `, wording untouched**; the lint otherwise reads it as an orphaned rationale. Keep everything the user wants kept: each item's rationale carried whole, old "captured by you" signals kept, old "by Claude" labels dropped, every red-flag risk kept as a marked item. When unsure whether something is the user's own work or boilerplate, ask.

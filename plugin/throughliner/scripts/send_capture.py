@@ -50,7 +50,7 @@ for _stream in (sys.stderr, sys.stdout):
         pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ADDRESS_BOOK = os.path.join("INBOX", ".address-book.md")
+ADDRESS_BOOK = os.path.join(".throughliner", "address-book.md")
 ROW_RE = re.compile(r'^\|\s*(?P<name>[^|]+?)\s*\|\s*`?(?P<path>[^|`]+?)`?\s*\|\s*$')
 # The second shape the book may be written in ([address-book-format-unstated]):
 # a bullet — a hyphen, the name, an em dash (or an en dash, or a spaced
@@ -80,8 +80,13 @@ def read_address_book(root):
         with open(path, encoding="utf-8") as f:
             lines = f.read().splitlines()
     except OSError:
-        raise Refused("no address book at INBOX/.address-book.md in this "
-                      "project.")
+        # No book at all is the state every project starts in: the first
+        # correspondent the user supplies creates the file, so the refusal
+        # says where it lives and what a row looks like.
+        raise Refused("no address book at .throughliner/address-book.md in "
+                      "this project. Record the folder the user supplies as "
+                      "one line in that file, which the first entry creates:"
+                      "\n  " + SHAPES + "\nNothing here scans for projects.")
     book = {}
     content = 0
     for line in lines:
@@ -168,9 +173,10 @@ def send(root, to, heading, slug, body, attachments=(), send_tracked=False):
     book = read_address_book(root)
     entry = book.get((to or "").strip().lower())
     if entry is None:
-        raise Refused("'%s' is not a correspondent in this project's address "
-                      "book. Record the folder the user supplies first; "
-                      "nothing here scans for projects." % to)
+        raise Refused(("'%s' is not a correspondent in this project's address "
+                       "book, .throughliner/address-book.md. Record the folder "
+                       "the user supplies there first, as one line:\n  " % to)
+                      + SHAPES + "\nNothing here scans for projects.")
     name, folder = entry
     if not os.path.isdir(folder):
         raise Refused("%s: the recorded folder does not exist on this "

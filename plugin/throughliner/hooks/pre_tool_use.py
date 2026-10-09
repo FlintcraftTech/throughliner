@@ -19,7 +19,7 @@ PreToolUse hook — enforces three rules:
    editable (method docs — QUEUE.md, LOG/, that working file — plus the user's
    memory dir, workshop/resources/research/, the session scratchpad dir,
    TOOLS.md, MAP.md, the file the project's `Task list:` line names (any edit, no whole-file overwrite), and
-   any project's INBOX/ are always editable). Tri-state:
+   the project's own register and address book in `.throughliner/` are always editable). Tri-state:
    no Files: section = no enforcement;
    section present but empty = method docs only; entries listed = only
    those files. SPEC.md is not a method doc, so a build can edit it only
@@ -112,15 +112,15 @@ def _conflicted_tracked_file(repo_dir: str):
 SEGMENT_SPLIT = re.compile(r"&&|\|\||[;|\n]")
 
 # Destruction of the outbound register through the shell. The register has no
-# git history to restore from — its folder is gitignored on every path — so an
+# git history to restore from — the working folder is gitignored on every path — so an
 # `rm`, a truncating redirect or a `mv` away from the name is final. Matched on
 # the filename with either separator, since a segment may carry a Windows path.
 # Deliberately narrow: it catches removal, truncation and rename, and lets
 # everything that merely reads the file through.
 SENT_REGISTER_DESTRUCTION = re.compile(
     r"(?:\brm\b|\bdel\b|\bRemove-Item\b|\bmv\b|\bmove\b|\bClear-Content\b|"
-    r"\btruncate\b|(?<!>)>(?!>))[^\n]*INBOX[/\\]sent\.md"
-    r"|INBOX[/\\]sent\.md[^\n]*\|\s*(?:Out-File|Set-Content)\b",
+    r"\btruncate\b|(?<!>)>(?!>))[^\n]*\.throughliner[/\\]sent\.md"
+    r"|\.throughliner[/\\]sent\.md[^\n]*\|\s*(?:Out-File|Set-Content)\b",
     re.IGNORECASE)
 
 # Appended to every git-safety denial: the patterns match command text,
@@ -937,24 +937,21 @@ def _is_global_instructions_file(filepath: str) -> bool:
     return bool(path) and _normalise(filepath) == _normalise(path)
 
 
-def _is_inbox_dir(filepath: str) -> bool:
-    """Check if a path is inside any project's INBOX folder.
+def _is_working_register(filepath: str, cwd: str) -> bool:
+    """True for this project's outbound register or address book, the two
+    files that live in the ignored working folder, `.throughliner/sent.md`
+    and `.throughliner/address-book.md` ([inbox-folder-retired-register-moves]).
 
-    Two directions, and both must pass the scope-lock. Inbound: this project's
-    own `INBOX/`, where an arriving message is archived after being triaged.
-    Outbound: another project's `INBOX/`, which is where a message is delivered
-    — that path sits outside this project entirely, so no cwd-relative check
-    could recognise it. Matching on an `INBOX` path segment covers both.
-
-    The scope-lock is not what protects the user here. Every outbound message
-    is shown and approved before it is written (skill-nonspecific-rules.md, the
-    cross-project INBOX channel) — a message leaving this project is an
-    outward-facing action, and the user's approval is the backstop, exactly as
-    it is for a feedback report.
+    Both pass the scope-lock in every kind of session: an approved send or
+    post writes its register line in the same turn, and the address book is
+    written the first time the user supplies a correspondent's path. Nothing
+    outside this project passes here — a capture sent to another project goes
+    through the send script, which appends to that project's queue itself.
     """
     norm = _normalise(filepath)
-    parts = norm.replace("/", os.sep).split(os.sep)
-    return _normalise("INBOX") in parts
+    folder = os.path.join(cwd, ".throughliner")
+    return norm in (_normalise(os.path.join(folder, "sent.md")),
+                    _normalise(os.path.join(folder, "address-book.md")))
 
 
 def _is_scratchpad_dir(filepath: str, cwd: str) -> bool:
@@ -1203,7 +1200,7 @@ def _is_plan_quiet_path(filepath: str, cwd: str) -> bool:
     This is the planning session's STANDING list — QUEUE.md, SPEC.md (the
     root's, and a part's SPEC.md at any depth), CYCLES.md, LOG/, any
     `slips.md` inside the project and the two FAQ templates, plus the memory directory, `workshop/resources/research/`, the scratchpad and
-    any INBOX (checked by their own helpers at the call site). Everything else
+    the register and address book in `.throughliner/` (checked by their own helpers at the call site). Everything else
     is DENIED.
 
     This used to ask rather than deny, and the comment here instructed future
@@ -2265,26 +2262,26 @@ def _build_record_claims_unticked(tool_name: str, filepath: str, cwd: str,
     return ""
 
 
-SENT_REGISTER = os.path.join("INBOX", "sent.md")
+SENT_REGISTER = os.path.join(".throughliner", "sent.md")
 
 
 def _is_sent_register_overwrite(tool_name: str, filepath: str, cwd: str) -> bool:
     """True for a Write whose target is the outbound register.
 
-    `INBOX/sent.md` is the one-line index of everything the project has sent or
-    posted, and it is what the repeal check greps for claims already announced.
-    It sits inside a mailbox that is gitignored on every path, so unlike every
-    other project document it has NO HISTORY to restore from and an accidental
-    deletion is final.
+    `.throughliner/sent.md` is the one-line index of everything the project has
+    sent or posted, and it is what the repeal check greps for claims already
+    announced. It sits inside the working folder, gitignored on every path, so
+    unlike every other project document it has NO HISTORY to restore from and
+    an accidental deletion is final.
 
     WRITE ONLY, like its LOG sibling. The register is appended to and edited
     constantly — every approved send writes a line in the same turn — and both
     go through Edit, so nothing correct is caught.
 
-    The register is not un-ignored to fix this: the folder's ignore is what
-    keeps the address book's identifying paths out of a published repository,
-    and a project's outbound record is not necessarily something its owner
-    wants public.
+    The register is not un-ignored to fix this: the working folder's ignore is
+    what keeps the address book's identifying paths out of a published
+    repository, and a project's outbound record is not necessarily something
+    its owner wants public.
 
     The limit, stated rather than implied: a hook sees only what goes through
     Claude's tools. A file deleted outside the app, or a lost disk, is not
@@ -2470,7 +2467,7 @@ def main() -> int:
                     "record of everything this project has sent, and that "
                     "record has no backup.\n\n"
                     f"File: {SENT_REGISTER}\n\n"
-                    "The mailbox folder is deliberately kept out of git, so "
+                    "The working folder is deliberately kept out of git, so "
                     "this one file has no history to restore from.\n\n"
                     "Use Edit to change a line in it. Nothing else needs to "
                     "touch the whole file."
@@ -2702,15 +2699,16 @@ def main() -> int:
             branch="record claims unticked item",
         )
 
-    # A Write over the outbound register destroys the only copy — the mailbox is
-    # gitignored, so there is no history to restore from. Unconditional for the
-    # same reason as its LOG sibling: every scope branch permits INBOX/.
+    # A Write over the outbound register destroys the only copy — the working
+    # folder is gitignored, so there is no history to restore from.
+    # Unconditional for the same reason as its LOG sibling: every scope branch
+    # permits the register.
     if _is_sent_register_overwrite(tool_name, filepath, cwd):
         return _deny(
             "[Throughliner] BLOCKED: this would write over the record of "
             "everything this project has sent, and that record has no backup.\n\n"
             f"File: {SENT_REGISTER}\n\n"
-            "The mailbox folder is deliberately kept out of git — it holds "
+            "The working folder is deliberately kept out of git — it holds "
             "other projects' folder paths — so this one file has no history to "
             "restore from and an overwrite is final.\n\n"
             "Use Edit instead: append the new line to the existing register, "
@@ -2925,7 +2923,7 @@ def main() -> int:
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("task list append", lambda: _is_task_list_file(filepath, cwd)),
-            ("INBOX", lambda: _is_inbox_dir(filepath)),
+            ("working register", lambda: _is_working_register(filepath, cwd)),
             ("close-phase file",
              lambda: _is_close_phase_file(filepath, cwd, sid)),
             ("own close marker",
@@ -3042,7 +3040,7 @@ def main() -> int:
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("task list append", lambda: _is_task_list_file(filepath, cwd)),
-            ("INBOX", lambda: _is_inbox_dir(filepath)),
+            ("working register", lambda: _is_working_register(filepath, cwd)),
             ("checklist Writes: field",
              lambda: _is_checklist_declared_path(filepath, cwd)),
             ("own close marker",

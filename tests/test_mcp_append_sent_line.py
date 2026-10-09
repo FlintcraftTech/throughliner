@@ -8,7 +8,7 @@ Run:  py tests/test_mcp_append_sent_line.py
 No test framework, matching the suites alongside it.
 
 Why this exists ([sent-register-has-no-append-path]): the outbound register
-`INBOX/sent.md` is append-only, has no git history, and had no append path —
+`.throughliner/sent.md` is append-only, has no git history, and had no append path —
 every session wrote a new line with an edit anchored on whatever it last read,
 and one line landed a row above the end. The tool is the safe path: it
 composes the line, stamps the clock, and appends at the end. This suite pins
@@ -44,9 +44,9 @@ def project(with_inbox=True, register_text=None):
     with open(os.path.join(d, "SPEC.md"), "w", encoding="utf-8") as f:
         f.write("# SPEC\n")
     if with_inbox:
-        os.makedirs(os.path.join(d, "INBOX"))
+        os.makedirs(os.path.join(d, ".throughliner"))
         if register_text is not None:
-            with open(os.path.join(d, "INBOX", "sent.md"), "w",
+            with open(os.path.join(d, ".throughliner", "sent.md"), "w",
                       encoding="utf-8", newline="") as f:
                 f.write(register_text)
     return d
@@ -78,7 +78,7 @@ def call(cwd, arguments):
 
 
 def register(d):
-    with open(os.path.join(d, "INBOX", "sent.md"), "rb") as f:
+    with open(os.path.join(d, ".throughliner", "sent.md"), "rb") as f:
         return f.read().decode("utf-8")
 
 
@@ -131,23 +131,25 @@ check("a missing trailing newline is added before the append, so the old line is
       f"lines: {lines!r}")
 shutil.rmtree(d, ignore_errors=True)
 
-# 3. Create-when-absent: INBOX/ exists, sent.md does not.
+# 3. Create-when-absent: .throughliner/ exists, sent.md does not.
 d = project()
 answer = call(d, {k: v for k, v in GOOD.items() if k != "message_id"})
-check("with INBOX/ present and no sent.md, the file is created",
-      answer.startswith("Created INBOX/sent.md") and os.path.isfile(os.path.join(d, "INBOX", "sent.md")),
+check("with .throughliner/ present and no sent.md, the file is created",
+      answer.startswith("Created .throughliner/sent.md") and os.path.isfile(os.path.join(d, ".throughliner", "sent.md")),
       f"tool answered: {answer!r}")
 last = register(d).splitlines()[-1]
 check("without a message id, no id segment is written",
       "message id" not in last, f"last line: {last!r}")
 shutil.rmtree(d, ignore_errors=True)
 
-# 4. Refuse-when-no-mailbox.
+# 4. No working folder yet ([inbox-folder-retired-register-moves]): the
+# folder is the hooks' own and is created on the way, so the first send in a
+# project that has never had a hook fire still gets its line.
 d = project(with_inbox=False)
 answer = call(d, GOOD)
-check("a project with no INBOX/ is refused and nothing is written",
-      answer.startswith("Refused") and "not scaffolded" in answer
-      and not os.path.exists(os.path.join(d, "INBOX")),
+check("a project with no .throughliner/ gets the folder and the line",
+      answer.startswith("Created .throughliner/sent.md")
+      and os.path.isfile(os.path.join(d, ".throughliner", "sent.md")),
       f"tool answered: {answer!r}")
 shutil.rmtree(d, ignore_errors=True)
 

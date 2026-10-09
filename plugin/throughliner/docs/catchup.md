@@ -6,9 +6,9 @@ note: The /catchup procedure. A returning user's brief: where each goal and feat
 
 # /catchup
 
-**/catchup is for a user coming back after time away.** It says where the project's goals and features stand, in a few lines, and re-runs the return checks an opening runs. It moves nothing, and files only what those checks file: a due cycle's capture, and waiting mail routed by the triage.
+**/catchup is for a user coming back after time away.** It says where the project's goals and features stand, in a few lines, and re-runs the return checks an opening runs. It moves nothing, and files only what those checks file: a due cycle's capture.
 
-**Read:** SPEC's Goals section and every heading under "How it works" (each heading is one feature); both queue sections; the LOG index window a planning opening reads (`LOG/index.md`, and the previous month's where the current month does not reach the last planning record); the cycles doc through `cycles_state`, due-ness computed as plan.md's opening computes it; `INBOX/`; the installed version against the one this chat opened on; and the clock, against the opening's date line. Where a session already opened in this chat, read only what is missing.
+**Read:** SPEC's Goals section and every heading under "How it works" (each heading is one feature); both queue sections; the LOG index window a planning opening reads (`LOG/index.md`, and the previous month's where the current month does not reach the last planning record); the cycles doc through `cycles_state`, due-ness computed as plan.md's opening computes it; the installed version against the one this chat opened on; and the clock, against the opening's date line. Where a session already opened in this chat, read only what is missing.
 
 **Each feature gets one of five stages, the first that matches:** shipped (a build record in the window names it); ready (its item sits above the cleared-to-run line); waiting (below the line, with the date or item it waits on in plain words); an idea (named only by a capture); untouched. Match by the heading's words and any slug the SPEC section cites; take the highest stage where several match. A goal is reached where its "reached when" line names something the record, the cycles doc or the queue shows holding, and heading otherwise.
 
