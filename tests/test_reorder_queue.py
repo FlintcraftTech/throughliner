@@ -53,7 +53,17 @@ def run(text, *args):
         capture_output=True, text=True,
     )
     with open(path, "r", encoding="utf-8", newline="") as f:
-        return proc.returncode, proc.stderr, f.read()
+        return proc.returncode, proc.stderr, strip_derived(f.read())
+
+
+# The tool's own derived checkbox line under every heading
+# ([queue-entry-task-line-written-by-tools]) is stripped from read-backs:
+# the byte-identity promise is about the entry's text, not the tool's line.
+DERIVED = re.compile(r"^- \[[ xX]\] .*🆔 \S+.*\n", re.MULTILINE)
+
+
+def strip_derived(text):
+    return DERIVED.sub("", text)
 
 
 def check(name, condition, detail=""):
@@ -929,7 +939,7 @@ def test_retitle_changes_the_heading_and_nothing_else():
             capture_output=True, text=True, encoding="utf-8", errors="replace",
         )
         with open(path, "r", encoding="utf-8") as f:
-            after = f.read()
+            after = strip_derived(f.read())
         expected = FIXTURE.replace(
             "#### A held item [gamma]",
             "#### Held item, distinguishing words first [gamma]")

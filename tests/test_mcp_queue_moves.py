@@ -24,6 +24,7 @@ must leave the file byte-identical.
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -39,6 +40,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER = os.path.join(ROOT, "plugin", "throughliner", "mcp", "server.py")
 
 MARKER = "--- Cleared to run above this line ---"
+# The tool's own derived checkbox line under every heading
+# ([queue-entry-task-line-written-by-tools]), stripped from read-backs.
+DERIVED = re.compile(r"^- \[[ xX]\] .*🆔 \S+.*\n", re.MULTILINE)
 
 failures = []
 
@@ -124,8 +128,11 @@ def call(cwd, tool, arguments):
 
 
 def queue_text(d):
+    """The queue with the tool's own derived checkbox lines stripped
+    ([queue-entry-task-line-written-by-tools]): the byte-identity promise is
+    about the entry's text, which the derived line is not part of."""
     with open(os.path.join(d, "QUEUE.md"), "rb") as f:
-        return f.read().decode("utf-8")
+        return DERIVED.sub("", f.read().decode("utf-8"))
 
 
 def order_of(text, section="## Processed"):

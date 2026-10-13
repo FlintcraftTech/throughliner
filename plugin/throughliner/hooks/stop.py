@@ -639,6 +639,89 @@ def _checkpoint_clock_or_stop_owed(cwd, session_id, message):
     )
 
 
+# --- The close ask after the user said to keep the chat open -----------------
+#
+# [stop-check-close-ask-after-keep-open]: plan.md's keep-open rule — once the
+# user has said to keep the chat open to capture ideas, the wrap-up question
+# stops — held by prose and degraded, the user's report being that Claude
+# "always bugs you over and over again to close the session". The check reads
+# the transcript at the `transcript_path` the hook input carries for the
+# user's own messages; where one says, in words matching the fixed set below,
+# to keep the chat open for capturing, a finished reply whose last paragraph
+# asks to close is sent back once per phrase. The set is fixed, so the check
+# reaches those words and not every way of saying it; a transcript line's
+# shape (type "user", message.role "user", content a string or a list of
+# text blocks, tool results skipped) was read from a real transcript on
+# 2026-10-13. Where no transcript path is given, the check passes.
+KEEP_OPEN_PHRASES = (
+    "keep the chat open", "keep this chat open", "keep the session open",
+    "keep this session open", "keep it open", "leave the chat open",
+    "leave this chat open", "leave it open", "drop ideas in",
+    "drop ideas into", "keep capturing", "capture ideas",
+    "don't close", "do not close",
+)
+CLOSE_ASK = re.compile(
+    r"(close command|run /close|send (?:the )?close|ready to close"
+    r"|anything else to capture|close (?:the|this) (?:chat|session)"
+    r"|wrap(?:ping)? up)", re.IGNORECASE)
+
+
+def _user_said_keep_open(transcript_path):
+    """The keep-open phrase the user's own messages carry, or None."""
+    if not transcript_path or not os.path.isfile(transcript_path):
+        return None
+    found = None
+    try:
+        with open(transcript_path, "r", encoding="utf-8",
+                  errors="replace") as f:
+            for raw in f:
+                try:
+                    entry = json.loads(raw)
+                except ValueError:
+                    continue
+                if entry.get("type") != "user" or entry.get("isMeta"):
+                    continue
+                msg = entry.get("message") or {}
+                if msg.get("role") != "user":
+                    continue
+                content = msg.get("content")
+                if isinstance(content, list):
+                    content = " ".join(
+                        b.get("text", "") for b in content
+                        if isinstance(b, dict) and b.get("type") == "text")
+                if not isinstance(content, str):
+                    continue
+                low = content.lower()
+                for phrase in KEEP_OPEN_PHRASES:
+                    if phrase in low:
+                        found = phrase
+    except OSError:
+        return None
+    return found
+
+
+def _close_ask_after_keep_open_owed(cwd, session_id, message, transcript_path):
+    """The block reason where the reply ends on a close ask after the user
+    said to keep the chat open, else None."""
+    phrase = _user_said_keep_open(transcript_path)
+    if not phrase:
+        return None
+    paragraphs = [p for p in _strip_quoted(message).split("\n\n") if p.strip()]
+    if not paragraphs or not CLOSE_ASK.search(paragraphs[-1]):
+        return None
+    if _already_blocked(cwd, session_id,
+                        "keep-open-" + phrase.replace(" ", "-")):
+        return None
+    return (
+        "Your last message ends on an ask to close, after the user said to "
+        "keep the chat open for capturing (\"%s\"). End on the capture "
+        "filed instead, with no close ask and no \"anything else to "
+        "capture\"; the user closes when they choose. Reply with the "
+        "correction alone, one or two lines, nothing from the earlier "
+        "message repeated. This is stopped once per phrase." % phrase
+    )
+
+
 def _finish_with_shape_checks(cwd, session_id, message):
     """The last check on a reply every other check has passed: one check,
     its prose length. It sits last so a reply that owes a correction of
@@ -732,6 +815,12 @@ def main():
         sys.exit(0)
 
     owed = _checkpoint_clock_or_stop_owed(cwd, session_id, message)
+    if owed:
+        print(json.dumps({"decision": "block", "reason": owed}))
+        sys.exit(0)
+
+    owed = _close_ask_after_keep_open_owed(
+        cwd, session_id, message, payload.get("transcript_path") or "")
     if owed:
         print(json.dumps({"decision": "block", "reason": owed}))
         sys.exit(0)

@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Regression tests for pre_tool_use.py's task-list permission.
+"""Regression tests for pre_tool_use.py's writes outside the project.
 
 Host-only dev artifact — not shipped in the plugin package.
 
 Run:  py tests/test_pre_tool_use_task_list.py
 
-Why this exists ([task-list-above-projects]): a project's own CLAUDE.md may
-carry one line, `Task list: <absolute path>`, naming the user's one markdown
-task list above every project. Planning appends a checkbox line there when it
-keeps a task-shaped [user] item. It is the one permitted write outside the
-project root. Any edit to it passes; only a Write over a list that already
-exists is refused, since the list sits where git cannot restore it
-([task-list-any-line-editable]).
+Why this exists: the one permitted write outside a project root is the user's
+global instructions file, CLAUDE.md in the home `.claude` folder
+([user-facts-to-global-instructions]): an Edit asks the user in planning and
+mid-build alike ([global-instructions-write-gated-by-procedure-only]), a
+Write over an existing file is refused, and another file in the home folder
+stays denied.
 
-Pinned here: the line is read from CLAUDE.md and only an absolute path opens
-the permission; the path matches exactly; an edit of any kind passes in a
-planning session and mid-build alike; a whole-file overwrite is refused in both; and an unrelated
-path outside the project is still denied, so the permission is one file and
-not a widening of either scope branch.
+The task-list permission this suite once pinned — any edit to the file a
+project's `Task list:` line names — was retired 2026-10-12
+([user-task-line-lives-in-queue-with-tasks-marks]): a task line lives in its
+own queue item, and the `Task list:` line now names the user's query note,
+which no session writes. Pinned here: a write to that named file is an
+ordinary outside write and is denied, in planning and mid-build.
 """
 
 import json
@@ -30,10 +30,6 @@ HOOKS = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "plugin", "throughliner", "hooks",
 )
-sys.path.insert(0, HOOKS)
-
-import pre_tool_use  # noqa: E402
-
 HOOK = os.path.join(HOOKS, "pre_tool_use.py")
 
 failures = []
@@ -46,131 +42,16 @@ def _check(label, got, expected, what):
     print(f"[{status}] {label} -> {got!r} ({what})")
 
 
-# --- the readers themselves ---------------------------------------------------
-
 _root = tempfile.mkdtemp(prefix="task-list-root-")
 _outside = tempfile.mkdtemp(prefix="task-list-outside-")
 LIST = os.path.join(_outside, "Tasks.md")
-
-
-def _write_claude(text):
-    with open(os.path.join(_root, "CLAUDE.md"), "w", encoding="utf-8") as f:
-        f.write(text)
-
-
-_check("no CLAUDE.md", pre_tool_use._task_list_path(_root), "",
-       "a project with no CLAUDE.md names no list")
-
-_write_claude("# CLAUDE.md\n\nVisibility: flat\n")
-_check("no line", pre_tool_use._task_list_path(_root), "",
-       "a CLAUDE.md with no Task list: line names no list")
-
-_write_claude("# CLAUDE.md\n\nTask list:\n\n<!-- a comment on the next line -->\n")
-_check("blank line", pre_tool_use._task_list_path(_root), "",
-       "a blank Task list: line names no list and does not read the next line")
-
-_write_claude("# CLAUDE.md\n\nTask list: notes/Tasks.md\n")
-_check("relative path", pre_tool_use._task_list_path(_root), "",
-       "a relative path names no list — setup refuses to write one")
-
-_write_claude("# CLAUDE.md\n\nTask list: none\n")
-_check("the word none", pre_tool_use._task_list_path(_root), "",
-       "a line reading none names no list, so no path outside the project "
-       "is permitted ([setup-left-task-list-line-blank])")
-_check("none, no file", pre_tool_use._is_task_list_file(LIST, _root), False,
-       "with the line reading none, no file is the task list")
-
-_write_claude(f"# CLAUDE.md\n\nTask list: {LIST}\n")
-_check("absolute path", pre_tool_use._task_list_path(_root), LIST,
-       "the absolute path is read back as written")
-_check("the file itself", pre_tool_use._is_task_list_file(LIST, _root), True,
-       "the named file matches")
-_check("a sibling", pre_tool_use._is_task_list_file(
-    os.path.join(_outside, "Other.md"), _root), False,
-    "a sibling file outside the project does not match")
-
-# --- end to end ------------------------------------------------------------------
-
-def _decide(cwd, tool_name, tool_input, session_id="task-list-test-session"):
-    payload = {
-        "cwd": cwd,
-        "tool_name": tool_name,
-        "tool_input": tool_input,
-        "session_id": session_id,
-    }
-    proc = subprocess.run(
-        [sys.executable, HOOK], input=json.dumps(payload),
-        capture_output=True, text=True,
-        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
-    )
-    if not proc.stdout.strip():
-        return "pass"
-    try:
-        out = json.loads(proc.stdout)
-    except json.JSONDecodeError:
-        return "pass"
-    return (out.get("hookSpecificOutput") or {}).get("permissionDecision", "pass")
-
-
-APPEND = {"file_path": LIST, "old_string": "- [ ] first (Demo)\n",
-          "new_string": "- [ ] first (Demo)\n- [ ] second (Demo)\n"}
-REWORD = {"file_path": LIST, "old_string": "- [ ] first (Demo)\n",
-          "new_string": "- [ ] FIRST (Demo)\n"}
-REMOVE = {"file_path": LIST, "old_string": "- [ ] first (Demo)\n",
-          "new_string": ""}
-REORDER = {"file_path": LIST,
-           "old_string": "- [ ] first (Demo)\n- [ ] other (Demo)\n",
-           "new_string": "- [ ] other (Demo)\n- [ ] first (Demo)\n"}
-REWRITE = {"file_path": LIST, "content": "# Tasks\n"}
-OTHER = {"file_path": os.path.join(_outside, "Other.md"), "content": "x"}
-
-# planning session: SPEC.md present, no build working file
 with open(os.path.join(_root, "SPEC.md"), "w", encoding="utf-8") as f:
     f.write("# SPEC\n")
-
-_check("planning create", _decide(_root, "Write", REWRITE), "pass",
-       "a Write creating the list where none exists passes")
+with open(os.path.join(_root, "CLAUDE.md"), "w", encoding="utf-8") as f:
+    f.write(f"# CLAUDE.md\n\nTask list: {LIST}\n")
 with open(LIST, "w", encoding="utf-8") as f:
-    f.write("# Tasks\n- [ ] first (Demo)\n- [ ] other (Demo)\n")
+    f.write("# Tasks\n\n```tasks\nnot done\n```\n")
 
-_check("planning append", _decide(_root, "Edit", APPEND), "pass",
-       "an append to the task list passes in a planning session")
-_check("planning reword", _decide(_root, "Edit", REWORD), "pass",
-       "rewording a line passes")
-_check("planning remove", _decide(_root, "Edit", REMOVE), "pass",
-       "removing a line passes")
-_check("planning reorder", _decide(_root, "Edit", REORDER), "pass",
-       "reordering two lines passes")
-_check("planning rewrite", _decide(_root, "Write", REWRITE), "deny",
-       "a rewrite of the task list is refused in a planning session")
-_check("planning other outside", _decide(_root, "Write", OTHER), "deny",
-       "an unrelated file outside the project is still denied")
-
-# mid-build: a working file whose Files list omits the task list
-_sid = "task-list-build-session"
-with open(os.path.join(_root, f"_build-{_sid}.md"), "w", encoding="utf-8") as f:
-    f.write("# Active Build\n\nFiles:\n- src/app.py\n")
-
-_check("build append", _decide(_root, "Edit", APPEND, _sid), "pass",
-       "an append to the task list passes mid-build though unlisted")
-_check("build reword", _decide(_root, "Edit", REWORD, _sid), "pass",
-       "rewording a line passes mid-build though unlisted")
-_check("build rewrite", _decide(_root, "Write", REWRITE, _sid), "deny",
-       "a rewrite of the task list is refused mid-build")
-_check("build other outside", _decide(_root, "Write", OTHER, _sid), "deny",
-       "an unrelated file outside the project is still denied mid-build")
-
-# no line at all: the same append is an ordinary outside write and is denied
-_write_claude("# CLAUDE.md\n")
-_check("no line, planning append", _decide(_root, "Edit", APPEND), "deny",
-       "with no Task list: line the permission never opens")
-
-# --- the global instructions file ([user-facts-to-global-instructions]) --------
-# The second permitted write outside a project: CLAUDE.md in the home .claude
-# folder. The hook finds home through expanduser, so the subprocess is given a
-# temporary home; an Edit asks the user in planning and mid-build
-# ([global-instructions-write-gated-by-procedure-only]), a Write over an
-# existing file is refused, and another file in the home folder stays denied.
 _home = tempfile.mkdtemp(prefix="task-list-home-")
 os.makedirs(os.path.join(_home, ".claude"))
 GLOBAL = os.path.join(_home, ".claude", "CLAUDE.md")
@@ -179,7 +60,7 @@ with open(GLOBAL, "w", encoding="utf-8") as f:
 _home_env = {"USERPROFILE": _home, "HOME": _home}
 
 
-def _decide_home(cwd, tool_name, tool_input, session_id="task-list-test-session"):
+def _decide(cwd, tool_name, tool_input, session_id="task-list-test-session"):
     payload = {"cwd": cwd, "tool_name": tool_name, "tool_input": tool_input,
                "session_id": session_id}
     proc = subprocess.run(
@@ -196,23 +77,40 @@ def _decide_home(cwd, tool_name, tool_input, session_id="task-list-test-session"
     return (out.get("hookSpecificOutput") or {}).get("permissionDecision", "pass")
 
 
+# --- the query note the Task list: line names is not written ----------------
+APPEND = {"file_path": LIST, "old_string": "not done\n",
+          "new_string": "not done\n- [ ] second (Demo)\n"}
+REWRITE = {"file_path": LIST, "content": "# Tasks\n"}
+
+_check("planning edit of the query note", _decide(_root, "Edit", APPEND), "deny",
+       "the file the Task list: line names is an ordinary outside write")
+_check("planning rewrite of the query note", _decide(_root, "Write", REWRITE),
+       "deny", "a Write there is refused too")
+
+_sid = "task-list-build-session"
+with open(os.path.join(_root, f"_build-{_sid}.md"), "w", encoding="utf-8") as f:
+    f.write("# Active Build\n\nFiles:\n- src/app.py\n")
+_check("build edit of the query note", _decide(_root, "Edit", APPEND, _sid),
+       "deny", "mid-build the same edit is refused")
+
+# --- the global instructions file ([user-facts-to-global-instructions]) --------
 GLOBAL_EDIT = {"file_path": GLOBAL, "old_string": "I'm Sam.\n",
                "new_string": "I'm Sam.\nMy timezone is UTC.\n"}
 GLOBAL_REWRITE = {"file_path": GLOBAL, "content": "# Global instructions\n"}
 HOME_OTHER = {"file_path": os.path.join(_home, ".claude", "settings.json"),
               "old_string": "a", "new_string": "b"}
 
-_check("global edit, planning", _decide_home(_root, "Edit", GLOBAL_EDIT), "ask",
+_check("global edit, planning", _decide(_root, "Edit", GLOBAL_EDIT), "ask",
        "an edit to the global instructions file asks the user in a planning session")
-_check("global rewrite, planning", _decide_home(_root, "Write", GLOBAL_REWRITE),
+_check("global rewrite, planning", _decide(_root, "Write", GLOBAL_REWRITE),
        "deny", "a whole-file Write over the existing global file is refused")
-_check("other home file, planning", _decide_home(_root, "Edit", HOME_OTHER), "deny",
+_check("other home file, planning", _decide(_root, "Edit", HOME_OTHER), "deny",
        "another file in the home .claude folder is refused as before")
-_check("global edit, build", _decide_home(_root, "Edit", GLOBAL_EDIT, _sid), "ask",
+_check("global edit, build", _decide(_root, "Edit", GLOBAL_EDIT, _sid), "ask",
        "an edit to the global instructions file asks the user mid-build")
-_check("global rewrite, build", _decide_home(_root, "Write", GLOBAL_REWRITE, _sid),
+_check("global rewrite, build", _decide(_root, "Write", GLOBAL_REWRITE, _sid),
        "deny", "a whole-file Write over the existing global file is refused mid-build")
-_check("other home file, build", _decide_home(_root, "Edit", HOME_OTHER, _sid), "deny",
+_check("other home file, build", _decide(_root, "Edit", HOME_OTHER, _sid), "deny",
        "another file in the home .claude folder is refused mid-build")
 
 print()

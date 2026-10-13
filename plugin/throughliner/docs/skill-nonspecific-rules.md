@@ -40,9 +40,10 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> --append Unprocess
 
 ```
 #### <one-line description> [slug]
+- [ ] <description> (<project>) 🆔 <slug> ⛔ <slug>,<slug> 📅 YYYY-MM-DD
+                                          # written and kept by the tools, never by hand
 <prose rationale — plain short sentences, each paragraph one line>
 Red flag · State: <cleared | uncleared>   # only if it carries one
-Runs alone                                # only if the work moves paths under a run
 Blocked by: [slug], [slug]                # lifts when every named entry resolves;
                                           # on a capture may end `until built`
 Not before: YYYY-MM-DD                    # lifts itself on the date
@@ -62,23 +63,73 @@ The heading opens with its distinguishing words, and with a word other than A, A
 ```
 (no tag)     build        /build builds it, by build-work.md
 [audit]      read, report  /build runs it; findings become captures, nothing edited
-[user]       walk-through  /build walks the user through it, or names it as a task
-                           on their list where it carries a task line instead
+[user]       walk-through  /build walks the user through it, or says its task line
+                           is in the queue where it carries one instead
 [freeform]   by hand       done outside /build, which halts on it
 [co-write]   together      a text finished with the user inside the run, on one file
 ```
 
-**`[user]` is for work Claude cannot perform or witness at all.** Work Claude can do but not yet is held below the line against what it waits on. Before tagging `[user]`, check whether a tool could do it instead. A `[user]` item carries a walkthrough, or one task line. The task line, `- [ ] <task> (<project>) due <date>`, is appended to the list the project's CLAUDE.md names in its `Task list:` line, written as the list's header says where it has one. It carries what the user needs to act (a number, an address, a reference; their own home address stays out). It is added after a search of the list, ticked lines included, for a line already covering it, and in the order the project's queue gives its items. A task the user asks for in any command is filed at that moment as a `[user]` capture and added to the list in the same turn. A `[user]` item is walked whenever it is reached, in any skill, saying how many items wait on it where any do. Its completion comes from what the user volunteers, or from an observable the item names. Before walking, list LOG/ for records under its slug and resume at the first step not shown done.
+**`[user]` is for work Claude cannot perform or witness at all.** Work Claude can do but not yet is held below the line against what it waits on. Before tagging `[user]`, check whether a tool could do it instead. A `[user]` item carries a walkthrough, or one task line in its own body. The task line, `- [ ] <task> (<project>) 📅 YYYY-MM-DD 🆔 <slug> ⛔ <slug of what it waits on>`, is written in the Obsidian Tasks plugin's marks, the date and the ⛔ present only where they apply. It carries what the user needs to act (a number, an address, a reference; their own home address stays out). The project's `Task list:` line names the file holding the user's own Tasks queries, which read every project's queue inside the vault; no session writes to it. A task the user asks for in any command is filed at that moment as a `[user]` capture carrying its task line. Ticking the line, in Obsidian or at a session, is the completion the method reads. A `[user]` item is walked whenever it is reached, in any skill, saying how many items wait on it where any do. Its completion comes from what the user volunteers, or from an observable the item names. Before walking, list LOG/ for records under its slug and resume at the first step not shown done.
 
-**A `[freeform]` session writes `_freeform-<session-id>.md`** in the project root before its first edit, with a `Files:` section, through `build_open` where the server is registered; the safety check permits the listed paths.
+**A `[freeform]` session writes `_freeform-<session-id>.md`** in the project root after its first edit is refused once, with a `Files:` section, through `build_open` where the server is registered; the safety check then permits every listed path. A queued item built in the session is ticked with the tick tool, which writes into the scope file.
+
+**A session opened with no skill is a freeform session.** It files captures through the capture tool, records a decision it reaches in its close record, and where it changes a shipped doc its record carries the `Rule gate:` line.
+
+## Subagents
+
+**A subagent runs on the model the table gives its task kind; the main agent finds the task on the table and weighs nothing.** A task on neither list is the main agent's own. A subagent on any other model needs the user's yes, with its cost named.
+
+```
+Haiku    — returns facts only: no synthesis, no suggestion
+  a read of named files, returning what they say
+  an extraction of every rule or sentence on a subject, with its file and line
+  a summary of one transcript or record
+  a classification of entries against a fixed list
+  a fetch of one web page or search, returning what it says
+  a count or measurement over files
+Sonnet   — returns findings, any recommendation marked as the subagent's own
+  a trace of a mechanism across files, where the next file to read depends on the last
+  a read of two documents for sentences that contradict
+  a verification of a claim against the installed plugin's files
+  a read of code across more than one file, saying what it does
+  a draft of text that will be shown to the user
+```
+
+**The brief carries**: the question in one sentence; what has already been ruled out; which files to read; the answer's shape and length; what not to do; and the row's return rule. Effort stays the model's default. The safety check lets a Haiku or Sonnet spawn through and asks before any other.
 
 ## Queue states
 
+**An entry is in exactly one state, and every transition has one owner**: the server tool that makes it, or the word prose with the doc and step that makes it. A rule about queue handling is a change to one row; a row owned by prose is where the next rule lands, as the move into a tool.
+
 ```
-Unprocessed                a capture; what gets built cannot yet be described
-Processed, above the line  kept and ready; /build picks from here
-Processed, below the line  designed, held by a named item or a date, nothing else
-Deleted                    not worth doing; git keeps it
+State                 Meaning
+captured              in Unprocessed; what gets built cannot yet be described
+kept and held         in Processed below the line; held by a named item or a date
+kept and cleared      in Processed above the line; /build picks from here
+ticked confirmed      built, its check run; removed from Processed at the tick
+ticked unconfirmed    built, its check filed as a [user] capture; removed from
+                      Processed at a build run's tick, kept there at a freeform tick
+done                  a [user] item walked to its end, said done, or its check passed
+deleted               not worth doing; git keeps it
+
+Transition                                   Owner
+captured -> kept (held or cleared)           queue_move_section, at the plan keep
+captured -> deleted                          queue_delete, at the plan keep
+captured -> captured, a hold added           hold_entry
+captured, flagged -> stays captured          prose: plan.md's red-flag clearing;
+                                             an item is kept only once cleared
+kept and held -> kept and cleared            queue_move, at the plan lift;
+                                             prose: close.md's lift at a build close
+kept and cleared -> kept and held            hold_entry
+kept -> kept, rewritten whole                prose: plan.md's lift and skip
+kept and held, blocker unverified            prose: plan.md's held-work table,
+                                             naming the check item
+kept and cleared -> ticked confirmed         build_tick
+kept and cleared -> ticked unconfirmed       build_tick, with file_capture for the check
+kept and cleared -> deleted                  queue_delete, on the user's word
+[user] item -> done                          prose: build.md's walk-through outcomes,
+                                             close.md's completed-[user] arm, the mover
+advisory filed and spent                     prose: close.md's advisory, plan.md's opening
 ```
 
 **Not-ready work goes to the bottom of Unprocessed**, and that is the only defer. A principle goes to SPEC or CLAUDE.md, a durable finding to `workshop/resources/research/` or LOG, a goal to SPEC's Goals with a "reached when" line. Claude owns the order within Processed and narrates a non-default placement in one sentence. The user owns keep-or-delete, scope growth, clearing a red flag and approving a send.
@@ -102,4 +153,4 @@ CLAUDE.md   how Claude works on this project
 
 ## Files and git
 
-**Read a file to its end before reasoning over it**; a digest covers only the fields it computes. **Edit with the editing tools.** A session writes inside its own project and into a new folder belonging to no project; another project's files are written only through that project's own queue. Stage by path (`git add <path>`). Push on the user's ask, as a plain push. Check for secrets before committing. **Uncommitted changes you did not make are the user's own work**: accept wording and plain fixes with no question and note them in the record; ask, one at a time, about any that reverses a recorded decision or has no reason you can see; where an edit removes or changes text, search the project for its distinctive words and name each place that now disagrees. Ask before spawning a subagent, naming the cost. Before rolling a lot back, read `${CLAUDE_PLUGIN_ROOT}/docs/recovery.md`.
+**Read a file to its end before reasoning over it**; a digest covers only the fields it computes. **Edit with the editing tools.** A session writes inside its own project and into a new folder belonging to no project; another project's files are written only through that project's own queue. Stage by path (`git add <path>`). Push on the user's ask, as a plain push. Check for secrets before committing. **Uncommitted changes you did not make are the user's own work**: accept wording and plain fixes with no question and note them in the record; ask, one at a time, about any that reverses a recorded decision or has no reason you can see; where an edit removes or changes text, search the project for its distinctive words and name each place that now disagrees. Before rolling a lot back, read `${CLAUDE_PLUGIN_ROOT}/docs/recovery.md`.

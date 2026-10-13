@@ -82,11 +82,14 @@ FLAG_RE = re.compile(r"^Red flag\s*·\s*State:\s*(\w+)", re.IGNORECASE)
 # whose session a run is in decides what follows, and that is not read here.
 ASSIGNED_RE = re.compile(r"^Assigned to:\s*(.+?)\s*$", re.IGNORECASE)
 FLAVOR_RE = re.compile(r"^\[(audit|user|freeform|co-write)\]\s*", re.IGNORECASE)
-# "Runs alone" — the item is ready, but /build must not build it alongside other
-# work. Printed on the item's digest line because a solo item changes how much
-# of the ready region a single run can actually clear, which is exactly what a
-# planning session is deciding when it reads the digest.
-RUNS_ALONE_RE = re.compile(r"^\**Runs alone\**\s*$", re.IGNORECASE)
+# "Runs alone" — a marker retired 2026-10-11
+# ([runs-alone-retired-for-cleared-line-and-blocked-by]): the cleared line
+# placed after one item, with the rest held on it by `Blocked by:`, does the
+# same work. A line still met on an entry is reported as retired and ignored.
+RETIRED_RUNS_ALONE_RE = re.compile(r"^\**Runs alone\**\s*$", re.IGNORECASE)
+# The checkbox line the queue tool derives under every heading — recognised
+# so it is skipped, never read ([queue-entry-task-line-written-by-tools]).
+DERIVED_LINE_RE = re.compile(r"^- \[[ xX]\] .*🆔\s*\S")
 # The readiness marker. Matched as a whole line, never as a substring: an item's
 # own prose may legitimately quote the marker text while describing how the queue
 # works, and a substring test would take that sentence as the readiness line and
@@ -300,7 +303,9 @@ def parse(path):
                 "flag": None,
                 "cycle": None,
                 "assigned_to": None,
-                "runs_alone": False,
+                # True where the entry still carries the retired `Runs alone`
+                # line; reported, never read for state.
+                "retired_runs_alone": False,
                 # Lowercased prose, for the placement-contradiction checks. Not
                 # printed — the digest stays one line per item.
                 "prose": [],
@@ -316,6 +321,13 @@ def parse(path):
                 "last_line": lineno,
             }
             items.append(current)
+            continue
+
+        # The derived checkbox line the queue tool writes under every heading
+        # ([queue-entry-task-line-written-by-tools]) is skipped as derived:
+        # never read for state, never counted as prose or length. `Blocked
+        # by:` and `Not before:` stay the fields every hook reads.
+        if current is not None and DERIVED_LINE_RE.match(stripped):
             continue
 
         if current is not None and stripped:
@@ -341,8 +353,8 @@ def parse(path):
             assigned = ASSIGNED_RE.match(stripped)
             if assigned:
                 current["assigned_to"] = assigned.group(1)
-            if RUNS_ALONE_RE.match(stripped):
-                current["runs_alone"] = True
+            if RETIRED_RUNS_ALONE_RE.match(stripped):
+                current["retired_runs_alone"] = True
             files = FILES_LINE_RE.match(stripped)
             if files and current["files_line"] is None:
                 current["files_line"] = files.group(1).lower()
@@ -1149,11 +1161,6 @@ def size_signs(items, root, queue_path):
         out.append("- user steps deferred run after run: none")
     held = [i for i in items if i["section"] == "Processed" and not i["cleared"]]
     out.append(f"- held region: {len(held)} item(s) below the line")
-    cleared_order = [i for i in items if i["section"] == "Processed" and i["cleared"]]
-    for item in cleared_order:
-        if item["runs_alone"]:
-            out.append(f"- [{item['slug'] or 'NO-SLUG'}] runs alone with "
-                       f"{cleared_order.index(item)} cleared item(s) ahead of it")
     try:
         size = os.path.getsize(queue_path)
     except OSError:
@@ -1220,8 +1227,8 @@ def render(items, root="", queue_path="QUEUE.md"):
             if section == "Processed":
                 bits.append("cleared" if item["cleared"] else "held")
             bits.append(item["flavor"])
-            if item["runs_alone"]:
-                bits.append("runs alone")
+            if item["retired_runs_alone"]:
+                bits.append("retired `Runs alone` line, ignored")
             slug = item["slug"] or "NO-SLUG"
             line = f"- [{slug}] ({', '.join(bits)}) {item['heading']}"
             if item["blocked_by"]:
@@ -1323,32 +1330,6 @@ def render(items, root="", queue_path="QUEUE.md"):
     if shared:
         for path, slugs in shared.items():
             out.append(f"- {path}: " + ", ".join(f"[{s}]" for s in slugs))
-    else:
-        out.append("- none")
-    out.append("")
-
-    # How much ready work sits in front of each `Runs alone` item.
-    #
-    # /build stops BEFORE such an item, so it is reached only once everything
-    # ahead of it has been built — and every planning session adds newly ready
-    # work ahead of it. So a correctly placed item quietly recedes each time the
-    # queue is worked, and nothing in the queue shows that happening.
-    #
-    # A COUNT is reportable where an age is not: how long something has been
-    # ready would need a threshold nobody can derive, while what sits in front of
-    # it is arithmetic. A fact, like every other line here, never a verdict —
-    # moving the item is the user's decision.
-    alone = [i for i in items
-             if i["section"] == "Processed" and i["cleared"] and i["runs_alone"]]
-    out.append(f"## Runs-alone work, and what is ahead of it — {len(alone)}")
-    if alone:
-        cleared_order = [i for i in items
-                         if i["section"] == "Processed" and i["cleared"]]
-        for item in alone:
-            ahead = cleared_order.index(item)
-            out.append(
-                f"- [{item['slug'] or 'NO-SLUG'}]: {ahead} cleared item(s) ahead of it"
-            )
     else:
         out.append("- none")
     out.append("")

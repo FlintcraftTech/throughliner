@@ -25,13 +25,13 @@ This project uses the Throughliner method.
 
 ## Visibility
 
-<!-- Set at setup: which repository holds this project's documents, and whether
-     they are published anywhere. Left blank until that is settled. In a
-     nested project the line names both repositories and their roles, e.g.:
+<!-- Set at setup. Every project is nested, and the line names both
+     repositories and their roles, e.g.:
      "Visibility: nested — the outer repository (this folder) holds the
      method's documents and never gets a remote; the inner repository
      (<product subfolder>/) holds only the product and is the one that goes
-     public when asked." -->
+     public when asked." A single document gitignored on your ask is named
+     here too. -->
 
 Visibility:
 
@@ -41,16 +41,14 @@ Language: English
 
 ## Task list
 
-<!-- Optional. The full path of the one markdown task list you keep for every
-     project. It is read best in Obsidian with the Tasks plugin, whose fields
-     the task line uses; any markdown editor works. When planning keeps a step
-     of yours that needs no walkthrough, Claude appends one checkbox line
-     there — the task, this project's name in brackets, and a due date where
-     there is one — and reads the file at each planning opening for lines you
-     have ticked. Where the file opens with a header stating its line
-     conventions, the line's fields are written as that header says. Claude
-     keeps this project's lines current and changes any other line when you
-     ask. Write none to keep no list; setup asks and fills this line in. An absolute path, e.g.
+<!-- Optional. The full path of the note holding your Obsidian Tasks plugin
+     queries — the one place you read every project's tasks. No session
+     writes to it: a task of yours lives as a checkbox line inside its own
+     queue item, in the plugin's marks (📅 date, 🆔 slug, ⛔ what it waits
+     on), and the queries read every project's queue in the vault. Tick the
+     line in Obsidian or at a session; the next planning session closes the
+     item. Write none to keep no such note; setup asks and fills this line
+     in. An absolute path, e.g.
      "Task list: C:\Users\you\Notes\Tasks.md" -->
 
 Task list:

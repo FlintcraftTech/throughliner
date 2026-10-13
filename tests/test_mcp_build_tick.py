@@ -161,8 +161,18 @@ def refused(name, arguments, expect, **kw):
 refused("a slug not in the working file",
         dict(GOOD, slug="delta", rule_gate=""), "not a work item in Processed")
 refused("a missing verdict", dict(GOOD, verdict=""), "verdict must be")
-refused("unconfirmed with no reason", dict(GOOD, verdict="unconfirmed"),
+refused("unconfirmed with no reason",
+        dict(GOOD, verdict="unconfirmed", check_item="delta"),
         "reason is missing")
+# [unverified-blocker-never-surfaced]: an unconfirmed tick names the [user]
+# capture carrying its check, and the slug must resolve to an entry.
+refused("unconfirmed with no check item",
+        dict(GOOD, verdict="unconfirmed", reason="needs the user's eyes"),
+        "check_item is missing")
+refused("unconfirmed with a check item resolving to nothing",
+        dict(GOOD, verdict="unconfirmed", reason="needs the user's eyes",
+             check_item="no-such-entry"),
+        "resolves to no entry")
 refused("a full depth with no trigger", dict(GOOD, depth="full"),
         "names its trigger")
 refused("a gate line the item does not carry",
@@ -183,7 +193,58 @@ refused("a SPEC-check value outside the three forms",
         dict(GOOD, spec_check="looked fine"), "spec_check opens")
 refused("a contradicts with no sentence",
         dict(GOOD, spec_check="contradicts:"), "spec_check opens")
-refused("no working file", GOOD, "no build working file", working=None)
+refused("a gate line in no accepted form",
+        dict(GOOD, rule_gate="maybe — who knows"), "rule_gate opens")
+refused("no working file and no scope file", GOOD, "build_open",
+        working=None)
+
+# --- [handmade-builds-leave-queue-unconfirmed]: a session with no build file
+# ticks into its freeform scope file, under a `## Ticks` heading ----------
+d = project(working=None)
+with open(os.path.join(d, "_freeform-s1.md"), "w", encoding="utf-8",
+          newline="") as f:
+    f.write("# Freeform scope\n\nFiles:\n- some/file.py\n")
+text = call(d, dict(GOOD, session_id="s1"))
+w = read(d, "_freeform-s1.md")
+check("the tick lands in the scope file",
+      text.startswith("Wrote to _freeform-s1.md"), repr(text))
+check("the scope file gains a Ticks heading with the six lines under it",
+      "\n## Ticks\n\n- [x] Alpha — a cleared build with a gate — done, "
+      "confirmed\nDepth: alpha — short\n" in w
+      and "\nSPEC check: alpha — agrees\n- some/file.py: the guard gains a "
+      "résumé check — Ω\n- some/file.py: added the check, 12 lines\n" in w,
+      repr(w))
+check("the scope file's Files section is untouched",
+      "\nFiles:\n- some/file.py\n" in w, repr(w))
+check("the item left Processed from a scope-file tick",
+      "[alpha]" not in read(d, "QUEUE.md"))
+call(d, {"slug": "gamma", "verdict": "confirmed", "depth": "short",
+         "index_candidate": "audit of x: two findings captured",
+         "changes": "- finding one — captured", "session_id": "s1",
+         "bears_on": "not applicable", "spec_check": "not applicable"})
+w = read(d, "_freeform-s1.md")
+check("a second tick appends under the one Ticks heading",
+      w.count("## Ticks") == 1 and "Depth: gamma — short" in w, repr(w))
+text = call(d, {"slug": "beta", "verdict": "unconfirmed",
+                "reason": "needs the user's eyes", "check_item": "delta",
+                "depth": "short", "index_candidate": "docs/x.md: reworded",
+                "changes": "docs/x.md: one sentence", "session_id": "s1",
+                "bears_on": "none found: x", "spec_check": "agrees"})
+check("an unconfirmed scope-file tick leaves the item in Processed",
+      "Left [beta] in Processed" in text and "[beta]" in read(d, "QUEUE.md")
+      and "check: [delta]" in read(d, "_freeform-s1.md"), repr(text))
+shutil.rmtree(d, ignore_errors=True)
+
+# --- the lean `slips` form is accepted and copied across unchanged ----------
+d = project()
+SLIPS = "slips none — amends the keep step; out: the planning-site refusal"
+text = call(d, dict(GOOD, rule_gate=SLIPS))
+w = read(d, "_build-s1.md")
+check("the slips form is accepted",
+      text.startswith("Wrote"), repr(text))
+check("the slips line is copied across unchanged under its slug",
+      "Rule gate: alpha — " + SLIPS + "\n" in w, repr(w))
+shutil.rmtree(d, ignore_errors=True)
 refused("two working files and no session id", GOOD,
         "pass session_id", extra_working=True)
 
@@ -218,7 +279,7 @@ check("the tool reports the writes and the removal",
 
 # --- a second tick appends after the first, and a re-tick is refused --------
 text2 = call(d, {"slug": "beta", "verdict": "unconfirmed",
-                 "reason": "the suite has not run",
+                 "reason": "the suite has not run", "check_item": "delta",
                  "depth": "full", "trigger": "alternative seriously weighed",
                  "index_candidate": "docs/x.md: reworded",
                  "changes": "docs/x.md: one sentence",
@@ -230,7 +291,7 @@ check("the second item's two lines land under its own slug",
       "SPEC check: beta — owes: spec-owes-x-sentence\n" in w, repr(w))
 check("the second tick follows the first under Progress",
       "SPEC check: alpha — agrees\n- [x] Beta — a cleared build with no gate — done, UNCONFIRMED: "
-      "the suite has not run\nDepth: beta — full, alternative seriously "
+      "the suite has not run — check: [delta]\nDepth: beta — full, alternative seriously "
       "weighed\n" in w, repr(w))
 check("a bare changes line gains its bullet",
       "- some/file.py: added the check, 12 lines\n- docs/x.md: one sentence\n"

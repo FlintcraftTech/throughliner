@@ -110,6 +110,27 @@ def main():
         repr(drive_edit(d, target)),
     )
 
+    # 1a. [freeform-scope-lock-one-block-per-file-and-planning-session-wording]:
+    # the door opens once per session, not once per path. A second path the
+    # scope file lists is admitted on the strength of the first refusal, and
+    # the one block's message names the scope file.
+    check(
+        "the block message names the no-skill session's scope file",
+        "_freeform-%s.md" % SESSION in cold.get("permissionDecisionReason", "")
+        and "opened with no skill" in cold.get("permissionDecisionReason", ""),
+        repr(cold),
+    )
+    d1a = make_project(scope_files=["plugin/docs/some-doc.md",
+                                    "plugin/docs/second-doc.md"])
+    first = os.path.join(d1a, "plugin", "docs", "some-doc.md")
+    second = os.path.join(d1a, "plugin", "docs", "second-doc.md")
+    drive_edit(d1a, first)  # the one refusal
+    check(
+        "a second listed path is admitted after the first refusal",
+        decision(drive_edit(d1a, second)) == "allow",
+        repr(drive_edit(d1a, second)),
+    )
+
     # 1b. A refusal logged under a DIFFERENT session id does not open the door.
     d1 = make_project(scope_files=["plugin/docs/some-doc.md"])
     target1 = os.path.join(d1, "plugin", "docs", "some-doc.md")

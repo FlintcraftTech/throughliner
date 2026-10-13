@@ -17,8 +17,6 @@ run     = Processed, from the top down to `--- Cleared to run above this line --
 [freeform]  halt; it needs a session of its own
 ```
 
-**A `Runs alone` line is the run's second bound.** Where the run has already built something, end before that item. Where it is the run's first item, build it and end after it. Where its observable check finds it already done, close it and continue. Say why the run ended and how many cleared items it did not reach, then recommend /close.
-
 ## Step 1: Pre-flight
 
 Everything these checks find folds into one narration, delivered with the run at step 4.
@@ -68,11 +66,11 @@ Changes:
 
 **Build every Claude-work item that depends on no `[user]` item first.** Then, in queue order, walk each `[user]` item whose prose names builds by slug and build the ones it names; then walk the rest. Between items, keep going; the run was confirmed at the off-ramp.
 
-**As each item completes, write six things in the working file and remove the item from the queue.** Write them with `build_tick` where the server is registered, which refuses a missing verdict, a full depth with no trigger, or an empty bears-on or SPEC-check field; otherwise by hand:
+**As each item completes, write six things in the working file and remove the item from the queue.** Write them with `build_tick` where the server is registered, which refuses a missing verdict, a full depth with no trigger, an empty bears-on or SPEC-check field, or an unconfirmed tick with no check item; otherwise by hand. **Before an unconfirmed tick whose check needs the user, file the check** through the capture tool as a `[user]` capture named for the item with `-check` on its slug, carrying the check in the three-instruction form (what to open or run, what to look for, what to tell the next session), the items held on the ticked work by slug, and, where the check is host-side, a first step that the installed host must carry the build, read with `host_currency`; then tick with its slug:
 
 ```
 - [x] <item description> — done, confirmed
-- [x] <item description> — done, UNCONFIRMED: <what still needs running>
+- [x] <item description> — done, UNCONFIRMED: <what still needs running> — check: [<slug>-check]
 Depth: <slug> — short
 Depth: <slug> — full, <reasoning contested | alternative seriously weighed>
 Bears on: <slug> — <SPEC and queue hits for the item's distinctive words, found before the first edit>
@@ -91,7 +89,7 @@ Tick first, then remove, so that an interruption leaves the item visible in both
 
 **Once the Claude-work is built, walk the user through each `[user]` item still in the cleared region**, from the item's own walkthrough in QUEUE.md. Where an item carries none, halt on it. Walking is part of the run.
 
-**First, in one short message, name the items that cannot move this session**, one line each with why: a task-shaped item (one carrying a task line instead of a walkthrough) is on the user's list and completes when they tick it; an item whose record shows it handed over after a /close with no observable to check stays open, with what waits on it named by slug; an item whose first step needs something not yet there is blocked on that thing. Record each under the outcome block below. The message carries no ask.
+**First, in one short message, name the items that cannot move this session**, one line each with why: a task-shaped item (one carrying a task line instead of a walkthrough) has its line in the queue and completes when they tick it there; an item whose record shows it handed over after a /close with no observable to check stays open, with what waits on it named by slug; an item whose first step needs something not yet there is blocked on that thing. Record each under the outcome block below. The message carries no ask.
 
 **Then each item that can move gets its own turn**, saying how many items wait on it where any do. Open its LOG entry under its slug, append each action as it happens, write one `Run-level:` line, and append every path on the item's Files line to the working file's `Files:` section, saying so in one clause.
 
@@ -105,7 +103,7 @@ Where the user volunteers that an item is done, take their word and recommend /c
 
 ```
 done          walked to its end, or the user said so, or its observable check passed;
-              its task line, where it has one, is ticked at the close that removes it
+              its task line, where it has one, leaves with it ticked, into its LOG entry
 deferred      the user said to leave it, their word quoted
 not reached   never presented, or presented with no answer
 anything else what actually happened, in one plain sentence

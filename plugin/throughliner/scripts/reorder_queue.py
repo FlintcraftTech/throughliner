@@ -528,6 +528,101 @@ def _write_with_one_retry(queue_path, text):
             time.sleep(RETRY_PAUSE_SECONDS)
 
 
+# --- The derived checkbox line under every heading -------------------------
+#
+# [queue-entry-task-line-written-by-tools]: each entry in either section
+# carries one line directly under its `#### ` heading, written here from the
+# entry's own fields and never hand-edited:
+#
+#   - [ ] <heading text> (<project>) 🆔 <slug> ⛔ <slug>,<slug> 📅 YYYY-MM-DD
+#
+# in the Obsidian Tasks plugin's marks (🆔 the id, ⛔ a comma-separated list
+# of the ids it depends on, 📅 the due date — read from the plugin's own
+# documentation 2026-10-13), so that one Tasks query over the vault lists
+# every entry in every project with what it waits on. The ⛔ ids come from
+# `Blocked by:`, the 📅 from `Not before:`, and the project name from the
+# queue's folder. Every write path runs the pass, so the line follows every
+# move, hold and tick; a line whose entry is gone goes with it. A `[user]`
+# item's own task line — any checkbox line carrying `🆔 <its slug>` — is
+# that item's line, and no second one is written.
+DERIVED_LINE_RE = re.compile(r'^\s*- \[([ xX])\] .*🆔\s*\S')
+_BLOCKED_LINE_RE = re.compile(r'^Blocked by:\s*(.+?)\s*$', re.IGNORECASE)
+_NOT_BEFORE_LINE_RE = re.compile(r'^Not before:\s*(\d{4}-\d{2}-\d{2})',
+                                 re.IGNORECASE)
+_SLUG_REF_RE = re.compile(r'\[([^\]\s]+)\]')
+
+
+def _project_name(queue_path):
+    return os.path.basename(os.path.dirname(os.path.abspath(queue_path)))
+
+
+def derived_line(heading_line, block_lines, project, ticked=False, eol='\n'):
+    """The checkbox line an entry's heading and fields derive to."""
+    slug = heading_slug(heading_line)
+    text = ITEM_RE.sub('', heading_line.rstrip('\r\n'), count=1)
+    text = SLUG_RE.sub('', text).strip()
+    blocked, date = [], None
+    for raw in block_lines:
+        s = raw.strip()
+        m = _BLOCKED_LINE_RE.match(s)
+        if m:
+            for ref in _SLUG_REF_RE.findall(m.group(1)):
+                if ref not in blocked:
+                    blocked.append(ref)
+        m = _NOT_BEFORE_LINE_RE.match(s)
+        if m:
+            date = m.group(1)
+    parts = ['- [%s] %s (%s) 🆔 %s' % ('x' if ticked else ' ', text,
+                                       project, slug)]
+    if blocked:
+        parts.append('⛔ ' + ','.join(blocked))
+    if date:
+        parts.append('📅 ' + date)
+    return ' '.join(parts) + eol
+
+
+def sync_lines(lines, project):
+    """Return `lines` with every entry's derived line written or rewritten
+    directly under its heading. A block already carrying a checkbox line
+    with its own slug's 🆔 elsewhere than directly under the heading (a
+    `[user]` item's task line) is left as it is."""
+    eol = '\r\n' if any(l.endswith('\r\n') for l in lines) else '\n'
+    out = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        if not ITEM_RE.match(line):
+            out.append(line)
+            i += 1
+            continue
+        slug = heading_slug(line)
+        # The block: up to the next heading, marker or section line.
+        j = i + 1
+        while j < n and not (ITEM_RE.match(lines[j]) or MARKER_RE.match(lines[j])
+                             or SECTION_RE.match(lines[j])):
+            j += 1
+        block = lines[i + 1:j]
+        out.append(line)
+        own = None
+        for k, raw in enumerate(block):
+            m = DERIVED_LINE_RE.match(raw)
+            if m and slug and ('🆔 %s' % slug) in raw:
+                own = k
+                break
+        if own is None:
+            out.append(derived_line(line, block, project, eol=eol))
+            out.extend(block)
+        elif own == 0 and not line.lstrip('# ').startswith('[user]'):
+            ticked = DERIVED_LINE_RE.match(block[0]).group(1) != ' '
+            out.append(derived_line(line, block[1:], project, ticked, eol))
+            out.extend(block[1:])
+        else:
+            out.extend(block)
+        i = j
+    return out
+
+
 def write_verified(queue_path, new_lines, absent=(), present=()):
     """Write the queue, force it to disk, read it back, and confirm the write
     actually landed before reporting success.
@@ -560,6 +655,9 @@ def write_verified(queue_path, new_lines, absent=(), present=()):
     produce — the script waits and tries once more, saying so; a second
     refusal names what to check.
     """
+    # Every write runs the derived-line pass first, so the checkbox line
+    # under each heading follows the write that just changed its fields.
+    new_lines = sync_lines(list(new_lines), _project_name(queue_path))
     _write_with_one_retry(queue_path, ''.join(new_lines))
 
     with open(queue_path, 'r', encoding='utf-8', newline='') as f:
@@ -584,7 +682,7 @@ STAMP_RE = re.compile(r"^Filed \d{4}-\d{2}-\d{2} \d{2}:\d{2}, stamped by the "
 # The lines a capture may end on after its prose: the parsed fields. A stamp
 # goes before the first of them, so it stays the last prose line.
 FIELD_LINE_RE = re.compile(
-    r"^(Blocked by|Not before|Cycle|Red flag|Runs alone|Assigned to)\b")
+    r"^(Blocked by|Not before|Cycle|Red flag|Assigned to)\b")
 ASSIGNED_LINE_RE = re.compile(r"^Assigned to:.*$", re.IGNORECASE)
 
 
@@ -1285,6 +1383,18 @@ def main():
         except IndexError:
             die("--marker-after needs a value (a slug, TOP, or BOTTOM)")
         args = args[:k] + args[k + 2:]
+
+    if '--sync-lines' in args:
+        rest = [a for a in args if a != '--sync-lines']
+        if len(rest) != 1:
+            die("usage: reorder_queue.py <queue_path> --sync-lines")
+        with open(rest[0], 'r', encoding='utf-8', newline='') as f:
+            lines = f.read().splitlines(keepends=True)
+        parse(lines)
+        write_verified(rest[0], lines)
+        sys.stderr.write("reorder_queue: derived lines synced under every "
+                         "heading\n")
+        return
 
     if '--append' in args:
         k = args.index('--append')

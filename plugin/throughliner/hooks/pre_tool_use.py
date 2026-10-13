@@ -18,7 +18,7 @@ PreToolUse hook — enforces three rules:
    (_build-<session-id>.md) has a Files: section governing which files are
    editable (method docs — QUEUE.md, LOG/, that working file — plus the user's
    memory dir, workshop/resources/research/, the session scratchpad dir,
-   TOOLS.md, MAP.md, the file the project's `Task list:` line names (any edit, no whole-file overwrite), and
+   TOOLS.md, MAP.md, and
    the project's own register and address book in `.throughliner/` are always editable). Tri-state:
    no Files: section = no enforcement;
    section present but empty = method docs only; entries listed = only
@@ -875,43 +875,11 @@ def _is_map_file(filepath: str, cwd: str) -> bool:
     return _normalise(filepath) == _normalise(os.path.join(cwd, "MAP.md"))
 
 
-# --- The user's task list above every project ([task-list-above-projects]) ---
-#
-# A project's own CLAUDE.md may carry one line, `Task list: <absolute path>`,
-# naming the user's one markdown task list — a file in the notes app they run
-# their day from, shared by every project they work on. Planning appends a
-# checkbox line there when it keeps a task-shaped [user] item, and reads the
-# file at every opening for ticked lines. It is the ONE permitted write outside
-# the project root: any edit to it passes, and only a whole-file overwrite is
-# refused, because the list sits where git cannot restore it.
-TASK_LIST_LINE_RE = re.compile(r"^Task list:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
-
-
-def _task_list_path(cwd: str) -> str:
-    """The absolute path a project's `Task list:` line names, or "".
-
-    Read from the project's own CLAUDE.md at the root the session opened in.
-    A relative path is not a task list — setup refuses to write one, and a
-    line carrying one here names nothing, so the permission never opens.
-    """
-    try:
-        with open(os.path.join(cwd, "CLAUDE.md"), "r", encoding="utf-8") as f:
-            text = f.read()
-    except OSError:
-        return ""
-    m = TASK_LIST_LINE_RE.search(text)
-    if not m:
-        return ""
-    path = m.group(1).strip().strip("`")
-    if not path or not os.path.isabs(path):
-        return ""
-    return path
-
-
-def _is_task_list_file(filepath: str, cwd: str) -> bool:
-    """True for the file the project's `Task list:` line names — exact match."""
-    path = _task_list_path(cwd)
-    return bool(path) and _normalise(filepath) == _normalise(path)
+# The task-list permission that once sat here — any edit to the file a
+# project's `Task list:` line names — was retired 2026-10-12
+# ([user-task-line-lives-in-queue-with-tasks-marks]): a task line lives in
+# its own queue item, and the `Task list:` line names the user's query note,
+# which no session writes. A write there is an ordinary outside write, refused.
 
 
 def _global_instructions_path() -> str:
@@ -928,8 +896,8 @@ def _global_instructions_path() -> str:
 
 
 def _is_global_instructions_file(filepath: str) -> bool:
-    """True for the user's global instructions file — exact match. The second
-    permitted write outside the project root, beside the task list: a fact
+    """True for the user's global instructions file — exact match. The one
+    permitted write outside the project root: a fact
     about the user that no project owns goes there as one line on their yes
     ([user-facts-to-global-instructions]), so an edit asks the user and a
     whole-file overwrite of an existing file is refused."""
@@ -1504,29 +1472,33 @@ def _freeform_scope_files(cwd: str, session_id: str) -> list[str]:
 
 
 def _door_refused_earlier(filepath: str, cwd: str, session_id: str) -> bool:
-    """True where this session's decision log holds a deny of this same path.
+    """True where this session's decision log holds any deny under its id.
 
     The user's door — a scope file in a no-build session — opens only after
-    the safety check has itself refused that path earlier in the same session
+    the safety check has itself refused an edit earlier in the same session
     ([sweep-security-users-door-is-self-declared]). The hook cannot tell a
     scope file written on the user's word from one a session wrote to get past
     a refusal, so this ties the door to the one thing it can read: its own
-    log. Matched on the session id column and the path, normalised; lines
-    from before the column existed carry no id and never match.
+    log. Since 2026-10-13 the test is "this session has been refused once",
+    not "this path has" ([freeform-scope-lock-one-block-per-file-and-
+    planning-session-wording]): a path added to the scope file after one
+    refusal was admitted anyway, and each further block cost a turn for a
+    log line. Matched on the session id column; lines from before the column
+    existed carry no id and never match. `filepath` is kept for the callers'
+    shape and not read.
     """
+    del filepath
     path = os.path.join(cwd, ".throughliner", _DECISION_LOG_NAME)
     if not os.path.isfile(path):
         return False
     sid = safe_session_id(session_id)
-    want = _normalise(filepath)
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as f:
             for raw in f:
                 parts = raw.rstrip("\r\n").split("\t")
                 if len(parts) < 6 or parts[2] != "deny" or parts[5] != sid:
                     continue
-                if _normalise(parts[4]) == want:
-                    return True
+                return True
     except OSError:
         return False
     return False
@@ -2391,7 +2363,16 @@ def main() -> int:
     # subagent tool "Agent", older harnesses name it "Task". Matching only
     # "Task" is how this gate was silently dead — registered, firing, and
     # never recognising the tool it exists to guard.
+    #
+    # A spawn naming Haiku or Sonnet in the tool's `model` field passes with
+    # no prompt ([haiku-subagents-facts-only-with-brief-standard]): the
+    # always-loaded rules carry a fixed table of task kinds naming one of the
+    # two, so the model is reliable by mechanism; which row a task is on
+    # stays prose. Any other model, or none named, still asks.
     if tool_name in ("Task", "Agent"):
+        model = str((tool_input or {}).get("model") or "").strip().lower()
+        if model in ("haiku", "sonnet"):
+            return _allow("subagent cost gate: %s named" % model)
         return _ask(
             "[Throughliner] Claude wants to start a subagent. "
             "Subagents burn tokens fast — a single run can use up your usage "
@@ -2718,20 +2699,6 @@ def main() -> int:
             branch="overwrite guard: sent register",
         )
 
-    # The user's task list takes any edit. A Write over a list that already
-    # exists is refused whatever kind of session is running; an Edit, and a
-    # Write creating the file, pass through the scope branches below by name.
-    if (_is_task_list_file(filepath, cwd) and tool_name == "Write"
-            and os.path.exists(filepath)):
-        return _deny(
-            "[Throughliner] BLOCKED: this would replace the user's task list "
-            "whole.\n\n"
-            f"File: {filepath}\n\n"
-            "The list sits outside the project where git cannot restore it, "
-            "so change it line by line with Edit.",
-            branch="task list: whole-file overwrite",
-        )
-
     # The user's global instructions file refuses a whole-file Write where the
     # file exists, in planning and in a build alike: it sits where git cannot
     # restore it, and a line there changes every session's behaviour.
@@ -2922,7 +2889,6 @@ def main() -> int:
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
-            ("task list append", lambda: _is_task_list_file(filepath, cwd)),
             ("working register", lambda: _is_working_register(filepath, cwd)),
             ("close-phase file",
              lambda: _is_close_phase_file(filepath, cwd, sid)),
@@ -3039,7 +3005,6 @@ def main() -> int:
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
-            ("task list append", lambda: _is_task_list_file(filepath, cwd)),
             ("working register", lambda: _is_working_register(filepath, cwd)),
             ("checklist Writes: field",
              lambda: _is_checklist_declared_path(filepath, cwd)),
@@ -3058,8 +3023,9 @@ def main() -> int:
                 return _allow("freeform scope file")
             door_line = (
                 "\n\nA scope file names this path, but the door opens only "
-                "after the safety check has refused the path earlier in this "
-                "same session — this refusal is that one.")
+                "after the safety check has refused an edit earlier in this "
+                "same session — this refusal is that one, and every path the "
+                "scope file lists is admitted from here on.")
         elif os.path.isfile(working_file(cwd, "freeform", sid)):
             # A scope file exists and nothing in it matched: say so, so the
             # refusal is not read as though no scope file existed
@@ -3070,9 +3036,16 @@ def main() -> int:
                 "and nothing in its Files: list matched this path — check "
                 "the path as written there against the one above.")
         if True:
+            # The hook cannot tell a planning session from a session opened
+            # with no skill, so the message names both: the standing list
+            # for a planning session, and the scope file for a no-skill one.
+            scope_name = os.path.basename(working_file(cwd, "freeform", sid))
             return _deny(
-                "[Throughliner] BLOCKED: planning sessions can only change a "
-                "fixed set of files, and this isn't one of them.\n\n"
+                "[Throughliner] BLOCKED: a session opened with no skill can "
+                "only change the files its scope file "
+                f"`{scope_name}` lists, and a planning session only a fixed "
+                "set of files; this path is neither, and the door opens after "
+                "this one refusal.\n\n"
                 f"About to edit: {filepath}\n\n"
                 "A planning session may write QUEUE.md, any SPEC.md (the "
                 "root's or a part's), CYCLES.md, TOOLS.md, MAP.md, anything "
@@ -3082,8 +3055,8 @@ def main() -> int:
                 "otherwise goes through the user's door below), supplied "
                 "material the user wrote or attached (under "
                 "workshop/resources/supplied/), the temp/ "
-                "folder, the memory directory, the task list the project "
-                "names, the user's global instructions file (CLAUDE.md in "
+                "folder, the memory directory, "
+                "the user's global instructions file (CLAUDE.md in "
                 "their home .claude folder, one line on their yes), its own "
                 "scratch files, and any "
                 "path a checklist definition in CYCLES.md declares its steps "
@@ -3095,9 +3068,9 @@ def main() -> int:
                 "is now an item rather than an edit. Where the user then asks "
                 "for the same change again in their own words, write "
                 "_freeform-<session-id>.md in the project root with a Files: "
-                "section naming this one path, say so in one line, and make "
+                "section naming the paths, say so in one line, and make "
                 "the edit — the user's repeated direction is what opens that "
-                "door, one path at a time." + door_line,
+                "door, once per session." + door_line,
                 branch=("freeform scope file: no prior refusal" if door_line
                         else "planning standing list: not on it"),
             )

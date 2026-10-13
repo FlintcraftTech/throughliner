@@ -143,6 +143,15 @@ def test_the_report_names_snapshots_and_not_show_first():
     check("the retired show-first consequence is gone",
           "is SHOWN to you first instead" not in source,
           "stale show-first clause still present")
+    # [nested-shape-required-flat-gitignore-retired]: the lead sentence names
+    # the project as not yet nested and setup as what converts it, and the
+    # retired "configuration the method proposes" framing is gone.
+    check("the report says the project is not yet nested and names setup",
+          "not yet nested" in source and "setup command converts" in source,
+          "nested wording not found")
+    check("the retired keep-private framing is gone",
+          "configuration the method proposes at setup" not in source,
+          "stale keep-private framing still present")
 
 
 if __name__ == "__main__":

@@ -241,24 +241,48 @@ def _is_root_commit(cwd, commit):
     return result.returncode != 0
 
 
+# Paths under LOG/ that git history holds, read once per backfill
+# ([session-start-hash-backfill-one-git-call-per-record]): the per-record
+# `git log -1 -- <path>` this answered with cost 60 ms a call and three
+# minutes an opening on a project with 3,291 records. Keyed by cwd; the
+# backfill clears it at its start, so a commit made between two backfills in
+# one process is seen.
+_COMMITTED_LOG_PATHS = {}
+
+
+def _committed_log_paths(cwd):
+    """The set of LOG/ paths with at least one commit, from one git call."""
+    if cwd in _COMMITTED_LOG_PATHS:
+        return _COMMITTED_LOG_PATHS[cwd]
+    paths = set()
+    try:
+        result = subprocess.run(
+            ["git", "log", "--name-only", "--format=", "--", "LOG/"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
+        if result.returncode == 0:
+            paths = {line.strip().replace("\\", "/")
+                     for line in result.stdout.splitlines() if line.strip()}
+    except (OSError, subprocess.SubprocessError):
+        paths = set()
+    _COMMITTED_LOG_PATHS[cwd] = paths
+    return paths
+
+
 def _file_is_committed(cwd, relpath):
     """True if `relpath` has at least one commit in git history.
 
     Used to tell an unresolved placeholder that *should* have resolved (its
     entry file is already committed, so `git log -S` should have found it)
     from the normal case (the current session's own entry, not yet committed).
+    Answered from one `git log --name-only` over LOG/, not one call per file.
     """
-    try:
-        result = subprocess.run(
-            ["git", "log", "-1", "--pretty=%h", "--", relpath],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return False
-    return result.returncode == 0 and bool(result.stdout.strip())
+    return relpath.replace("\\", "/") in _committed_log_paths(cwd)
 
 
 def _placeholder_line_is_committed(cwd, relpath, line, is_index_file, is_legacy_log=False):
@@ -450,6 +474,8 @@ def backfill_log_hashes(cwd):
         return ""
     if not _log_is_tracked(cwd):
         return _backfill_untracked(cwd, log_dir, names)
+    # One git read for the whole folder, fresh for this backfill.
+    _COMMITTED_LOG_PATHS.clear()
     filled = 0
     touched_files = []
     # Placeholders that stayed unresolved even though their entry file is
@@ -2553,6 +2579,131 @@ def leftover_working_files(cwd: str, session_id: str) -> list:
     return found
 
 
+# The kinds of file a person uses, as MAP.md's own preamble names them: a
+# markdown document, a PDF, a slide deck, a spreadsheet, an image, a calendar
+# file. Machinery (scripts, configuration) earns no map line and is not read.
+HUMAN_USED_SUFFIXES = (".md", ".pdf", ".pptx", ".ppt", ".key", ".odp",
+                       ".xlsx", ".xls", ".ods", ".csv", ".png", ".jpg",
+                       ".jpeg", ".gif", ".svg", ".webp", ".ics")
+# The method's own files, which MAP.md's preamble covers rather than a line.
+_MAP_EXEMPT = ("SPEC.md", "QUEUE.md", "CLAUDE.md", "MAP.md", "LOG")
+# A map line's head is everything before its first " — "; a line may name
+# several paths there ("a/ and b/ — ..."), so every path-shaped token in the
+# head is a lead.
+_MAP_LINE_RE = re.compile(r"^\s*-\s+([^—]+?)\s*(?:—|$)")
+_MAP_PATH_TOKEN_RE = re.compile(r"[\w.\-]+(?:/[\w.\-]*)*")
+_MAP_TICK_RE = re.compile(r"`([^`]+)`")
+
+
+def _map_coverage(cwd: str):
+    """(leading paths, backticked names) read from MAP.md, or None without it."""
+    path = os.path.join(cwd, "MAP.md")
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return None
+    leads, ticks = set(), set()
+    for line in text.splitlines():
+        m = _MAP_LINE_RE.match(line)
+        if m:
+            for tok in _MAP_PATH_TOKEN_RE.findall(m.group(1).replace("`", "")):
+                if "/" in tok or "." in tok:
+                    leads.add(tok.strip("/").replace("\\", "/"))
+        for t in _MAP_TICK_RE.findall(line):
+            ticks.add(t.strip("/").replace("\\", "/"))
+    return leads, ticks
+
+
+def _git_ignored(cwd: str, rels: list) -> set:
+    """The subset of `rels` git reports ignored, in one call; empty on error."""
+    if not rels:
+        return set()
+    # NUL-separated bytes both ways: text mode on Windows would turn each
+    # newline into CRLF and git would then see a carriage return on every
+    # path but the last.
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "--stdin", "-z"], cwd=cwd,
+            input="\0".join(rels).encode("utf-8"),
+            capture_output=True, timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    if result.returncode not in (0, 1):
+        return set()
+    out = result.stdout.decode("utf-8", "replace")
+    return {p.replace("\\", "/").rstrip("/")
+            for p in out.split("\0") if p.strip()}
+
+
+def unmapped_paths(cwd: str, session_id: str) -> list:
+    """Every entry at the project root, and every human-used file below it,
+    that no MAP.md line names — ignored paths and the method's own files
+    excluded. A fact for the opening; the close settles each with one ask
+    ([close-leaves-other-sessions-scope-file]).
+
+    A path is covered where a map line leads with it or with a folder above
+    it, or where a map line names its basename in backticks (the shape the
+    map uses for a file inside a set). Hidden entries at the root are
+    machinery and are not listed; this session's own working and scope files
+    are its own. Without MAP.md there is nothing to read against: [].
+    """
+    coverage = _map_coverage(cwd)
+    if coverage is None:
+        return []
+    leads, ticks = coverage
+    mine = {"_build-%s.md" % session_id, "_freeform-%s.md" % session_id}
+
+    # A backticked name that is a folder at the root reads as a lead: the
+    # map names a folder that way inside another line's prose.
+    for t in list(ticks):
+        if os.path.isdir(os.path.join(cwd, t)):
+            leads.add(t)
+
+    def covered(rel):
+        parts = rel.split("/")
+        for n in range(1, len(parts) + 1):
+            if "/".join(parts[:n]) in leads:
+                return True
+        if os.path.isdir(os.path.join(cwd, rel)) and \
+                any(lead.startswith(rel + "/") for lead in leads):
+            # A folder is in view where the map names anything inside it;
+            # its uncovered files are listed on their own below.
+            return True
+        return parts[-1] in ticks or rel in ticks
+
+    candidates = []
+    try:
+        root_names = sorted(os.listdir(cwd))
+    except OSError:
+        return []
+    for name in root_names:
+        if name.startswith(".") or name in _MAP_EXEMPT or name in mine:
+            continue
+        candidates.append(name)
+        full = os.path.join(cwd, name)
+        if os.path.isdir(full) and not covered(name):
+            # An uncovered folder is listed once, as itself; its contents
+            # are not spelled out.
+            continue
+        if os.path.isdir(full):
+            for dirpath, dirnames, filenames in os.walk(full):
+                dirnames[:] = [d for d in dirnames
+                               if not d.startswith(".") and d != "node_modules"]
+                for fn in filenames:
+                    if fn.lower().endswith(HUMAN_USED_SUFFIXES):
+                        rel = os.path.relpath(os.path.join(dirpath, fn), cwd)
+                        candidates.append(rel.replace("\\", "/"))
+    candidates = [c for c in candidates if not covered(c)]
+    # A folder is asked about with its trailing slash, which is how an
+    # ignore pattern written `name/` matches it.
+    ignored = _git_ignored(cwd, [c + "/" if os.path.isdir(os.path.join(cwd, c))
+                                 else c for c in candidates])
+    return [c for c in candidates
+            if c not in ignored and c.rstrip("/") not in ignored]
+
+
 def sweep_stale_editing_markers(cwd: str) -> None:
     """Delete editing-state marker files left behind by dead sessions.
 
@@ -2714,11 +2865,12 @@ def _untracked_core_docs(cwd: str) -> list:
 
     `git check-ignore` answers this in one call with no judgment involved.
 
-    This is NOT reported as a fault. `setup.md` offers to ignore exactly these
-    three paths, so a check asserting the state is wrong would fire on a
-    configuration the method itself creates on request — and would fire hardest
-    immediately after the user chose it. What was actually missing is that
-    nobody was ever told what follows.
+    Reported as "not yet nested", with setup named as what converts it
+    ([nested-shape-required-flat-gitignore-retired]): since 2026-10-12 every
+    project is set up nested, its documents tracked in a private outer
+    repository, and the flat keep-private route that gitignored them is
+    retired. The three consequences still hold for a project in that state
+    and are what the user needs to know until setup has run.
     """
     try:
         result = subprocess.run(
@@ -3258,14 +3410,16 @@ def main() -> int:
     isolation = _isolation_model(cwd)
     # Which core docs git has been told to ignore, and what follows from it.
     # Unconditional, and outside the isolation branches: the consequences hold
-    # whatever kind of checkout this is. Stated as consequences and never as a
-    # fault, because setup.md offers exactly this configuration.
+    # whatever kind of checkout this is. The lead sentence says the project is
+    # not yet nested and names setup as what converts it; the retired flat
+    # keep-private route is what left the documents ignored.
     ignored = _untracked_core_docs(cwd)
     if ignored:
         context_parts.append(
-            "[Throughliner] Not tracked by git: %s. This is the configuration "
-            "the method proposes at setup, so nothing is wrong — and undo still "
-            "works, by a different route.\n"
+            "[Throughliner] Not tracked by git: %s. This project is not yet "
+            "nested — every project is set up with its documents tracked in a "
+            "private outer repository, and running the setup command converts "
+            "this one. Until then, undo still works, by a different route.\n"
             "  1. Claude writes to these and then tells you what landed, as "
             "usual. Before each change a copy of the previous version is saved "
             "under .throughliner/snapshots/, so an unwanted change — a deleted "
@@ -3562,7 +3716,21 @@ def main() -> int:
             f"sessions: {listed}. Each belongs to a session that never closed, or "
             "to one running right now in another chat. Nothing is deleted — a "
             "working file can hold the only record of what a crashed session did. "
-            "If one is genuinely orphaned, /close can close out what it records."
+            "The close offers to settle it: read into the record, then deleted "
+            "on the user's yes."
+        )
+
+    # Paths no MAP.md line covers, as a fact the close settles one ask at a
+    # time ([close-leaves-other-sessions-scope-file]): files accumulate
+    # unseen otherwise, a leftover scope file being the case that showed it.
+    unmapped = unmapped_paths(cwd, session_id)
+    if unmapped:
+        shown = ", ".join(unmapped[:10])
+        more = "" if len(unmapped) <= 10 else " and %d more" % (len(unmapped) - 10)
+        context_parts.append(
+            f"[Throughliner] {len(unmapped)} path(s) no map line covers: "
+            f"{shown}{more}. A fact, not a verdict: the close asks once per "
+            "path whether it gets a map line, a move or a deletion."
         )
 
     # An artifact a retired feature left behind. Reported, never deleted — the

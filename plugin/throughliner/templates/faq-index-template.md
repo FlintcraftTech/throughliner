@@ -30,11 +30,11 @@ Quick answers about how this project's workflow works. Each question links to a 
   yourself, what you would be taking on, and where the people already doing it
   are. [faq.md](faq.md)
 - **Why did my build run stop before finishing the list?** — the cleared-to-run
-  line you set at planning, and the `Runs alone` marker that gives risky work a
-  run of its own. [faq.md](faq.md)
+  line you set at planning, and how work that moves files gets a run of its
+  own without a marker. [faq.md](faq.md)
 - **Can I keep my planning documents out of the repository, and does undo still
-  work?** — the per-document choice setup proposes, the saved copies that keep
-  undo working, and the one thing that changes. [faq.md](faq.md)
+  work?** — the private outer repository that already holds them, the one
+  document you may gitignore on your ask, and its trade. [faq.md](faq.md)
 - **What is a checklist, and how is it different from a cycle?** — a step list you
   fire with a word versus recurring work with a rhythm, and how one becomes the
   other. [faq.md](faq.md)
@@ -88,8 +88,8 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **Why are my queue items in the order they are?** — file order as when
   things landed, and the one pass the planning close makes. [faq.md](faq.md)
 - **Why does my project have two repositories?** — the nested shape, which
-  repository goes public, and how an existing project is wrapped without
-  moving it. [faq.md](faq.md)
+  repository goes public, and how setup converts an existing flat project.
+  [faq.md](faq.md)
 - **I typed /close twice — what did the second one do?** — one commit per
   session, the marked tail, and the once-only offer after a post-close
   change. [faq.md](faq.md)
@@ -135,9 +135,10 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **What is MAP.md, and do I write it?** — one line per folder and human-used
   file, written by setup and kept by the sessions, for Claude to read first.
   [faq.md](faq.md)
-- **Can my steps go onto the task list I already keep?** — the `Task list:`
-  line, the checkbox line a kept task gets, ticking it in your notes app, and
-  the one thing Claude never does to the file. [faq.md](faq.md)
+- **Can my steps go onto the task list I already keep?** — the checkbox line
+  a kept task carries inside its own queue item, in the Tasks plugin's marks,
+  the query note your `Task list:` line names, and ticking the line.
+  [faq.md](faq.md)
 - **Can Claude explain the code as it writes it?** — the Code Notes reply style offered at setup, the block it adds after each piece of code, and what it costs. [faq.md](faq.md)
 - **What is the difference between an item being kept and being cleared?** —
   kept is the decision at planning, cleared is the position above the line, and
@@ -145,4 +146,7 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **Can a cycle run as a chain of steps with no dates?** — the sequential chain: the first step on your word, each later one after the step before, a condition read from the records, and what the opening says about it. [faq.md](faq.md)
 - **Where does Claude keep facts about me, like my pronouns?** — the global instructions file in your home .claude folder, written one line at a time on your yes, with the safety check asking you before each edit, read by every session on the machine. [faq.md](faq.md)
 - **I changed something Claude wrote — will it notice?** — the three moments it reads your edit, which edits it asks about, and the search that names what your edit now contradicts. [faq.md](faq.md)
+- **Can I see every project's queue in one place?** — the checkbox line the tools keep under every entry, in the Tasks plugin's marks, and the one query that lists every project's entries with what they wait on. [faq.md](faq.md)
+- **Why did Claude start a helper without asking me first?** — the Haiku and Sonnet helpers the method lets through by a fixed table of task kinds, what each returns, and when a helper still asks. [faq.md](faq.md)
+- **Why does my session opening list files that are not on the map?** — the paths no map line covers, listed as a fact at the opening and settled one ask at a time at the close. [faq.md](faq.md)
 - **Can I keep a planning chat open just to drop ideas into?** — saying so stops the end-of-session wrap-up question for the rest of that chat; in an ordinary chat the question returns each time the queue refills and empties. [faq.md](faq.md)

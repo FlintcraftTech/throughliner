@@ -203,6 +203,40 @@ check("the same placeholder, once committed, is reported when it cannot resolve"
       repr(report))
 shutil.rmtree(d, ignore_errors=True)
 
+# --- the committed-file test asks git once per backfill, not once per record
+# ([session-start-hash-backfill-one-git-call-per-record]): the per-record
+# `git log -1 -- <path>` cost three minutes an opening on a project with
+# 3,291 records. Forty committed records, one `--name-only` read.
+d = repo()
+for i in range(40):
+    write(d, "LOG/2026-02-%02d-r.md" % (i + 1), "# r%d\n" % i)
+git(d, "add", "LOG")
+git(d, "commit", "-q", "-m", "forty records")
+_real_run = hook.subprocess.run
+_calls = {"name_only": 0, "per_path": 0}
+
+
+def _counting_run(args, *a, **kw):
+    if isinstance(args, (list, tuple)) and args[:1] == ["git"]:
+        if "--name-only" in args:
+            _calls["name_only"] += 1
+        elif "log" in args and "-1" in args:
+            _calls["per_path"] += 1
+    return _real_run(args, *a, **kw)
+
+
+hook.subprocess.run = _counting_run
+try:
+    hook.backfill_log_hashes(d)
+finally:
+    hook.subprocess.run = _real_run
+check("the committed-file test reads git once for the whole folder",
+      _calls["name_only"] == 1 and _calls["per_path"] == 0, repr(_calls))
+check("the set answers for a committed record and not for an uncommitted one",
+      hook._file_is_committed(d, "LOG/2026-02-01-r.md")
+      and not hook._file_is_committed(d, "LOG/2026-02-99-none.md"))
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

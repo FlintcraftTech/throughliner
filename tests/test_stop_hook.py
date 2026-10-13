@@ -63,12 +63,14 @@ def project(log_files=()):
     return d
 
 
-def run(root, message, session_id="s1"):
+def run(root, message, session_id="s1", transcript_path=None):
     payload = {
         "last_assistant_message": message,
         "cwd": root,
         "session_id": session_id,
     }
+    if transcript_path:
+        payload["transcript_path"] = transcript_path
     r = subprocess.run(
         [sys.executable, HOOK],
         input=json.dumps(payload),
@@ -593,6 +595,53 @@ def test_turn_length_is_fed_back_once():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def _transcript(root, user_texts):
+    """A transcript in the real file's shape: one JSON object per line,
+    type "user", message.role "user", content a string or text blocks."""
+    path = os.path.join(root, "transcript.jsonl")
+    with open(path, "w", encoding="utf-8") as f:
+        for i, text in enumerate(user_texts):
+            content = text if i % 2 == 0 else [{"type": "text", "text": text}]
+            f.write(json.dumps({"type": "user",
+                                "message": {"role": "user",
+                                            "content": content}}) + "\n")
+            f.write(json.dumps({"type": "assistant",
+                                "message": {"role": "assistant",
+                                            "content": [{"type": "text",
+                                                         "text": "ok"}]}})
+                    + "\n")
+    return path
+
+
+def test_close_ask_after_keep_open_is_sent_back_once():
+    """[stop-check-close-ask-after-keep-open]: after the user says to keep
+    the chat open for capturing, a reply ending on the close ask is sent
+    back once per phrase; the same reply with no such message passes; and
+    the second reply after the send-back passes."""
+    reply = ("Filed [queued-item] as agreed.\n\n"
+             "Anything else to capture, or shall I run the close command?")
+    root = project()
+    t = _transcript(root, ["first idea", "keep the chat open, I'll drop ideas in"])
+    code, out = run(root, reply, transcript_path=t)
+    check("a close ask after keep-open is sent back",
+          "keep the chat open" in out and "End on the capture filed" in out,
+          out)
+    code, out = run(root, reply, transcript_path=t)
+    check("the same phrase is not sent back twice",
+          "End on the capture filed" not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+    root = project()
+    t = _transcript(root, ["first idea", "another idea"])
+    code, out = run(root, reply, transcript_path=t)
+    check("with no keep-open message the close ask passes",
+          "End on the capture filed" not in out, out)
+    code, out = run(root, reply)
+    check("with no transcript path the check passes",
+          "End on the capture filed" not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_bold_inside_a_sentence_is_not_blocked():
     """[stop-check-bold-correction-repeats-pending-ask]: the bold check is
     gone, so a reply with bold inside a sentence, under the word bound, is
@@ -611,6 +660,7 @@ if __name__ == "__main__":
     test_tail_check_skips_git_ignored_paths()
     test_turn_length_is_fed_back_once()
     test_bold_inside_a_sentence_is_not_blocked()
+    test_close_ask_after_keep_open_is_sent_back_once()
     test_denoted_date_anywhere_in_the_reply_sources_the_word()
     test_checkpoint_with_clock_or_stop_offer_is_blocked_once()
     test_post_close_tail_offer_is_fed_back_once()

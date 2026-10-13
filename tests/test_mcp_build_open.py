@@ -262,6 +262,17 @@ check("the parser reads the scope file's one path",
       hook_parse(os.path.join(d, "_freeform-s1.md")) == ["notes.md"])
 shutil.rmtree(d, ignore_errors=True)
 
+# [freeform-scope-lock-one-block-per-file-and-planning-session-wording]: the
+# door is per session, so a deny of ANOTHER path under this session's id
+# admits the listed one.
+d = project()
+with_log(d, "s1", "deny", "elsewhere.md")
+text = call(d, "build_open",
+            {"session_id": "s1", "kind": "freeform", "files": ["notes.md"]})
+check("a refusal of any path under this session opens the door for the list",
+      "Wrote _freeform-s1.md" in text, repr(text))
+shutil.rmtree(d, ignore_errors=True)
+
 d = project()
 with_log(d, "other", "deny", "notes.md")
 with_log(d, "s1", "allow", "notes.md")

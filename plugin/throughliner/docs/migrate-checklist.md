@@ -6,6 +6,8 @@ note: Loaded from setup.md when a project's documents are on an older format tha
 
 # Format migration checklist
 
+**The derived checkbox line under every queue heading is no epoch**: an entry without it is still correct, and the top-up's one `--sync-lines` run adds it.
+
 **Run every epoch section from the project's recorded epoch up to the current `FORMAT_EPOCH`, in order.** A project with no marker starts at the beginning. Say "your queue" to the user; the structural terms here are for Claude to read.
 
 ```

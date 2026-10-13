@@ -1797,19 +1797,36 @@ def _build_working_file(root, session_id):
     taken as this session's, and none or several is a refusal — a tick
     written into another session's file would record work that session
     never did.
+
+    Where the session has no build working file, its freeform scope file
+    (`_freeform-<session-id>.md`) is the tick's home instead
+    ([handmade-builds-leave-queue-unconfirmed]): a queued item built by hand
+    in a session with no skill gets the same tick a build run's item gets,
+    so the close has something to read. Neither file is a refusal naming
+    `build_open`.
     """
     if session_id:
         safe = re.sub(r"[^A-Za-z0-9._-]", "_", session_id)
         path = os.path.join(root, "_build-%s.md" % safe)
-        return (path, None) if os.path.isfile(path) else \
-            (None, "no build working file at %s." % path)
+        if os.path.isfile(path):
+            return path, None
+        scope = os.path.join(root, "_freeform-%s.md" % safe)
+        if os.path.isfile(scope):
+            return scope, None
+        return None, ("no build working file at %s and no scope file at %s "
+                      "— open one with `build_open` first." % (path, scope))
     found = sorted(name for name in os.listdir(root)
                    if name.startswith("_build-") and name.endswith(".md"))
     if not found:
-        return None, "no build working file (_build-<session-id>.md) in %s." \
-            % root
+        found = sorted(name for name in os.listdir(root)
+                       if name.startswith("_freeform-")
+                       and name.endswith(".md"))
+    if not found:
+        return None, ("no build working file (_build-<session-id>.md) and no "
+                      "scope file (_freeform-<session-id>.md) in %s — open "
+                      "one with `build_open` first." % root)
     if len(found) > 1:
-        return None, "%d build working files in %s (%s) — pass session_id " \
+        return None, "%d working files in %s (%s) — pass session_id " \
             "to say which is this session's." % (len(found), root,
                                                  ", ".join(found))
     return os.path.join(root, found[0]), None
@@ -1855,6 +1872,7 @@ def tool_build_tick(arguments):
     bears_on = " ".join((arguments.get("bears_on") or "").split())
     spec_check = " ".join((arguments.get("spec_check") or "").split())
     session_id = (arguments.get("session_id") or "").strip()
+    check_item = (arguments.get("check_item") or "").strip().strip("[]")
 
     problems = []
     if not bears_on:
@@ -1901,6 +1919,20 @@ def tool_build_tick(arguments):
         problems.append(why)
 
     items = digest.parse(queue)
+    # An unconfirmed tick names the `[user]` capture carrying its check
+    # ([unverified-blocker-never-surfaced]): a held item waiting on work
+    # ticked unconfirmed was stalled silently until someone asked, because
+    # nothing filed the check. The entry must exist in either section.
+    if verdict == "unconfirmed":
+        if not check_item:
+            problems.append("an unconfirmed tick names its check item — "
+                            "check_item is missing: the slug of the `[user]` "
+                            "capture carrying the check, filed before the "
+                            "tick.")
+        elif not any(i["slug"] == check_item for i in items):
+            problems.append("check_item %r resolves to no entry in either "
+                            "queue section — file the `[user]` capture "
+                            "first." % check_item)
     matches = [i for i in items if i["slug"] == slug
                and i["section"] == "Processed"]
     if slug and not matches:
@@ -1920,20 +1952,23 @@ def tool_build_tick(arguments):
         if rule_gate and not carries_gate:
             problems.append("the queue item carries no `Rule gate:` line, so "
                             "a disposition cannot be written here — the "
-                            "gate's site is planning.")
-        if rule_gate and not re.match(r"^(run|not needed)\b", rule_gate,
+                            "line is written at the keep.")
+        if rule_gate and not re.match(r"^(slips|run|not needed)\b", rule_gate,
                                       re.IGNORECASE):
-            problems.append("rule_gate opens `run — <what>` or "
+            problems.append("rule_gate opens `slips <n> — amends <rule>; "
+                            "out: <what>`, `run — <what>` or "
                             "`not needed — <why>`.")
 
     text = None
     if path is not None:
         with open(path, "r", encoding="utf-8", newline="") as f:
             text = f.read()
+        is_scope = os.path.basename(path).startswith("_freeform-")
         # The specimen writes the slug bare on the Run and Entries lines;
-        # bracketed is accepted too.
-        if slug and not re.search(r"(?<![a-z0-9-])%s(?![a-z0-9-])"
-                                  % re.escape(slug), text):
+        # bracketed is accepted too. A scope file carries no item list, so
+        # any cleared item may be ticked into it.
+        if slug and not is_scope and not re.search(
+                r"(?<![a-z0-9-])%s(?![a-z0-9-])" % re.escape(slug), text):
             problems.append("[%s] is not in the working file's item list "
                             "(%s)." % (slug, os.path.basename(path)))
         if slug and re.search(r"^Depth:\s*%s\s" % re.escape(slug), text,
@@ -1942,9 +1977,11 @@ def tool_build_tick(arguments):
                             % slug)
         lines = text.splitlines(keepends=True)
         spans = _working_file_sections(lines)
-        for name in ("Index entry candidates", "Progress", "Changes"):
-            if name not in spans:
-                problems.append("the working file has no `%s:` section." % name)
+        if not is_scope:
+            for name in ("Index entry candidates", "Progress", "Changes"):
+                if name not in spans:
+                    problems.append("the working file has no `%s:` section."
+                                    % name)
     if problems:
         return "Refused — nothing was written:\n" + \
                "\n".join("- " + p for p in problems)
@@ -1953,7 +1990,7 @@ def tool_build_tick(arguments):
     description = item["heading"]
     tick = "- [x] %s — done, %s" % (
         description, "confirmed" if verdict == "confirmed"
-        else "UNCONFIRMED: %s" % reason)
+        else "UNCONFIRMED: %s — check: [%s]" % (reason, check_item))
     depth_line = "Depth: %s — %s" % (slug, depth if depth == "short"
                                      else "full, %s" % trigger)
     progress = [tick, depth_line]
@@ -1966,22 +2003,40 @@ def tool_build_tick(arguments):
     change_lines = [l if l.lstrip().startswith("-") else "- " + l
                     for l in change_lines if l.strip()]
 
-    # Insert bottom-up so earlier indices stay valid.
-    inserts = [
-        (spans["Changes"][1], change_lines),
-        (spans["Progress"][1], progress),
-        (spans["Index entry candidates"][1], [candidate_line]),
-    ]
-    for at, new in sorted(inserts, key=lambda p: p[0], reverse=True):
-        lines[at:at] = [l + eol for l in new]
+    if is_scope:
+        # A scope file has no sections: the six lines go under one
+        # `## Ticks` heading, added on first use, in the order the
+        # specimen gives them, so the close reads one block per item.
+        if not lines or not lines[-1].endswith(("\n", "\r\n")):
+            lines.append(eol)
+        if not any(l.strip() == "## Ticks" for l in lines):
+            lines.extend([eol, "## Ticks" + eol, eol])
+        lines.extend(l + eol for l in progress + [candidate_line]
+                     + change_lines)
+    else:
+        # Insert bottom-up so earlier indices stay valid.
+        inserts = [
+            (spans["Changes"][1], change_lines),
+            (spans["Progress"][1], progress),
+            (spans["Index entry candidates"][1], [candidate_line]),
+        ]
+        for at, new in sorted(inserts, key=lambda p: p[0], reverse=True):
+            lines[at:at] = [l + eol for l in new]
     new_text = "".join(lines)
     with open(path, "w", encoding="utf-8", newline="") as f:
         f.write(new_text)
 
-    ok, report = _run_mover([queue, "--delete", slug, "Processed"], root)
     written = "Wrote to %s:\n%s" % (
         os.path.basename(path),
         "\n".join(progress + [candidate_line] + change_lines))
+    if is_scope and verdict == "unconfirmed":
+        # A handmade build's unconfirmed tick leaves the item in Processed
+        # with its check step beside it; the close removes it only on a
+        # confirmed tick ([handmade-builds-leave-queue-unconfirmed]).
+        return ("%s\nLeft [%s] in Processed: an unconfirmed tick in a scope "
+                "file keeps the item until its check [%s] runs."
+                % (written, slug, check_item))
+    ok, report = _run_mover([queue, "--delete", slug, "Processed"], root)
     if not ok:
         return ("%s\nBut the queue tool refused the removal of [%s] from "
                 "Processed, so the item still sits in the queue:\n%s"
@@ -2008,22 +2063,22 @@ def _safe_session_id(session_id):
     return re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
 
 
-def _door_refused_earlier(root, path, session_id):
-    """True where the safety check's log holds a deny of this path under
-    this session's id."""
+def _door_refused_earlier(root, session_id):
+    """True where the safety check's log holds any deny under this
+    session's id — the door's test since 2026-10-13 is that the session has
+    been refused once, not that each path has
+    ([freeform-scope-lock-one-block-per-file-and-planning-session-wording])."""
     log = os.path.join(root, _DECISION_LOG)
     if not os.path.isfile(log):
         return False
     sid = _safe_session_id(session_id)
-    want = os.path.normcase(os.path.normpath(os.path.join(root, path)))
     try:
         with open(log, "r", encoding="utf-8", errors="replace") as f:
             for raw in f:
                 parts = raw.rstrip("\r\n").split("\t")
                 if len(parts) < 6 or parts[2] != "deny" or parts[5] != sid:
                     continue
-                if os.path.normcase(os.path.normpath(parts[4])) == want:
-                    return True
+                return True
     except OSError:
         return False
     return False
@@ -2136,14 +2191,12 @@ def tool_build_open(arguments):
                             "one path or more the door admits.")
     problems.extend(_path_problems(root, files))
     if kind == "freeform" and session_id:
-        for f in files:
-            if "`" in f or " — " in f or " - " in f:
-                continue
-            if not _door_refused_earlier(root, f, session_id):
-                problems.append("path %r has no refusal under this session's "
-                                "id in %s — the door opens only after the "
-                                "safety check has refused that path earlier "
-                                "in the same session." % (f, _DECISION_LOG))
+        if not _door_refused_earlier(root, session_id):
+            problems.append("no refusal under this session's id in %s — the "
+                            "door opens only after the safety check has "
+                            "refused an edit earlier in the same session, "
+                            "and then admits every listed path."
+                            % _DECISION_LOG)
     if problems:
         return "Refused — nothing was written:\n" + \
                "\n".join("- " + p for p in problems)
@@ -2827,6 +2880,14 @@ TOOLS = [
                     "description": "confirmed where something ran and "
                                    "passed; unconfirmed otherwise.",
                 },
+                "check_item": {
+                    "type": "string",
+                    "description": "Required when unconfirmed: the slug of "
+                                   "the `[user]` capture carrying the check, "
+                                   "filed before the tick; refused where it "
+                                   "resolves to no entry in either section. "
+                                   "The tick line gains ` — check: [slug]`.",
+                },
                 "reason": {
                     "type": "string",
                     "description": "Required when unconfirmed: what still "
@@ -2845,7 +2906,8 @@ TOOLS = [
                 "rule_gate": {
                     "type": "string",
                     "description": "The item's disposition copied "
-                                   "unchanged: `run — <what>` or `not "
+                                   "unchanged: `slips <n> — amends <rule>; "
+                                   "out: <what>`, `run — <what>` or `not "
                                    "needed — <why>`. Required where the "
                                    "queue item carries a Rule gate: line; "
                                    "refused where it does not.",
@@ -2900,7 +2962,7 @@ TOOLS = [
             "[co-write]; a path carrying backticks, text after a spaced dash "
             "or anything after the path; a path that is an existing folder, "
             "resolves outside the project root, or is listed twice; for a "
-            "freeform file, a path the safety check has not refused earlier "
+            "freeform file, a session the safety check has not refused earlier "
             "in this session. An empty files list on a build writes an empty "
             "Files: section, which locks the run to the method docs.",
         "inputSchema": {
@@ -2941,6 +3003,9 @@ TOOLS = [
 # among them — is named here, and `_advertised_tools` leaves it out.
 HOST_ONLY_TOOLS = ()
 
+_DECLARED_ARGUMENTS = {
+    tool["name"]: set((tool.get("inputSchema") or {}).get("properties") or {})
+    for tool in TOOLS}
 HANDLERS = {tool["name"]: tool["handler"] for tool in TOOLS
             if tool["name"] not in HOST_ONLY_TOOLS}
 
@@ -3024,6 +3089,24 @@ def handle(message):
             return {"jsonrpc": "2.0", "id": request_id,
                     "error": {"code": -32602,
                               "message": "No such tool: %r" % name}}
+        # An argument the tool's schema does not name is refused with the
+        # field named ([queue-move-tools-ignore-anchor-silently]): a move
+        # once passed `after_slug`, which no tool has, and the default
+        # position was applied without a word. One check at the door covers
+        # every tool, since each declares its properties in `inputSchema`.
+        declared = _DECLARED_ARGUMENTS.get(name, set())
+        unknown = sorted(k for k in arguments if k not in declared)
+        if unknown:
+            return {"jsonrpc": "2.0", "id": request_id,
+                    "result": {"isError": True,
+                               "content": [{"type": "text",
+                                            "text": "Refused — nothing was "
+                                                    "written:\n- unknown "
+                                                    "argument(s): %s — this "
+                                                    "tool takes: %s"
+                                                    % (", ".join(unknown),
+                                                       ", ".join(sorted(declared))
+                                                       or "no arguments")}]}}
         try:
             text = (_not_set_up() or _conflicted_queue(name)
                     or handler(arguments))

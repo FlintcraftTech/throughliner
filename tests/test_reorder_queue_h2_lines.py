@@ -20,6 +20,7 @@ mover; the digest reads such an item whole.
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -77,7 +78,11 @@ def run(text, *args):
     proc = subprocess.run([sys.executable, SCRIPT, path] + list(args),
                           capture_output=True, text=True, encoding="utf-8")
     with open(path, "r", encoding="utf-8", newline="") as f:
-        return proc.returncode, proc.stderr, f.read(), path
+        # The tool's derived checkbox line under every heading is stripped
+        # from the read-back ([queue-entry-task-line-written-by-tools]).
+        return (proc.returncode, proc.stderr,
+                re.sub(r"^- \[[ xX]\] .*🆔 \S+.*\n", "", f.read(),
+                       flags=re.MULTILINE), path)
 
 
 def main():

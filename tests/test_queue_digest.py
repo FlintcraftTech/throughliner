@@ -846,40 +846,25 @@ def test_filed_stamp_is_read_over_git_and_horizon_prints_by():
     shutil.rmtree(root, ignore_errors=True)
 
 
-def test_runs_alone_reports_what_is_ahead_of_it():
-    """A correctly placed `Runs alone` item recedes as the queue is worked.
-
-    /build stops BEFORE it, so it is reached only once everything ahead is built
-    — and every planning session adds newly ready work ahead of it. Nothing in
-    the queue shows that happening, and it was noticed once only because someone
-    happened to say it out loud.
-
-    A count is reportable where an age is not: how long something has been ready
-    would need a threshold nobody can derive.
-    """
+def test_retired_runs_alone_line_is_reported_and_ignored():
+    """[runs-alone-retired-for-cleared-line-and-blocked-by]: the marker is
+    retired — the cleared line after one item, with the rest held on it by
+    `Blocked by:`, does the same work. An entry still carrying the line is
+    reported as carrying a retired line and nothing is read from it: no
+    runs-alone section, no count of what sits ahead."""
     root = project(
         processed=(
             "#### First [a]\nProse.\n"
             "\n"
-            "#### Second [b]\nProse.\n"
-            "\n"
-            "#### The one that runs alone [c]\nProse.\nRuns alone\n"
+            "#### The one with the old line [c]\nProse.\nRuns alone\n"
         ),
     )
     _, out = run(root)
-    check("the runs-alone block appears",
-          "Runs-alone work" in out, out[-400:])
-    check("it counts the two cleared items ahead",
-          "[c]: 2 cleared item(s) ahead" in out, out[-400:])
-    shutil.rmtree(root, ignore_errors=True)
-
-
-def test_no_runs_alone_work_says_none():
-    """A computed zero must not look like a check that never ran."""
-    root = project(processed="#### Ordinary [a]\nProse.\n")
-    _, out = run(root)
-    block = out.split("Runs-alone work")[1]
-    check("no runs-alone work reports none", "- none" in block, block[:200])
+    check("the retired line is reported on the item's line",
+          "[c] (cleared, build, retired `Runs alone` line, ignored)" in out,
+          out[:600])
+    check("no runs-alone section prints",
+          "Runs-alone work" not in out and "ahead of it" not in out, out[-400:])
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -1508,8 +1493,8 @@ def test_assigned_to_prints_on_the_entry_line():
 def test_size_signs_are_computed_facts():
     """[project-size-signs-and-popout-offer]: the Size signs block prints
     each computed sign as a fact — a user step's consecutive deferrals read
-    from its records' outcome lines, the held count, a runs-alone item's
-    count ahead, the queue's size against the one-read figure, and the
+    from its records' outcome lines, the held count, the queue's size
+    against the one-read figure, and the
     left-to-process trend across planning records — and its limits line.
     The per-part counts once printed here went with the Parts block
     ([parts-folded-into-map])."""
@@ -1520,7 +1505,7 @@ def test_size_signs_are_computed_facts():
             "#### Beta, in the app [beta]\nProse citing [alpha].\n\n"
             "**Files that change:** `app/b.md`\n\n"
             "#### [user] A step of yours [a-step]\nWalkthrough.\n\n"
-            "#### Gamma, alone [gamma]\nProse.\n\nRuns alone\n\n"
+            "#### Gamma [gamma]\nProse.\n\n"
             "**Files that change:** `notes/c.md`\n\n"
         ),
         unprocessed="",
@@ -1536,8 +1521,8 @@ def test_size_signs_are_computed_facts():
     check("a user step deferred in two consecutive records is counted",
           "[a-step]: deferred in 2 consecutive record(s)" in block, block)
     check("the held region is counted", "held region: 0 item(s)" in block, block)
-    check("a runs-alone item's count ahead prints",
-          "[gamma] runs alone with 3 cleared item(s) ahead of it" in block, block)
+    check("no runs-alone count prints, the marker being retired",
+          "runs alone" not in block, block)
     check("no per-part line prints, the Parts block being retired",
           "part the app" not in block and "Parts block" not in block, block)
     check("the queue's size prints against the one-read figure",
@@ -1596,8 +1581,7 @@ if __name__ == "__main__":
     test_no_git_degrades_quietly()
     test_age_prints_in_a_git_repository()
     test_filed_stamp_is_read_over_git_and_horizon_prints_by()
-    test_runs_alone_reports_what_is_ahead_of_it()
-    test_no_runs_alone_work_says_none()
+    test_retired_runs_alone_line_is_reported_and_ignored()
     test_whats_next_answers_only_the_pick()
     test_whats_next_rung_changes_when_the_queue_changes_beneath_it()
     test_whats_next_cycle_pass_over_and_due_rung()

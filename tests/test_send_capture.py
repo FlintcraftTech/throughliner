@@ -81,9 +81,13 @@ def run(sender, *extra, to="recipient", slug="sent-capture",
 
 
 def queue_text(recipient):
+    """The queue with the tool's derived checkbox lines stripped
+    ([queue-entry-task-line-written-by-tools])."""
+    import re
     with open(os.path.join(recipient, "QUEUE.md"), encoding="utf-8",
               newline="") as f:
-        return f.read()
+        return re.sub(r"^- \[[ xX]\] .*🆔 \S+.*\n", "", f.read(),
+                      flags=re.MULTILINE)
 
 
 # 1. The fact the design rested on: the queue tool appends to a queue outside
