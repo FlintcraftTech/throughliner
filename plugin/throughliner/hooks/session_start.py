@@ -1639,7 +1639,9 @@ def _log_session_opened(cwd, session_id, version):
 def _stale_close_markers(cwd, session_id):
     """Names of `close-active-<id>` markers in `.throughliner/` left by
     sessions other than this one — a /close run that did not finish.
-    Reported, never deleted."""
+    Reported here, never deleted here; the close offers the deletion once
+    the session is closed or its work is committed
+    ([close-deletes-dead-session-close-marker])."""
     safe_id = re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
     folder = os.path.join(cwd, ".throughliner")
     try:
@@ -3597,8 +3599,8 @@ def main() -> int:
     # Ignore lines setup would have written, read against `.gitignore` where
     # the folder they cover is present; a close-active marker another session
     # left; an address book in neither shape the send script reads. Each is
-    # reported and nothing is written — the top-up writes the lines, and a
-    # marker is never deleted.
+    # reported and nothing is written — the top-up writes the lines, and the
+    # opening never deletes a marker; the close offers that.
     ignore_gaps = _missing_ignore_lines(cwd)
     if ignore_gaps:
         context_parts.append(
@@ -3612,8 +3614,9 @@ def main() -> int:
         context_parts.append(
             "[Throughliner] A /close run that did not finish left "
             + ", ".join(f"`.throughliner/{n}`" for n in stale_closes)
-            + " behind. Left where it is; it belongs to another session and "
-            "unlocks nothing here."
+            + " behind. It belongs to another session and unlocks nothing "
+            "here; the next close offers to delete it where that session is "
+            "closed or its work is committed."
         )
     if _address_book_unreadable(cwd):
         context_parts.append(

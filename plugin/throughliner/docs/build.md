@@ -85,6 +85,8 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> --delete <slug> Pr
 
 Tick first, then remove, so that an interruption leaves the item visible in both files. A capture filed mid-run gets a line in `Run-level:` at the moment of the write.
 
+**Lift what this item cleared.** Where the confirmed tick was the last blocker a held item's `Blocked by:` line names, move that item to the bottom of the cleared region with `queue_move` (position BOTTOM, `marker_after` naming the lifted item) or the mover, drop its `Blocked by:` line, rewrite it whole saying what cleared it, append each path on its Files line to the working file's `Files:` section, read it whole and run the bears-on search, say so in one line with what the item rests on stated as information, and carry on with it as the run's next item. A blocker built but unconfirmed leaves the item held.
+
 ### Walk-through branch: the `[user]` items
 
 **Once the Claude-work is built, walk the user through each `[user]` item still in the cleared region**, from the item's own walkthrough in QUEUE.md. Where an item carries none, halt on it. Walking is part of the run.
@@ -98,6 +100,8 @@ Tick first, then remove, so that an interruption leaves the item visible in both
 **Before a step goes out**: name the tool that would do that step instead and confirm it is absent; apply the rules file's sentence on what Claude performs and what is handed over; check that a named file still has the property the step needs; verify any command the user will paste by running it safely or reading its help; look up on the web any path, setting or fact Claude is unsure of before it goes out, the step naming the source; and read the words back as a no-code developer would. Give the first concrete step, what to do and what to look for, and **wait**. Then the next. Where the step's reasoning is already on record, the step is the ask alone. /close is named once the item is finished or left. Where the user leaves one step, each later hand-over leads with leaving as the recommendation: "Leave this one too?", saying that sending close leaves it and ends the session. A step requiring action in another project is filed as a capture. Where the item carries `Assigned to:`, address that person, and take "not mine, it is <name>'s" from anyone present, rewriting the line with `hold_entry`'s `assigned_to` field or the queue tool's `--assign`.
 
 Where the user volunteers that an item is done, take their word and recommend /close. Where the walkthrough names an observable check, run it and report a failure as what was found.
+
+**Lift what this item cleared.** Where a `[user]` item walked to done was the last blocker a held item's `Blocked by:` line names, lift that item as the tick step's lift paragraph says — moved to the bottom of the cleared region, its `Blocked by:` line dropped, rewritten whole, its paths appended to the working file, read whole with the bears-on search run, said in one line — and build or walk it as the run's next item.
 
 **Every `[user]` item the run touched ends on a recorded outcome:**
 

@@ -44,8 +44,14 @@ stale = hook._stale_close_markers(d, "this-session")
 check("another session's marker is named, this session's and other files are not",
       stale == ["close-active-other-session"], repr(stale))
 check("no folder reads as nothing", hook._stale_close_markers(os.path.join(d, "nope"), "x") == [])
-check("the markers are still there — nothing deleted",
+check("the markers are still there — the opening deletes nothing",
       sorted(os.listdir(folder)) == ["close-active-other-session", "close-active-this-session", "stop-claim-x.marker"])
+# [close-deletes-dead-session-close-marker]: the opening's line says the next
+# close offers the deletion, instead of saying the marker is left forever.
+with open(HOOK, encoding="utf-8") as f:
+    src = f.read()
+check("the stale-marker message names the close's offer to delete",
+      "the next close offers to delete it" in src and "Left where it is" not in src)
 
 # The opening logs the version it ran as, in the decision log's own shape.
 hook._log_session_opened(d, "this-session", "1.24.0-test1")

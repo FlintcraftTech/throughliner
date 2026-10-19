@@ -119,7 +119,9 @@ captured -> captured, a hold added           hold_entry
 captured, flagged -> stays captured          prose: plan.md's red-flag clearing;
                                              an item is kept only once cleared
 kept and held -> kept and cleared            queue_move, at the plan lift;
-                                             prose: close.md's lift at a build close
+                                             prose: build.md's lift after the
+                                             confirming tick, close.md's lift at
+                                             a build close
 kept and cleared -> kept and held            hold_entry
 kept -> kept, rewritten whole                prose: plan.md's lift and skip
 kept and held, blocker unverified            prose: plan.md's held-work table,
