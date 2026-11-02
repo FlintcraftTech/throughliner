@@ -25,7 +25,7 @@ Everything these checks find folds into one narration, delivered with the run at
 2. **Read SPEC once**, then the `LOG/index.md` lines newer than the most recent build record (the one carrying a `Files touched` field), opening an entry only where an item's instructions are unclear, then the cleared region top-down, each item whole. A build carrying an `Assigned to:` line naming someone other than the person whose session this is skipped, said in one clause. Then:
    - Processed is empty above the marker: tell the user the next work is not cleared yet, recommend /plan, stop.
    - An item carries `Red flag · State: uncleared`: stop before it, name the risk plainly, recommend /plan to clear it, wait.
-   - The top item is `[freeform]`: say what it is and that it needs a session of its own, stop.
+   - The top item is `[freeform]`: say what it is and that it runs in a freeform session, a chat opened with no skill; hand over the rules doc's starter prompt in a fenced block with its slug filled, and stop.
    - The run has no build or `[audit]` item: skip step 2 and go to the walk-through branch.
 3. **Cycles.** Run the cycles check as plan.md's opening states it, filing only.
 4. **Present the run and offer the off-ramp, in one message.** A one-line pointer naming the items, linked to QUEUE.md, counts read off the digest. The whole cleared region is the run. One thing may drop an item from this run only, the queue untouched: a /setup outstanding (the opening reports the format epoch behind, or a missing document) where the item names a file /setup rewrites from a template. End with **"Say go and I'll start, or say the word to change scope or reorder first."** A change routes to /plan.
@@ -83,7 +83,7 @@ plus the item's index-entry candidate (artifact touched and nature of change) an
 python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> --delete <slug> Processed
 ```
 
-Tick first, then remove, so that an interruption leaves the item visible in both files. A capture filed mid-run gets a line in `Run-level:` at the moment of the write.
+Tick first, then remove, so that an interruption leaves the item visible in both files. Once the item is removed, say one line to the user naming it and linking each file it changed that she is meant to read, product first, and carry on. A capture filed mid-run gets a line in `Run-level:` at the moment of the write.
 
 **Lift what this item cleared.** Where the confirmed tick was the last blocker a held item's `Blocked by:` line names, move that item to the bottom of the cleared region with `queue_move` (position BOTTOM, `marker_after` naming the lifted item) or the mover, drop its `Blocked by:` line, rewrite it whole saying what cleared it, append each path on its Files line to the working file's `Files:` section, read it whole and run the bears-on search, say so in one line with what the item rests on stated as information, and carry on with it as the run's next item. A blocker built but unconfirmed leaves the item held.
 
@@ -91,9 +91,9 @@ Tick first, then remove, so that an interruption leaves the item visible in both
 
 **Once the Claude-work is built, walk the user through each `[user]` item still in the cleared region**, from the item's own walkthrough in QUEUE.md. Where an item carries none, halt on it. Walking is part of the run.
 
-**First, in one short message, name the items that cannot move this session**, one line each with why: a task-shaped item (one carrying a task line instead of a walkthrough) has its line in the queue and completes when they tick it there; an item whose record shows it handed over after a /close with no observable to check stays open, with what waits on it named by slug; an item whose first step needs something not yet there is blocked on that thing. Record each under the outcome block below. The message carries no ask.
+**First, in one short message, name the items that cannot move this session**, one line each with why: an item whose record shows it handed over after a /close with no observable to check stays open, with what waits on it named by slug; an item whose first step needs something not yet there is blocked on that thing. Record each under the outcome block below. The message carries no ask.
 
-**Then each item that can move gets its own turn**, saying how many items wait on it where any do. Open its LOG entry under its slug, append each action as it happens, write one `Run-level:` line, and append every path on the item's Files line to the working file's `Files:` section, saying so in one clause.
+**Then each item that can move gets its own turn**, saying how many items wait on it where any do. A task-shaped item (one carrying a task line instead of a walkthrough) is offered in one line asking whether to do it now, with what the line names (a date, a place, a reference) stated as information; on yes it is walked live step by step exactly as a walkthrough item is, and on no it is left with its line in the queue, the answer recorded under the outcome block as `deferred` with the user's word, or `done`. Open its LOG entry under its slug, append each action as it happens, write one `Run-level:` line, and append every path on the item's Files line to the working file's `Files:` section, saying so in one clause.
 
 **A step that has the user edit text Claude drafted** writes the draft to the file the item names, hands it over as a relative link that opens it in the side panel, offering in the same breath to display it inline or send the file, waits, reads it back when they say to, asks whether there is anything else, and repeats until they say they are finished. A `[co-write]` item's whole walkthrough is this loop on its one file; where the text is the user's, Claude reads and responds on their word.
 

@@ -78,10 +78,37 @@ def test_a_doc_produces_a_definition_per_cycle():
     check("the observable travels as written",
           facts[0][3].startswith("the newest GitHub release's date"),
           repr(facts[0][3]))
-    check("a date inside the observable is surfaced as the last turn",
-          facts[0][4] == "2026-07-01", repr(facts[0][4]))
-    check("an observable with no date reports none",
-          facts[1][4] is None, repr(facts[1][4]))
+    check("no date is read out of the observable: four fields, no last turn",
+          all(len(row) == 4 for row in facts), repr(facts))
+
+
+def test_a_date_in_the_observable_is_not_reported_as_a_last_turn():
+    """Driven whole: the opening's cycles line reports the observable as
+    written and carries no `(last turn <date>)` suffix, however many dates the
+    sentence holds."""
+    import json
+    import subprocess
+    d = project(DEMO)
+    for name in ("SPEC.md", "QUEUE.md"):
+        with open(os.path.join(d, name), "w", encoding="utf-8") as f:
+            f.write("# QUEUE\n\n## Processed\n\n## Unprocessed\n"
+                    if name == "QUEUE.md" else "# SPEC\n")
+    proc = subprocess.run(
+        [sys.executable, HOOK],
+        input=json.dumps({"cwd": d, "session_id": "observable-date-test"}),
+        capture_output=True, text=True, encoding="utf-8", cwd=d, timeout=120)
+    try:
+        out = json.loads(proc.stdout) if proc.stdout.strip() else {}
+        context = (out.get("hookSpecificOutput") or {}).get(
+            "additionalContext") or out.get("additionalContext") or ""
+    except ValueError:
+        context = proc.stdout
+    check("the observable with a date in it is reported as written",
+          "observable: the newest GitHub release's date" in context,
+          context[-1500:])
+    check("no last-turn suffix is computed from the date",
+          "(last turn" not in context, context[-1500:])
+    shutil.rmtree(d, ignore_errors=True)
 
 
 WRAPPED = """# CYCLES
@@ -118,8 +145,6 @@ def test_a_wrapped_field_reads_whole():
           repr(facts[0][2]))
     check("a wrapped observable continues too",
           "last turn 2026-08-27" in (facts[0][3] or ""), repr(facts[0][3]))
-    check("the date in the wrapped continuation is still found",
-          facts[0][4] == "2026-08-27", repr(facts[0][4]))
     check("a following field line ends the continuation",
           "Steps of one turn" not in (facts[0][3] or ""), repr(facts[0][3]))
 
@@ -573,6 +598,7 @@ if __name__ == "__main__":
     test_a_your_part_field_leaves_the_chain_dates_unchanged()
     test_a_date_anchor_with_forward_leads_and_the_spent_state()
     test_a_doc_produces_a_definition_per_cycle()
+    test_a_date_in_the_observable_is_not_reported_as_a_last_turn()
     test_a_wrapped_field_reads_whole()
     test_a_blank_line_ends_a_field()
     test_checklists_are_read_and_kept_out_of_the_cycles()

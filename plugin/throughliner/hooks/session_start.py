@@ -2006,7 +2006,9 @@ def cycles_facts(cwd):
     reported as a cycle whose cadence is missing.
 
     Returns None where the project has no cycles doc, otherwise a list of
-    (slug, description, cadence, observable, last_date) tuples.
+    (slug, description, cadence, observable) tuples. No date is read out of
+    the observable's text: the skills compute due-ness from the source the
+    field names, and a date written into the sentence is not a turn.
     """
     entries = _parse_cycles_doc(cwd)
     if entries is None:
@@ -2015,10 +2017,8 @@ def cycles_facts(cwd):
     for entry in entries:
         if _is_checklist(entry) or _is_malformed(entry):
             continue
-        observable = entry["observable"]
-        dates = ISO_DATE_IN_TEXT_RE.findall(observable or "")
         out.append((entry["slug"], entry["description"], entry["cadence"],
-                    observable, max(dates) if dates else None))
+                    entry["observable"]))
     return out
 
 
@@ -3316,15 +3316,12 @@ def main() -> int:
                 )
         else:
             described = []
-            for slug, description, cadence, observable, last_date in cycles:
+            for slug, description, cadence, observable in cycles:
                 part = f"[{slug}]"
                 if description:
                     part += f" {description}"
                 part += f" — cadence: {cadence or 'not stated'}"
-                if last_date:
-                    part += (f"; observable reads {observable} "
-                             f"(last turn {last_date})")
-                elif observable:
+                if observable:
                     part += f"; observable: {observable}"
                 else:
                     part += "; no observable line"

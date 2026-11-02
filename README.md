@@ -77,6 +77,12 @@ The **how-to** posts on the Discord walk you through the plugin one feature at a
 
 Running the method on a tool other than Claude Code is supported. The Discord is where porters compare notes and where port-facing news lands. The repository's [porting/](porting/) folder holds the changelog written for ports and a paste-ready prompt for porting with Claude's help.
 
+### Companion skills
+
+Separate skills built to run alongside Throughliner, each needing it installed and none part of it.
+
+- [Email processing](https://github.com/its-coughfee/email-processing) — works through your Gmail inbox oldest first, one email at a time, with a short summary and one suggested action each, acted on only on your yes. Tested only with Gmail.
+
 ## License
 
 See [LICENSE](LICENSE).

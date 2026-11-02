@@ -197,13 +197,10 @@ def tool_cycles_state(_arguments):
                "nothing is owed here."
 
     lines = []
-    for slug, description, cadence, observable, last_date in \
-            hooks.cycles_facts(root):
+    for slug, description, cadence, observable in hooks.cycles_facts(root):
         lines.append("[%s] %s" % (slug, description))
         lines.append("  cadence:    %s" % (cadence or "(none stated)"))
         lines.append("  observable: %s" % (observable or "(none stated)"))
-        if last_date:
-            lines.append("  latest date in that observable: %s" % last_date)
         lines.append("")
 
     # A chained cycle: its next anchor date and each checklist's computed due
@@ -380,6 +377,45 @@ def tool_clock(_arguments):
                                 now.strftime("%A"),
                                 now.strftime("%H:%M"),
                                 zone)
+
+
+def keep_open_marker_path(root, session_id):
+    """Where the keep-open marker for a session lives: `.throughliner/
+    keep-open-<session-id>.marker`, the id reduced to safe characters the
+    same way the stop hook reduces it."""
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", session_id or "unknown")
+    return os.path.join(root, ".throughliner", "keep-open-%s.marker" % safe)
+
+
+def tool_keep_open_mark(arguments):
+    """Write the keep-open marker for this session.
+
+    The stop hook's keep-open check armed only on a fixed phrase list, so the
+    user's own wording ("I want to keep collecting captures as the day goes
+    on") left it off and every finished reply kept asking her to close. Claude
+    understands the wording; this tool lets it say so where the hook reads:
+    once the marker exists for the session, the check arms on it, the phrase
+    list staying as the fallback. The marker carries the session id and the
+    clock; a missing session id is refused, since a marker for no session
+    would arm nothing.
+    """
+    session_id = (arguments.get("session_id") or "").strip()
+    if not session_id:
+        return "Refused: session_id is required — read it off this " \
+               "session's scratchpad path."
+    root = project_root()
+    path = keep_open_marker_path(root, session_id)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("session: %s\nmarked: %s\n" % (session_id,
+                                                  tool_clock({})))
+    except OSError as exc:
+        return "Refused: the marker could not be written at %s (%s)." % (
+            os.path.relpath(path, root), exc)
+    return "Keep-open marker written: %s. The stop hook's keep-open check " \
+           "is armed for this session; end replies on the capture filed, " \
+           "with no close ask." % os.path.relpath(path, root)
 
 
 _RECORD_DATE_RE = re.compile(
@@ -2298,6 +2334,28 @@ TOOLS = [
             "user's statement included — before saying it.",
         "inputSchema": {"type": "object", "properties": {}},
         "handler": tool_clock,
+    },
+    {
+        "name": "keep_open_mark",
+        "description":
+            "Write this session's keep-open marker into the project's "
+            ".throughliner/ folder, once the user has said, in any words, to "
+            "keep the chat open for capturing. From then on the stop hook "
+            "sends back a finished reply that ends on a close ask, whatever "
+            "words the user used; the hook's fixed phrase list stays as the "
+            "fallback. Refuses a missing session id.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string",
+                    "description": "This session's id, read off its "
+                                   "scratchpad path.",
+                },
+            },
+            "required": ["session_id"],
+        },
+        "handler": tool_keep_open_mark,
     },
     {
         "name": "planning_anchor",

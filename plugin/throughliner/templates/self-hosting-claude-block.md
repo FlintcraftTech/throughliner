@@ -11,7 +11,7 @@ You are building something whose output is instructions: a method, a plugin, a p
 
 ### Wording
 
-**State each rule bare, as the action required.** Main clause first, conditions after; short connectives (but, except that, unless, so long as); one idea per provision; every exception at the same level as the rule it qualifies. A prohibition is a signal that the action required was never specified. Reasons go to the record that decided the rule, not into the rule.
+**State each rule bare, as the action required.** Main clause first, conditions after; short connectives (but, except that, unless, so long as); one idea per provision; every exception at the same level as the rule it qualifies. A prohibition is a signal that the action required was never specified. Reasons go to the record that decided the rule, not into the rule; a rule that has slipped twice may carry one purpose clause welded into its sentence, stating the outcome the rule secures and never what happened before it, and a sweep leaves a purpose clause alone.
 
 ### Host and target
 

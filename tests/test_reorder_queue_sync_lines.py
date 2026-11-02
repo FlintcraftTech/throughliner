@@ -58,6 +58,10 @@ Not before: 2026-12-01
 A step of yours.
 - [ ] Phone the office (Demo) 📅 2026-11-02 🆔 phone-office
 
+#### [user] Check the hooks on the second machine [second-machine]
+A walkthrough of yours.
+1. Open a project there and look for the opening lines.
+
 ## Unprocessed
 
 #### Beta — a capture [beta]
@@ -96,10 +100,17 @@ check("a cleared entry gets its line under the heading",
 check("a held entry's line carries ⛔ from Blocked by and 📅 from Not before",
       "- [ ] Gamma — a held build (Demo Project) 🆔 gamma ⛔ alpha,beta "
       "📅 2026-12-01\n" in text, text)
-check("a [user] item's own task line is its line, with no second one",
+check("a [user] item's own task line is its line, with no second one, "
+      "and gains #user",
       text.count("🆔 phone-office") == 1
-      and "- [ ] Phone the office (Demo) 📅 2026-11-02 🆔 phone-office\n"
+      and "- [ ] Phone the office (Demo) 📅 2026-11-02 🆔 phone-office #user\n"
       in text, text)
+check("a walkthrough [user] item's derived line carries no #user",
+      "- [ ] [user] Check the hooks on the second machine (Demo Project) "
+      "🆔 second-machine\n" in text
+      and "second-machine #user" not in text, text)
+check("no build's line gains #user",
+      "alpha #user" not in text and "gamma #user" not in text, text)
 check("a capture gets its line too",
       "- [ ] Beta — a capture (Demo Project) 🆔 beta\n" in text, text)
 
@@ -125,7 +136,7 @@ check("a deleted entry's line goes with it",
 proc = subprocess.run([sys.executable, DIGEST, q], cwd=d, capture_output=True,
                       encoding="utf-8", errors="replace")
 check("the digest's cleared and held counts are unchanged",
-      "1 cleared to run, 2 held below the line" in proc.stdout, proc.stdout[:400])
+      "1 cleared to run, 3 held below the line" in proc.stdout, proc.stdout[:400])
 check("the digest counts no cite from the derived line",
       "Cited by" not in proc.stdout.split("[alpha]")[1].split("\n")[0],
       proc.stdout[:600])

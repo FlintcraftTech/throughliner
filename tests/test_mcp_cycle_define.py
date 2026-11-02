@@ -199,7 +199,7 @@ check("cycle_chains computes a due date for every checklist in the chain",
       "weekly-release" in chains
       and all(due for _, due in chains["weekly-release"]["checklists"]),
       repr(chains))
-facts = {s: (cad, obs) for s, _, cad, obs, _ in hook.cycles_facts(d)}
+facts = {s: (cad, obs) for s, _, cad, obs in hook.cycles_facts(d)}
 check("cycles_facts lists the cycle and not the checklists",
       set(facts) == {"weekly-release"}, repr(facts))
 after = doc_text(d)

@@ -39,13 +39,19 @@ Visibility:
 
 Language: English
 
+<!-- One line per person, set at setup: the name Claude uses for them in
+     records, queue credits and Assigned to: lines — GitHub username or first
+     name, their choice. -->
+Referred to as: 
+
 ## Task list
 
 <!-- Optional. The full path of the note holding your Obsidian Tasks plugin
      queries — the one place you read every project's tasks. No session
      writes to it: a task of yours lives as a checkbox line inside its own
      queue item, in the plugin's marks (📅 date, 🆔 slug, ⛔ what it waits
-     on), and the queries read every project's queue in the vault. Tick the
+     on), and the queries read every project's queue in the vault; a query
+     with `tags include #user` shows your own steps alone. Tick the
      line in Obsidian or at a session; the next planning session closes the
      item. Write none to keep no such note; setup asks and fills this line
      in. An absolute path, e.g.

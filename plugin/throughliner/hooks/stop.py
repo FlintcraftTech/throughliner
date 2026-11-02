@@ -700,10 +700,25 @@ def _user_said_keep_open(transcript_path):
     return found
 
 
+def _keep_open_marked(cwd, session_id):
+    """True where the state server's `keep_open_mark` tool wrote this
+    session's marker, `.throughliner/keep-open-<session-id>.marker`: Claude
+    understood the user's own wording and said so where this hook reads."""
+    if not session_id:
+        return False
+    marker = os.path.join(cwd, ".throughliner",
+                          "keep-open-%s.marker" % _safe_id(session_id))
+    return os.path.isfile(marker)
+
+
 def _close_ask_after_keep_open_owed(cwd, session_id, message, transcript_path):
     """The block reason where the reply ends on a close ask after the user
-    said to keep the chat open, else None."""
-    phrase = _user_said_keep_open(transcript_path)
+    said to keep the chat open, else None. The marker Claude writes arms the
+    check on any wording; the phrase list is the fallback."""
+    if _keep_open_marked(cwd, session_id):
+        phrase = "the keep-open marker"
+    else:
+        phrase = _user_said_keep_open(transcript_path)
     if not phrase:
         return None
     paragraphs = [p for p in _strip_quoted(message).split("\n\n") if p.strip()]
@@ -714,11 +729,12 @@ def _close_ask_after_keep_open_owed(cwd, session_id, message, transcript_path):
         return None
     return (
         "Your last message ends on an ask to close, after the user said to "
-        "keep the chat open for capturing (\"%s\"). End on the capture "
+        "keep the chat open for capturing (%s). End on the capture "
         "filed instead, with no close ask and no \"anything else to "
         "capture\"; the user closes when they choose. Reply with the "
         "correction alone, one or two lines, nothing from the earlier "
-        "message repeated. This is stopped once per phrase." % phrase
+        "message repeated. This is stopped once per phrase."
+        % (phrase if phrase == "the keep-open marker" else '"%s"' % phrase)
     )
 
 

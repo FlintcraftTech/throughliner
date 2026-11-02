@@ -642,6 +642,45 @@ def test_close_ask_after_keep_open_is_sent_back_once():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_keep_open_marker_arms_the_check_on_any_wording():
+    """[keep-open-check-arms-on-marker-not-phrases]: the marker the state
+    server's keep_open_mark tool writes arms the check with no phrase in the
+    transcript; neither marker nor phrase leaves it off; the phrase alone
+    still arms it."""
+    reply = ("Filed [queued-item] as agreed.\n\n"
+             "Anything else to capture, or shall I run the close command?")
+    root = project()
+    t = _transcript(root, ["first idea",
+                           "I want to keep collecting captures as the day "
+                           "goes on"])
+    code, out = run(root, reply, transcript_path=t)
+    check("wording off the phrase list leaves the check off",
+          "End on the capture filed" not in out, out)
+    marker_dir = os.path.join(root, ".throughliner")
+    os.makedirs(marker_dir, exist_ok=True)
+    with open(os.path.join(marker_dir, "keep-open-s1.marker"),
+              "w", encoding="utf-8") as f:
+        f.write("session: s1\nmarked: 2026-11-03\n")
+    code, out = run(root, reply, transcript_path=t)
+    check("the marker arms the check with no phrase in the transcript",
+          "the keep-open marker" in out and "End on the capture filed" in out,
+          out)
+    code, out = run(root, reply, transcript_path=t)
+    check("the marker's send-back happens once",
+          "End on the capture filed" not in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+    root = project()
+    code, out = run(root, reply)
+    check("neither marker nor phrase leaves the check off",
+          "End on the capture filed" not in out, out)
+    t = _transcript(root, ["keep the chat open"])
+    code, out = run(root, reply, transcript_path=t)
+    check("the phrase alone still arms it",
+          "End on the capture filed" in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_bold_inside_a_sentence_is_not_blocked():
     """[stop-check-bold-correction-repeats-pending-ask]: the bold check is
     gone, so a reply with bold inside a sentence, under the word bound, is
@@ -661,6 +700,7 @@ if __name__ == "__main__":
     test_turn_length_is_fed_back_once()
     test_bold_inside_a_sentence_is_not_blocked()
     test_close_ask_after_keep_open_is_sent_back_once()
+    test_keep_open_marker_arms_the_check_on_any_wording()
     test_denoted_date_anywhere_in_the_reply_sources_the_word()
     test_checkpoint_with_clock_or_stop_offer_is_blocked_once()
     test_post_close_tail_offer_is_fed_back_once()

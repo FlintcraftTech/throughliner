@@ -617,10 +617,34 @@ def sync_lines(lines, project):
             ticked = DERIVED_LINE_RE.match(block[0]).group(1) != ' '
             out.append(derived_line(line, block[1:], project, ticked, eol))
             out.extend(block[1:])
+        elif line.lstrip('# ').startswith('[user]'):
+            # A [user] item's own task line gains ` #user`, so a Tasks query
+            # can show the user's own steps alone; a derived line the tool
+            # wrote under a walkthrough item is left untagged.
+            out.extend(_tag_user_line(line, block, own, project, eol))
         else:
             out.extend(block)
         i = j
     return out
+
+
+USER_TAG = '#user'
+
+
+def _tag_user_line(heading_line, block, own, project, eol):
+    """`block` with its own task line carrying ` #user` where that line is
+    the user's own and not the derived line the tool would write."""
+    raw = block[own]
+    body = raw.rstrip('\r\n')
+    line_eol = raw[len(body):] or eol
+    ticked = DERIVED_LINE_RE.match(raw).group(1) != ' '
+    rest = block[:own] + block[own + 1:]
+    derived = derived_line(heading_line, rest, project, ticked, '').rstrip()
+    if body.strip() == derived:
+        return block
+    if USER_TAG in body:
+        return block
+    return block[:own] + [body + ' ' + USER_TAG + line_eol] + block[own + 1:]
 
 
 def write_verified(queue_path, new_lines, absent=(), present=()):
