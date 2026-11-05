@@ -151,3 +151,4 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **Why does my session opening list files that are not on the map?** — the paths no map line covers, listed as a fact at the opening and settled one ask at a time at the close. [faq.md](faq.md)
 - **Can I keep a planning chat open just to drop ideas into?** — saying so stops the end-of-session wrap-up question for the rest of that chat; in an ordinary chat the question returns each time the queue refills and empties. [faq.md](faq.md)
 - **Claude said a step I had approved was "blocked by classifier" — what do I do?** — Claude Code's auto-mode screen refusing a destructive or outward step by its shape, and switching to manual mode as the way through. [faq.md](faq.md)
+- **Can Claude call me by something other than my first name?** — the `Referred to as:` line setup asks for per person, used in records, credits and `Assigned to:` lines, first names where there is none. [faq.md](faq.md)
