@@ -994,7 +994,39 @@ def _check_cleared_names_queue(annotated, blocks, warnings):
 # here; the bolded line-leading form, which this check tolerates for the other
 # markers, is the separate check below.
 MID_LINE_MARKERS = ("Red flag · State:", "Blocked by:", "Not before:",
-                    "Cycle:", "Rule gate:", "Assigned to:")
+                    "Due:", "Cycle:", "Rule gate:", "Assigned to:")
+
+# `Due: YYYY-MM-DD` — when the work is wanted, read by the close's next-run
+# line and carried onto the derived line's 📅 ([next-run-line-at-close]).
+DUE_LINE = re.compile(r"^\*{0,2}Due:?\*{0,2}\s*(.*?)\s*$", re.IGNORECASE)
+
+
+def _check_due_dates(annotated, warnings):
+    """Flag a `Due:` line whose value is not a real YYYY-MM-DD date."""
+    import datetime as _dt
+    in_fence = False
+    for i, line, h2, is_heading in annotated:
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence or is_heading or h2 not in ("Processed", "Unprocessed"):
+            continue
+        m = DUE_LINE.match(line.strip())
+        if not m:
+            continue
+        raw = m.group(1).strip()
+        ok = bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw))
+        if ok:
+            try:
+                _dt.date.fromisoformat(raw)
+            except ValueError:
+                ok = False
+        if not ok:
+            warnings.append(
+                f"line {i + 1}: 'Due: {raw}' is not a date in YYYY-MM-DD "
+                "form — the next-run line and the derived checkbox line read "
+                "nothing from it as written."
+            )
 
 
 def _check_mid_line_markers(annotated, warnings):
@@ -1132,6 +1164,32 @@ def _read_unassigned_default(root: str):
     return m.group(1).strip() if m else None
 
 
+# One `Referred to as: <name>` line per person the project names, written by
+# setup; two or more mean the project is shared.
+REFERRED_LINE = re.compile(r"^\s*\*{0,2}Referred to as:?\*{0,2}\s*\S", re.MULTILINE)
+
+
+def _project_is_shared(root: str) -> bool:
+    """True where the project's CLAUDE.md carries two or more `Referred to
+    as:` lines. The missing-default-owner warning fires only then
+    ([solo-project-owner-lint-noise]): in a one-person project the assigned
+    entries are that person's and the rest are nobody's problem."""
+    if not root:
+        return False
+    try:
+        with open(os.path.join(root, "CLAUDE.md"), "r", encoding="utf-8",
+                  errors="replace") as f:
+            return len(REFERRED_LINE.findall(f.read())) >= 2
+    except OSError:
+        return False
+
+
+# A `[user]` item's own task line carries `#user`, or `#user/<name>` where
+# the item carries `Assigned to:`; the two name the same person.
+USER_TAG_RE = re.compile(r"(?:(?<=\s)|^)#user(?:/(\S+))?(?=\s|$)")
+TASK_LINE_RE = re.compile(r"^- \[[ xX]\] .*🆔\s*\S")
+
+
 CONFLICT_MARKER_RE = re.compile(r"^(<<<<<<< |>>>>>>> )")
 
 
@@ -1153,36 +1211,54 @@ def _check_conflict_markers(content, warnings):
             return
 
 
-def _check_assigned_to(blocks, warnings, unassigned_default):
-    """Check: every `Assigned to:` line names exactly one person, and where
-    the field is in use, entries without one have a readable default.
+def _check_assigned_to(blocks, warnings, unassigned_default, shared=False):
+    """Check: every `Assigned to:` line names exactly one person; a task
+    line's `#user/<name>` tag names the same person as the entry's
+    `Assigned to:` line; and, in a shared project, entries without the field
+    have a readable default while other entries carry it.
 
     `unassigned_default` is the name read off the project's CLAUDE.md, or
-    None where no line in the fixed shape exists. The missing-default case
-    fires only where some entry carries the field — a project of one person
-    never sees it.
+    None where no line in the fixed shape exists. `shared` is whether that
+    file carries two or more `Referred to as:` lines; the missing-default
+    case fires only then, so a one-person project never sees it.
     """
     in_use = False
     unassigned = []
     for b in blocks:
         assigned = None
-        for line in b["lines"][1:]:
-            m = ASSIGNED_LINE.match(line.strip())
-            if not m:
+        tag_name = None
+        tag_line = None
+        for n, line in enumerate(b["lines"][1:], start=b["idx"] + 2):
+            s = line.strip()
+            m = ASSIGNED_LINE.match(s)
+            if m:
+                in_use = True
+                name = m.group(1).strip()
+                if not name or "," in name or re.search(r"\band\b", name):
+                    warnings.append(
+                        f"line {b['idx'] + 1}: {b['heading'][:60]!r} carries "
+                        f"'Assigned to: {name}', which is not one name — the "
+                        "field names the one person whose work this is to do; "
+                        "write one name, or drop the line."
+                    )
+                assigned = name
                 continue
-            in_use = True
-            name = m.group(1).strip()
-            if not name or "," in name or re.search(r"\band\b", name):
-                warnings.append(
-                    f"line {b['idx'] + 1}: {b['heading'][:60]!r} carries "
-                    f"'Assigned to: {name}', which is not one name — the "
-                    "field names the one person whose work this is to do; "
-                    "write one name, or drop the line."
-                )
-            assigned = name
+            if TASK_LINE_RE.match(s):
+                t = USER_TAG_RE.search(s)
+                if t:
+                    tag_name = t.group(1) or ""
+                    tag_line = n
         if assigned is None:
             unassigned.append(b)
-    if in_use and unassigned and unassigned_default is None:
+        elif tag_line is not None and tag_name != re.sub(r"\s+", "-", assigned):
+            shown = "#user" + ("/" + tag_name if tag_name else "")
+            warnings.append(
+                f"line {tag_line}: the task line's tag {shown} does not name "
+                f"the person on 'Assigned to: {assigned}' — the tag is "
+                "#user/<name>, written by the queue tool from that line; "
+                "run the sync pass, or correct whichever is wrong."
+            )
+    if in_use and unassigned and unassigned_default is None and shared:
         warnings.append(
             f"{len(unassigned)} entr{'y has' if len(unassigned) == 1 else 'ies have'} "
             "no 'Assigned to:' line while other entries carry one, and the "
@@ -1220,7 +1296,7 @@ def _slugs_ticked_in_working_file(cwd: str, session_id: str) -> set:
 
 
 def lint(content: str, gate_check: bool = True,
-         unassigned_default=None, in_flight=None) -> list[str]:
+         unassigned_default=None, in_flight=None, shared: bool = False) -> list[str]:
     """Every structure check over a queue's text.
 
     `gate_check` is whether the cleared-item gate-disposition check runs —
@@ -1228,19 +1304,22 @@ def lint(content: str, gate_check: bool = True,
     CLAUDE.md; a direct caller keeps the check on. `in_flight` is the set of
     slugs this session's build working file names, for which the
     missing-blocker check says nothing. `unassigned_default` is
-    the name `_read_unassigned_default` read off the same file, or None.
+    the name `_read_unassigned_default` read off the same file, or None, and
+    `shared` is what `_project_is_shared` read off it: the missing-default
+    warning fires only in a shared project.
     """
     annotated = _annotate(content)
     blocks = _workline_blocks(annotated)
     warnings = []
     _check_conflict_markers(content, warnings)
-    _check_assigned_to(blocks, warnings, unassigned_default)
+    _check_assigned_to(blocks, warnings, unassigned_default, shared)
     _check_slugs(blocks, warnings)
     _check_heading_articles(blocks, warnings)
     _check_filed_stamp(blocks, warnings)
     _check_sections(annotated, warnings)
     _check_red_flag_states(annotated, warnings)
     _check_mid_line_markers(annotated, warnings)
+    _check_due_dates(annotated, warnings)
     _check_readiness_marker(annotated, blocks, warnings)
     _check_blocked_by(annotated, blocks, warnings, in_flight or set())
     _check_until_built_on_work_item(annotated, warnings)
@@ -1598,6 +1677,131 @@ def _partial_read_advisory(data: dict) -> int:
     )
 
 
+# --- SPEC.md Goals lint ([goal-lines-in-tasks-marks]) ----------------------
+# A goal in a project's SPEC is one checkbox line in the Obsidian Tasks
+# plugin's marks, tagged #goal, so a query note of the user's gathers every
+# project's goals the way the #user queries gather every project's steps:
+#   - [ ] <goal>, reached when <the test> (<project>) 🆔 <slug> #goal
+# After an edit lands on SPEC.md the Goals section is read and a line
+# missing any part is flagged, advisory and once while it stands, through
+# the same state file the queue lint keeps. A line in the section carrying
+# #user is flagged too: it would reach the user's task list.
+
+_GOAL_STATE_NAME = "spec-goals-lint-last.json"
+_GOAL_HEADING_RE = re.compile(r"^##\s+Goals\s*$")
+_ANY_H2_RE = re.compile(r"^##\s+")
+_GOAL_LINE_PARTS = (
+    ("reached when", re.compile(r"\breached when\b", re.IGNORECASE)),
+    ("the project in brackets", re.compile(r"\([^()]+\)")),
+    ("🆔 <slug>", re.compile(r"🆔\s*[a-z0-9][a-z0-9-]*")),
+    ("#goal", re.compile(r"(?:^|\s)#goal(?:\s|$)")),
+)
+
+
+def goals_section(content: str) -> list:
+    """(line number, text) for every line under `## Goals`, up to the next
+    `## ` heading. An empty list where SPEC has no Goals heading."""
+    lines = []
+    inside = False
+    for n, line in enumerate(content.splitlines(), 1):
+        if inside and _ANY_H2_RE.match(line):
+            break
+        if inside:
+            lines.append((n, line))
+        elif _GOAL_HEADING_RE.match(line.rstrip()):
+            inside = True
+    return lines
+
+
+def lint_goals(content: str) -> list:
+    """Every goal line in SPEC's Goals section missing a part of the shape.
+
+    A bullet under the heading that is not a checkbox line is a goal in the
+    older sentence shape and is flagged as one; prose beneath a line (its
+    history) is left alone. A checkbox line is checked for each part in
+    turn, and a line carrying `#user` is named, since the `#user` queries
+    would list it among the user's own steps.
+    """
+    warnings = []
+    for n, line in goals_section(content):
+        stripped = line.strip()
+        if not stripped.startswith("- "):
+            continue
+        if not re.match(r"^- \[[ xX]\] ", stripped):
+            warnings.append(
+                f"line {n}: a goal written as a bullet rather than a checkbox "
+                "line — the shape is `- [ ] <goal>, reached when <the test> "
+                "(<project>) 🆔 <slug> #goal`, so one query gathers every "
+                "project's goals."
+            )
+            continue
+        missing = [name for name, pat in _GOAL_LINE_PARTS
+                   if not pat.search(stripped)]
+        if missing:
+            warnings.append(
+                f"line {n}: the goal line is missing {', '.join(missing)} — "
+                "the shape is `- [ ] <goal>, reached when <the test> "
+                "(<project>) 🆔 <slug> #goal`."
+            )
+        if re.search(r"(?:^|\s)#user(?:/\S+)?(?:\s|$)", stripped):
+            warnings.append(
+                f"line {n}: a goal line carries #user, so the user's task "
+                "queries would list it as a step of theirs — a goal carries "
+                "#goal and no other tag."
+            )
+    return warnings
+
+
+def _read_goal_state(cwd: str):
+    path = os.path.join(cwd, ".throughliner", _GOAL_STATE_NAME)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, list):
+        return None
+    return {b for b in data if isinstance(b, str)}
+
+
+def _write_goal_state(cwd: str, warnings: list) -> None:
+    folder = os.path.join(cwd, ".throughliner")
+    try:
+        os.makedirs(folder, exist_ok=True)
+        with open(os.path.join(folder, _GOAL_STATE_NAME), "w",
+                  encoding="utf-8") as f:
+            json.dump(sorted(set(warnings)), f)
+    except (OSError, TypeError, ValueError):
+        pass
+
+
+def _goals_advisory(spec_path: str, cwd: str) -> str:
+    """The Goals lint's message after an edit lands on SPEC.md, or ''.
+
+    Each flag prints once while it stands: a flag the previous run already
+    printed is held back, and prints again only after it has gone and
+    returned, as the queue lint's flags do.
+    """
+    try:
+        with open(spec_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except (OSError, UnicodeDecodeError):
+        return ""
+    warnings = lint_goals(content)
+    last_run = _read_goal_state(cwd)
+    _write_goal_state(cwd, warnings)
+    new = [w for w in warnings if not last_run or w not in last_run]
+    if not new:
+        return ""
+    return (
+        "[Throughliner] SPEC.md Goals lint (advisory). A goal is one "
+        "checkbox line in the Tasks plugin's marks, tagged #goal, so a note "
+        "of the user's gathers every project's goals; these lines miss a "
+        "part of that shape. Fix what is genuinely wrong in a follow-up "
+        "edit, leave what isn't.\n" + "\n".join(f"- {w}" for w in new)
+    )
+
+
 def _emit(message: str) -> int:
     output = {
         "hookSpecificOutput": {
@@ -1644,7 +1848,8 @@ def _lint_queue(queue_path: str, with_growth: bool = True,
     sections = []
     warnings = lint(content, gate_check=gate_check,
                     unassigned_default=_read_unassigned_default(cwd),
-                    in_flight=_slugs_ticked_in_working_file(cwd, session_id))
+                    in_flight=_slugs_ticked_in_working_file(cwd, session_id),
+                    shared=_project_is_shared(cwd))
     # Both directions read the previous lint RUN beside the commit; read it
     # before this run's bodies overwrite it.
     last_run = _read_lint_state(cwd)
@@ -1837,6 +2042,12 @@ def main() -> int:
         secrets = _scan_secrets(filepath)
         if secrets:
             messages.append(_secret_message(os.path.basename(filepath), secrets))
+
+    # The Goals lint, on the root SPEC.md alone ([goal-lines-in-tasks-marks]).
+    if _normalise(filepath) == _normalise(os.path.join(cwd, "SPEC.md")):
+        goals = _goals_advisory(filepath, cwd)
+        if goals:
+            messages.append(goals)
 
     if messages:
         return _emit("\n\n".join(messages))

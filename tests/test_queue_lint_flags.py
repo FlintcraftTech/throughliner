@@ -261,6 +261,23 @@ def test_malformed_date_is_flagged():
     check("a date nobody can read is flagged", hit, f"got: {warnings}")
 
 
+def test_due_line_date_is_checked():
+    """`Due:` is a date in YYYY-MM-DD form, and holds nothing
+    ([next-run-line-at-close])."""
+    lint = load_lint()
+    bad = CLEAN.replace("Filed by Claude. Rationale for alpha.",
+                        "Filed by Claude. Rationale for alpha.\nDue: next week")
+    warnings = lint(bad)
+    check("an unreadable Due: date is flagged",
+          any("'Due: next week' is not a date" in w for w in warnings),
+          repr(warnings))
+    good = CLEAN.replace("Filed by Claude. Rationale for alpha.",
+                         "Filed by Claude. Rationale for alpha.\nDue: 2026-11-20")
+    warnings = lint(good)
+    check("a well-formed Due: on a cleared item draws no warning", not warnings,
+          repr(warnings))
+
+
 def test_date_above_the_line_is_flagged():
     """Cleared work has nothing holding it, a date included."""
     lint = load_lint()
@@ -675,16 +692,59 @@ def test_assigned_to_two_names_is_flagged():
 
 def test_missing_default_is_reported_when_the_field_is_in_use():
     """Entries without the field, other entries with it, and no readable
-    `Unassigned work is <name>'s.` line: one warning naming the shape."""
+    `Unassigned work is <name>'s.` line: one warning naming the shape — in
+    a shared project. A one-person project never sees it
+    ([solo-project-owner-lint-noise])."""
     lint = load_lint()
-    warnings = lint(ASSIGNED_QUEUE, unassigned_default=None)
+    warnings = lint(ASSIGNED_QUEUE, unassigned_default=None, shared=True)
     check("the missing default is reported with the line's shape",
           any("Unassigned work is <name>'s." in w for w in warnings),
           repr(warnings))
     warnings = lint(ASSIGNED_QUEUE.replace("Assigned to: Alex\n", ""),
-                    unassigned_default=None)
+                    unassigned_default=None, shared=True)
     check("a queue with no field in use is not asked for a default",
           not any("Unassigned work" in w for w in warnings), repr(warnings))
+    warnings = lint(ASSIGNED_QUEUE, unassigned_default=None, shared=False)
+    check("a one-person project is not asked for a default",
+          not any("Unassigned work" in w for w in warnings), repr(warnings))
+    check("the one-name check still runs in a one-person project",
+          any("not one name" in w for w in lint(
+              ASSIGNED_QUEUE.replace("Assigned to: Alex", "Assigned to: Alex, Sam"),
+              unassigned_default=None, shared=False)))
+
+
+def test_shared_is_read_from_referred_to_as_lines():
+    import tempfile
+    mod = _load_module()
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "CLAUDE.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("# Project\n\nReferred to as: its-coughfee\n")
+        check("one Referred to as: line is not shared", not mod._project_is_shared(td))
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("# Project\n\nReferred to as: its-coughfee\nReferred to as: Sam\n")
+        check("two Referred to as: lines are shared", mod._project_is_shared(td))
+        os.remove(path)
+        check("no CLAUDE.md is not shared", not mod._project_is_shared(td))
+
+
+TAGGED_QUEUE = ASSIGNED_QUEUE.replace(
+    "#### Work for one person [alpha]\nRationale.\nAssigned to: Alex\n",
+    "#### [user] Work for one person [alpha]\nRationale.\n"
+    "- [ ] Work for one person (Demo) 🆔 alpha {tag}\nAssigned to: Alex\n")
+
+
+def test_task_line_tag_names_the_assigned_person():
+    """`#user/<name>` on the task line and `Assigned to:` name one person
+    ([two-person-chagora-and-task-ownership])."""
+    lint = load_lint()
+    for tag, expect in (("#user/Alex", False), ("#user/Sam", True), ("#user", True)):
+        warnings = [w for w in lint(TAGGED_QUEUE.format(tag=tag),
+                                    unassigned_default="Alex")
+                    if "does not name the person" in w]
+        check(f"a task line tagged {tag} under Assigned to: Alex is "
+              + ("flagged" if expect else "silent"),
+              bool(warnings) == expect, repr(warnings))
 
 
 def test_conflict_marker_line_is_a_finding():
@@ -719,6 +779,8 @@ if __name__ == "__main__":
     test_assigned_to_one_name_passes_the_shape_check()
     test_assigned_to_two_names_is_flagged()
     test_missing_default_is_reported_when_the_field_is_in_use()
+    test_shared_is_read_from_referred_to_as_lines()
+    test_task_line_tag_names_the_assigned_person()
     test_unassigned_default_is_read_in_its_shape_only()
     test_conflict_marker_line_is_a_finding()
     test_clean_queue_is_silent()
@@ -737,6 +799,7 @@ if __name__ == "__main__":
     test_held_item_with_neither_is_flagged()
     test_malformed_date_is_flagged()
     test_date_above_the_line_is_flagged()
+    test_due_line_date_is_checked()
     test_build_block_delimiters_are_no_longer_asked_for_or_flagged()
     test_malformed_date_on_a_capture_is_flagged()
     test_good_date_on_a_capture_is_silent()

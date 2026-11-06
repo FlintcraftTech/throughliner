@@ -1354,6 +1354,31 @@ def test_held_since_attributes_within_one_commit():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_due_and_task_date_are_read_as_facts():
+    """`Due:` is parsed and printed bare, and a [user] item's own task-line
+    📅 is read into `task_date`; neither holds anything
+    ([next-run-line-at-close])."""
+    root = project(
+        processed=(
+            "#### Alpha — a cleared build [alpha]\nRationale.\nDue: 2026-11-20\n\n"
+            "#### [user] Phone the office [phone]\nA step.\n"
+            "- [ ] Phone the office (Demo) 📅 2026-12-01 🆔 phone #user\n"
+        ),
+    )
+    items = digest.parse(os.path.join(root, "QUEUE.md"))
+    by = {i["slug"]: i for i in items}
+    check("Due: is read onto the item", by["alpha"]["due"] == "2026-11-20",
+          repr(by["alpha"]["due"]))
+    check("a Due: line holds nothing: the item is still cleared",
+          by["alpha"]["cleared"] is True)
+    check("the task line's 📅 is read as the item's task date",
+          by["phone"]["task_date"] == "2026-12-01", repr(by["phone"]["task_date"]))
+    out = digest.render(items, root, os.path.join(root, "QUEUE.md"))
+    out = "\n".join(out) if isinstance(out, list) else out
+    check("Due: prints on the item's line", "| Due: 2026-11-20" in out, out[:500])
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_not_before_prints_with_its_state():
     """The field, and the fact of whether the date has arrived.
 
@@ -1601,6 +1626,7 @@ if __name__ == "__main__":
     test_held_since_attributes_within_one_commit()
     test_not_before_prints_with_its_state()
     test_unreadable_not_before_says_so()
+    test_due_and_task_date_are_read_as_facts()
     test_size_signs_are_computed_facts()
     test_size_signs_degrade_without_records()
     print()

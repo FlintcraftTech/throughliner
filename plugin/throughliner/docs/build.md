@@ -22,7 +22,7 @@ run     = Processed, from the top down to `--- Cleared to run above this line --
 Everything these checks find folds into one narration, delivered with the run at step 4.
 
 1. **Active build.** Where this session's own `_build-<session-id>.md` exists, offer to resume and read it for state. Another session's file is outside this session's scope. Before creating any file at the project root, check the opening's untracked list: an untracked file has no git copy, and overwriting it destroys the only version.
-2. **Read SPEC once**, then the `LOG/index.md` lines newer than the most recent build record (the one carrying a `Files touched` field), opening an entry only where an item's instructions are unclear, then the cleared region top-down, each item whole. A build carrying an `Assigned to:` line naming someone other than the person whose session this is skipped, said in one clause. Then:
+2. **Read SPEC once**, then the `LOG/index.md` lines newer than the most recent build record (the one carrying a `Files touched` field), opening an entry only where an item's instructions are unclear, then the cleared region top-down, each item whole. A build carrying an `Assigned to:` line naming someone other than the person whose session this is skipped, said in one clause; in one conversation serving more than one person, nothing is skipped. Then:
    - Processed is empty above the marker: tell the user the next work is not cleared yet, recommend /plan, stop.
    - An item carries `Red flag · State: uncleared`: stop before it, name the risk plainly, recommend /plan to clear it, wait.
    - The top item is `[freeform]`: say what it is and that it runs in a freeform session, a chat opened with no skill; hand over the rules doc's starter prompt in a fenced block with its slug filled, and stop.
@@ -89,7 +89,7 @@ Tick first, then remove, so that an interruption leaves the item visible in both
 
 ### Walk-through branch: the `[user]` items
 
-**Once the Claude-work is built, walk the user through each `[user]` item still in the cleared region**, from the item's own walkthrough in QUEUE.md. Where an item carries none, halt on it. Walking is part of the run.
+**Once the Claude-work is built, walk the user through each `[user]` item still in the cleared region**, from the item's own walkthrough in QUEUE.md. Where an item carries none, halt on it. Walking is part of the run. The standing `next-run` item is the close's own: never walked, never counted, left where it sits.
 
 **First, in one short message, name the items that cannot move this session**, one line each with why: an item whose record shows it handed over after a /close with no observable to check stays open, with what waits on it named by slug; an item whose first step needs something not yet there is blocked on that thing. Record each under the outcome block below. The message carries no ask.
 

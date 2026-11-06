@@ -22,7 +22,7 @@ unsure        ->  ask which
 
 ## Sending to another project
 
-**Anything sent to another project of the same user is a capture added to the bottom of that project's Unprocessed**, on the user's explicit yes to the exact text, with the state server's `send_capture` tool, or the script:
+**Anything sent to another project of the same user is a capture added to the bottom of that project's Unprocessed**, on the user's explicit yes to the exact text, with the state server's `send_capture` tool, or the script. Before a capture that asks another project a fact, search that project's queue and `LOG/` by its address-book path, ticked task lines included, and send only where nothing answers; a question that needs the project's own context still goes. The script:
 
 ```
 python <plugin-root>/scripts/send_capture.py <project root> --to "<correspondent name>" --heading "<one line>" --slug <slug> --body <body file> [--attach <path>]... [--send-tracked]

@@ -118,6 +118,9 @@ def _queue_path(root):
 # The four tools. Each returns a plain string — what the caller reads.
 # --------------------------------------------------------------------------
 
+NEXT_RUN_SLUG = "next-run"
+
+
 def tool_queue_checkpoint_counts(_arguments):
     """How much work is cleared to run, and how much is left to process."""
     root = project_root()
@@ -131,7 +134,9 @@ def tool_queue_checkpoint_counts(_arguments):
     except OSError as error:
         return "Cannot read %s: %s" % (path, error)
 
-    processed = [i for i in items if i["section"] == "Processed"]
+    # The standing next-run line is the close's own and counts as no work.
+    processed = [i for i in items if i["section"] == "Processed"
+                 and i["slug"] != NEXT_RUN_SLUG]
     ready = [i for i in processed if i["cleared"]]
     held = [i for i in processed if not i["cleared"]]
     unprocessed = [i for i in items if i["section"] == "Unprocessed"]
@@ -250,32 +255,53 @@ def tool_cycles_state(_arguments):
     return "\n".join(lines)
 
 
-def _installed_snapshot():
-    """The newest plugin snapshot the CLI has written, or (None, None).
+_CACHE_MARK = os.sep + os.path.join(".claude", "plugins", "cache") + os.sep
+
+
+def _installed_snapshot(plugin_root=None):
+    """The plugin snapshot this server process runs from, or (None, None).
 
     The CLI copies each installed build into
-    `~/.claude/plugins/cache/flintcraft/throughliner/<version>/` and does not
-    touch it again, so the newest directory by modification time is the one
-    most recently installed. Degrades to nothing found rather than guessing:
-    a wrong answer here would be read as evidence that the host is current.
+    `~/.claude/plugins/cache/<owner>/<plugin>/<version>/`, and the session-start
+    hook reports the folder it runs from as the installed build. This reads
+    the same thing: the server's own plugin root, where it sits inside that
+    cache. It used to pick the newest cache folder by modification time, and
+    on Windows a folder's time moves whenever anything inside it is touched,
+    so an older build's folder read as the newest and the tool named a build
+    the session was not running ([host-currency-reads-stale-install]).
+    Degrades to nothing found where the server runs outside the cache (the
+    development source, a test), rather than guessing.
     """
-    cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
-                         "cache", "flintcraft", "throughliner")
-    if not os.path.isdir(cache):
+    root = os.path.abspath(plugin_root or PLUGIN_ROOT)
+    if _CACHE_MARK not in root + os.sep:
         return None, None
-    entries = []
-    for name in os.listdir(cache):
-        full = os.path.join(cache, name)
-        if os.path.isdir(full):
-            try:
-                entries.append((os.path.getmtime(full), name, full))
-            except OSError:
-                continue
-    if not entries:
-        return None, None
-    entries.sort()
-    _when, version, full = entries[-1]
-    return version, full
+    return os.path.basename(root.rstrip(os.sep)), root
+
+
+def _version_key(name):
+    """Sort key for a cache folder's name: 1.24.0-test9 after 1.24.0-test8,
+    a release after its test builds."""
+    m = re.match(r"^(\d+)\.(\d+)\.(\d+)(?:-test(\d+))?$", name)
+    if not m:
+        return (0, 0, 0, 0, name)
+    major, minor, patch, test = m.groups()
+    return (int(major), int(minor), int(patch),
+            10 ** 6 if test is None else int(test), name)
+
+
+def _newer_installed_builds(installed_dir):
+    """Cache folders beside `installed_dir` whose version sorts after it —
+    a build installed since this server process started, which the hook
+    reports and this process does not run."""
+    cache = os.path.dirname(os.path.abspath(installed_dir))
+    mine = os.path.basename(os.path.abspath(installed_dir))
+    try:
+        names = [n for n in os.listdir(cache)
+                 if os.path.isdir(os.path.join(cache, n))]
+    except OSError:
+        return []
+    return sorted((n for n in names if _version_key(n) > _version_key(mine)),
+                  key=_version_key)
 
 
 VISIBILITY_INNER_RE = re.compile(r"inner repository \(`([^`]+?)/?`\)")
@@ -337,18 +363,28 @@ def tool_host_currency(_arguments):
     source_stamp = hooks.content_stamp(source)
     version, installed_dir = _installed_snapshot()
     if installed_dir is None:
-        return "Source stamp: %s\nNo installed snapshot found in the plugin " \
-               "cache, so there is nothing to compare against." % source_stamp
+        return "Source stamp: %s\nThis server runs from %s, outside the " \
+               "plugin cache, so it is not an installed snapshot and there " \
+               "is nothing to compare against; the session opening's " \
+               "installed-version line is the reading to use." \
+               % (source_stamp, PLUGIN_ROOT)
 
     installed_stamp = hooks.content_stamp(installed_dir)
     when = hooks.install_date(installed_dir)
 
     lines = [
-        "Installed version: %s%s" % (version,
-                                     " (installed %s)" % when if when else ""),
+        "Installed version: %s%s — the snapshot this server process runs "
+        "from" % (version, " (installed %s)" % when if when else ""),
         "Installed stamp:   %s" % installed_stamp,
         "Source stamp:      %s" % source_stamp,
     ]
+    newer = _newer_installed_builds(installed_dir)
+    if newer:
+        lines.append("A newer build sits in the cache beside this one: %s. "
+                     "This server process is the older build's; the session "
+                     "opening reports the build the hooks run from, and a full "
+                     "app restart starts the server on it."
+                     % ", ".join(newer))
     if installed_stamp == source_stamp:
         lines.append("Stamps MATCH — the installed host carries the current "
                      "source files, so a host-side change is live.")
@@ -559,6 +595,7 @@ def tool_file_capture(arguments):
         blocked_by = [s.strip() for s in blocked_by.split(",") if s.strip()]
     blocked_by = [s.strip().strip("[]") for s in blocked_by]
     not_before = (arguments.get("not_before") or "").strip()
+    due = (arguments.get("due") or "").strip()
     cycle = (arguments.get("cycle") or "").strip().strip("[]")
     assigned_to = (arguments.get("assigned_to") or "").strip()
     until_built = bool(arguments.get("until_built"))
@@ -587,9 +624,11 @@ def tool_file_capture(arguments):
         problems.append(
             "the body reads as a standing entry (%s) — an entry kept open "
             "while its pieces are built reads as unshipped work. A standing "
-            "outcome is written as a goal in SPEC's Goals section with a "
-            "\"reached when\" line; file the next concrete piece of work as "
-            "the capture instead." % ", ".join("%r" % p for p in standing))
+            "outcome is written as a goal in SPEC's Goals section, one "
+            "checkbox line in the Tasks plugin's marks: `- [ ] <goal>, "
+            "reached when <the test> (<project>) 🆔 <slug> #goal`; file the "
+            "next concrete piece of work as the capture instead."
+            % ", ".join("%r" % p for p in standing))
 
     if not heading:
         problems.append("heading is missing — the entry's one-line "
@@ -637,6 +676,11 @@ def tool_file_capture(arguments):
         except ValueError:
             problems.append("not_before %r is not a real date — YYYY-MM-DD."
                             % not_before)
+    if due:
+        try:
+            datetime.date.fromisoformat(due)
+        except ValueError:
+            problems.append("due %r is not a real date — YYYY-MM-DD." % due)
 
     if cycle:
         hooks = _session_start()
@@ -673,6 +717,8 @@ def tool_file_capture(arguments):
                         " until built" if until_built else ""))
     if not_before:
         entry.append("Not before: %s\n" % not_before)
+    if due:
+        entry.append("Due: %s\n" % due)
     if cycle:
         entry.append("Cycle: [%s]\n" % cycle)
     if assigned_to:
@@ -957,6 +1003,7 @@ def tool_hold_entry(arguments):
     not_before = (arguments.get("not_before") or "").strip()
     until_built = bool(arguments.get("until_built"))
     assigned_to = (arguments.get("assigned_to") or "").strip()
+    due = (arguments.get("due") or "").strip()
 
     problems = []
     if not slug:
@@ -964,9 +1011,14 @@ def tool_hold_entry(arguments):
     if blocked_by and not_before:
         problems.append("both blocked_by and not_before were given — a hold "
                         "is one or the other.")
-    if not blocked_by and not not_before and not assigned_to:
+    if not blocked_by and not not_before and not assigned_to and not due:
         problems.append("neither blocked_by nor not_before nor assigned_to "
-                        "was given — nothing to write.")
+                        "nor due was given — nothing to write.")
+    if due:
+        try:
+            datetime.date.fromisoformat(due)
+        except ValueError:
+            problems.append("due %r is not a real date — YYYY-MM-DD." % due)
     if assigned_to and ("," in assigned_to
                         or re.search(r"\band\b", assigned_to)):
         problems.append("assigned_to %r is not one name — the field names "
@@ -1026,10 +1078,28 @@ def tool_hold_entry(arguments):
                    captured.getvalue().strip()
         return "Wrote Assigned to: %s on [%s]." % (assigned_to, slug)
 
+    def _set_due():
+        # `Due:` is not a holding fact: the entry does not move. The line is
+        # replaced where one exists, else appended as the block's last line,
+        # read fresh since a hold written just before may have moved it.
+        fresh = [i for i in digest.parse(queue) if i["slug"] == slug]
+        if not fresh:
+            return "Could not write Due: — [%s] was not found after the " \
+                   "hold." % slug
+        ok, text = _write_line_on_entry(mover, queue, fresh[0],
+                                        DUE_LINE_RE, "Due: %s" % due)
+        return ("Wrote Due: %s on [%s]." % (due, slug)) if ok else \
+               "Refused by the queue tool — Due: was not written:\n" + text
+
     if not blocked_by and not not_before:
-        # A reassignment alone: the hold is untouched and the entry does not
-        # move, since whose an entry is to do is not a holding fact.
-        return _assign()
+        # A reassignment or a due date alone: the hold is untouched and the
+        # entry does not move, since neither is a holding fact.
+        parts = []
+        if assigned_to:
+            parts.append(_assign())
+        if due:
+            parts.append(_set_due())
+        return "\n".join(parts)
 
     item = by_slug[slug][0]
     section = item["section"]
@@ -1122,7 +1192,45 @@ def tool_hold_entry(arguments):
         action, slug, where, new_line, moved)
     if assigned_to:
         report += "\n" + _assign()
+    if due:
+        report += "\n" + _set_due()
     return report
+
+
+DUE_LINE_RE = re.compile(r"^Due:.*$", re.MULTILINE)
+
+
+def _write_line_on_entry(mover, queue, item, line_re, new_line):
+    """Replace the one line of `item`'s block matching `line_re` with
+    `new_line`, or append `new_line` as the block's last line, through the
+    mover's in-item replace. Returns (ok, the mover's text)."""
+    with open(queue, "r", encoding="utf-8", newline="") as f:
+        queue_lines = f.read().splitlines(keepends=True)
+    block = "".join(queue_lines[item["first_line"] - 1:item["last_line"]])
+    section = item["section"]
+    old = None
+    for match in line_re.finditer(block):
+        old = match.group(0)
+        break
+    if old is not None:
+        if block.count(old) != 1:
+            return False, "the entry's existing line occurs more than once " \
+                          "in its block."
+        return _in_process(lambda: mover.replace_in_item(
+            queue, item["slug"], old, new_line, section))
+    block_lines = block.splitlines(keepends=True)
+    tail = ""
+    for line in reversed(block_lines):
+        tail = line + tail
+        if block.count(tail) == 1:
+            break
+    eol = "\r\n" if "\r\n" in block else "\n"
+    if not tail.endswith("\n"):
+        replacement = tail + eol + new_line + eol
+    else:
+        replacement = tail + new_line + eol
+    return _in_process(lambda: mover.replace_in_item(
+        queue, item["slug"], tail, replacement, section))
 
 
 # --------------------------------------------------------------------------
@@ -1137,6 +1245,179 @@ def tool_hold_entry(arguments):
 # observable stay the user's declaration: the tool composes on their word, as
 # hold_entry does for a date, and decides nothing.
 # --------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
+# The next-run line ([next-run-line-at-close]). Every close leaves one
+# standing [user] item, slug `next-run`, whose task line says what the project
+# wants run and why, with the digest's standing cleared-to-run counts by
+# kind, dated from the nearest due thing in the queue, so the user's task
+# list says which project to open. Composed here from the digest and never
+# by hand; rewritten at every close; removed when nothing is queued.
+# --------------------------------------------------------------------------
+
+_KINDS = ("build", "audit", "co-write", "freeform", "user")
+
+
+def _plural(n, one, many=None):
+    return "%d %s" % (n, one if n == 1 else (many or one + "s"))
+
+
+def _next_run_counts(items):
+    """(cleared, held, captures, kinds): the standing counts, the next-run
+    line itself and the forward advisory left out."""
+    cleared = [i for i in items if i["section"] == "Processed"
+               and i["cleared"] and i["slug"] != NEXT_RUN_SLUG]
+    held = [i for i in items if i["section"] == "Processed"
+            and not i["cleared"] and i["slug"] != NEXT_RUN_SLUG]
+    captures = [i for i in items if i["section"] == "Unprocessed"
+                and i["slug"] not in (NEXT_RUN_SLUG, "forward-advisory")]
+    kinds = {k: 0 for k in _KINDS}
+    for i in cleared:
+        flavor = i["flavor"] if i["flavor"] in kinds else "build"
+        kinds[flavor] += 1
+    return cleared, held, captures, kinds
+
+
+def _next_run_date(items, today):
+    """(date, what): the nearest due thing in the queue, or (None, '').
+
+    Read: a `Due:` line on any entry; the 📅 on a [user] item's own task
+    line in Processed; a held item's `Not before:` already passed, which is
+    due today; an uncleared red flag, due today. A cycle's due-ness is the
+    opening's to compute and is not read here.
+    """
+    found = []
+    for i in items:
+        if i["slug"] == NEXT_RUN_SLUG:
+            continue
+        name = "[%s]" % (i["slug"] or "?")
+        if i["due"]:
+            found.append((i["due"], "%s due" % name))
+        if i["section"] == "Processed" and i["flavor"] == "user" and i["task_date"]:
+            found.append((i["task_date"], "the step %s" % name))
+        if (i["section"] == "Processed" and not i["cleared"] and i["not_before"]
+                and i["not_before"] <= today):
+            found.append((today, "%s past its Not before: date" % name))
+        if i["flag"] == "uncleared":
+            found.append((today, "the uncleared red flag on %s" % name))
+    if not found:
+        return None, ""
+    found.sort()
+    return found[0]
+
+
+def _next_run_text(project, cleared, held, captures, kinds, date):
+    """(skill, reason, quiet), or (None, None, False) where nothing is queued."""
+    claude_work = sum(kinds[k] for k in ("build", "audit", "co-write", "freeform"))
+    parts = []
+    if kinds["build"]:
+        parts.append(_plural(kinds["build"], "build"))
+    if kinds["audit"]:
+        parts.append(_plural(kinds["audit"], "audit"))
+    if kinds["co-write"]:
+        parts.append(_plural(kinds["co-write"], "co-write"))
+    if kinds["freeform"]:
+        parts.append(_plural(kinds["freeform"], "freeform item"))
+    if kinds["user"]:
+        parts.append(_plural(kinds["user"], "step of yours", "steps of yours"))
+    if len(parts) > 1:
+        joined = ", ".join(parts[:-1]) + " and " + parts[-1]
+    else:
+        joined = parts[0] if parts else ""
+    if claude_work or kinds["user"]:
+        reason = "%s cleared, [%s] first" % (joined, cleared[0]["slug"])
+        if captures:
+            reason += "; %s waiting" % _plural(len(captures), "capture")
+        return "build", reason, False
+    if captures:
+        reason = "%s waiting to be planned" % _plural(len(captures), "capture")
+        if held:
+            reason += ", %s held below the line" % _plural(len(held), "item")
+        quiet = date is None and len(captures) < 3
+        return "plan", reason, quiet
+    return None, None, False
+
+
+def _insert_cleared_bottom(mover, queue, slug, block_lines):
+    """Insert a block as the last cleared entry of Processed, the marker
+    anchored on it, through the mover's own assembly and verified write."""
+    with open(queue, "r", encoding="utf-8", newline="") as f:
+        lines = f.read().splitlines(keepends=True)
+    sections = mover.parse(lines)
+    if "Processed" not in sections:
+        return False, "QUEUE.md has no Processed section."
+    start, end = sections["Processed"]
+    preamble, blocks, marker_after, had_marker = mover.split_blocks(lines[start:end])
+    if had_marker and marker_after is None:
+        idx = 0
+    elif had_marker:
+        idx = next((n + 1 for n, (s, _b) in enumerate(blocks)
+                    if s == marker_after), len(blocks))
+    else:
+        idx = len(blocks)
+    eol = "\r\n" if any(l.endswith("\r\n") for l in lines) else "\n"
+    block = [l.rstrip("\r\n") + eol for l in block_lines]
+    new_blocks = blocks[:idx] + [(slug, block)] + blocks[idx:]
+    pref = slug if had_marker else "TOP"
+    out = mover.assemble_section(
+        preamble, mover.elements_with_marker(new_blocks, had_marker, pref))
+    new_lines = lines[:start] + out + lines[end:]
+    return _in_process(lambda: mover.write_verified(
+        queue, new_lines, present=[(slug, "Processed")]))
+
+
+def tool_next_run_line(_arguments):
+    """Rewrite the standing next-run item from the queue's standing counts,
+    or remove it where nothing is queued."""
+    root = project_root()
+    queue = _queue_path(root)
+    mover = _mover()
+    digest = _digest()
+    if mover is None or digest is None:
+        return "Cannot write: reorder_queue.py or queue_digest.py is not " \
+               "where this server expects it (%s)." % PLUGIN_ROOT
+    if not os.path.isfile(queue):
+        return "Cannot write: no QUEUE.md at %s." % queue
+
+    items = digest.parse(queue)
+    today = datetime.date.today().isoformat()
+    project = os.path.basename(root.rstrip(os.sep)) or "this project"
+    cleared, held, captures, kinds = _next_run_counts(items)
+    date, what = _next_run_date(items, today)
+    skill, reason, quiet = _next_run_text(project, cleared, held, captures,
+                                          kinds, date)
+
+    existing = [i for i in items if i["slug"] == NEXT_RUN_SLUG]
+    for old in existing:
+        ok, text = _in_process(lambda: mover.delete_item(
+            queue, NEXT_RUN_SLUG, old["section"]))
+        if not ok:
+            return "Refused by the queue tool — the standing line was not " \
+                   "rewritten:\n" + text
+
+    if skill is None:
+        return ("Nothing is queued, so no next-run line: the standing item "
+                "was removed." if existing else
+                "Nothing is queued, so no next-run line was written.")
+
+    text = "Run /%s in %s%s: %s" % (skill, project,
+                                     " when you like" if quiet else "", reason)
+    task = "- [ ] %s (%s)%s 🆔 %s #user" % (
+        text, project, " 📅 %s" % date if date else "", NEXT_RUN_SLUG)
+    body = ("Standing line written at the close of %s, composed by the state "
+            "server from the queue digest's standing counts; rewritten at "
+            "every close and removed when nothing is queued. Ticking it is "
+            "read as done, write the next one. %s"
+            % (today, ("Dated from the nearest due thing in the queue: %s."
+                       % what) if date else
+               "Nothing in the queue is dated, so the line carries no date."))
+    block = ["#### [user] %s [%s]" % (text, NEXT_RUN_SLUG), task, body]
+    ok, report = _insert_cleared_bottom(mover, queue, NEXT_RUN_SLUG, block)
+    if not ok:
+        return "Refused by the queue tool — nothing was written:\n" + report
+    return "Wrote the next-run line as the last cleared item in Processed:\n" \
+           + task
+
 
 DEFINITION_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 DERIVATION_RE = re.compile(r"\b(declared|derived)\b", re.IGNORECASE)
@@ -2268,6 +2549,27 @@ TOOLS = [
         "handler": tool_queue_checkpoint_counts,
     },
     {
+        "name": "next_run_line",
+        "description":
+            "Rewrite the standing next-run [user] item (slug `next-run`) as "
+            "the last cleared item in Processed, or remove it where nothing "
+            "is queued. Its task line says what the project wants run and "
+            "why — `Run /build in <project>: 3 builds, 1 audit and 2 steps "
+            "of yours cleared, [slug] first; 5 captures waiting` — composed "
+            "from the queue digest's standing counts by kind, never by hand, "
+            "with the `#user` tag so the task-list note's queries show it, "
+            "and a 📅 date where anything in the queue is dated: a `Due:` "
+            "line on any entry, the 📅 on a [user] item's own task line, a "
+            "held item's `Not before:` already passed, or an uncleared red "
+            "flag. With nothing cleared and fewer than three captures and no "
+            "date, the line reads `Run /plan in <project> when you like` and "
+            "carries no date. A cycle's due-ness is not read; the opening "
+            "computes it. Called at every close after the last queue write; "
+            "the standing item counts as no work in every count.",
+        "inputSchema": {"type": "object", "properties": {}},
+        "handler": tool_next_run_line,
+    },
+    {
         "name": "queue_next_pick",
         "description":
             "Which item the ordering ladder picks next, which rung it fell "
@@ -2384,7 +2686,8 @@ TOOLS = [
             "standing-entry phrase (\"stays open until\", \"kept open\", "
             "\"kept whole while\", \"returns at each\", \"returns when the "
             "next\", \"the umbrella\") — a standing outcome is a goal in "
-            "SPEC's Goals section, not a capture, and the retry is the next "
+            "SPEC's Goals section, one checkbox line in the Tasks plugin's "
+            "marks tagged #goal, not a capture, and the retry is the next "
             "concrete piece of work; the check matches those phrases only, "
             "so a standing entry worded another way passes — echoing "
             "the reason so the retry is instant. Body prose otherwise passes "
@@ -2444,12 +2747,23 @@ TOOLS = [
                         "for a chain step, the checklist's — with "
                         "no cycle field, and the slug is what ranks it.",
                 },
+                "due": {
+                    "type": "string",
+                    "description":
+                        "YYYY-MM-DD — when the work is wanted, written as a "
+                        "`Due:` line. Not a hold: the entry does not move. "
+                        "Read by the close's next-run line and carried onto "
+                        "the derived checkbox line's 📅.",
+                },
                 "assigned_to": {
                     "type": "string",
                     "description":
                         "One name: whose this work is to do, where the "
-                        "filer knows. Written as the entry's `Assigned "
-                        "to:` line. Says nothing about who may process it.",
+                        "filer knows, from the project CLAUDE.md's `Referred "
+                        "to as:` line. Written as the entry's `Assigned "
+                        "to:` line; a [user] item's own task line is then "
+                        "tagged `#user/<name>` by the queue tool. Says "
+                        "nothing about who may process it.",
                 },
             },
         },
@@ -2662,13 +2976,25 @@ TOOLS = [
                         "processed. Written as the trailing words `until "
                         "built` on the Blocked by: line.",
                 },
+                "due": {
+                    "type": "string",
+                    "description":
+                        "YYYY-MM-DD — when the work is wanted, written as a "
+                        "`Due:` line, replacing an existing one; may be "
+                        "given alone, with no hold, and moves nothing. Read "
+                        "by the close's next-run line and carried onto the "
+                        "derived checkbox line's 📅.",
+                },
                 "assigned_to": {
                     "type": "string",
                     "description":
-                        "One name: whose this entry is to do. Written as "
-                        "the entry's `Assigned to:` line, replacing an "
-                        "existing one; may be given alone, with no hold, "
-                        "to reassign. Says nothing about who may process.",
+                        "One name: whose this entry is to do, from the "
+                        "project CLAUDE.md's `Referred to as:` line. Written "
+                        "as the entry's `Assigned to:` line, replacing an "
+                        "existing one, and a [user] item's own task line is "
+                        "retagged `#user/<name>` by the queue tool; may be "
+                        "given alone, with no hold, to reassign. Says "
+                        "nothing about who may process.",
                 },
             },
         },

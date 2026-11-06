@@ -549,6 +549,9 @@ DERIVED_LINE_RE = re.compile(r'^\s*- \[([ xX])\] .*🆔\s*\S')
 _BLOCKED_LINE_RE = re.compile(r'^Blocked by:\s*(.+?)\s*$', re.IGNORECASE)
 _NOT_BEFORE_LINE_RE = re.compile(r'^Not before:\s*(\d{4}-\d{2}-\d{2})',
                                  re.IGNORECASE)
+# `Due:` is when the work is wanted; where an entry carries one, it is the
+# derived line's 📅 ahead of a Not before: date ([next-run-line-at-close]).
+_DUE_LINE_RE = re.compile(r'^Due:\s*(\d{4}-\d{2}-\d{2})', re.IGNORECASE)
 _SLUG_REF_RE = re.compile(r'\[([^\]\s]+)\]')
 
 
@@ -561,7 +564,7 @@ def derived_line(heading_line, block_lines, project, ticked=False, eol='\n'):
     slug = heading_slug(heading_line)
     text = ITEM_RE.sub('', heading_line.rstrip('\r\n'), count=1)
     text = SLUG_RE.sub('', text).strip()
-    blocked, date = [], None
+    blocked, date, due = [], None, None
     for raw in block_lines:
         s = raw.strip()
         m = _BLOCKED_LINE_RE.match(s)
@@ -572,6 +575,10 @@ def derived_line(heading_line, block_lines, project, ticked=False, eol='\n'):
         m = _NOT_BEFORE_LINE_RE.match(s)
         if m:
             date = m.group(1)
+        m = _DUE_LINE_RE.match(s)
+        if m:
+            due = m.group(1)
+    date = due or date
     parts = ['- [%s] %s (%s) 🆔 %s' % ('x' if ticked else ' ', text,
                                        project, slug)]
     if blocked:
@@ -629,11 +636,30 @@ def sync_lines(lines, project):
 
 
 USER_TAG = '#user'
+_USER_TAG_RE = re.compile(r'(?:(?<=\s)|^)#user(?:/\S+)?(?=\s|$)')
+_ASSIGNED_VALUE_RE = re.compile(r'^\*{0,2}Assigned to:?\*{0,2}\s*(.*?)\s*$',
+                                re.IGNORECASE)
+
+
+def user_tag_for(block):
+    """The tag a `[user]` item's own task line carries: `#user`, or
+    `#user/<name>` where the block carries `Assigned to: <name>`, the name
+    from the project CLAUDE.md's `Referred to as:` line, so `tags include
+    #user` still gathers every line and a person filters on their own
+    ([two-person-chagora-and-task-ownership]). Spaces in a name become
+    hyphens, since a tag ends at the first space."""
+    for raw in block:
+        m = _ASSIGNED_VALUE_RE.match(raw.strip())
+        if m and m.group(1).strip():
+            return USER_TAG + '/' + re.sub(r'\s+', '-', m.group(1).strip())
+    return USER_TAG
 
 
 def _tag_user_line(heading_line, block, own, project, eol):
-    """`block` with its own task line carrying ` #user` where that line is
-    the user's own and not the derived line the tool would write."""
+    """`block` with its own task line carrying its tag where that line is
+    the user's own and not the derived line the tool would write; a tag
+    naming another person, or none, is rewritten to the one the block's
+    `Assigned to:` line gives."""
     raw = block[own]
     body = raw.rstrip('\r\n')
     line_eol = raw[len(body):] or eol
@@ -642,9 +668,15 @@ def _tag_user_line(heading_line, block, own, project, eol):
     derived = derived_line(heading_line, rest, project, ticked, '').rstrip()
     if body.strip() == derived:
         return block
-    if USER_TAG in body:
+    tag = user_tag_for(rest)
+    found = _USER_TAG_RE.search(body)
+    if found and found.group(0) == tag:
         return block
-    return block[:own] + [body + ' ' + USER_TAG + line_eol] + block[own + 1:]
+    if found:
+        new_body = body[:found.start()] + tag + body[found.end():]
+    else:
+        new_body = body + ' ' + tag
+    return block[:own] + [new_body + line_eol] + block[own + 1:]
 
 
 def write_verified(queue_path, new_lines, absent=(), present=()):

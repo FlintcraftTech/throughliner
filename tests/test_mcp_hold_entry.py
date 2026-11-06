@@ -233,6 +233,30 @@ shutil.rmtree(d, ignore_errors=True)
 refused("two names in assigned_to", {"slug": "delta", "assigned_to": "Alex and Sam"},
         "not one name")
 
+# --- due: alone it writes the line and moves nothing; with a hold it rides --
+d = project()
+text = call(d, {"slug": "alpha", "due": "2026-11-20"})
+after = queue_text(d)
+marker = after.index("--- Cleared to run above this line ---")
+check("due alone writes a Due: line and the item stays cleared",
+      "Due: 2026-11-20" in after.split("[alpha]")[1].split("#### Beta")[0]
+      and after.index("[alpha]") < marker and "Wrote Due: 2026-11-20" in text,
+      repr(text) + repr(after))
+text = call(d, {"slug": "alpha", "due": "2026-11-25"})
+alpha_block = queue_text(d).split("[alpha]")[1].split("#### Beta")[0]
+check("a second due replaces the line rather than doubling it",
+      alpha_block.count("Due:") == 1 and "Due: 2026-11-25" in alpha_block,
+      repr(alpha_block))
+text = call(d, {"slug": "beta", "not_before": "2031-01-01", "due": "2031-02-01"})
+after = queue_text(d)
+beta_block = after.split("[beta]")[1].split("## Unprocessed")[0]
+check("a hold with due writes both on the moved item",
+      "Not before: 2031-01-01" in beta_block and "Due: 2031-02-01" in beta_block
+      and after.index("[beta]") > after.index("--- Cleared to run above this line ---"),
+      repr(beta_block))
+shutil.rmtree(d, ignore_errors=True)
+refused("an unreal due date", {"slug": "delta", "due": "soon"}, "not a real date")
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

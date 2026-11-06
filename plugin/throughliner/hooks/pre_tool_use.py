@@ -123,6 +123,28 @@ SENT_REGISTER_DESTRUCTION = re.compile(
     r"|\.throughliner[/\\]sent\.md[^\n]*\|\s*(?:Out-File|Set-Content)\b",
     re.IGNORECASE)
 
+_MOVE_WORD_RE = re.compile(r"^(?:mv|move|Move-Item)$", re.IGNORECASE)
+
+
+def _is_register_creating_move(segment: str, cwd: str) -> bool:
+    """A `mv` or `move` whose destination is the register, where no register
+    exists yet — the step the epoch-7 migration takes, moving `INBOX/sent.md`
+    to `.throughliner/sent.md` ([epoch7-sent-register-move-blocked]).
+
+    The destruction pattern matches the command's text, and a move INTO the
+    name reads the same as a move away from it; this mirrors the Write-side
+    rule (existing files only): nothing is lost where the destination does
+    not exist. The destination is the segment's last token, as the register's
+    path or the working folder itself; a flag after it is not read.
+    """
+    tokens = segment.strip().split()
+    if len(tokens) < 3 or not any(_MOVE_WORD_RE.match(t) for t in tokens[:2]):
+        return False
+    dest = tokens[-1].strip("'\"").replace("\\", "/").rstrip("/")
+    if not (dest.endswith(".throughliner/sent.md") or dest.endswith(".throughliner")):
+        return False
+    return not os.path.exists(os.path.join(cwd, SENT_REGISTER))
+
 # Appended to every git-safety denial: the patterns match command text,
 # not intent, so a denial can fire on a command that only carries the
 # pattern as data.
@@ -2442,7 +2464,8 @@ def main() -> int:
         # compound command, so tokens from unrelated segments can't combine
         # across a shell operator (the cross-segment false-denial bug).
         for segment in _split_segments(command):
-            if SENT_REGISTER_DESTRUCTION.search(segment):
+            if SENT_REGISTER_DESTRUCTION.search(segment) \
+                    and not _is_register_creating_move(segment, cwd):
                 return _deny(
                     "[Throughliner] BLOCKED: this would delete or empty the "
                     "record of everything this project has sent, and that "
@@ -2450,8 +2473,10 @@ def main() -> int:
                     f"File: {SENT_REGISTER}\n\n"
                     "The working folder is deliberately kept out of git, so "
                     "this one file has no history to restore from.\n\n"
-                    "Use Edit to change a line in it. Nothing else needs to "
-                    "touch the whole file."
+                    "Use Edit to change a line in it, and Write to create "
+                    "the file where none exists yet; a move whose "
+                    "destination is a register that does not yet exist "
+                    "passes. Nothing else needs to touch the whole file."
                     + PATTERN_AS_DATA_NOTE,
                     branch="git safety: sent-register destruction",
                 )

@@ -28,6 +28,12 @@ import subprocess
 import sys
 import tempfile
 
+for _stream in (sys.stderr, sys.stdout):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError, OSError):
+        pass
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER = os.path.join(ROOT, "plugin", "throughliner", "mcp", "server.py")
 
@@ -259,6 +265,28 @@ with open(os.path.join(d, "QUEUE.md"), "rb") as f:
 check("until_built without blocked_by is refused and nothing is written",
       text.startswith("Refused") and "without blocked_by" in text
       and after == before, f"tool answered: {text!r}")
+
+# --- due: a Due: line, carried onto the derived line's 📅 -------------------
+text = answer(call_file_capture(d, {
+    "heading": "Fixture capture with a due date",
+    "slug": "fixture-due",
+    "body": "Filed by the suite.",
+    "due": "2026-11-20",
+}))
+with open(os.path.join(d, "QUEUE.md"), "rb") as f:
+    after = f.read().decode("utf-8").replace("\r", "")
+check("due writes a Due: line and the derived line's 📅",
+      text.startswith("Filed") and "Due: 2026-11-20\n" in after
+      and "🆔 fixture-due 📅 2026-11-20" in after,
+      f"tool answered: {text!r}; queue tail: {after[-300:]!r}")
+text = answer(call_file_capture(d, {
+    "heading": "Fixture capture with a bad due date",
+    "slug": "fixture-due-bad",
+    "body": "Filed by the suite.",
+    "due": "next week",
+}))
+check("an unreal due date is refused", text.startswith("Refused")
+      and "not a real date" in text, f"tool answered: {text!r}")
 shutil.rmtree(d, ignore_errors=True)
 
 print()

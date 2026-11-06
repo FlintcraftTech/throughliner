@@ -176,6 +176,8 @@ def main():
         ("rm .throughliner/sent.md", "deny", "removal"),
         ("echo x > .throughliner/sent.md", "deny", "a truncating redirect"),
         ("mv .throughliner/sent.md elsewhere.md", "deny", "a rename away"),
+        ("mv INBOX/sent.md .throughliner/sent.md", "deny",
+         "a move over an existing register"),
         ("echo x >> .throughliner/sent.md", "pass", "an append"),
         ("grep tips .throughliner/sent.md", "pass", "a read"),
         ("rm .throughliner/snapshots/old-snapshot.md", "pass", "an unrelated working-folder file"),
@@ -184,6 +186,33 @@ def main():
         got = shell.get("permissionDecision", "pass")
         check(f"shell: {what} -> {expected}", got == expected,
               f"{command!r} got {got}")
+    shell = drive_tool(d, "Bash", {"command": "rm .throughliner/sent.md"})
+    reason = shell.get("permissionDecisionReason", "")
+    check("the shell refusal names Write to create and Edit to change",
+          "Write to create" in reason and "Use Edit" in reason, reason)
+
+    # The epoch-7 migration's step ([epoch7-sent-register-move-blocked]): a
+    # move whose destination is a register that does not yet exist passes,
+    # mirroring the Write-side existing-files-only rule, in both shells'
+    # spellings; the same move over an existing register stays refused
+    # (asserted above).
+    d = make_project()
+    os.makedirs(os.path.join(d, ".throughliner"), exist_ok=True)
+    os.makedirs(os.path.join(d, "INBOX"), exist_ok=True)
+    with open(os.path.join(d, "INBOX", "sent.md"), "w", encoding="utf-8") as f:
+        f.write("- 2026-08-01 — somewhere — a claim\n")
+    for command, what in (
+        ("mv INBOX/sent.md .throughliner/sent.md", "a bash move into an absent register"),
+        ("move INBOX\\sent.md .throughliner\\sent.md", "a cmd move into an absent register"),
+        ("Move-Item INBOX\\sent.md .throughliner\\sent.md", "a PowerShell move into an absent register"),
+        ("mv INBOX/sent.md .throughliner/", "a move into the working folder"),
+    ):
+        shell = drive_tool(d, "Bash", {"command": command})
+        got = shell.get("permissionDecision", "pass")
+        check(f"shell: {what} -> pass", got == "pass", f"{command!r} got {got}")
+    shell = drive_tool(d, "Bash", {"command": "mv .throughliner/sent.md INBOX/sent.md"})
+    check("shell: a move away from an absent register's name still denies",
+          shell.get("permissionDecision") == "deny", str(shell))
 
     # Two-direction case ([sent-register-creation-blocked]): a Write CREATING
     # an absent register must pass — a project's first-ever send has nothing

@@ -70,6 +70,13 @@ UNTIL_BUILT_RE = re.compile(r"\buntil built\s*$", re.IGNORECASE)
 # passed, so the lift is a fact on the line rather than a date the reader has
 # to compare against today by hand.
 NOT_BEFORE_RE = re.compile(r"^Not before:\s*(\S+)\s*$", re.IGNORECASE)
+# `Due: YYYY-MM-DD` — when the work is wanted, as opposed to when it may
+# start. Written by the capture and hold tools and read by the close's
+# next-run line, so a dated walkthrough item reaches the user's task list
+# through that line ([next-run-line-at-close]). No hold: it moves nothing.
+DUE_RE = re.compile(r"^Due:\s*(\S+)\s*$", re.IGNORECASE)
+# The 📅 date on a [user] item's own task line, read for the same reason.
+TASK_DATE_RE = re.compile(r"📅\s*(\d{4}-\d{2}-\d{2})")
 # `Cycle: [slug]` — the capture is a named cycle's material rather than a
 # pending decision, so that cycle's turns draw from it and the planning ladder
 # passes over it. Printed as a bare fact: whether the named definition exists
@@ -300,6 +307,10 @@ def parse(path):
                 # True where a `Blocked by:` line ends `until built`.
                 "until_built": False,
                 "not_before": None,
+                # `Due:`, and the 📅 on a [user] item's own task line — read
+                # for the next-run line, never for a hold.
+                "due": None,
+                "task_date": None,
                 "flag": None,
                 "cycle": None,
                 "assigned_to": None,
@@ -328,6 +339,12 @@ def parse(path):
         # never read for state, never counted as prose or length. `Blocked
         # by:` and `Not before:` stay the fields every hook reads.
         if current is not None and DERIVED_LINE_RE.match(stripped):
+            # One thing is read off a [user] item's own task line: its 📅
+            # date, which the next-run line carries out to the task list.
+            if "#user" in stripped:
+                dated = TASK_DATE_RE.search(stripped)
+                if dated:
+                    current["task_date"] = dated.group(1)
             continue
 
         if current is not None and stripped:
@@ -344,6 +361,9 @@ def parse(path):
             not_before = NOT_BEFORE_RE.match(stripped)
             if not_before:
                 current["not_before"] = not_before.group(1).strip()
+            due = DUE_RE.match(stripped)
+            if due:
+                current["due"] = due.group(1).strip()
             cycle = CYCLE_RE.match(stripped)
             if cycle:
                 current["cycle"] = cycle.group(1).lower()
@@ -1244,6 +1264,8 @@ def render(items, root="", queue_path="QUEUE.md"):
                     line += " until built"
             if item["not_before"]:
                 line += f"  | Not before: {item['not_before']} -> {not_before_state(item['not_before'])}"
+            if item["due"]:
+                line += f"  | Due: {item['due']}"
             if item["cycle"]:
                 line += f"  | Cycle: [{item['cycle']}]"
             if item["flag"]:

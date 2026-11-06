@@ -62,6 +62,11 @@ A step of yours.
 A walkthrough of yours.
 1. Open a project there and look for the opening lines.
 
+#### [user] Book the venue [book-venue]
+A step of Sam's.
+- [ ] Book the venue (Demo) 🆔 book-venue #user
+Assigned to: Sam
+
 ## Unprocessed
 
 #### Beta — a capture [beta]
@@ -113,10 +118,24 @@ check("no build's line gains #user",
       "alpha #user" not in text and "gamma #user" not in text, text)
 check("a capture gets its line too",
       "- [ ] Beta — a capture (Demo Project) 🆔 beta\n" in text, text)
+check("an assigned [user] item's task line carries #user/<name>",
+      "- [ ] Book the venue (Demo) 🆔 book-venue #user/Sam\n" in text
+      and "book-venue #user\n" not in text, text)
 
 # A second pass changes nothing: the line is derived, not accumulated.
 run([q, "--sync-lines"], d)
 check("a second pass is idempotent", read(q) == text)
+
+# A reassignment through --assign retags the task line; dropping to a plain
+# `#user` happens where the owner line goes ([two-person-chagora-and-task-ownership]).
+code, out = run([q, "--assign", "book-venue", "Alex"], d)
+text = read(q)
+check("--assign retags the task line to the new owner",
+      "🆔 book-venue #user/Alex\n" in text and "#user/Sam" not in text, out + text)
+code, out = run([q, "--assign", "phone-office", "Jo Bloggs"], d)
+text = read(q)
+check("a name with a space becomes one tag",
+      "🆔 phone-office #user/Jo-Bloggs\n" in text, out + text)
 
 # A hold added by --replace-in rewrites the line with the new ⛔.
 code, out = run([q, "--replace-in", "alpha", "--old", "Alpha's rationale.",
@@ -136,7 +155,7 @@ check("a deleted entry's line goes with it",
 proc = subprocess.run([sys.executable, DIGEST, q], cwd=d, capture_output=True,
                       encoding="utf-8", errors="replace")
 check("the digest's cleared and held counts are unchanged",
-      "1 cleared to run, 3 held below the line" in proc.stdout, proc.stdout[:400])
+      "1 cleared to run, 4 held below the line" in proc.stdout, proc.stdout[:400])
 check("the digest counts no cite from the derived line",
       "Cited by" not in proc.stdout.split("[alpha]")[1].split("\n")[0],
       proc.stdout[:600])

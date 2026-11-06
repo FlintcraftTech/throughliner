@@ -75,7 +75,8 @@ Quick answers about how this project's workflow works. Each question links to a 
   advice that a planning opening reads and deletes in the same breath.
   [faq.md](faq.md)
 - **How do my projects send each other work?** — a capture added to the other
-  project's queue on your yes, attachments, and what the other project sees.
+  project's queue on your yes, attachments, the look through that project's
+  queue and records before a question is sent, and what the other project sees.
   [faq.md](faq.md)
 - **What does a build run do with my spec?** — read once at the start, the
   halt on a contradiction, and why a build never rewrites SPEC.
@@ -107,13 +108,15 @@ Quick answers about how this project's workflow works. Each question links to a 
   return checks: a cycle due, a version change, the date moved.
   [faq.md](faq.md)
 - **A draft I'm asked to edit — where is it and how do I hand it back?** —
-  who drafts first, the `.txt` in `temp/`, the side-panel link and save
-  button, and what to say when you are done. [faq.md](faq.md)
+  who drafts first, the `.md` in `temp/` read in Obsidian, the side panel's
+  `.txt` as the fallback on your ask, and what to say when you are done.
+  [faq.md](faq.md)
 - **Why is the planning opening so short?** — the one quiet clause for checks
   that found nothing, held work as a count, and the limit. [faq.md](faq.md)
 - **Two of us share one queue — whose is what?** — the `Assigned to:` line,
-  "not mine", the unassigned-work line, the remote-ahead notice and refused
-  conflict markers. [faq.md](faq.md)
+  "not mine", the unassigned-work line, the `#user/<name>` tag on a task
+  line, one conversation shared through a bot, the remote-ahead notice and
+  refused conflict markers. [faq.md](faq.md)
 - **Claude refused to put my work on a cycle — why?** — the fields checked at
   the door, what the refusal names, and what tells you it was written.
   [faq.md](faq.md)
@@ -152,4 +155,7 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **Can I keep a planning chat open just to drop ideas into?** — saying so stops the end-of-session wrap-up question for the rest of that chat; in an ordinary chat the question returns each time the queue refills and empties. [faq.md](faq.md)
 - **Claude said a step I had approved was "blocked by classifier" — what do I do?** — Claude Code's auto-mode screen refusing a destructive or outward step by its shape, and switching to manual mode as the way through. [faq.md](faq.md)
 - **Can Claude call me by something other than my first name?** — the `Referred to as:` line setup asks for per person, used in records, credits and `Assigned to:` lines, first names where there is none. [faq.md](faq.md)
-- **How do I work through my own tasks?** — the tasks command, run in the project that keeps your task-list note: your queries resolved over every project's queue, one task at a time, and a done task sent back to its project as a capture. [faq.md](faq.md)
+- **Can I see every project's goals in one place?** — the checkbox line each goal in a spec carries, in the Tasks plugin's marks tagged `#goal`, the one query that gathers them, and the check that names a line missing a part. [faq.md](faq.md)
+- **Where does a task go that belongs to no project?** — the queue of the project that keeps your task-list note, sent there from any chat on your word or on Claude's one ask, and what setup says about that project. [faq.md](faq.md)
+- **Why is there a "Run /build in …" task in my list?** — the next-run line every close leaves, its counts and its date, how it is rewritten, and what ticking it does. [faq.md](faq.md)
+- **How do I work through my own tasks?** — the tasks command, run in the project that keeps your task-list note: your queries resolved over every project's queue, one task at a time, the order (dates, then what unblocks most, then your projects' priority from a `goals.md` note of your own, then queue order), and a done task sent back to its project as a capture. [faq.md](faq.md)
