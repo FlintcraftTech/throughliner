@@ -139,7 +139,7 @@ CHECKLIST = {
     "heading": "Maintenance sweep",
     "slug": "sweep",
     "artifact": "the plugin's own documents",
-    "trigger": "the user says \"sweep\", or the release cycle reaches it",
+    "trigger": "after [beta-pick] in the release chain, or the user's ask",
     "steps": ["Measure the size criterion.", "One eviction pass."],
 }
 
@@ -147,7 +147,7 @@ SHIP = {
     "heading": "Release",
     "slug": "ship",
     "artifact": "the published pre-release",
-    "trigger": "the user says \"release\"",
+    "trigger": "after [rezip] in the release chain",
     "steps": ["Bump the version.", "Attach the zip."],
 }
 
@@ -171,7 +171,7 @@ check("a checklist appends and the tool reports it as a checklist",
 check("the hook's parser reads the checklist back",
       "sweep" in got and hook._is_checklist(got["sweep"]), repr(got.get("sweep")))
 check("the checklist carries its trigger and no cadence",
-      got.get("sweep", {}).get("trigger", "").startswith("the user says")
+      got.get("sweep", {}).get("trigger", "").startswith("after [beta-pick]")
       and got.get("sweep", {}).get("cadence") is None, repr(got.get("sweep")))
 check("the existing definition and preamble are untouched",
       doc_text(d).startswith(EXISTING) and "rezip" in got)
@@ -235,8 +235,19 @@ refused("a slug already defined", dict(CHECKLIST, slug="rezip"),
 refused("both cadence and trigger",
         dict(CHECKLIST, cadence="weekly, declared 2026-01-01",
              observable="x"), "both cadence and trigger")
-refused("neither cadence nor trigger",
-        {k: v for k, v in CHECKLIST.items() if k != "trigger"}, "neither")
+# --- a checklist with no trigger is well-formed: run on the user's ask -------
+d = project()
+text = call(d, dict({k: v for k, v in CHECKLIST.items() if k != "trigger"},
+                    slug="tidy", heading="Tidy pass"))
+got = entries(d)
+check("a checklist with no trigger appends",
+      "Appended to CYCLES.md" in text and "as a checklist" in text, repr(text))
+check("the wordless checklist parses back as a checklist with no trigger",
+      "tidy" in got and hook._is_checklist(got["tidy"])
+      and got["tidy"].get("trigger") is None, repr(got.get("tidy")))
+check("checklists_facts lists the wordless checklist",
+      any(s == "tidy" for s, _, _ in hook.checklists_facts(d)))
+shutil.rmtree(d, ignore_errors=True)
 refused("a cadence with no observable",
         {"heading": "Posting", "slug": "posting", "artifact": "the channel",
          "cadence": "every three days, declared by the user 2026-08-29",

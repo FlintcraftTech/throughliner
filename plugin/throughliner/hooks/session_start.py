@@ -1812,7 +1812,7 @@ CYCLE_OBSERVABLE_RE = re.compile(r"^\s*\*{0,2}Observable\s*:\*{0,2}\s*(.+?)\s*$"
                                  re.IGNORECASE)
 CYCLE_CADENCE_RE = re.compile(r"^\s*\*{0,2}Cadence\s*:\*{0,2}\s*(.+?)\s*$",
                               re.IGNORECASE)
-# A checklist's field: the word that fires it, standing where a cadence would be.
+# A checklist's optional field: what fires it — a chain arm or a condition.
 CYCLE_TRIGGER_RE = re.compile(r"^\s*\*{0,2}Trigger\s*:\*{0,2}\s*(.+?)\s*$",
                               re.IGNORECASE)
 # A chained cycle's two extra fields. Anchor names a weekday that recurs (and
@@ -1971,32 +1971,16 @@ def _parse_cycles_doc(cwd):
 
 
 def _is_checklist(entry):
-    """A definition fired by a word rather than by a cadence.
+    """A definition with no cadence — run where a chain reaches it or when
+    the user asks for it in their own words.
 
     The discriminator is what the definition carries, so the format grows
-    additively and every existing cycles doc stays valid: a cycle has a cadence,
-    a checklist has a trigger and no cadence.
+    additively and every existing cycles doc stays valid: a cycle has a
+    cadence, a checklist has none. A `Trigger:` field is optional on a
+    checklist and describes what fires it — a chain arm, a condition — and a
+    definition carrying neither field is a plain checklist run on the ask.
     """
-    return entry["trigger"] is not None and entry["cadence"] is None
-
-
-def _is_malformed(entry):
-    """A definition carrying neither a cadence nor a trigger — a cycle the
-    due-ness check cannot compute from, or a checklist no word fires. Named
-    at the opening rather than dropped ([malformed-cycle-definition-named-and-refused]):
-    a hand-written checklist carrying its firing word under a label the
-    parser does not read used to come back as a cycle with no cadence, and
-    "prep" and "income" fired nothing with nobody told why."""
-    return entry["trigger"] is None and entry["cadence"] is None
-
-
-def malformed_definitions(cwd):
-    """The slug of every definition in the cycles doc that carries neither
-    `Cadence:` nor `Trigger:`. None where the project has no cycles doc."""
-    entries = _parse_cycles_doc(cwd)
-    if entries is None:
-        return None
-    return [entry["slug"] for entry in entries if _is_malformed(entry)]
+    return entry["cadence"] is None
 
 
 def cycles_facts(cwd):
@@ -2015,7 +1999,7 @@ def cycles_facts(cwd):
         return None
     out = []
     for entry in entries:
-        if _is_checklist(entry) or _is_malformed(entry):
+        if _is_checklist(entry):
             continue
         out.append((entry["slug"], entry["description"], entry["cadence"],
                     entry["observable"]))
@@ -2413,12 +2397,14 @@ def sequential_chains(cwd):
 
 
 def checklists_facts(cwd):
-    """Each CHECKLIST definition's slug, name and trigger word, as written.
+    """Each CHECKLIST definition's slug, name and trigger text, as written.
 
     Name and trigger only, and deliberately nothing else: a checklist has no
     cadence and no observable, so there is no due-ness to compute and nothing
-    for a session to file. What a session needs is to know the checklist exists and
-    what word runs it — the steps are read from the doc when that word is said.
+    for a session to file. What a session needs is to know the checklist
+    exists and what its definition says fires it — a chain arm, a condition,
+    or nothing, in which case the user's plain ask runs it; the steps are
+    read from the doc when it runs.
 
     Returns None where the project has no cycles doc, otherwise a list of
     (slug, description, trigger) tuples.
@@ -3303,11 +3289,10 @@ def main() -> int:
     cycles = cycles_facts(cwd)
     if cycles is not None:
         if not cycles:
-            # Headings that parse but carry no fields are named by the
-            # malformed-definitions line below, which is the whole truth then;
-            # the heading-shape line is for a doc where no heading parses
-            # ([cycles-opening-blames-heading]).
-            if not malformed_definitions(cwd):
+            # The heading-shape line is for a doc where no heading parses
+            # ([cycles-opening-blames-heading]); a heading that parses with no
+            # cadence is a checklist, reported by the checklists line below.
+            if not checklists_facts(cwd):
                 context_parts.append(
                     "[Throughliner] Cycles: CYCLES.md is present but no "
                     "definition matched the expected shape (a heading ending "
@@ -3360,23 +3345,11 @@ def main() -> int:
                 % (len(cycles), "; ".join(described))
             )
 
-    # A definition carrying neither field is named, never silently dropped:
-    # report only, nothing edited or filed.
-    malformed = malformed_definitions(cwd)
-    if malformed:
-        context_parts.append(
-            "[Throughliner] Cycles: %d definition(s) in CYCLES.md carry neither "
-            "a Cadence: line nor a Trigger: line, so nothing is computed from "
-            "them and no word fires them — %s. A checklist carries `Trigger:` "
-            "and a cycle carries `Cadence:`, written by the state server's "
-            "cycle_define tool where the server is registered."
-            % (len(malformed), ", ".join("[%s]" % s for s in malformed))
-        )
-
-    # Checklists ride the same doc and are reported by name and trigger. A
-    # checklist a cycle chains has its date computed on the cycles line above,
-    # and an opening files its capture under the checklist's own slug when that
-    # date arrives; an unchained one runs when the user says its word.
+    # Checklists ride the same doc and are reported by name and what their
+    # definition says fires them. A checklist a cycle chains has its date
+    # computed on the cycles line above, and an opening files its capture under
+    # the checklist's own slug when that date arrives; an unchained one runs
+    # when the user asks for it in their own words.
     checklists = checklists_facts(cwd)
     if checklists:
         named = []
@@ -3384,14 +3357,14 @@ def main() -> int:
             part = f"[{slug}]"
             if description:
                 part += f" {description}"
-            part += f" — fires on: {trigger or 'no trigger word stated'}"
+            part += f" — fires on: {trigger or 'the ask alone — nothing stated'}"
             named.append(part)
         context_parts.append(
             "[Throughliner] Checklists on file (%d): %s. A checklist a cycle "
             "chains has its date on the cycles line above, and an opening files "
             "its capture under the checklist's own slug when that date arrives; "
-            "an unchained one runs when the user says its word. Read its steps "
-            "from the cycles doc when it runs."
+            "an unchained one runs when the user asks for it in their own "
+            "words. Read its steps from the cycles doc when it runs."
             % (len(checklists), "; ".join(named))
         )
 

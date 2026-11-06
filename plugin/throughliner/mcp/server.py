@@ -245,9 +245,12 @@ def tool_cycles_state(_arguments):
 
     checklists = hooks.checklists_facts(root)
     if checklists:
-        lines.append("Checklists (fired by a word, never due):")
+        lines.append("Checklists (run where a chain reaches them or on the "
+                     "user's ask; never due):")
         for slug, description, trigger in checklists:
-            lines.append("  [%s] %s — %s" % (slug, description, trigger))
+            lines.append("  [%s] %s — %s"
+                         % (slug, description,
+                            trigger or "fires on the ask alone"))
         lines.append("")
 
     lines.append("Facts as the definitions state them. Due-ness is computed "
@@ -1430,8 +1433,9 @@ CYCLES_PREAMBLE = (
     "definition says which — and the observable that marks a completed turn; "
     "the openings and closes of /plan and /build read this file, compute each "
     "cycle's due-ness from its observable, and file one capture per due step. "
-    "A checklist carries the word that fires it in place of a cadence and an "
-    "observable, and runs when the user says that word. A chained cycle "
+    "A checklist carries no cadence and no observable, and runs where a "
+    "chain reaches it or when the user asks for it in their own words; a "
+    "Trigger: field, where it carries one, says what fires it. A chained cycle "
     "lists its checklists in order under Chain:, each with its lead counted "
     "back from the anchor — or, in a sequential chain, each firing on the "
     "one before it with no date, the first on the user's word.\n"
@@ -1516,10 +1520,7 @@ def tool_cycle_define(arguments):
         problems.append("artifact is missing — what the definition works on.")
     if cadence and trigger:
         problems.append("both cadence and trigger were given — a cycle has a "
-                        "cadence, a checklist has a trigger, never both.")
-    if not cadence and not trigger:
-        problems.append("neither cadence nor trigger was given — a cycle "
-                        "needs a cadence, a checklist the word that fires it.")
+                        "cadence, a checklist at most a trigger, never both.")
     if cadence and not observable:
         problems.append("a cadence was given with no observable — a cycle "
                         "names what marks a completed turn.")
@@ -1649,7 +1650,7 @@ def tool_cycle_define(arguments):
              "**Artifact:** %s" % artifact, ""]
     if cadence:
         block += ["**Cadence:** %s" % cadence, ""]
-    else:
+    elif trigger:
         block += ["**Trigger:** %s" % trigger, ""]
     if due_rule:
         block += ["**Due rule:** %s" % due_rule, ""]
@@ -1738,10 +1739,10 @@ def tool_cycle_define(arguments):
         lines.append("The cadence and the observable are recorded as "
                      "declared; nothing here computes due-ness.")
     else:
-        lines.append("A checklist runs when the user says its word, or, where "
-                     "a cycle chains it, when its chain date arrives — the "
-                     "openings compute that date and file its capture under "
-                     "this slug.")
+        lines.append("A checklist runs when the user asks for it in their "
+                     "own words, or, where a cycle chains it, when its chain "
+                     "date arrives — the openings compute that date and file "
+                     "its capture under this slug.")
     return "\n".join(lines)
 
 
@@ -2612,7 +2613,7 @@ TOOLS = [
         "name": "cycles_state",
         "description":
             "Every cycle definition's cadence and what its observable "
-            "currently reads, plus any checklists and their firing words. Facts "
+            "currently reads, plus any checklists with what fires each. Facts "
             "as written — computing due-ness from them is the reader's step, "
             "exactly as it is at a session opening.",
         "inputSchema": {"type": "object", "properties": {}},
@@ -3007,10 +3008,13 @@ TOOLS = [
             "cycles doc (CYCLES.md, created with a short preamble where none "
             "exists) from fields, in the shape the session-start hook reads, "
             "appended at the end of the doc. A cycle carries a cadence and "
-            "an observable; a checklist carries a trigger — the word that "
-            "fires it — and neither. Refuses at the door, echoing the "
-            "reason: a missing, malformed or already-defined slug; both "
-            "cadence and trigger, or neither; a cadence with no observable, "
+            "an observable; a checklist carries neither, runs where a chain "
+            "reaches it or when the user asks for it in their own words, and "
+            "may carry a Trigger: field describing what fires it — a chain "
+            "arm, a condition — never a registered word. Refuses at the "
+            "door, echoing the reason: a missing, malformed or "
+            "already-defined slug; both "
+            "cadence and trigger; a cadence with no observable, "
             "or one naming no derivation (\"declared\" or \"derived\"); a "
             "chain item naming a checklist not defined in the doc, or "
             "naming the anchor twice, or a dated chain with no anchor; a "
@@ -3049,9 +3053,13 @@ TOOLS = [
                 },
                 "trigger": {
                     "type": "string",
-                    "description": "A checklist's firing word — e.g. \"the "
-                                   "user says \\\"rezip\\\"\". Not with "
-                                   "cadence.",
+                    "description": "Optional: what fires a checklist, as its "
+                                   "definition states it — a chain arm or a "
+                                   "condition, e.g. \"after "
+                                   "[sweep-findings-built] in "
+                                   "[release-cycle]\" — never a registered "
+                                   "word. Omit it for a checklist run on the "
+                                   "user's plain ask. Not with cadence.",
                 },
                 "observable": {
                     "type": "string",

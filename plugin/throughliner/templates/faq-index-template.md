@@ -35,9 +35,9 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **Can I keep my planning documents out of the repository, and does undo still
   work?** — the private outer repository that already holds them, the one
   document you may gitignore on your ask, and its trade. [faq.md](faq.md)
-- **What is a checklist, and how is it different from a cycle?** — a step list you
-  fire with a word versus recurring work with a rhythm, and how one becomes the
-  other. [faq.md](faq.md)
+- **What is a checklist, and how is it different from a cycle?** — a step list
+  run on your ask or by a chain versus recurring work with a rhythm, and how
+  one becomes the other. [faq.md](faq.md)
 - **What does planning tell me when held work comes back?** — what the lift
   says about the work's assumptions, and why the wait ending is not the same as
   the assumption holding. [faq.md](faq.md)

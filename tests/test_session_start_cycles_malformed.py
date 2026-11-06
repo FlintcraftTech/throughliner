@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Regression tests for session_start.py's naming of a malformed cycles-doc
-definition ([malformed-cycle-definition-named-and-refused]).
+"""Regression tests for session_start.py's reading of a cycles-doc definition
+that carries no cadence ([checklists-lose-word-triggers]).
 
 Host-only dev artifact — not shipped in the plugin package.
 
 Run:  py tests/test_session_start_cycles_malformed.py
 (Plain script, never pytest — see CLAUDE.md's scripting constraints.)
 
-A definition carrying neither `Cadence:` nor `Trigger:` used to come back as
-a cycle with no cadence, no observable and no trigger — a checklist whose
-firing word sat under a label the parser does not read fired nothing, and the
-opening reported an empty cycle with nobody told why. The opening now names
-it as malformed, and the cycles and checklists lines leave it out.
+A definition with no `Cadence:` is a checklist, run where a chain reaches it
+or when the user asks for it in their own words; `Trigger:` is optional and
+describes what fires it. The malformed-definitions line is retired: a
+definition carrying neither field is a plain checklist, reported on the
+checklists line as firing on the ask alone. A doc where no heading parses
+still gets the heading-shape line.
 """
 
 import importlib.util
@@ -55,11 +56,9 @@ DOC = """# CYCLES
 1. Read the roster.
 2. Print the handouts.
 
-**Fires on the word:** the user says "prep".
-
 ## Rezip [rezip]
 
-**Trigger:** the user says "rezip".
+**Trigger:** after the chain's last step, or the user's ask.
 
 **Steps of one turn.** Each step fires on the one before it.
 
@@ -79,19 +78,17 @@ def project():
 
 
 d = project()
-check("the Fires-on-the-word definition is named as malformed",
-      hook.malformed_definitions(d) == ["prep"],
-      repr(hook.malformed_definitions(d)))
-check("the checklist carrying Trigger: is a checklist",
-      [s for s, _, _ in hook.checklists_facts(d)] == ["rezip"],
+check("a definition with neither field is a checklist",
+      [s for s, _, _ in hook.checklists_facts(d)] == ["prep", "rezip"],
       repr(hook.checklists_facts(d)))
-check("the malformed definition is not reported as a cycle",
+check("the wordless checklist's trigger reads back as None",
+      dict((s, t) for s, _, t in hook.checklists_facts(d))["prep"] is None,
+      repr(hook.checklists_facts(d)))
+check("neither checklist is reported as a cycle",
       hook.cycles_facts(d) == [], repr(hook.cycles_facts(d)))
-check("a project with no cycles doc has nothing malformed",
-      hook.malformed_definitions(tempfile.mkdtemp(prefix="no-doc-")) is None)
 
-# Driven whole: the opening's context names the malformed slug and both
-# field names, and the checklists line names the well-formed one.
+# Driven whole: the opening's checklists line carries both, the wordless one
+# as firing on the ask alone, and no malformed line appears.
 proc = subprocess.run(
     [sys.executable, HOOK],
     input=json.dumps({"cwd": d, "session_id": "malformed-test"}),
@@ -103,13 +100,14 @@ try:
         or out.get("additionalContext") or ""
 except ValueError:
     context = proc.stdout
-check("the opening names [prep] as carrying neither field",
-      "[prep]" in context and "neither a Cadence: line nor a Trigger: line"
-      in context, context[-1500:])
-check("the opening names cycle_define as what writes the field",
-      "cycle_define" in context, context[-800:])
-check("the checklists line carries [rezip] and not [prep]",
-      "Checklists on file (1): [rezip]" in context, context[-1500:])
+check("the checklists line carries both definitions",
+      "Checklists on file (2):" in context and "[prep]" in context
+      and "[rezip]" in context, context[-1500:])
+check("the wordless checklist fires on the ask alone",
+      "the ask alone" in context, context[-1500:])
+check("no neither-field line appears",
+      "neither a Cadence: line nor a Trigger: line" not in context,
+      context[-1500:])
 shutil.rmtree(d, ignore_errors=True)
 
 
@@ -131,16 +129,16 @@ def opening_context(doc):
         return run.stdout
 
 
-# Headings that parse but carry no field lines are malformed, not misshapen:
-# the opening names all five and does not blame the heading shape
-# ([cycles-opening-blames-heading]).
+# Headings that parse but carry no field lines are plain checklists: the
+# opening reports all five on the checklists line and does not blame the
+# heading shape ([cycles-opening-blames-heading]).
 SLUGS = ["checkin", "review", "backup", "budget", "garden"]
 FIELDLESS = "# CYCLES\n\n" + "".join(
     "## Cycle — fortnightly %s [%s]\n\nSome prose about it.\n\n" % (s, s)
     for s in SLUGS)
 context = opening_context(FIELDLESS)
-check("five field-less definitions are all named as malformed",
-      "5 definition(s)" in context
+check("five field-less definitions are all reported as checklists",
+      "Checklists on file (5):" in context
       and all("[%s]" % s in context for s in SLUGS), context[-1500:])
 check("field-less definitions get no heading-shape line",
       "matched the expected shape" not in context, context[-1500:])
