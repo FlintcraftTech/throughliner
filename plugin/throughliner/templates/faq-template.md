@@ -16,11 +16,11 @@ You do need a paid Claude plan — Pro is enough. Claude Code does not run on th
 
 ## What happens in my first session?
 
-Open your project folder in Claude Code and run `/setup`. Claude interviews you about what you're building and creates your project's documents: your spec, your queue, your session log and this FAQ.
+Open your project folder in Claude Code and run `/setup`. Claude interviews you about what you're building and creates your project's documents: your spec, your queue and your session log.
 
-Don't overthink the answers. Plain language is fine and nothing is locked in — your next step is a `/plan` session where you organise the work, so anything you miss gets sorted there.
+Don't overthink the answers. Plain language is fine and nothing is locked in — your next step is a `/process` session where you and Claude sort the first captures into agreed work, so anything you miss gets sorted there.
 
-The interview asks what you're building and who for, whether to keep Claude's replies short and decision-led, whether the repository is public or private (and if public, about a licence), and whether to keep your planning documents out of version control — those documents hold your reasoning, which is worth keeping private if the repository isn't. From your answers Claude then names the command-line tools your project's work will need, asks whether any are missing, checks each on your machine and writes what it found into `TOOLS.md`, so a later session never assumes a tool is absent that you already have.
+The interview asks what you're building and who for, where it's heading, and whether to keep Claude's replies short and decision-led. From your answers Claude then names the command-line tools your project's work will need, asks whether any are missing, checks each on your machine and writes what it found into `TOOLS.md`, so a later session never assumes a tool is absent that you already have.
 
 **If your project has several distinct parts**, start with one project in the parent folder. When a part outgrows that queue, move its folder out of the project to stand by itself and run `/setup` there; it becomes a full project of its own. If you run `/setup` in a folder still inside another project, Claude says in one line that it works best moved out, and that otherwise the project above needs to ignore that folder. You don't need to decide any of this upfront.
 
@@ -35,9 +35,17 @@ Your queue has two sections. **Unprocessed** is where new ideas land, as **captu
 
 **Processed** is work you and Claude have agreed on, and inside it a readiness line separates work that's ready to build from work that's still waiting on something. The part above that line is cleared to run, and it's what `/build` builds from. Work sits below the line for one of two reasons, written on the item itself: another named piece of work has to ship first, or a date hasn't passed yet.
 
-A `/plan` run opens by checking the queue for problems — work marked ready that contradicts its own notes, items that name no files to change, work waiting on itself in a loop — and reports what it finds. Then it asks one question: is there anything you want to process first? Otherwise say go, and Claude takes them in the method's order, starting on the first item. After each item, Claude says where it landed and describes the next one in a plain sentence of its own, with the item's name in brackets, then asks whether to take it next.
+A `/plan` run opens by checking the queue for problems — work marked ready that contradicts its own notes, items that name no files to change, work waiting on itself in a loop — and reports what it finds. Then it asks one question: is there anything you want to raise? From there the session is yours. Whatever you or Claude raise is talked through, and written once you agree what would be written, as agreed work or as a capture for later. Claude offers no capture from the queue unasked; name one and it is taken up.
 
-You don't have to process everything in one sitting. `/plan`, `/close`, fresh chat, `/plan` again is a normal rhythm.
+The session ends when you say so. `/plan`, `/close`, fresh chat, `/plan` again is a normal rhythm.
+
+## What does `/process` do?
+
+It works through the captures waiting in Unprocessed, one at a time, so each becomes agreed work or is deleted.
+
+It opens exactly as `/plan` does, with the same checks and the same report. Then it asks one question: is there anything you want to process first? Otherwise say go, and Claude takes them in the method's order, starting on the first item. For each capture Claude says in plain words what it is, asks what is still open, and recommends one of three outcomes: kept and cleared to run, kept and held behind a named item or a date, or deleted. You say yes or no. After each item, Claude says where it landed and describes the next one in a plain sentence of its own, with the item's name in brackets, then asks whether to take it next.
+
+You don't have to process everything in one sitting: say skip, stop, or run the close command whenever you like. What tells you it worked: the item sits in Processed, and the count of captures left to process goes down by one.
 
 ## What does `/build` do?
 
@@ -48,7 +56,7 @@ If several items are ready, `/build` builds them back to back without asking you
 Work can carry a tag saying how it runs:
 
 - **`[audit]`** — Claude reads and reports without editing anything. What it
-  finds becomes captures in your queue for a later `/plan`.
+  finds becomes captures in your queue for a later `/process`.
 - **`[user]`** — work Claude genuinely can't do, like a check that needs your
   eyes. Claude walks you through it live, one step at a time, after all the
   building is finished.
@@ -181,7 +189,7 @@ A chat in a set-up project normally opens with a few lines starting `[Throughlin
 
 ## How do I hold work back until something else happens?
 
-In a planning session, say what the work is waiting for. Claude writes it on the item itself, one of two ways: `Blocked by:` naming another queue item, or `Not before:` naming a date. The item then sits below the `--- Cleared to run above this line ---` line, where a build run never reaches it. Where the thing it waits for isn't in the queue yet — a reply, a site going live — Claude files that as its own item first and holds yours on it, so the wait is a piece of work someone can see rather than a sentence buried inside another item.
+In a planning session, say what the work is waiting for. Claude writes it on the item itself, one of two ways: `Blocked by:` naming another queue item, or `Not before:` naming a date. The item then sits below the `--- Cleared to run above this line ---` line, where a build run never reaches it. The item it waits for may live in another of your projects: Claude looks it up there, reading that project and writing nothing to it, and the line then names the project, as `Blocked by: [slug] in <project>`. Where the thing it waits for isn't in the queue yet — a reply, a site going live — Claude files that as its own item first and holds yours on it, so the wait is a piece of work someone can see rather than a sentence buried inside another item.
 
 You never have to remember any of it. Every planning session opens by checking each held item: has its blocker shipped, has its date passed? Where yes, Claude proposes lifting it and moves it on your word. A date lifts by itself. A build run that builds and confirms the last item yours was waiting on lifts it there and then, says so in one line, and builds or walks it in the same run, so one item never costs you another planning session. When several become ready at once, they are cleared one move each, and what you see is the queue tool's line naming each item as cleared and nothing else crossing the line.
 
@@ -211,13 +219,13 @@ To get the opposite, say so: ask to be shown text before it is written, and Clau
 
 Two things run, and neither promises what people hope. A check scans your queue, spec and session records for things shaped like credentials — keys, tokens, email addresses. And Claude reads what it is about to write against a checklist — personal names, case details, third-party data, identifying paths — at the moments text enters a committed document.
 
-The limit is the point: no pattern can tell whether a sentence quietly identifies a real person, so Throughliner never tells you your documents are scrubbed or safe to publish. For a repository that will be public, the only complete protection is not publishing these documents at all, which is what setup's keep-private question is for.
+The limit is the point: no pattern can tell whether a sentence quietly identifies a real person, so Throughliner never tells you your documents are scrubbed or safe to publish. For a repository that will be public, the only complete protection is not publishing these documents at all, which the nested shape gives you by default, the planning documents living in the outer repository that never gets a remote.
 
 In a project whose documents live in a repository with no remote — the default for a new nested project, read from the Visibility line in your CLAUDE.md — people are recorded as they are: a collaborator's name stays in a capture, and a risk you have accepted in your spec is not raised again. The scrub still runs on anything leaving the machine.
 
 ## What is the "Last session advises" note at the top of my queue?
 
-Advice, not work. When `/close` closes a session with a concrete recommendation for what to do next, it writes that as a note at the top of Unprocessed. The next `/plan` reads it aloud in its opening and deletes it in the same breath — surfacing it is what consumes it. It never moves into Processed and never becomes an item. If you see one, the last session had a view; if it is gone, a planning session has already read it.
+Advice, not work. When `/close` closes a session with a concrete recommendation for what to do next, it writes that as a note at the top of Unprocessed. The next `/plan` or `/process` reads it aloud in its opening and deletes it in the same breath — surfacing it is what consumes it. It never moves into Processed and never becomes an item. If you see one, the last session had a view; if it is gone, a planning session has already read it.
 
 ## How do my projects send each other work?
 
@@ -237,9 +245,15 @@ It reads SPEC.md once at the start of the run, and checks each item it builds ag
 
 ## Which command do I run now?
 
-Every piece of work travels one loop. Anything noticed, by you or by Claude, in any chat, becomes a capture in Unprocessed. `/plan` turns captures into agreed work and clears it to run. `/build` builds the cleared work, top down. `/close` records what happened and commits. Then a fresh chat, which learns what happened from the record rather than from memory.
+Every piece of work travels one loop. Anything noticed that is for later, by you or by Claude, in any chat, becomes a capture in Unprocessed. `/process` turns captures into agreed work and clears it to run, and `/plan` is the open session for thinking a thing through first. `/build` builds the cleared work, top down. `/close` records what happened and commits. Then a fresh chat, which learns what happened from the record rather than from memory.
 
-Two things come back to the start. An audit edits nothing: what it finds becomes captures, weighed at the next `/plan`. A build that discovers something files a capture and keeps building. And a step that is yours leaves the loop only when you have done it — a run walks you through it and then leaves it in the queue until you say it is done.
+Two things come back to the start. An audit edits nothing: what it finds becomes captures, weighed at the next `/process`. A build that discovers something files a capture and keeps building. And a step that is yours leaves the loop only when you have done it — a run walks you through it and then leaves it in the queue until you say it is done.
+
+## Do I have to run a command every time?
+
+No. A chat opened with no command is an ordinary way to work. Talk, think something through, make changes by hand with Claude, and file what is for later as a capture. Claude does what the chat can do there and then, and files only what is for later.
+
+When you are finished, send the close command. It records the chat and commits its changes as handmade work, and a decision you reached there goes into that record, so the next session reads it. What tells you it worked: the close shows the commit and names the record it wrote.
 
 ## Why did an old queue item come up before a newer one?
 
@@ -387,7 +401,7 @@ To the queue of the project that keeps your task-list note, the one your `Task l
 
 ## Why is there a "Run /build in …" task in my list?
 
-So your task list says which project to open next, and why, without you opening each one to find out. You meet it in your Tasks queries after any session's close: one line per project, reading like `Run /build in Hexboard: 3 builds, 1 audit and 2 steps of yours cleared, [dark-theme] first; 5 captures waiting`, or `Run /plan in Hexboard: 4 captures waiting to be planned`. Every close writes it, from the queue's own standing counts and never by hand, as a small item at the bottom of the project's cleared work; it carries a date wherever something in that queue is dated, a due date on an item, a dated step of yours, a hold whose date has passed, or an unanswered risk flag, so it sorts with your other tasks by date, and where nothing is dated and little has gathered it reads `Run /plan in Hexboard when you like` and sinks to the bottom with no date. You never maintain it: the next close rewrites it, and when the project has nothing queued at all the close removes it. Ticking it is read as "done, write the next", not as closing anything. What tells you it worked: after a close, the project's line in your list shows the counts you just left, and a project you have not opened in weeks still says what it wants.
+So your task list says which project to open next, and why, without you opening each one to find out. You meet it in your Tasks queries after any session's close: one line per project, reading like `Run /build in Hexboard: 3 builds, 1 audit and 2 steps of yours cleared, [dark-theme] first; 5 captures waiting`, or `Run /process in Hexboard: 4 captures waiting to be processed`. Every close writes it, from the queue's own standing counts and never by hand, as a small item at the bottom of the project's cleared work; it carries a date wherever something in that queue is dated, a due date on an item, a dated step of yours, a hold whose date has passed, or an unanswered risk flag, so it sorts with your other tasks by date, and where nothing is dated and little has gathered it reads `Run /process in Hexboard when you like` and sinks to the bottom with no date. You never maintain it: the next close rewrites it, and when the project has nothing queued at all the close removes it. Ticking it is read as "done, write the next", not as closing anything. What tells you it worked: after a close, the project's line in your list shows the counts you just left, and a project you have not opened in weeks still says what it wants.
 
 ## How do I work through my own tasks?
 

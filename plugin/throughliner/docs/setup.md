@@ -91,7 +91,7 @@ A goal is one checkbox line in the Obsidian Tasks plugin's marks, tagged `#goal`
 
 ## Unprocessed
 
-> Captured ideas and tasks not yet fully processed. The next /plan run goes through these with you and decides each one's fate — keep it (move it up to Processed) or drop it. Each is filed as its own `#### ` heading, so the list shows up in an editor's outline.
+> Captured ideas and tasks not yet fully processed. The next /process run goes through these with you and decides each one's fate — keep it (move it up to Processed) or drop it. Each is filed as its own `#### ` heading, so the list shows up in an editor's outline.
 ````
 
 **LOG/index.md:** a `# LOG Index` heading and one line saying each line names a session's entry file; the close regenerates it.
@@ -120,6 +120,6 @@ A goal is one checkbox line in the Obsidian Tasks plugin's marks, tagged `#goal`
 
 ## Step 4: Write
 
-**Write a personal fact into a document only where the user supplied it**; use "they" where no pronoun was given. Fill SPEC.md; create the approved set and MAP.md; file the one capture; show what was created, one line per file, saying the state server's tools are available where it is registered; create `.throughliner-setup-done`; recommend /close; and teach the rhythm in plain words: /setup is run again when an opening says the project has fallen behind; /plan thinks and organises, /build builds everything cleared; every session ends with /close, after which /clear wipes the screen and touches no files.
+**Write a personal fact into a document only where the user supplied it**; use "they" where no pronoun was given. Fill SPEC.md; create the approved set and MAP.md; file the one capture; show what was created, one line per file, saying the state server's tools are available where it is registered; create `.throughliner-setup-done`; recommend /close; and teach the rhythm in plain words: /setup is run again when an opening says the project has fallen behind; /plan thinks and organises, /process works through the captures one at a time, /build builds everything cleared; every session ends with /close, after which /clear wipes the screen and touches no files.
 
 **The self-hosting seed**, for a user building something that carries its own rules (a method, a plugin, a port): asked once at a fresh setup, or run when the user says so. Add-only. It appends the block from `${CLAUDE_PLUGIN_ROOT}/templates/self-hosting-claude-block.md` to the project's CLAUDE.md between its own markers, and where the project keeps its notes places a retired-terms register from `${CLAUDE_PLUGIN_ROOT}/templates/retired-terms-template.md` and an empty `slips.md` whose one header line says what a line is (the date, what happened, which document governs it), on a yes.

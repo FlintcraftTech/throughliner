@@ -180,8 +180,8 @@ Delta's rationale.
 d = project(QUIET)
 text = call(d, "next_run_line")
 after = queue_text(d)
-check("with nothing cleared the line says to run plan",
-      "Run /plan in Demo when you like: 1 capture waiting to be planned" in after,
+check("with nothing cleared the line says to run process",
+      "Run /process in Demo when you like: 1 capture waiting to be processed" in after,
       repr(after))
 check("the quiet line carries no date", "📅" not in after.split("[next-run]")[1],
       repr(after))

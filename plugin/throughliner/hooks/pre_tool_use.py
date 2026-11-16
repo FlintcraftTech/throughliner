@@ -1639,7 +1639,9 @@ SETUP_SCAFFOLD_FILES = (
 # The method's own skills, all of which ship with model invocation disabled.
 # Lowercased, and compared against the part of a skill name after any plugin
 # prefix. Adding a skill to the method means adding it here.
-METHOD_SKILLS = frozenset({"setup", "plan", "build", "rescan", "close"})
+METHOD_SKILLS = frozenset({
+    "setup", "plan", "process", "build", "rescan", "close", "catchup", "tasks",
+})
 
 # The files the method's own CLOSE obligations name. A close is required to write
 # these and a build is not, and the two phases share one working file — so

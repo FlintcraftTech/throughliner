@@ -7,7 +7,10 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **What happens in my first session?** — what `/setup` asks you, what it
   creates, and how a big project splits into parts later. [faq.md](faq.md)
 - **What actually happens in a `/plan` session?** — captures, what gets cleared
-  to run, and what the opening checks for. [faq.md](faq.md)
+  to run, what the opening checks for, and the open session that follows.
+  [faq.md](faq.md)
+- **What does `/process` do?** — the pass over your waiting captures, one at a
+  time, each kept as agreed work or deleted on your word. [faq.md](faq.md)
 - **What does `/build` do?** — how a build run works, what stops it, and the
   four work tags, the co-write among them. [faq.md](faq.md)
 - **Why does every session end with `/close`, and why start a fresh chat?** —
@@ -83,6 +86,8 @@ Quick answers about how this project's workflow works. Each question links to a 
   [faq.md](faq.md)
 - **Which command do I run now?** — the loop every piece of work travels, and
   the two ways work comes back to the start. [faq.md](faq.md)
+- **Do I have to run a command every time?** — a chat with no command as an
+  ordinary way to work, and how the close command records it. [faq.md](faq.md)
 - **Why did an old queue item come up before a newer one?** — the fixed order
   planning works in, and how naming items at the opening changes it.
   [faq.md](faq.md)

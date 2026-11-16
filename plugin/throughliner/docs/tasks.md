@@ -24,7 +24,7 @@ note: The /tasks procedure. The user's own tasks from every project in the vault
 
 **Then the waiting-first questions.** For each task whose line carries "waiting on", one per message, ask whether the reply has come, naming who and since when as the line gives them. A yes makes the task ordinary for the rest of the session; a no leaves it, with nothing written.
 
-**Then the opening line**, stating as facts: how many tasks are up for this session; how many are held back, with the three reasons folded into one count; and how many are waiting. Held back and never presented: a task whose `📅` or `⏳` date is more than seven days after the clock's date; a task whose `🛫` date has not come; and a task whose `⛔` names a line not yet ticked, or whose wording says it waits on something ("once …", "after …"). Undated tasks are up.
+**Then the opening line**, stating as facts: how many tasks are up for this session; how many are held back, with the three reasons folded into one count; and how many are waiting. Held back and never presented: a task whose `📅` or `⏳` date is more than seven days after the clock's date; a task whose `🛫` date has not come; and a task whose `⛔` names a line not yet ticked, or whose wording says it waits on something ("once …", "after …"). Where a `⛔` slug is no task line in the session's results, `blocker_lookup` says where that item sits, in whichever project holds it; one it returns as built or ticked holds nothing. Undated tasks are up.
 
 ## Step 3: Work the tasks
 

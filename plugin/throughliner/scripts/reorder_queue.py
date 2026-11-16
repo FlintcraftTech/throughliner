@@ -553,6 +553,13 @@ _NOT_BEFORE_LINE_RE = re.compile(r'^Not before:\s*(\d{4}-\d{2}-\d{2})',
 # derived line's 📅 ahead of a Not before: date ([next-run-line-at-close]).
 _DUE_LINE_RE = re.compile(r'^Due:\s*(\d{4}-\d{2}-\d{2})', re.IGNORECASE)
 _SLUG_REF_RE = re.compile(r'\[([^\]\s]+)\]')
+# A blocker in another project's queue is written `[slug] in <project>`
+# ([cross-project-holds-in-task-marks]). The derived line's ⛔ carries the
+# bare slug either way, which is what the Tasks plugin resolves vault-wide by
+# 🆔; the suffix only tells this queue's readers the item lives elsewhere.
+_ELSEWHERE_REF_RE = re.compile(
+    r'\[([a-z0-9][a-z0-9-]*)\]\s+in\s+([^,\[\]]+?)\s*'
+    r'(?=,|$|\s+until built\s*$)', re.IGNORECASE)
 
 
 def _project_name(queue_path):
@@ -967,7 +974,10 @@ def delete_item(queue_path, slug, section):
         stripped_line = line.strip()
         names = (re.findall(r'\[([a-z0-9][a-z0-9-]*)\]', stripped_line)
                  if re.match(r'^Blocked by:', stripped_line, re.I) else [])
-        if slug in names:
+        # A blocker written `[slug] in <project>` names another project's
+        # item, which this delete did not touch.
+        elsewhere = {ref for ref, _p in _ELSEWHERE_REF_RE.findall(stripped_line)}
+        if slug in names and slug not in elsewhere:
             heading = None
             for j in range(i, -1, -1):
                 if ITEM_RE.match(new_lines[j]):

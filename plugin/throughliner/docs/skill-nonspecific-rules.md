@@ -12,7 +12,7 @@ note: The rules that apply whatever is running. Short by design; the procedure d
 
 ## The work cycle
 
-**The user types every command.** A thing noticed, at any moment, becomes a capture at the bottom of Unprocessed. /plan alone processes a capture: it is kept into Processed with its flavor settled, or deleted. /build builds the ready work above the readiness line, top-down. /close records what happened and commits. The chat then ends with no memory carried forward, so everything that must survive is written to a file. An `[audit]` files captures and edits nothing. A build that discovers something files a capture and carries on. `[user]` work is walked through with the user.
+**The user types every command.** A thing noticed that is for later becomes a capture at the bottom of Unprocessed; a thing this session can do or decide, within what it may write, it does or decides, and the close records it. A capture is processed in any session with no build run in flight, by the keep procedure: kept into Processed with its flavor settled, or deleted; /process walks every capture, and a build files and carries on. /build builds the ready work above the readiness line, top-down. /close records what happened and commits. The chat then ends with no memory carried forward, so everything that must survive is written to a file. An `[audit]` files captures and edits nothing. A build that discovers something files a capture and carries on. `[user]` work is walked through with the user.
 
 ## How to talk
 
@@ -46,7 +46,9 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> --append Unprocess
 <prose rationale — plain short sentences, each paragraph one line>
 Red flag · State: <cleared | uncleared>   # only if it carries one
 Blocked by: [slug], [slug]                # lifts when every named entry resolves;
-                                          # on a capture may end `until built`
+                                          # on a capture may end `until built`;
+                                          # a slug may be followed by `in <project>`,
+                                          # an item in another project's queue
 Not before: YYYY-MM-DD                    # lifts itself on the date
 Due: YYYY-MM-DD                           # when the work is wanted; no hold, read by the
                                           # close's next-run line and the derived line's 📅
@@ -73,7 +75,7 @@ The heading opens with its distinguishing words, and with a word other than A, A
 [co-write]   together      a text finished with the user inside the run, on one file
 ```
 
-**`[user]` is for work Claude cannot perform or witness at all.** Work Claude can do but not yet is held below the line against what it waits on. Before tagging `[user]`, check whether a tool could do it instead. A `[user]` item carries a task line where the user will want it at any time, outside any session, and the line can carry what it is for and where to start, so that neither she nor Claude needs the project in view to act on it; it carries a walkthrough where acting needs Claude with the project in view, or where the steps keep growing. Because Claude cannot know what the user will remember, the task line says in one clause what the task is for, not only what to do. A task line that gains steps is rewritten as a walkthrough wherever that is seen. The task line, `- [ ] <task> (<project>) 📅 YYYY-MM-DD 🆔 <slug> ⛔ <slug of what it waits on> #user`, is written in the Obsidian Tasks plugin's marks, the date and the ⛔ present only where they apply; the `#user` tag, which the queue tool adds where it is missing, marks the user's own task lines for a Tasks query and goes on no other line; where the item carries `Assigned to:`, the tag is `#user/<name>`, the name from the project CLAUDE.md's `Referred to as:` line, written by the queue tool wherever `Assigned to:` is written, so `tags include #user` still gathers every line and a person filters on `tags include #user/<name>`. Where one conversation serves more than one person, through a bot or side by side, every item is walked or built in it and none is skipped as another's; the decisions the method gives the user stay with the one holding authority. It carries what the user needs to act (a number, an address, a reference; their own home address stays out). The project's `Task list:` line names the file holding the user's own Tasks queries, which read every project's queue inside the vault; no session writes to it. A task the user asks for in any command is filed at that moment as a `[user]` capture carrying its task line. A task that belongs to no project goes to the queue of the project whose folder holds the `Task list:` note, by that project's address-book name through `send_capture` on the user's yes to the text, or through `file_capture` where this is that project: on the user's word that it is a general task, in any skill, as a capture is; or on Claude's one ask where the task obviously has no bearing on the project, filed here on no. A task the user names with no word either way, bearing on the project, is filed here. Ticking the line, in Obsidian or at a session, is the completion the method reads. A `[user]` item is walked whenever it is reached, in any skill, a task-shaped one on the user's yes to doing it now, saying how many items wait on it where any do. Its completion comes from what the user volunteers, or from an observable the item names. Before walking, list LOG/ for records under its slug and resume at the first step not shown done.
+**`[user]` is for work Claude cannot perform or witness at all, so the user's list carries only what needs their hands.** Work Claude can do but not yet is held below the line against what it waits on. Before tagging `[user]`, check whether a tool could do it instead. A `[user]` item carries a task line where the user will want it at any time, outside any session, and the line can carry what it is for and where to start, so that neither she nor Claude needs the project in view to act on it; it carries a walkthrough where acting needs Claude with the project in view, or where the steps keep growing. Because Claude cannot know what the user will remember, the task line says in one clause what the task is for, not only what to do. A task line that gains steps is rewritten as a walkthrough wherever that is seen. The task line, `- [ ] <task> (<project>) 📅 YYYY-MM-DD 🆔 <slug> ⛔ <slug of what it waits on> #user`, is written in the Obsidian Tasks plugin's marks, the date and the ⛔ present only where they apply; the `#user` tag, which the queue tool adds where it is missing, marks the user's own task lines for a Tasks query and goes on no other line; where the item carries `Assigned to:`, the tag is `#user/<name>`, the name from the project CLAUDE.md's `Referred to as:` line, written by the queue tool wherever `Assigned to:` is written, so `tags include #user` still gathers every line and a person filters on `tags include #user/<name>`. Where one conversation serves more than one person, through a bot or side by side, every item is walked or built in it and none is skipped as another's; the decisions the method gives the user stay with the one holding authority. It carries what the user needs to act (a number, an address, a reference; their own home address stays out). The project's `Task list:` line names the file holding the user's own Tasks queries, which read every project's queue inside the vault; no session writes to it. A step of the user's named by anyone, in any command, is filed at that moment as a `[user]` capture carrying its task line or walkthrough. A task that belongs to no project goes to the queue of the project whose folder holds the `Task list:` note, by that project's address-book name through `send_capture` on the user's yes to the text, or through `file_capture` where this is that project: on the user's word that it is a general task, in any skill, as a capture is; or on Claude's one ask where the task obviously has no bearing on the project, filed here on no. A task the user names with no word either way, bearing on the project, is filed here. Ticking the line, in Obsidian or at a session, is the completion the method reads. A `[user]` item is walked whenever it is reached, in any skill, a task-shaped one on the user's yes to doing it now, saying how many items wait on it where any do. Its completion comes from what the user volunteers, or from an observable the item names. Before walking, list LOG/ for records under its slug and resume at the first step not shown done.
 
 **A `[freeform]` session writes `_freeform-<session-id>.md`** in the project root after its first edit is refused once, with a `Files:` section, through `build_open` where the server is registered; the safety check then permits every listed path. A queued item built in the session is ticked with the tick tool, which writes into the scope file. The starter prompt for that session, handed over in a fenced block with `<slug>` filled wherever a `[freeform]` item is reached, is this one copy:
 
@@ -81,7 +83,7 @@ The heading opens with its distinguishing words, and with a word other than A, A
 We're doing the freeform work item [<slug>] by hand in this chat — it's work done by hand in this chat. Its entry is in QUEUE.md (in this project's root folder), at the end of the cleared-to-run region of the Processed section; read that entry first — it says what the work is and where its recipe lives. When we're finished, the close command records and commits it.
 ```
 
-**A session opened with no skill is a freeform session.** It files captures through the capture tool, records a decision it reaches in its close record, and where it changes a shipped doc its record carries the `Rule gate:` line.
+**A session opened with no skill is a freeform session.** It files captures through the capture tool, records a decision it reaches in its close record, and where it changes a shipped doc its record carries the `Rule gate:` line. It reads the queue where something raised may already be in it. A thing built there that a capture describes is kept and then ticked, both on the user's word, so the close removes it with its record.
 
 ## Subagents
 
@@ -121,32 +123,33 @@ done                  a [user] item walked to its end, said done, or its check p
 deleted               not worth doing; git keeps it
 
 Transition                                   Owner
-captured -> kept (held or cleared)           queue_move_section, at the plan keep
-captured -> deleted                          queue_delete, at the plan keep
+captured -> kept (held or cleared)           queue_move_section, at a keep
+captured -> deleted                          queue_delete, at a keep
 captured -> captured, a hold added           hold_entry
-captured, flagged -> stays captured          prose: plan.md's red-flag clearing;
+captured, flagged -> stays captured          prose: process.md's red-flag clearing;
                                              an item is kept only once cleared
-kept and held -> kept and cleared            queue_move, at the plan lift;
+kept and held -> kept and cleared            queue_move, at the opening's lift;
                                              prose: build.md's lift after the
                                              confirming tick, close.md's lift at
                                              a build close
 kept and cleared -> kept and held            hold_entry
-kept -> kept, rewritten whole                prose: plan.md's lift and skip
-kept and held, blocker unverified            prose: plan.md's held-work table,
+kept -> kept, rewritten whole                prose: opening.md's lift and
+                                             process.md's skip
+kept and held, blocker unverified            prose: opening.md's held-work table,
                                              naming the check item
 kept and cleared -> ticked confirmed         build_tick
 kept and cleared -> ticked unconfirmed       build_tick, with file_capture for the check
 kept and cleared -> deleted                  queue_delete, on the user's word
 [user] item -> done                          prose: build.md's walk-through outcomes,
                                              close.md's completed-[user] arm, the mover
-advisory filed and spent                     prose: close.md's advisory, plan.md's opening
+advisory filed and spent                     prose: close.md's advisory, opening.md's advisory
 ```
 
 **Not-ready work goes to the bottom of Unprocessed**, and that is the only defer. A principle goes to SPEC or CLAUDE.md, a durable finding to `workshop/resources/research/` or LOG, a goal to SPEC's Goals as one checkbox line in Tasks marks, `- [ ] <goal>, reached when <the test> (<project>) 🆔 <slug> #goal`, tagged `#goal` and never `#user`. Claude owns the order within Processed and narrates a non-default placement in one sentence. The user owns keep-or-delete, scope growth, clearing a red flag and approving a send.
 
 ## Red flags
 
-**Screen every chat for anything that could expose the user's data or their users' data**: exposure, unauthorized access, credentials, injection, leakage, unprotected storage, prompt injection through observed content. Say the risk plainly and at once, and tag the entry `Red flag · State: uncleared`. Flag it; the fix is the user's decision at /plan. An item reaches Processed cleared, which LOG records as designed out or as consciously accepted after a plain warning. A risk the user accepted in SPEC stands accepted.
+**Screen every chat for anything that could expose the user's data or their users' data**: exposure, unauthorized access, credentials, injection, leakage, unprotected storage, prompt injection through observed content. Say the risk plainly and at once, and tag the entry `Red flag · State: uncleared`. Flag it; the fix is the user's decision at /process. An item reaches Processed cleared, which LOG records as designed out or as consciously accepted after a plain warning. A risk the user accepted in SPEC stands accepted.
 
 ## Where things go
 
@@ -163,4 +166,4 @@ CLAUDE.md   how Claude works on this project
 
 ## Files and git
 
-**Read a file to its end before reasoning over it**; a digest covers only the fields it computes. **Edit with the editing tools.** A session writes inside its own project and into a new folder belonging to no project; another project's files are written only through that project's own queue. Stage by path (`git add <path>`). Push on the user's ask, as a plain push. Check for secrets before committing. **Uncommitted changes you did not make are the user's own work**: accept wording and plain fixes with no question and note them in the record; ask, one at a time, about any that reverses a recorded decision or has no reason you can see; where an edit removes or changes text, search the project for its distinctive words and name each place that now disagrees. Before rolling a lot back, read `${CLAUDE_PLUGIN_ROOT}/docs/recovery.md`.
+**Read a file to its end before reasoning over it**; a digest covers only the fields it computes. **Edit with the editing tools, so the safety check and the editing-state marker see every write to a project file.** A session writes inside its own project and into a new folder belonging to no project; another project's files are written only through that project's own queue. Stage by path (`git add <path>`). Push on the user's ask, as a plain push. Check for secrets before committing. **Uncommitted changes you did not make are the user's own work**: accept wording and plain fixes with no question and note them in the record; ask, one at a time, about any that reverses a recorded decision or has no reason you can see; where an edit removes or changes text, search the project for its distinctive words and name each place that now disagrees. Before rolling a lot back, read `${CLAUDE_PLUGIN_ROOT}/docs/recovery.md`.

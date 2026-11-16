@@ -12,9 +12,12 @@ Every project keeps a written record of *why* things are built a certain way (`S
 - **Silent regressions are caught:** historical context prevents unwanted changes.
 - **Seamless handoffs:** easily pick up where you left off after a break, or hand the project to someone else.
 - **Checked writes:** a small local server, connected when the plugin is installed, files captures and moves queue work with every field checked before anything lands.
-- **One task list across projects:** name a markdown task list once per project, and Claude adds a checkbox line there for each step of yours that needs no walkthrough, with the project in brackets and a due date where there is one, and keeps it current; tick a line and the next planning session closes the item. The default line depends on no plugin; any markdown editor works, and a header at the top of your list can give the line a plugin's fields, such as Obsidian's Tasks plugin.
+- **One task list across projects:** each step of yours that needs no walkthrough carries one checkbox line inside its own queue item, in the Obsidian Tasks plugin's marks, and the note your `Task list:` line names holds the queries that gather them across every project; tick the line and the next planning session closes the item. Any markdown editor shows the lines as plain checkboxes.
 - **Your own edits are noticed:** change a draft, a project file or a post by hand and the next session that reads it sorts the change — a plain fix is accepted and noted, while an edit that reverses a decision or contradicts something is asked about, with every place it now disagrees with named.
 - **Recurring work on a cycle:** ask for something you do repeatedly — a release, a posting rhythm, a review — to go on a cycle, and every session's opening says when a turn is due; a named step list runs when you say its name.
+- **Work tagged by how it runs:** an item is a build Claude does alone, an `[audit]` that reads and reports, a `[user]` step walked through with you, or `[co-write]` text finished together, so you know before a run what each item will ask of you.
+- **A line that bounds the run:** the queue carries a cleared-to-run line and a build run builds only what sits above it, so what is agreed and ready is separate from what is agreed and waiting.
+- **Projects kept current:** once a week the session opening checks for a newer plugin and a planning session offers the update, and where a project's files need to change shape the session halts and points you at setup, which migrates them, instead of running on a stale layout.
 
 ## Installation
 
@@ -39,15 +42,18 @@ Fully restart Claude Code to load the plugin. To update later, run `claude plugi
 
 ## Core workflow and slash commands
 
-The plugin splits your project into a structured build queue managed by seven main commands:
+The plugin splits your project into a structured build queue managed by eight main commands:
 
 - **`/setup`** — interviews you about your project, works out with you the smallest set of folders and documents your work actually uses before creating any of them, scaffolds text documents (`SPEC.md`, `QUEUE.md`, etc.), checks your machine for the command-line tools your project's work will need and records what it finds in `TOOLS.md`, and offers two styles for Claude's replies: Throughliner Brevity, which keeps them short, and Throughliner Code Notes, which adds a short note after each piece of work on why the code is the way it is.
-- **`/plan`** — organizes the queue, captures new ideas, and resolves design questions. Its opening also reads the signs that a project has outgrown one queue and names moving a part out where one holds.
+- **`/plan`** — an open planning session: it reports where the queue stands, then takes up whatever you raise, capturing new ideas and resolving design questions. Its opening also reads the signs that a project has outgrown one queue and names moving a part out where one holds.
+- **`/process`** — works through the captures waiting in the queue one at a time; each is discussed, then kept as agreed work or deleted on your word.
 - **`/build`** — builds the cleared work from the top, several items in one run, walks you through any steps that are yours, and stays locked to the files that work names.
 - **`/rescan`** — reviews past conversation history to capture unrecorded decisions or notes into the queue.
 - **`/close`** — records session outcomes, commits changes to Git, and tees up next steps. Always run this before `/clear`.
 - **`/catchup`** — summarizes feature statuses (shipped, ready, waiting) when returning after time away, and re-runs the return checks a fresh chat runs: a cycle due now, mail waiting, the plugin version changed under the chat, the date moved.
 - **`/tasks`** — works your own tasks one at a time, most urgent first: every step of yours that any project in your vault keeps as a task line, read through the Obsidian Tasks note your `Task list:` line names. Run it in the project that keeps that note; a task you finish goes back to its project as a capture.
+
+A chat with no command is a normal way to work too: talk, think and make changes by hand, and the close command records it.
 
 ## Project structure
 
@@ -57,13 +63,14 @@ Setup adds plain-text documentation and folders to your repository:
 - **`LOG/` and `workshop/`** — historical session records, research, and testing drafts. Each record carries its own one-line summary, and the index is generated from those at every close.
 - **`MAP.md`** — a map of what the project's folders and human-used files are for, written for Claude to read first each session, so nothing sits in a folder it never opens.
 - **`TOOLS.md`** — persistent memory of what Claude has learned about your machine.
+- **`temp/`** — the project's disposable working files, drafts handed over for editing among them, cleared at the close on your yes and kept out of git.
 - **`.throughliner/`** — the plugin's working folder, kept out of git. It holds the register of everything the project has sent; projects send each other captures, added straight to the other project's queue on your yes.
 
 ## Getting started
 
 1. Open any project folder in Claude Code.
 2. Run `/setup` to scaffold your project docs.
-3. Run `/plan` to organize your first piece of work.
+3. Run `/process` to turn your first capture into agreed work.
 4. Run `/build` to start building!
 
 ## Community and support

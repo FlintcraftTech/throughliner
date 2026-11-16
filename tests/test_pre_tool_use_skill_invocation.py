@@ -5,7 +5,7 @@ Host-only dev artifact — not shipped in the plugin package.
 
 Run:  py tests/test_pre_tool_use_skill_invocation.py
 
-Why this exists ([claude-invoked-plan-against-the-rule]): the method's five
+Why this exists ([claude-invoked-plan-against-the-rule]): the method's eight
 skills ship with model invocation disabled, so an attempt fails and shows the
 user a red error at the moment they have least context for it — once at a
 close, landing between "now closing the session" and any explanation. The
@@ -77,6 +77,9 @@ CASES = [
     (ADOPTED, "throughliner:build", "deny", "/build"),
     (ADOPTED, "throughliner:rescan", "deny", "/rescan"),
     (ADOPTED, "throughliner:setup", "deny", "/setup"),
+    (ADOPTED, "throughliner:process", "deny", "/process, added with the plan split"),
+    (ADOPTED, "throughliner:catchup", "deny", "/catchup, never added when it shipped"),
+    (ADOPTED, "throughliner:tasks", "deny", "/tasks, never added when it shipped"),
     (ADOPTED, "plan", "deny", "the bare name in an adopted project"),
     # /setup's own failure happens in a folder that is not adopted yet, which is
     # the whole reason the prefixed arm is not gated on adoption.
@@ -88,7 +91,7 @@ CASES = [
     (ADOPTED, "someone-else:plan", "pass",
      "another plugin's skill is untouched even when the name collides"),
     (ADOPTED, "throughliner:something-else", "pass",
-     "a name outside the five passes"),
+     "a name outside the eight passes"),
     (ADOPTED, "pdf", "pass", "an unrelated skill passes"),
     (ADOPTED, "docx", "pass", "another unrelated skill passes"),
 ]

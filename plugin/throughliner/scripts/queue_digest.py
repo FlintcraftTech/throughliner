@@ -58,6 +58,12 @@ ITEM_RE = re.compile(r"^####\s+\S")
 # would report liftable with most of the group outstanding.
 BLOCKED_RE = re.compile(r"^Blocked by:", re.IGNORECASE)
 SLUG_REF_RE = re.compile(r"\[([a-z0-9][a-z0-9-]*)\]")
+# A blocker in another project's queue is written `[slug] in <project>`
+# ([cross-project-holds-in-task-marks]). The slug is read as any other; the
+# suffix says it lives elsewhere, so nothing here reports it as absent.
+ELSEWHERE_REF_RE = re.compile(
+    r"\[([a-z0-9][a-z0-9-]*)\]\s+in\s+([^,\[\]]+?)\s*"
+    r"(?=,|$|\s+until built\s*$)", re.IGNORECASE)
 # A capture's hold may end `until built`: then the capture returns only when
 # every named entry has a build record, not the moment one is kept into
 # Processed. The words without the qualifier keep the "processed or built"
@@ -304,6 +310,9 @@ def parse(path):
                 # slug matches no `[slug]` — and the two states are otherwise
                 # indistinguishable from `blocked_by` alone.
                 "blocked_raw": [],
+                # Blockers written `[slug] in <project>`: slug -> project.
+                # Each is in `blocked_by` too, so the hold still holds.
+                "blocked_elsewhere": {},
                 # True where a `Blocked by:` line ends `until built`.
                 "until_built": False,
                 "not_before": None,
@@ -358,6 +367,8 @@ def parse(path):
                 for ref in SLUG_REF_RE.findall(stripped):
                     if ref not in current["blocked_by"]:
                         current["blocked_by"].append(ref)
+                for ref, project in ELSEWHERE_REF_RE.findall(stripped):
+                    current["blocked_elsewhere"][ref] = project.strip()
             not_before = NOT_BEFORE_RE.match(stripped)
             if not_before:
                 current["not_before"] = not_before.group(1).strip()
@@ -1255,8 +1266,14 @@ def render(items, root="", queue_path="QUEUE.md"):
                 # Every blocker is printed with where it sits, because the item
                 # lifts only when all of them resolve — printing the first alone
                 # would read as one outstanding dependency when there are four.
+                # A blocker in another project's queue is printed as that,
+                # never as absent: only the lookup tool reads the other queue.
+                elsewhere = item.get("blocked_elsewhere") or {}
                 shown = ", ".join(
-                    f"[{ref}] -> {locate(ref, items, shipped)}"
+                    (f"[{ref}] -> in {elsewhere[ref]}, another project's "
+                     "queue (blocker_lookup says where it sits)")
+                    if ref in elsewhere
+                    else f"[{ref}] -> {locate(ref, items, shipped)}"
                     for ref in item["blocked_by"]
                 )
                 line += f"  | Blocked by: {shown}"

@@ -964,6 +964,199 @@ def tool_send_capture(arguments):
 HOLD_LINE_RE = re.compile(r"^(Blocked by|Not before):.*$", re.MULTILINE)
 
 
+# --------------------------------------------------------------------------
+# blocker_lookup ([cross-project-holds-in-task-marks]): where a slug sits
+# now, in this project or another. A hold may name an item in another
+# project's queue, written `Blocked by: [slug] in <project>`; this is the one
+# place that resolves such a slug, called by hold_entry before it refuses a
+# blocker absent from this queue, and by the opening and the build run's
+# walk-through through the tool. Other queues are read for the one slug and
+# nothing else; nothing is written anywhere.
+# --------------------------------------------------------------------------
+
+# Folders a walk for queues never enters: version control, dependencies, the
+# plugin's own working folder, and the method's own folders, none of which
+# holds a project.
+_VAULT_SKIP = frozenset({".git", ".obsidian", ".throughliner", ".claude",
+                         "node_modules", "__pycache__", "LOG", "temp"})
+_TASK_LIST_RE = re.compile(
+    r"^\s*(?:\*\*)?Task list:(?:\*\*)?\s*`?([^`\r\n]+?)`?\s*$", re.MULTILINE)
+# The record names the digest attributes to a slug: the bare name, or one
+# carrying the `-plan`, `-build` or numbered suffix a second record takes.
+_RECORD_FOR_SLUG_RE = r"^(\d{4}-\d{2}-\d{2})-%s(?:-(?:plan|build|\d+))?\.md$"
+
+
+def _walk_up_for_vault(start):
+    """The nearest folder at or above `start` holding `.obsidian/`, or None."""
+    folder = os.path.abspath(start)
+    if not os.path.isdir(folder):
+        folder = os.path.dirname(folder)
+    while True:
+        if os.path.isdir(os.path.join(folder, ".obsidian")):
+            return folder
+        parent = os.path.dirname(folder)
+        if parent == folder:
+            return None
+        folder = parent
+
+
+def _vault_root(root):
+    """The vault, found as tasks.md finds it: walking up from the note the
+    project's `Task list:` line names, and from the project itself where the
+    line is missing, reads `none`, or names a note under no vault."""
+    try:
+        with open(os.path.join(root, "CLAUDE.md"), "r", encoding="utf-8") as f:
+            text = f.read()
+    except (OSError, UnicodeDecodeError):
+        text = ""
+    match = _TASK_LIST_RE.search(text)
+    if match and match.group(1).strip().lower() != "none":
+        note = match.group(1).strip()
+        if not os.path.isabs(note):
+            note = os.path.join(root, note)
+        vault = _walk_up_for_vault(note)
+        if vault:
+            return vault
+    return _walk_up_for_vault(root)
+
+
+def _other_projects(root):
+    """[(name, folder)] for every other project whose queue may hold a
+    blocker: each folder holding a QUEUE.md under the vault, then each
+    address-book project outside it. A folder the address book names goes by
+    its address-book name, any other by its folder's name."""
+    here = os.path.normcase(os.path.abspath(root))
+    booked = {}
+    sender = _send_capture_module()
+    if sender is not None:
+        try:
+            book = sender.read_address_book(root)
+        except Exception:
+            book = {}
+        for _key, (name, folder) in book.items():
+            if not os.path.isabs(folder):
+                folder = os.path.join(root, folder)
+            folder = os.path.abspath(folder)
+            booked[os.path.normcase(folder)] = (name, folder)
+    found = {}
+    vault = _vault_root(root)
+    if vault:
+        for dirpath, dirnames, filenames in os.walk(vault):
+            dirnames[:] = [d for d in dirnames if d not in _VAULT_SKIP]
+            if "QUEUE.md" not in filenames:
+                continue
+            key = os.path.normcase(os.path.abspath(dirpath))
+            if key == here:
+                continue
+            name = booked[key][0] if key in booked else os.path.basename(dirpath)
+            found[key] = (name, dirpath)
+    for key, (name, folder) in booked.items():
+        if key != here and key not in found \
+                and os.path.isfile(_queue_path(folder)):
+            found[key] = (name, folder)
+    return sorted(found.values(), key=lambda pair: pair[0].lower())
+
+
+def _slug_state(digest, folder, slug):
+    """Where `slug` sits in the project at `folder`, as one phrase and its
+    heading, or None where neither its queue nor its records hold it."""
+    queue = _queue_path(folder)
+    items = []
+    if os.path.isfile(queue):
+        try:
+            items = digest.parse(queue)
+        except (SystemExit, Exception):
+            items = []
+    for item in items:
+        if item["slug"] != slug:
+            continue
+        if item["section"] == "Unprocessed":
+            state = "Unprocessed, captured and not yet kept"
+        elif item["cleared"]:
+            state = "Processed, cleared to run"
+        else:
+            hold = "; ".join(item["blocked_raw"]) or (
+                "Not before: %s" % item["not_before"]
+                if item["not_before"] else "no hold line")
+            state = "Processed, held (%s)" % hold
+        try:
+            with open(queue, "r", encoding="utf-8") as f:
+                block = f.read().splitlines()[
+                    item["first_line"] - 1:item["last_line"]]
+        except (OSError, UnicodeDecodeError):
+            block = []
+        ticked = re.compile(r"^\s*- \[[xX]\] .*🆔\s*%s(?:\s|$)" % re.escape(slug))
+        if any(ticked.match(line) for line in block):
+            state += ", its task line ticked"
+        return state, item["heading"]
+    kinds = digest.shipped_slugs(folder, {slug})
+    if slug not in kinds:
+        return None
+    dates = []
+    record_re = re.compile(_RECORD_FOR_SLUG_RE % re.escape(slug))
+    try:
+        for name in os.listdir(os.path.join(folder, "LOG")):
+            match = record_re.match(name)
+            if match:
+                dates.append(match.group(1))
+    except OSError:
+        pass
+    kind = {"built": "a record of the work being built",
+            "processed": "a record of it being processed only, not built",
+            }.get(kinds[slug], "a record of unknown kind")
+    return ("no longer in the queue; LOG holds %s%s"
+            % (kind, ", latest dated %s" % max(dates) if dates else "")), ""
+
+
+def _lookup_slug(digest, root, slug, others=None, include_here=True):
+    """[(project name, state phrase, heading)] for every project holding
+    `slug`, this project first."""
+    hits = []
+    if include_here:
+        state = _slug_state(digest, root, slug)
+        if state:
+            hits.append((os.path.basename(root) + " (this project)",) + state)
+    for name, folder in (others if others is not None
+                         else _other_projects(root)):
+        state = _slug_state(digest, folder, slug)
+        if state:
+            hits.append((name,) + state)
+    return hits
+
+
+def tool_blocker_lookup(arguments):
+    """Where each named slug sits now: the project holding it, its section
+    and state, and its heading. A slug found nowhere is a fact, not a
+    refusal."""
+    root = project_root()
+    digest = _digest()
+    if digest is None:
+        return "Cannot read: queue_digest.py is not where this server " \
+               "expects it (%s)." % PLUGIN_ROOT
+    slugs = arguments.get("slugs") or []
+    if isinstance(slugs, str):
+        slugs = [s.strip() for s in slugs.split(",") if s.strip()]
+    slugs = [s.strip().strip("[]") for s in slugs if s and s.strip()]
+    if not slugs:
+        return "Refused — nothing was read:\n- slugs is missing — one or " \
+               "more slugs to look up."
+    others = _other_projects(root)
+    out = []
+    for slug in slugs:
+        hits = _lookup_slug(digest, root, slug, others)
+        if not hits:
+            out.append("[%s] — not found: no queue or record holds it, in "
+                       "this project, under the vault, or in an address-book "
+                       "project." % slug)
+            continue
+        for name, state, heading in hits:
+            out.append("[%s] — %s: %s%s" % (
+                slug, name, state, " — " + heading if heading else ""))
+    out.append("Read from %d other project queue(s). Facts, as each queue "
+               "and its records stand now." % len(others))
+    return "\n".join(out)
+
+
 def _run_mover(args, cwd):
     """Run reorder_queue.py as a subprocess and return (ok, its stderr).
 
@@ -1042,13 +1235,26 @@ def tool_hold_entry(arguments):
         problems.append("slug %r matches %d entries — two items sharing a "
                         "slug is itself a fault; fix that first."
                         % (slug, len(by_slug[slug])))
+    # A blocker absent from this queue is looked up before it is refused: an
+    # item in another project's queue is a real blocker, written with the
+    # project's name after it ([cross-project-holds-in-task-marks]).
+    elsewhere = {}
+    others = None
     for b in blocked_by:
         if b == slug:
             problems.append("blocked_by names the entry itself.")
         elif b not in by_slug:
-            problems.append("blocked_by names [%s], which is not an entry in "
-                            "the queue — a blocker must resolve to a real "
-                            "entry." % b)
+            if others is None:
+                others = _other_projects(root)
+            hits = _lookup_slug(digest, root, b, others, include_here=False)
+            if hits:
+                elsewhere[b] = hits[0]
+            else:
+                problems.append("blocked_by names [%s], which is not an entry "
+                                "in this queue, nor in any queue or record "
+                                "under the vault or in an address-book "
+                                "project — a blocker must resolve to a real "
+                                "entry." % b)
     if not_before:
         try:
             date = datetime.date.fromisoformat(not_before)
@@ -1106,8 +1312,11 @@ def tool_hold_entry(arguments):
 
     item = by_slug[slug][0]
     section = item["section"]
-    new_line = ("Blocked by: %s%s" % (", ".join("[%s]" % b for b in blocked_by),
-                                      " until built" if until_built else "")
+    new_line = ("Blocked by: %s%s" % (
+                    ", ".join("[%s]%s" % (b, " in %s" % elsewhere[b][0]
+                                          if b in elsewhere else "")
+                              for b in blocked_by),
+                    " until built" if until_built else "")
                 if blocked_by else "Not before: %s" % not_before)
 
     # Read the entry's block to find an existing hold line of either kind,
@@ -1193,6 +1402,11 @@ def tool_hold_entry(arguments):
 
     report = "%s the hold line on [%s] %s:\n%s%s" % (
         action, slug, where, new_line, moved)
+    for b in blocked_by:
+        if b in elsewhere:
+            name, state, heading = elsewhere[b]
+            report += "\n[%s] is in another project's queue — %s: %s%s" % (
+                b, name, state, " — " + heading if heading else "")
     if assigned_to:
         report += "\n" + _assign()
     if due:
@@ -1333,11 +1547,11 @@ def _next_run_text(project, cleared, held, captures, kinds, date):
             reason += "; %s waiting" % _plural(len(captures), "capture")
         return "build", reason, False
     if captures:
-        reason = "%s waiting to be planned" % _plural(len(captures), "capture")
+        reason = "%s waiting to be processed" % _plural(len(captures), "capture")
         if held:
             reason += ", %s held below the line" % _plural(len(held), "item")
         quiet = date is None and len(captures) < 3
-        return "plan", reason, quiet
+        return "process", reason, quiet
     return None, None, False
 
 
@@ -2563,7 +2777,7 @@ TOOLS = [
             "line on any entry, the 📅 on a [user] item's own task line, a "
             "held item's `Not before:` already passed, or an uncleared red "
             "flag. With nothing cleared and fewer than three captures and no "
-            "date, the line reads `Run /plan in <project> when you like` and "
+            "date, the line reads `Run /process in <project> when you like` and "
             "carries no date. A cycle's due-ness is not read; the opening "
             "computes it. Called at every close after the last queue write; "
             "the standing item counts as no work in every count.",
@@ -2942,7 +3156,11 @@ TOOLS = [
             "held region in the same call; a capture gains the field only. "
             "Refuses a slug naming no entry, both or neither field, a blocker "
             "that is not a real entry, the entry naming itself, an unreal "
-            "date, or a date already past, echoing the reason. A date on a "
+            "date, or a date already past, echoing the reason. A blocker "
+            "absent from this queue is looked up before it is refused: found "
+            "in another project's queue or records, the hold is written "
+            "`Blocked by: [slug] in <project>` and the answer says where that "
+            "item sits. A date on a "
             "capture still needs the user's approval, which no tool can check. "
             "On a capture, until_built writes the hold as `Blocked by: [slug] "
             "until built`, which holds the capture until every named entry "
@@ -2961,7 +3179,8 @@ TOOLS = [
                     "items": {"type": "string"},
                     "description":
                         "Slugs of the entries this one waits on. Each must "
-                        "be a real entry in either section.",
+                        "be a real entry in either section, or an item in "
+                        "another project's queue, which the tool finds.",
                 },
                 "not_before": {
                     "type": "string",
@@ -3000,6 +3219,34 @@ TOOLS = [
             },
         },
         "handler": tool_hold_entry,
+    },
+    {
+        "name": "blocker_lookup",
+        "description":
+            "Where one or more slugs sit now, in this project or another: "
+            "for each, the project holding it, its section and state "
+            "(captured, held with its hold line, cleared, its task line "
+            "ticked, or gone from the queue with the kind and date of its "
+            "LOG record) and its heading. Reads this project's queue and "
+            "records, every `QUEUE.md` under the vault (the folder holding "
+            "`.obsidian/`, found from the note the project's `Task list:` "
+            "line names) and each address-book project outside it, for the "
+            "named slugs and nothing else. A slug found nowhere is returned "
+            "as not found, a fact and never a refusal. Use it to resolve a "
+            "`Blocked by: [slug] in <project>` hold, or any slug this queue "
+            "does not hold. Writes nothing.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["slugs"],
+            "properties": {
+                "slugs": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "The slugs to look up, one or more.",
+                },
+            },
+        },
+        "handler": tool_blocker_lookup,
     },
     {
         "name": "cycle_define",

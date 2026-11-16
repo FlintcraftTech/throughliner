@@ -6,7 +6,7 @@ note: The /build procedure. The run builds the cleared work top-down, walks the 
 
 # /build
 
-**/build executes what the user already agreed at /plan, as agreed, without stopping to confirm each item.** It reads SPEC and the queue's cleared region whole, builds the Claude-work items top-down, pauses at each `[user]` item to walk the user through it live and at each `[co-write]` item to work it with them, halts on a `[freeform]` item, and sits uncommitted until the user runs /close. It is scope-locked to the files the work names.
+**/build executes what the user already agreed when each item was kept, as agreed, without stopping to confirm each item.** It reads SPEC and the queue's cleared region whole, builds the Claude-work items top-down, pauses at each `[user]` item to walk the user through it live and at each `[co-write]` item to work it with them, halts on a `[freeform]` item, and sits uncommitted until the user runs /close. It is scope-locked to the files the work names.
 
 ```
 run     = Processed, from the top down to `--- Cleared to run above this line ---`
@@ -23,11 +23,11 @@ Everything these checks find folds into one narration, delivered with the run at
 
 1. **Active build.** Where this session's own `_build-<session-id>.md` exists, offer to resume and read it for state. Another session's file is outside this session's scope. Before creating any file at the project root, check the opening's untracked list: an untracked file has no git copy, and overwriting it destroys the only version.
 2. **Read SPEC once**, then the `LOG/index.md` lines newer than the most recent build record (the one carrying a `Files touched` field), opening an entry only where an item's instructions are unclear, then the cleared region top-down, each item whole. A build carrying an `Assigned to:` line naming someone other than the person whose session this is skipped, said in one clause; in one conversation serving more than one person, nothing is skipped. Then:
-   - Processed is empty above the marker: tell the user the next work is not cleared yet, recommend /plan, stop.
-   - An item carries `Red flag · State: uncleared`: stop before it, name the risk plainly, recommend /plan to clear it, wait.
+   - Processed is empty above the marker: tell the user the next work is not cleared yet, recommend /process, stop.
+   - An item carries `Red flag · State: uncleared`: stop before it, name the risk plainly, recommend /process to clear it, wait.
    - The top item is `[freeform]`: say what it is and that it runs in a freeform session, a chat opened with no skill; hand over the rules doc's starter prompt in a fenced block with its slug filled, and stop.
    - The run has no build or `[audit]` item: skip step 2 and go to the walk-through branch.
-3. **Cycles.** Run the cycles check as plan.md's opening states it, filing only.
+3. **Cycles.** Run the cycles check as opening.md states it, filing only.
 4. **Present the run and offer the off-ramp, in one message.** A one-line pointer naming the items, linked to QUEUE.md, counts read off the digest. The whole cleared region is the run. One thing may drop an item from this run only, the queue untouched: a /setup outstanding (the opening reports the format epoch behind, or a missing document) where the item names a file /setup rewrites from a template. End with **"Say go and I'll start, or say the word to change scope or reorder first."** A change routes to /plan.
 
 ## Step 2: Lock scope
@@ -91,7 +91,7 @@ Tick first, then remove, so that an interruption leaves the item visible in both
 
 **Once the Claude-work is built, walk the user through each `[user]` item still in the cleared region**, from the item's own walkthrough in QUEUE.md. Where an item carries none, halt on it. Walking is part of the run. The standing `next-run` item is the close's own: never walked, never counted, left where it sits.
 
-**First, in one short message, name the items that cannot move this session**, one line each with why: an item whose record shows it handed over after a /close with no observable to check stays open, with what waits on it named by slug; an item whose first step needs something not yet there is blocked on that thing. Record each under the outcome block below. The message carries no ask.
+**First, in one short message, name the items that cannot move this session**, one line each with why: an item whose record shows it handed over after a /close with no observable to check stays open, with what waits on it named by slug. Before an item is named as unable to start, name what its first step needs and seek it this session: ask the user, read this project's files, or read the task list and the queue and records of the project that holds it; a slug outside this queue is resolved with `blocker_lookup`. An item whose need any of those meets is walked. Record each under the outcome block below. The message carries no ask.
 
 **Then each item that can move gets its own turn**, saying how many items wait on it where any do. A task-shaped item (one carrying a task line instead of a walkthrough) is offered in one line asking whether to do it now, with what the line names (a date, a place, a reference) stated as information; on yes it is walked live step by step exactly as a walkthrough item is, and on no it is left with its line in the queue, the answer recorded under the outcome block as `deferred` with the user's word, or `done`. Open its LOG entry under its slug, append each action as it happens, write one `Run-level:` line, and append every path on the item's Files line to the working file's `Files:` section, saying so in one clause.
 

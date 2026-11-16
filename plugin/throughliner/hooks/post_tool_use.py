@@ -462,6 +462,12 @@ def _check_readiness_marker(annotated, blocks, warnings):
 
 BLOCKED_BY_LINE = re.compile(r"^\*{0,2}Blocked by:?\*{0,2}\s*(.+)$", re.IGNORECASE)
 SLUG_REF = re.compile(r"\[([a-z0-9][a-z0-9-]*)\]")
+# A blocker in another project's queue is written `[slug] in <project>`
+# ([cross-project-holds-in-task-marks]); it holds like any other and is not
+# looked for in this queue.
+ELSEWHERE_REF = re.compile(
+    r"\[([a-z0-9][a-z0-9-]*)\]\s+in\s+([^,\[\]]+?)\s*"
+    r"(?=,|$|\s+until built\s*$)", re.IGNORECASE)
 # `Not before: YYYY-MM-DD` — the second thing that may hold an item below the
 # line. The date is captured loosely here and validated as a real calendar date
 # by _parse_not_before, so a malformed date is reported rather than accepted.
@@ -557,12 +563,15 @@ def _check_blocked_by(annotated, blocks, warnings, in_flight=frozenset()):
     for b in blocks:
         below = b["idx"] > marker_idx
         refs = []
+        elsewhere = set()
         dates = []
         bad_dates = []
         for line in b["lines"][1:]:
             m = BLOCKED_BY_LINE.match(line)
             if m:
                 refs.extend(SLUG_REF.findall(m.group(1)))
+                elsewhere.update(
+                    ref for ref, _p in ELSEWHERE_REF.findall(m.group(1).strip()))
             d = NOT_BEFORE_LINE.match(line.strip())
             if d:
                 parsed = _parse_not_before(d.group(1))
@@ -592,6 +601,10 @@ def _check_blocked_by(annotated, blocks, warnings, in_flight=frozenset()):
         # a capture there is no marker position to give the mistake away — the
         # entry simply stops being offered, silently, forever.
         for slug in refs:
+            if slug in elsewhere:
+                # Named as an item in another project's queue: it is not
+                # missing from this one, and the lookup tool resolves it.
+                continue
             target = known.get(slug)
             if target is None and slug in in_flight:
                 # The run itself ticked this blocker: it is in the session's
@@ -661,6 +674,8 @@ def _check_blocked_by(annotated, blocks, warnings, in_flight=frozenset()):
         # both sections. What is left here is the one check that reads position:
         # within Processed, order is build order, so a blocker must come first.
         for slug in refs:
+            if slug in elsewhere:
+                continue
             target = known.get(slug)
             if target is None or target["idx"] == b["idx"]:
                 continue

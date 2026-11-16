@@ -1,13 +1,13 @@
 ---
 name: plan
-description: All thinking work — manage the queue, handle ideas and questions, detect drift, read back test results. No building happens here.
+description: An open planning session — hear where the project stands, then raise ideas and questions, settle designs, check for drift. No building happens here; the capture-by-capture pass is /process.
 disable-model-invocation: true
 user-invocable: true
 ---
 
 # /plan
 
-The user wants to do planning work — managing the queue, adding ideas, resolving questions, or checking for drift.
+The user wants an open planning session — hearing where the project stands, then raising ideas, resolving questions, or checking for drift. Working through the waiting captures one at a time is /process.
 
 Rules that apply whatever is running are at `${CLAUDE_PLUGIN_ROOT}/docs/skill-nonspecific-rules.md`, and they govern this skill at a level above the procedure below.
 

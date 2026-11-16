@@ -18,7 +18,7 @@ note: The /close procedure. Records what the chat did, cleans up, commits once, 
 
 ```
 working file exists   ->  the build close below, one LOG entry per item, build and [audit] alike
-no working file       ->  the no-build close: a planning session, a completed [user] item,
+no working file       ->  the no-build close: a planning or processing session, a completed [user] item,
                           or standalone handmade work, which overlap freely
 ```
 
@@ -47,11 +47,11 @@ python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> <Processed|Unproce
 - **Position the cleared-to-run line** just below the last item the user agreed is ready. Hold back an item whose prose depends by slug on work built but not verified, read from that entry's transcribed tick, with an entry carrying no tick field treated as unconfirmed; the one exception is an item that is itself its blocker's only verification. Every item below the line names what holds it: `Blocked by:`, `Not before:`, with `Assigned to:` carried beside. Ready `[user]` work goes above the line. Narrate only what moves.
 - **Completed `[user]` items.** Where the session saw one completed (the user said so, its observable check passes, or its task line was ticked at the opening), write a LOG entry under its slug, its task line ticked inside it where it has one, and remove it from Processed with the mover. The others go unmentioned.
 - **Write the LOG entry** with the fields `Queue changes:` and `Work processed:` (kept and deleted, with slugs, or "none"), read off `git diff HEAD -- QUEUE.md`; skipped items leave no trace and are left out. Where an item's record was written at its keep, complete that record by edit. Where a red flag was cleared this session, record how: designed out, or the informed-consent trail.
-- **Commit core**, then recommend next. A fresh setup session whose only item is the rough first build recommends /plan to scope it.
+- **Commit core**, then recommend next. A fresh setup session whose only item is the rough first build recommends /process to scope it.
 
 ## Staleness sweep
 
-**Check the remaining work items for references to files since renamed or deleted, or to behaviour since moved past.** A fate decision (drop, rewrite, keep) is /plan's: defer it. A pure pointer drift is fixed here in one line, with the queue tool's literal replace in a build close: `reorder_queue.py --replace-in <slug> --old <literal> --new <literal>`.
+**Check the remaining work items for references to files since renamed or deleted, or to behaviour since moved past.** A fate decision (drop, rewrite, keep) is a planning or processing session's: defer it. A pure pointer drift is fixed here in one line, with the queue tool's literal replace in a build close: `reorder_queue.py --replace-in <slug> --old <literal> --new <literal>`.
 
 ## LOG entry files
 
@@ -86,7 +86,7 @@ Advisory: filed — <slug>        or   Advisory: not needed — <why>
 
 ## Wind-down look-back
 
-**Before committing, look back over the chat only as far as the last /rescan, and surface candidate captures**: things the user thought out loud but never flagged. An amendment to a work item the user directed this session is made to the item and recorded under its name; a problem Claude noticed in a cleared item stays a capture, with the collision named. A candidate that belongs to another project in the address book is sent with the state server's `send_capture` tool, or the script `feedback-and-inbox.md` names, on the user's yes to the exact text, before the commit, its register line written by the tool in the same turn. Where nothing happened since a rescan, write "covered by the rescan just run". Run the cycles check as plan.md states it, reading the project root for a `CYCLES.md` created this session. First say one sentence on what the files prove ran that is no longer in view (a queue diff, a working file's ticks); the sentence makes no claim that nothing was lost. Show the candidate set as one numbered message, opening by naming itself as the close's look-back, ending "Say go to file it, or say no" (one), "Say go to file both, or contest by number" (two), or "Say go to file them all, or contest by number" (more). Write them on the yes and add them to the entry's `Routed to Captures` line.
+**Before committing, look back over the chat only as far as the last /rescan, and surface candidate captures**: things the user thought out loud but never flagged. An amendment to a work item the user directed this session is made to the item and recorded under its name; a problem Claude noticed in a cleared item stays a capture, with the collision named. A candidate that belongs to another project in the address book is sent with the state server's `send_capture` tool, or the script `feedback-and-inbox.md` names, on the user's yes to the exact text, before the commit, its register line written by the tool in the same turn. Where nothing happened since a rescan, write "covered by the rescan just run". Run the cycles check as opening.md states it, reading the project root for a `CYCLES.md` created this session. First say one sentence on what the files prove ran that is no longer in view (a queue diff, a working file's ticks); the sentence makes no claim that nothing was lost. Show the candidate set as one numbered message, opening by naming itself as the close's look-back, ending "Say go to file it, or say no" (one), "Say go to file both, or contest by number" (two), or "Say go to file them all, or contest by number" (more). Write them on the yes and add them to the entry's `Routed to Captures` line.
 
 ## Session-file cleanup
 
@@ -107,10 +107,10 @@ Advisory: filed — <slug>        or   Advisory: not needed — <why>
 
 ## Recommend next
 
-**Four things, each from a computed fact**: the commit hash and a link to each file the session made or changed for the user to read, the record's link last; the cleared count and the first few cleared items by name, from the digest or `queue_checkpoint_counts` run after the last queue write; the count waiting to be sorted, counting only what the next planning session would present; and one recommendation, naming a fresh session as where it runs and the command in words mid-sentence. Where the run stopped at a held item whose blocker it shipped, say in product terms what of the intended change is not yet on screen. Where this close filed a concrete advisory, the closing message is one line naming it, plus any due cycle.
+**Four things, each from a computed fact**: the commit hash and a link to each file the session made or changed for the user to read, the record's link last; the cleared count and the first few cleared items by name, from the digest or `queue_checkpoint_counts` run after the last queue write; the count waiting to be sorted, counting only what the next processing pass would present; and one recommendation, naming a fresh session as where it runs and the command in words mid-sentence. Where the run stopped at a held item whose blocker it shipped, say in product terms what of the intended change is not yet on screen. Where this close filed a concrete advisory, the closing message is one line naming it, plus any due cycle.
 
 **Where a held item's every blocker was built in this run with its tick confirmed, and the run did not lift it, lift it above the line** with `queue_move` or the mover, drop its `Blocked by:` line, rewrite it whole, and say so in one line; a blocker built but unconfirmed leaves the item held.
 
-**Scan the still-unprocessed work for overlap with the top cleared item and state the result either way.** Then: captures filed this session that affect the next work, work needing vetting, or an empty Processed: recommend /plan. Work above the marker: name the next cleared item and recommend /build. An audit session with findings appended recommends /plan, naming the count.
+**Scan the still-unprocessed work for overlap with the top cleared item and state the result either way.** Then: captures filed this session that affect the next work, work needing vetting, or an empty Processed: recommend /process. Work above the marker: name the next cleared item and recommend /build. An audit session with findings appended recommends /process, naming the count.
 
 Where a `[freeform]` item is the next cleared item, hand over the starter prompt the always-loaded rules carry under their freeform provision, verbatim in a fenced block, filling `<slug>` from `queue_next_pick` or the digest.

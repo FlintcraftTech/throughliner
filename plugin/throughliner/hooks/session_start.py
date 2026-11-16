@@ -546,9 +546,15 @@ def backfill_log_hashes(cwd):
             commit = "" if is_index_file else _hash_from_index(log_dir, name)
             if not commit:
                 commit = _oldest_commit_for(cwd, entry_title)
-                if (commit and not is_index_file
-                        and _is_root_commit(cwd, commit)):
-                    if name not in imported:
+                if commit and _is_root_commit(cwd, commit):
+                    # An index line is generated from its record's heading,
+                    # which keeps its placeholder on a root-commit match; a
+                    # root hash written into the index line alone is undone
+                    # by the next regeneration, so the index arm refuses it
+                    # too and counts no fill
+                    # ([index-hash-backfill-undone-by-regeneration]). Only
+                    # the record is named as imported.
+                    if not is_index_file and name not in imported:
                         imported.append(name)
                     continue
             if not commit:
@@ -1542,6 +1548,13 @@ def _queue_dependency_facts(queue_path):
     # report an item liftable while three of its four blockers were outstanding.
     blocked_line_re = re.compile(r"^Blocked by:", re.IGNORECASE)
     slug_ref_re = re.compile(r"\[([a-z0-9][a-z0-9-]*)\]")
+    # A blocker in another project's queue is written `[slug] in <project>`
+    # ([cross-project-holds-in-task-marks]). It holds its item like any
+    # other, and is left out of the pairs resolved against THIS queue, so it
+    # is never reported as a blocker in neither section.
+    elsewhere_ref_re = re.compile(
+        r"\[([a-z0-9][a-z0-9-]*)\]\s+in\s+([^,\[\]]+?)\s*"
+        r"(?=,|$|\s+until built\s*$)", re.IGNORECASE)
     # The second holding fact: a date the item must not be built before. It
     # resolves itself, so counting it here is the whole mechanism — nobody has
     # to confirm that a day has passed.
@@ -1589,7 +1602,11 @@ def _queue_dependency_facts(queue_path):
             continue
         if in_held_item:
             if blocked_line_re.match(stripped):
+                elsewhere = {ref for ref, _p
+                             in elsewhere_ref_re.findall(stripped)}
                 for blocker in slug_ref_re.findall(stripped):
+                    if blocker in elsewhere:
+                        continue
                     held_blockers.add(blocker)
                     held_pairs.append((current_held_slug or "?", blocker))
             dmatch = not_before_re.match(stripped)
@@ -3655,8 +3672,9 @@ def main() -> int:
         context_parts.append("")
         context_parts.append(
             "Ready. "
-            "Run /throughliner:plan to manage the queue, or /throughliner:build "
-            "to start the top work item.\n"
+            "Run /throughliner:plan to plan, /throughliner:process to process "
+            "the waiting captures, or /throughliner:build to start the top "
+            "work item.\n"
             # The qualified form, unconditionally. The plugin's skills are
             # namespaced, so on some installs the bare `/plan` resolves to
             # nothing and Claude Code answers "isn't available in this
@@ -3671,7 +3689,7 @@ def main() -> int:
             # it works is a harness fact nobody has measured and the qualified
             # form is correct in every project either way. Sidesteps the
             # unverified question rather than waiting on it.
-            "(The bare /plan and /build work on some installs and not others — "
+            "(The bare /plan, /process and /build work on some installs and not others — "
             "the longer names always work.)"
         )
 

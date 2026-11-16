@@ -27,7 +27,7 @@ note: Loaded from setup.md when a project's documents are on an older format tha
 
 ## Epoch 4: cleared work says what it changes
 
-**Nothing is reformatted.** A cleared item whose prose already says what changes and where needs nothing. One that does not never passed the decision step: move it below the readiness line for the next /plan. An old delimited build block is left as it is. Any block the migration does write under an existing item, with the user, gets one more line: `Build block written by the format migration on YYYY-MM-DD, not yet checked at planning`. Check it landed by running the queue digest and reading each cleared item's line.
+**Nothing is reformatted.** A cleared item whose prose already says what changes and where needs nothing. One that does not never passed the decision step: move it below the readiness line for the next /process. An old delimited build block is left as it is. Any block the migration does write under an existing item, with the user, gets one more line: `Build block written by the format migration on YYYY-MM-DD, not yet checked at planning`. Check it landed by running the queue digest and reading each cleared item's line.
 
 ## Epoch 5: `workshop/`, and `resources/` moves inside it
 

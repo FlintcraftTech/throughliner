@@ -169,8 +169,17 @@ check("a record first seen in the root commit keeps its placeholder",
       after.startswith("# PENDING — A record"), repr(after))
 check("the report names it as predating the repository's history",
       "2026-01-04-imported.md" in report and "predate" in report, repr(report))
-check("the index file's own placeholder keeps the git route and is filled",
-      "- PENDING —" not in read(d, "LOG/index.md"), repr(read(d, "LOG/index.md")))
+# [index-hash-backfill-undone-by-regeneration]: the index line of that record
+# is generated from the record's heading, so the index arm refuses the root
+# commit too. Filling it wrote a hash the close's regeneration put back,
+# 34 lines at every opening.
+check("the index line of a root-commit record keeps its placeholder too",
+      "- PENDING — A record that arrived" in read(d, "LOG/index.md"),
+      repr(read(d, "LOG/index.md")))
+check("the opening reports no fill for it",
+      "filled" not in report, repr(report))
+check("and does not read it as a backfill that should have resolved",
+      "should have resolved" not in report, repr(report))
 shutil.rmtree(d, ignore_errors=True)
 
 # --- 7. [housekeeping-note-misreads-uncommitted-placeholders]: a session's own
