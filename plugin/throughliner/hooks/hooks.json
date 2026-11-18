@@ -1,5 +1,5 @@
 {
-  "description": "Throughliner plugin hooks. SessionStart detects project state and orients Claude. PreToolUse enforces the batch file-list boundary (SPEC editable only when a batch lists it), git safety, and a subagent cost ask-gate (the subagent tool — named Agent in current Claude Code, Task in older harnesses — prompts for approval before a subagent runs — ask, never block). PostToolUse lints QUEUE.md structure after edits and after shell commands (advisory). Stop checks a finished response for a report claiming a work item was filed when that item is not in QUEUE.md, and blocks once so the write can be made and the user told before they act on it. Each command is shell form — no args field — so the app passes it to a shell (sh on Mac and Linux, Git Bash on Windows) where it runs `py -3` if the Windows launcher exists and `python` otherwise, since a bare `python` on Windows may be the Store placeholder or an application's bundled interpreter.",
+  "description": "Throughliner plugin hooks. SessionStart detects project state and orients Claude. PreToolUse enforces the batch file-list boundary (SPEC editable only when a batch lists it), git safety, and a subagent cost ask-gate (the subagent tool — named Agent in current Claude Code, Task in older harnesses — prompts for approval before a subagent runs — ask, never block). PostToolUse lints QUEUE.md structure after edits and after shell commands (advisory). Stop checks a finished response for a report claiming a work item was filed when that item is not in QUEUE.md, and blocks once so the write can be made and the user told before they act on it. UserPromptSubmit runs on each message the user sends and, where the message is a question that clearly matches one entry in the plugin's own FAQ, hands Claude that entry to answer from, once per entry per chat; it never blocks a message. Each command is shell form — no args field — so the app passes it to a shell (sh on Mac and Linux, Git Bash on Windows) where it runs `py -3` if the Windows launcher exists and `python` otherwise, since a bare `python` on Windows may be the Store placeholder or an application's bundled interpreter.",
   "hooks": {
     "SessionStart": [
       {
@@ -46,6 +46,16 @@
           {
             "type": "command",
             "command": "if command -v py >/dev/null 2>&1; then py -3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stop.py\"; else python \"${CLAUDE_PLUGIN_ROOT}/hooks/stop.py\"; fi"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v py >/dev/null 2>&1; then py -3 \"${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt_submit.py\"; else python \"${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt_submit.py\"; fi"
           }
         ]
       }

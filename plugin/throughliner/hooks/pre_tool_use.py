@@ -783,6 +783,28 @@ def _is_plans_dir(filepath: str, cwd: str) -> bool:
     return True
 
 
+def _is_project_plans_dir(filepath: str, cwd: str) -> bool:
+    """True for a path under the project's plans folder: `plans/` at the
+    project root, or `workshop/plans/` ([plan-writes-plan-docs]).
+
+    A planning or processing session writes a long-term plan document there
+    as it writes a research note, so later-stage work can leave the queue for
+    a document without a cleared build made only to perform the write. On the
+    standing list of a session with no build running; a build run's scope is
+    its working file's list. Matched relative to the project root, as the
+    research folder is. The harness's own plan-mode folder is a different
+    thing, `_is_plans_dir`.
+    """
+    norm = _normalise(filepath)
+    for plans_dir in (
+        _normalise(os.path.join(cwd, "plans")),
+        _normalise(os.path.join(cwd, "workshop", "plans")),
+    ):
+        if norm.startswith(plans_dir + os.sep):
+            return True
+    return False
+
+
 def _is_research_dir(filepath: str, cwd: str) -> bool:
     """Check if a path is under the project's workshop/resources/research/ folder.
 
@@ -1526,6 +1548,26 @@ def _door_refused_earlier(filepath: str, cwd: str, session_id: str) -> bool:
     return False
 
 
+def _no_skill_session(cwd: str, session_id: str) -> bool:
+    """True where the prompt hook's record says no prompt of this session
+    typed a Throughliner command ([safety-check-freeform-double-ask]).
+
+    `user_prompt_submit.py` keeps `.throughliner/session-skill-<id>.txt`:
+    `none` from the session's first prompt, a command's name once one is
+    typed. A session running a project's own skill, or any skill that is not
+    Throughliner's, reads `none`. Only an explicit `none` counts: where the
+    file is absent, because that hook did not run on this host, the door
+    keeps its refuse-once behaviour, so a fault there never opens it cold.
+    """
+    path = os.path.join(cwd, ".throughliner",
+                        "session-skill-%s.txt" % safe_session_id(session_id))
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read().strip() == "none"
+    except OSError:
+        return False
+
+
 SETUP_MARKER_NAME = ".throughliner-setup-active"
 CLOSE_MARKER_NAME = ".throughliner-close-active"
 # The /close marker's home since [scratchpad-refused-after-resume-close-marker]:
@@ -1641,6 +1683,7 @@ SETUP_SCAFFOLD_FILES = (
 # prefix. Adding a skill to the method means adding it here.
 METHOD_SKILLS = frozenset({
     "setup", "plan", "process", "build", "rescan", "close", "catchup", "tasks",
+    "memory-setup",
 })
 
 # The files the method's own CLOSE obligations name. A close is required to write
@@ -3030,6 +3073,8 @@ def main() -> int:
             ("scratchpad", lambda: _is_scratchpad_dir(filepath, cwd)),
             ("temp folder", lambda: _is_temp_dir(filepath, cwd)),
             ("plans dir", lambda: _is_plans_dir(filepath, cwd)),
+            ("project plans folder",
+             lambda: _is_project_plans_dir(filepath, cwd)),
             ("TOOLS.md", lambda: _is_tools_file(filepath, cwd)),
             ("MAP.md", lambda: _is_map_file(filepath, cwd)),
             ("working register", lambda: _is_working_register(filepath, cwd)),
@@ -3043,9 +3088,17 @@ def main() -> int:
         # The user's door: a scope file names the path. It admits the write
         # only where this session's log already holds a refusal of that same
         # path — a door that opens cold is a one-write convention, not a lock.
+        # In a session where no prompt typed a Throughliner command, the scope
+        # file is written on the user's go-ahead to a named change and admits
+        # its paths with no prior refusal, so one approval is enough
+        # ([safety-check-freeform-double-ask]). A session that typed one keeps
+        # the refuse-once door whole.
         door_line = ""
+        no_skill = _no_skill_session(cwd, sid)
         scope_files = _freeform_scope_files(cwd, sid)
         if _is_build_file(filepath, cwd, scope_files):
+            if no_skill:
+                return _allow("freeform scope file: no skill invoked")
             if _door_refused_earlier(filepath, cwd, sid):
                 return _allow("freeform scope file")
             door_line = (
@@ -3062,10 +3115,32 @@ def main() -> int:
                 f"({os.path.basename(working_file(cwd, 'freeform', sid))}) "
                 "and nothing in its Files: list matched this path — check "
                 "the path as written there against the one above.")
+        if no_skill:
+            # A session opened with no Throughliner skill: the change is made
+            # here once the scope file names the path, with no second ask.
+            scope_name = os.path.basename(working_file(cwd, "freeform", sid))
+            return _deny(
+                "[Throughliner] BLOCKED: this session was opened with no "
+                "Throughliner skill, and it can change the files its scope "
+                f"file `{scope_name}` lists; this path is not listed there "
+                "yet.\n\n"
+                f"About to edit: {filepath}\n\n"
+                "In a session like this one, a change the user asks for and "
+                "agrees to is made here; a capture is only for what is for "
+                "later. Where the user has given the go-ahead to this change, "
+                f"write `{scope_name}` in the project root with a Files: "
+                "section naming the path (one bare path per `- ` line), or "
+                "add the path to it, say so in one line, and make the edit: "
+                "no second ask is needed. Where the user has not asked for "
+                "this change, say what you were about to change and ask."
+                + door_line,
+                branch="no-skill session: path not in the scope file",
+            )
         if True:
             # The hook cannot tell a planning session from a session opened
-            # with no skill, so the message names both: the standing list
-            # for a planning session, and the scope file for a no-skill one.
+            # with no skill where the prompt hook left no record, so the
+            # message names both: the standing list for a planning session,
+            # and the scope file for a no-skill one.
             scope_name = os.path.basename(working_file(cwd, "freeform", sid))
             return _deny(
                 "[Throughliner] BLOCKED: a session opened with no skill can "
@@ -3081,8 +3156,9 @@ def main() -> int:
                 "research/ at the project root — a research part named "
                 "otherwise goes through the user's door below), supplied "
                 "material the user wrote or attached (under "
-                "workshop/resources/supplied/), the temp/ "
-                "folder, the memory directory, "
+                "workshop/resources/supplied/), long-term plan documents "
+                "(under plans/ at the project root or workshop/plans/), the "
+                "temp/ folder, the memory directory, "
                 "the user's global instructions file (CLAUDE.md in "
                 "their home .claude folder, one line on their yes), its own "
                 "scratch files, and any "

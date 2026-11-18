@@ -1681,7 +1681,10 @@ def _missing_ignore_lines(cwd):
     if not os.path.isfile(path):
         return []
     try:
-        with open(path, "r", encoding="utf-8", errors="replace") as f:
+        # utf-8-sig drops a leading byte-order mark, which git ignores and
+        # which otherwise stays on the first line and hides its entry
+        # ([gitignore-check-bom]); a file without one reads unchanged.
+        with open(path, "r", encoding="utf-8-sig", errors="replace") as f:
             present = {line.strip().lstrip("/").rstrip("/")
                        for line in f if line.strip()
                        and not line.strip().startswith("#")}

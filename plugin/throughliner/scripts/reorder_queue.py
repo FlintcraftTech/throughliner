@@ -562,6 +562,13 @@ _ELSEWHERE_REF_RE = re.compile(
     r'(?=,|$|\s+until built\s*$)', re.IGNORECASE)
 
 
+_USER_HEADING_TEXT_RE = re.compile(r'^\[user\]\s*', re.IGNORECASE)
+# The line the tool wrote under a walkthrough item before it read "Open a
+# session in …": the heading echoed with its flavor tag. A task line the user
+# or a filer wrote never leads with the tag, so this shape is the tool's own.
+_LEGACY_USER_ECHO_RE = re.compile(r'^- \[[ xX]\] \[user\]\s', re.IGNORECASE)
+
+
 def _project_name(queue_path):
     return os.path.basename(os.path.dirname(os.path.abspath(queue_path)))
 
@@ -571,6 +578,14 @@ def derived_line(heading_line, block_lines, project, ticked=False, eol='\n'):
     slug = heading_slug(heading_line)
     text = ITEM_RE.sub('', heading_line.rstrip('\r\n'), count=1)
     text = SLUG_RE.sub('', text).strip()
+    # A [user] item with no task line of its own is a walkthrough: acting on
+    # it needs the project in view, so the line a task list shows sends the
+    # reader there ([task-line-test-is-project-context]).
+    if _USER_HEADING_TEXT_RE.match(text):
+        thing = _USER_HEADING_TEXT_RE.sub('', text, count=1).strip()
+        if len(thing) > 1 and thing[0].isupper() and thing[1].islower():
+            thing = thing[0].lower() + thing[1:]
+        text = 'Open a session in %s to %s' % (project, thing)
     blocked, date, due = [], None, None
     for raw in block_lines:
         s = raw.strip()
@@ -677,6 +692,11 @@ def _tag_user_line(heading_line, block, own, project, eol):
         return block
     tag = user_tag_for(rest)
     found = _USER_TAG_RE.search(body)
+    if _LEGACY_USER_ECHO_RE.match(body.strip()):
+        # The tool's older echo of the heading: rewritten to the line the
+        # tool derives now, a tag it carried kept as the block's own.
+        new_body = derived + ((' ' + tag) if found else '')
+        return block[:own] + [new_body + line_eol] + block[own + 1:]
     if found and found.group(0) == tag:
         return block
     if found:

@@ -1511,12 +1511,37 @@ def whats_next(items, root, queue_path, skip=(), picked=0, today=None,
     if due:
         return 2, "due cycle work — its slug names a cycle definition", due[0]
 
+    # Dueness ([dueness-in-plan-and-build-ladders]): a capture overdue, oldest
+    # due date first, then one due within seven days, soonest first — the two
+    # tests /tasks puts at the top of its own order, read from the `Due:` line
+    # or the 📅 on a [user] capture's task line. One sort by date gives both,
+    # since every overdue date precedes every date still ahead. A capture due
+    # further out falls through to the rungs below.
+    import datetime
+    today_iso = today or datetime.date.today().isoformat()
+    try:
+        horizon = (datetime.date.fromisoformat(today_iso)
+                   + datetime.timedelta(days=7)).isoformat()
+    except ValueError:
+        horizon = today_iso
+    def due_of(item):
+        when = item.get("due") or item.get("task_date") or ""
+        return when if re.match(r"^\d{4}-\d{2}-\d{2}$", when) else ""
+
+    dated = sorted(
+        [i for i in pool if due_of(i) and due_of(i) <= horizon],
+        key=lambda i: (due_of(i), i["first_line"]))
+    if dated:
+        when = due_of(dated[0])
+        return 3, ("due — overdue since %s" % when if when < today_iso
+                   else "due — due %s, within seven days" % when), dated[0]
+
     counts = incoming_citations(items)
     cited = [i for i in pool if i["slug"] and counts.get(i["slug"], 0) > 0]
     if cited:
         cited.sort(key=lambda i: (-counts[i["slug"]], i["first_line"]))
         n = counts[cited[0]["slug"]]
-        return 3, ("unblock potential — %d other entr%s cite%s it"
+        return 4, ("unblock potential — %d other entr%s cite%s it"
                    % (n, "y" if n == 1 else "ies",
                       "s" if n == 1 else "")), cited[0]
 
@@ -1534,9 +1559,9 @@ def whats_next(items, root, queue_path, skip=(), picked=0, today=None,
     both = sorted([i for i in pool if is_long(i) and is_old(i)],
                   key=age_of)
     if both:
-        return 4, "both longer and older than the section's medians", both[0]
+        return 5, "both longer and older than the section's medians", both[0]
 
-    # Rung 5 alternates: oldest first, with every other pick required to be one
+    # The last rung alternates: oldest first, with every other pick required to be one
     # of the long entries. Alternation is what makes a short old entry
     # reachable at all — ordering by one key then the other only relabels the
     # starvation under a new name.
@@ -1544,8 +1569,8 @@ def whats_next(items, root, queue_path, skip=(), picked=0, today=None,
     if picked % 2 == 1:
         long_ones = [i for i in by_age if is_long(i)]
         if long_ones:
-            return 5, "alternating — this pick must be a long entry", long_ones[0]
-    return 5, "alternating — oldest first", by_age[0]
+            return 6, "alternating — this pick must be a long entry", long_ones[0]
+    return 6, "alternating — oldest first", by_age[0]
 
 
 def offerable(items, root, skip=(), today=None):

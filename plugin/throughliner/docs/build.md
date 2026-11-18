@@ -93,7 +93,7 @@ Tick first, then remove, so that an interruption leaves the item visible in both
 
 **First, in one short message, name the items that cannot move this session**, one line each with why: an item whose record shows it handed over after a /close with no observable to check stays open, with what waits on it named by slug. Before an item is named as unable to start, name what its first step needs and seek it this session: ask the user, read this project's files, or read the task list and the queue and records of the project that holds it; a slug outside this queue is resolved with `blocker_lookup`. An item whose need any of those meets is walked. Record each under the outcome block below. The message carries no ask.
 
-**Then each item that can move gets its own turn**, saying how many items wait on it where any do. A task-shaped item (one carrying a task line instead of a walkthrough) is offered in one line asking whether to do it now, with what the line names (a date, a place, a reference) stated as information; on yes it is walked live step by step exactly as a walkthrough item is, and on no it is left with its line in the queue, the answer recorded under the outcome block as `deferred` with the user's word, or `done`. Open its LOG entry under its slug, append each action as it happens, write one `Run-level:` line, and append every path on the item's Files line to the working file's `Files:` section, saying so in one clause.
+**Then each item that can move gets its own turn, in the order tasks.md gives under "The order"**, saying how many items wait on it where any do. A task-shaped item (one carrying a task line instead of a walkthrough) is offered in one line asking whether to do it now, with what the line names (a date, a place, a reference) stated as information; on yes it is walked live step by step exactly as a walkthrough item is, and on no it is left with its line in the queue, the answer recorded under the outcome block as `deferred` with the user's word, or `done`. Open its LOG entry under its slug, append each action as it happens, write one `Run-level:` line, and append every path on the item's Files line to the working file's `Files:` section, saying so in one clause.
 
 **A step that has the user edit text Claude drafted** writes the draft to the file the item names, hands it over as a relative link that opens it in the side panel, offering in the same breath to display it inline or send the file, waits, reads it back when they say to, asks whether there is anything else, and repeats until they say they are finished. A `[co-write]` item's whole walkthrough is this loop on its one file; where the text is the user's, Claude reads and responds on their word.
 
@@ -113,7 +113,13 @@ not reached   never presented, or presented with no answer
 anything else what actually happened, in one plain sentence
 ```
 
-Once an item is complete or deferred, say how it closes: running /close logs it under its slug and removes it from the queue, or the user mentions it at the next /plan. When every item is walked or deferred, say the run is complete and that the close command, named in words mid-sentence, records it.
+Once an item is complete or deferred, say how it closes: running /close logs it under its slug and removes it from the queue, or the user mentions it at the next /plan.
+
+## The run's end
+
+**The what-changes lines say what has changed for the user, in their own words.** For each built item in scope, read the record written when it was kept, the `LOG/` file named for its slug, for the user's quoted words. Write one line per change the user will notice in use (something they see, type, or are told differently): a short plain name for the change in bold, their words in quotation marks where the record carries them, what happens now, one clause saying what it is for, and the goal in SPEC it serves where it serves one. Six lines at most, the most noticeable first. Every other built item is gathered into one closing line, a count and a few plain words. Then one offer to walk through any of them, one message each, given on the user's word. Slugs, file names, and a date as the handle on a change stay out of the lines.
+
+**When every item is walked or deferred, the run's last message opens with the what-changes lines for the items this run ticked**, then says the run is complete and that the close command, named in words mid-sentence, records it.
 
 ## Ending before scope lock
 

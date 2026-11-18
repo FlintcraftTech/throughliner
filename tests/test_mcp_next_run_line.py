@@ -205,6 +205,94 @@ check("with nothing queued and no item, nothing is written",
       repr(text))
 shutil.rmtree(os.path.dirname(d), ignore_errors=True)
 
+# --- a hold date still ahead ([not-before-dates-offer-a-reminder]) ----------
+ahead = (datetime.date.today() + datetime.timedelta(days=20)).isoformat()
+nearer = (datetime.date.today() + datetime.timedelta(days=5)).isoformat()
+HELD_ONLY = """# QUEUE
+
+## Processed
+
+--- Cleared to run above this line ---
+
+#### [user] Edit the checklist tip once a release ships [edit-tip]
+A walkthrough of yours.
+Not before: %s
+
+## Unprocessed
+""" % ahead
+
+# Nothing else queued: the line is the hold's own, dated on the hold date.
+d = project(HELD_ONLY)
+text = call(d, "next_run_line",
+            {"hold_reason": "the release that carries the edit."})
+after = queue_text(d)
+check("a held item's future date writes the line in the command, thing and "
+      "reason form",
+      "Run /build in Demo to edit the checklist tip once a release ships, "
+      "due %s for the release that carries the edit" % ahead in after,
+      repr(text) + repr(after))
+check("the line is dated on the hold date",
+      "📅 %s 🆔 next-run #user" % ahead in after, repr(after))
+check("the body says the date is the hold's",
+      "the hold date on [edit-tip]" in after, repr(after))
+text = call(d, "next_run_line")
+after = queue_text(d)
+check("with no reason passed the line says held until the date",
+      "Run /build in Demo to edit the checklist tip once a release ships, "
+      "held until %s" % ahead in after and after.count("[next-run]") == 1,
+      repr(after))
+shutil.rmtree(os.path.dirname(d), ignore_errors=True)
+
+# A capture held by date reads as a processing run.
+d = project(HELD_ONLY.replace(
+    "#### [user] Edit the checklist tip once a release ships [edit-tip]\n"
+    "A walkthrough of yours.\nNot before: %s\n\n## Unprocessed\n" % ahead,
+    "## Unprocessed\n\n#### Renewal of the domain [renew-domain]\n"
+    "Waits on the registrar's window.\nNot before: %s\n" % ahead))
+call(d, "next_run_line", {"hold_reason": "the registrar's renewal window"})
+after = queue_text(d)
+check("a capture's future date writes a process line, dated on the hold date",
+      "Run /process in Demo to renewal of the domain, due %s for the "
+      "registrar's renewal window" % ahead in after
+      and "📅 %s 🆔 next-run" % ahead in after, repr(after))
+shutil.rmtree(os.path.dirname(d), ignore_errors=True)
+
+# A hold date already passed is due today, as before.
+d = project(HELD_ONLY.replace("Not before: %s" % ahead, "Not before: 2020-01-01")
+            .replace("## Unprocessed\n", "## Unprocessed\n\n#### Delta — a capture [delta]\nDelta's rationale.\n"))
+call(d, "next_run_line", {"hold_reason": "unused"})
+after = queue_text(d)
+check("a passed hold date dates the line today and keeps the counts form",
+      "📅 %s 🆔 next-run" % today in after and "Run /process in Demo:" in after
+      and "held until" not in after, repr(after))
+shutil.rmtree(os.path.dirname(d), ignore_errors=True)
+
+# A hold date later than a nearer Due: the Due dates the line.
+d = project(HELD_ONLY.replace(
+    "## Unprocessed\n",
+    "## Unprocessed\n\n#### Delta — a capture [delta]\nDelta's rationale.\nDue: %s\n" % nearer))
+call(d, "next_run_line", {"hold_reason": "unused"})
+after = queue_text(d)
+check("a nearer Due: dates the line ahead of a later hold date",
+      "📅 %s 🆔 next-run" % nearer in after and "Run /process in Demo:" in after
+      and "held until" not in after.split("[next-run]")[1].split("\n")[0],
+      repr(after))
+shutil.rmtree(os.path.dirname(d), ignore_errors=True)
+
+# Work ready now keeps its own line and date; the hold is a closing clause.
+d = project(QUEUE.replace("Not before: 2020-01-01", "Not before: %s" % ahead)
+            .replace(" 📅 2026-12-01", ""))
+call(d, "next_run_line", {"hold_reason": "unused"})
+after = queue_text(d)
+block = after.split("[next-run]")[1].split(MARKER)[0]
+check("with work cleared now the line keeps its counts and stays undated, "
+      "so a list of what is due does not hide it",
+      "1 build, 1 audit and 1 step of yours cleared, [alpha] first" in block
+      and "📅" not in block.split("\n")[1], repr(block))
+check("and names the hold in a closing clause",
+      "; [gamma] held until %s" % ahead in block, repr(block))
+shutil.rmtree(os.path.dirname(d), ignore_errors=True)
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

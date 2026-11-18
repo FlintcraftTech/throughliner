@@ -1523,6 +1523,40 @@ def _next_run_date(items, today):
     return found[0]
 
 
+def _next_run_hold(items, today):
+    """The nearest hold date still ahead, as (date, skill, thing, slug), or
+    None ([not-before-dates-offer-a-reminder]).
+
+    Read: a `Not before:` date after today on a held item in Processed, which
+    a build run takes up on the date, or on a capture in Unprocessed, which a
+    processing pass is offered on the date. The thing is the entry's heading
+    with its flavor tag dropped.
+    """
+    found = []
+    for i in items:
+        if i["slug"] in (NEXT_RUN_SLUG, "forward-advisory"):
+            continue
+        when = i["not_before"] or ""
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", when) or when <= today:
+            continue
+        if i["section"] == "Processed" and not i["cleared"]:
+            skill = "build"
+        elif i["section"] == "Unprocessed":
+            skill = "process"
+        else:
+            continue
+        thing = re.sub(r"^\[[a-z-]+\]\s*", "", i["heading"] or "").strip()
+        thing = thing.rstrip(".")
+        if len(thing) > 1 and thing[0].isupper() and thing[1].islower():
+            thing = thing[0].lower() + thing[1:]
+        found.append((when, i["first_line"], skill, thing, i["slug"] or "?"))
+    if not found:
+        return None
+    found.sort()
+    when, _line, skill, thing, slug = found[0]
+    return when, skill, thing, slug
+
+
 def _next_run_text(project, cleared, held, captures, kinds, date):
     """(skill, reason, quiet), or (None, None, False) where nothing is queued."""
     claude_work = sum(kinds[k] for k in ("build", "audit", "co-write", "freeform"))
@@ -1583,9 +1617,19 @@ def _insert_cleared_bottom(mover, queue, slug, block_lines):
         queue, new_lines, present=[(slug, "Processed")]))
 
 
-def tool_next_run_line(_arguments):
+def tool_next_run_line(arguments):
     """Rewrite the standing next-run item from the queue's standing counts,
-    or remove it where nothing is queued."""
+    or remove it where nothing is queued.
+
+    A hold date still ahead reaches the line two ways. Where nothing else
+    asks for a run now (nothing cleared, and no date or three captures to
+    press), the line is the hold's own: `Run /<skill> in <project> to <the
+    thing>, due <date> for <the reason>`, dated on the hold date, so the task
+    list brings the project up on the day. Where other work is ready now, the
+    line keeps its counts and its own date, since a date further out would
+    hide ready work from a list that shows only what is due, and names the
+    hold in a closing clause.
+    """
     root = project_root()
     queue = _queue_path(root)
     mover = _mover()
@@ -1612,13 +1656,27 @@ def tool_next_run_line(_arguments):
             return "Refused by the queue tool — the standing line was not " \
                    "rewritten:\n" + text
 
-    if skill is None:
+    hold = _next_run_hold(items, today)
+    hold_reason = " ".join(str((arguments or {}).get("hold_reason") or "").split())
+    hold_reason = hold_reason.rstrip(".")
+
+    if skill is None and hold is None:
         return ("Nothing is queued, so no next-run line: the standing item "
                 "was removed." if existing else
                 "Nothing is queued, so no next-run line was written.")
 
-    text = "Run /%s in %s%s: %s" % (skill, project,
-                                     " when you like" if quiet else "", reason)
+    if hold is not None and (skill is None or quiet):
+        when, hold_skill, thing, hold_slug = hold
+        tail = ("due %s for %s" % (when, hold_reason) if hold_reason
+                else "held until %s" % when)
+        text = "Run /%s in %s to %s, %s" % (hold_skill, project, thing, tail)
+        date, what = when, "the hold date on [%s]" % hold_slug
+    else:
+        text = "Run /%s in %s%s: %s" % (skill, project,
+                                         " when you like" if quiet else "",
+                                         reason)
+        if hold is not None and (date is None or hold[0] < date):
+            text += "; [%s] held until %s" % (hold[3], hold[0])
     task = "- [ ] %s (%s)%s 🆔 %s #user" % (
         text, project, " 📅 %s" % date if date else "", NEXT_RUN_SLUG)
     body = ("Standing line written at the close of %s, composed by the state "
@@ -2616,6 +2674,21 @@ def _door_refused_earlier(root, session_id):
     return False
 
 
+def _no_skill_session(root, session_id):
+    """True where the prompt hook's record, `.throughliner/session-skill-
+    <id>.txt`, reads `none`: no prompt of the session typed a Throughliner
+    command, so its scope file is written on the user's go-ahead with no
+    prior refusal ([safety-check-freeform-double-ask]). The safety check's
+    own `_no_skill_session` read, reproduced; an absent file is not `none`."""
+    path = os.path.join(root, ".throughliner",
+                        "session-skill-%s.txt" % _safe_session_id(session_id))
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read().strip() == "none"
+    except OSError:
+        return False
+
+
 def _path_problems(root, files):
     """Every reason a Files line would fail the safety check's exact match:
     backticks, trailing text after a spaced dash, anything after the path,
@@ -2723,7 +2796,8 @@ def tool_build_open(arguments):
                             "one path or more the door admits.")
     problems.extend(_path_problems(root, files))
     if kind == "freeform" and session_id:
-        if not _door_refused_earlier(root, session_id):
+        if (not _no_skill_session(root, session_id)
+                and not _door_refused_earlier(root, session_id)):
             problems.append("no refusal under this session's id in %s — the "
                             "door opens only after the safety check has "
                             "refused an edit earlier in the same session, "
@@ -2778,17 +2852,38 @@ TOOLS = [
             "held item's `Not before:` already passed, or an uncleared red "
             "flag. With nothing cleared and fewer than three captures and no "
             "date, the line reads `Run /process in <project> when you like` and "
-            "carries no date. A cycle's due-ness is not read; the opening "
-            "computes it. Called at every close after the last queue write; "
-            "the standing item counts as no work in every count.",
-        "inputSchema": {"type": "object", "properties": {}},
+            "carries no date. A `Not before:` date still ahead, on a held "
+            "item or a capture, reaches the line too: where nothing else "
+            "asks for a run now, the line reads `Run /<skill> in <project> "
+            "to <the entry's heading>, due <date> for <hold_reason>` and is "
+            "dated on the hold date, `held until <date>` where no reason is "
+            "passed; where other work is ready, the line keeps its counts "
+            "and date and names the hold in a closing clause. A cycle's "
+            "due-ness is not read; the opening computes it. Called at every "
+            "close after the last queue write; the standing item counts as "
+            "no work in every count.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "hold_reason": {
+                    "type": "string",
+                    "description":
+                        "One clause saying what the nearest hold date still "
+                        "ahead waits for, read off that entry's prose, e.g. "
+                        "`the release that carries the edit`. Used only "
+                        "where the line is the hold's own.",
+                },
+            },
+        },
         "handler": tool_next_run_line,
     },
     {
         "name": "queue_next_pick",
         "description":
             "Which item the ordering ladder picks next, which rung it fell "
-            "to, where that item starts in QUEUE.md, and the item's own text. "
+            "to (a due date overdue or within seven days among them, named "
+            "when it picks by it), where that item starts in QUEUE.md, and "
+            "the item's own text. "
             "Optionally takes the slugs set aside this session, how many "
             "picks have already been made, which the ladder's alternating "
             "rung needs, and the two medians the opening printed, so the "
@@ -2817,7 +2912,7 @@ TOOLS = [
                     "type": "integer",
                     "description":
                         "How many picks have been made this session. The "
-                        "fourth rung alternates on this parity.",
+                        "last rung alternates on this parity.",
                 },
             },
         },
@@ -3601,8 +3696,10 @@ TOOLS = [
             "[co-write]; a path carrying backticks, text after a spaced dash "
             "or anything after the path; a path that is an existing folder, "
             "resolves outside the project root, or is listed twice; for a "
-            "freeform file, a session the safety check has not refused earlier "
-            "in this session. An empty files list on a build writes an empty "
+            "freeform file, a session that typed a Throughliner command and "
+            "that the safety check has not refused earlier; a session with "
+            "no Throughliner command typed writes its scope file with no "
+            "prior refusal. An empty files list on a build writes an empty "
             "Files: section, which locks the run to the method docs.",
         "inputSchema": {
             "type": "object",

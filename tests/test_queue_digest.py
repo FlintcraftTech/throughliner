@@ -930,8 +930,60 @@ def test_whats_next_rung_changes_when_the_queue_changes_beneath_it():
           rung == 1 and item["slug"] == "risky", f"rung {rung}")
 
     rung, _, item = digest.whats_next(items, root, queue, skip=("risky",))
-    check("skipping it falls through to rung 3 (unblock potential)",
-          rung == 3 and item["slug"] == "alpha", f"rung {rung}")
+    check("skipping it falls through to rung 4 (unblock potential)",
+          rung == 4 and item["slug"] == "alpha", f"rung {rung}")
+    shutil.rmtree(root, ignore_errors=True)
+
+
+def test_whats_next_due_rung():
+    """A capture overdue, oldest first, then one due within seven days,
+    soonest first, ranks below the red flag and the due cycle and above the
+    most-cited entry; one due further out falls through
+    ([dueness-in-plan-and-build-ladders])."""
+    root = project(
+        unprocessed=(
+            "#### Cited by another entry [alpha]\nProse.\n"
+            "\n"
+            "#### Cites alpha [beta]\nThis depends on [alpha].\n"
+            "\n"
+            "#### Due in three days [soon]\nProse.\nDue: 2026-03-13\n"
+            "\n"
+            "#### Overdue a week [late]\nProse.\nDue: 2026-03-03\n"
+            "\n"
+            "#### Overdue a month [later]\nProse.\nDue: 2026-02-10\n"
+            "\n"
+            "#### Due far out [far]\nProse.\nDue: 2026-06-01\n"
+            "\n"
+            "#### [user] Ring the bank [ring]\n"
+            "- [ ] Ring the bank (Demo) 📅 2026-03-11 🆔 ring #user\nProse.\n"
+        ),
+    )
+    queue = os.path.join(root, "QUEUE.md")
+    items = digest.parse(queue)
+    today = "2026-03-10"
+
+    order = []
+    skip = []
+    for _ in range(4):
+        rung, why, item = digest.whats_next(items, root, queue, skip=tuple(skip),
+                                            today=today)
+        order.append((rung, item["slug"]))
+        skip.append(item["slug"])
+    check("overdue oldest first, then due within seven days soonest first",
+          order == [(3, "later"), (3, "late"), (3, "ring"), (3, "soon")],
+          repr(order))
+    rung, why, item = digest.whats_next(items, root, queue, skip=tuple(skip),
+                                        today=today)
+    check("with nothing due left, the most-cited entry is next and the "
+          "far-out date falls through",
+          rung == 4 and item["slug"] == "alpha", repr((rung, item["slug"])))
+    rung, why, _ = digest.whats_next(items, root, queue, today=today)
+    check("the answer names the rung it picked by",
+          why.startswith("due — overdue since 2026-02-10"), why)
+    rung, why, _ = digest.whats_next(items, root, queue,
+                                     skip=("later", "late"), today=today)
+    check("a date still ahead reads as due within seven days",
+          why == "due — due 2026-03-11, within seven days", why)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -1451,7 +1503,7 @@ def test_unblock_potential_singular():
     items = digest.parse(os.path.join(d, "QUEUE.md"))
     rung, why, item = digest.whats_next(items, d, os.path.join(d, "QUEUE.md"))
     check("singular: the cited entry is picked",
-          rung == 3 and item is not None and item["slug"] == "alpha",
+          rung == 4 and item is not None and item["slug"] == "alpha",
           repr((rung, why)))
     check("singular: one citer reads as one entry",
           "1 other entry cites it" in why, repr(why))
@@ -1610,6 +1662,7 @@ if __name__ == "__main__":
     test_whats_next_answers_only_the_pick()
     test_whats_next_rung_changes_when_the_queue_changes_beneath_it()
     test_whats_next_cycle_pass_over_and_due_rung()
+    test_whats_next_due_rung()
     test_whats_next_holds_the_openings_medians_when_passed()
     test_whats_next_respects_a_capture_bowing_out()
     test_capture_held_on_a_processed_item_is_offerable()

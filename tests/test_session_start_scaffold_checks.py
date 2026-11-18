@@ -57,6 +57,16 @@ check("temp/ present with no ignore line is reported",
 write(d, ".gitignore", ".throughliner/\ntemp/\n")
 check("with the line present nothing is reported",
       hook._missing_ignore_lines(d) == [], repr(hook._missing_ignore_lines(d)))
+# A leading byte-order mark, which git ignores, must not hide the first
+# line's entry ([gitignore-check-bom]).
+with open(os.path.join(d, ".gitignore"), "wb") as f:
+    f.write(b"\xef\xbb\xbftemp/\n.throughliner/\n")
+check("a first line behind a byte-order mark still counts",
+      hook._missing_ignore_lines(d) == [], repr(hook._missing_ignore_lines(d)))
+with open(os.path.join(d, ".gitignore"), "wb") as f:
+    f.write(b"temp/\n.throughliner/\n")
+check("the same file with no mark reads as before",
+      hook._missing_ignore_lines(d) == [], repr(hook._missing_ignore_lines(d)))
 os.remove(os.path.join(d, ".gitignore"))
 check("no .gitignore at all reads as nothing to report",
       hook._missing_ignore_lines(d) == [])

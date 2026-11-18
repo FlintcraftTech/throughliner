@@ -597,6 +597,24 @@ def test_post_tool_use_non_queue_edit_is_silent():
     check("PostToolUse (unrelated file): emits nothing", out.strip() == "", out[:300])
 
 
+def test_user_prompt_submit_envelope():
+    """A matching question returns the nested envelope; no match is silence."""
+    d = _queue_project("# QUEUE\n\n## Processed\n\n## Unprocessed\n")
+    base = {"hook_event_name": "UserPromptSubmit", "cwd": d,
+            "session_id": TEST_SESSION_ID}
+    rc, out, err = drive("user_prompt_submit.py",
+                         dict(base, prompt="what does a red flag mean in my queue?"),
+                         cwd=d)
+    check("UserPromptSubmit (match): exits 0", rc == 0, err[:500])
+    check("UserPromptSubmit (match): produced output", out.strip() != "")
+    if out.strip():
+        assert_envelope("UserPromptSubmit (match)", out, "UserPromptSubmit",
+                        ["additionalContext"])
+    rc, out, err = drive("user_prompt_submit.py", dict(base, prompt="ok"), cwd=d)
+    check("UserPromptSubmit (no match): exits 0", rc == 0, err[:500])
+    check("UserPromptSubmit (no match): emits nothing", out.strip() == "", out[:300])
+
+
 def main():
     print("hook schema-conformance check")
     print("(shape only — delivery is proved by the liveness step in CLAUDE.md)\n")
@@ -615,6 +633,7 @@ def main():
         test_content_stamp_ignores_the_cli_in_use_marker,
         test_post_tool_use_lint_shape,
         test_post_tool_use_non_queue_edit_is_silent,
+        test_user_prompt_submit_envelope,
     ):
         print(fn.__name__)
         fn()

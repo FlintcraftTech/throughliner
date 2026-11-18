@@ -110,10 +110,12 @@ check("a [user] item's own task line is its line, with no second one, "
       text.count("🆔 phone-office") == 1
       and "- [ ] Phone the office (Demo) 📅 2026-11-02 🆔 phone-office #user\n"
       in text, text)
-check("a walkthrough [user] item's derived line carries no #user",
-      "- [ ] [user] Check the hooks on the second machine (Demo Project) "
-      "🆔 second-machine\n" in text
-      and "second-machine #user" not in text, text)
+check("a walkthrough [user] item's derived line sends the reader to the "
+      "project and carries no #user",
+      "- [ ] Open a session in Demo Project to check the hooks on the second "
+      "machine (Demo Project) 🆔 second-machine\n" in text
+      and "second-machine #user" not in text
+      and "- [ ] [user] Check the hooks" not in text, text)
 check("no build's line gains #user",
       "alpha #user" not in text and "gamma #user" not in text, text)
 check("a capture gets its line too",
@@ -159,6 +161,38 @@ check("the digest's cleared and held counts are unchanged",
 check("the digest counts no cite from the derived line",
       "Cited by" not in proc.stdout.split("[alpha]")[1].split("\n")[0],
       proc.stdout[:600])
+
+# The line the tool wrote under a walkthrough item before it read "Open a
+# session in …", the heading echoed with its flavor tag, is rewritten to the
+# new shape, a tag it had picked up kept; a task line of the user's own is
+# left as written ([task-line-test-is-project-context]).
+with open(q, "w", encoding="utf-8", newline="") as f:
+    f.write("# QUEUE\n\n## Processed\n\n"
+            "#### [user] Edit the forum post once a release ships [edit-post]\n"
+            "- [ ] [user] Edit the forum post once a release ships (Demo Project) "
+            "🆔 edit-post ⛔ gone-blocker #user\n"
+            "A walkthrough of yours.\n\n"
+            "#### [user] File the return [file-return]\n"
+            "- [ ] [user] File the return (Demo Project) 🆔 file-return\n"
+            "A walkthrough of yours.\n\n"
+            "#### [user] Ring the bank [ring-bank]\n"
+            "- [ ] Ring the bank on 13 22 21 (Demo Project) 🆔 ring-bank #user\n\n"
+            "--- Cleared to run above this line ---\n## Unprocessed\n")
+code, out = run([q, "--sync-lines"], d)
+text = read(q)
+check("an older echoed line is rewritten to the new shape, its tag kept",
+      "- [ ] Open a session in Demo Project to edit the forum post once a "
+      "release ships (Demo Project) 🆔 edit-post #user\n" in text, out + text)
+check("an older untagged echoed line is rewritten and stays untagged",
+      "- [ ] Open a session in Demo Project to file the return (Demo Project) "
+      "🆔 file-return\n" in text, text)
+check("no echoed line is left behind", "- [ ] [user] " not in text, text)
+check("a task line of the user's own is left as written",
+      "- [ ] Ring the bank on 13 22 21 (Demo Project) 🆔 ring-bank #user\n" in text,
+      text)
+before = text
+run([q, "--sync-lines"], d)
+check("a second pass over the rewritten lines changes nothing", read(q) == before)
 
 shutil.rmtree(os.path.dirname(d), ignore_errors=True)
 print()

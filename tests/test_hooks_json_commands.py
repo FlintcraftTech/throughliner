@@ -75,7 +75,11 @@ def posix_shell():
 
 print("test_hooks_json_commands")
 found = commands()
-check("seven hook commands are registered", len(found) == 7, str(len(found)))
+check("eight hook commands are registered", len(found) == 8, str(len(found)))
+check("UserPromptSubmit is registered with no matcher",
+      any(e == "UserPromptSubmit" for e, _ in found)
+      and all("matcher" not in g for g in json.load(
+          open(HOOKS_JSON, encoding="utf-8"))["hooks"].get("UserPromptSubmit", [])))
 for event, hook in found:
     cmd = hook.get("command", "")
     m = SHAPE.match(cmd)

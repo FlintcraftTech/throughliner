@@ -42,7 +42,7 @@ Fully restart Claude Code to load the plugin. To update later, run `claude plugi
 
 ## Core workflow and slash commands
 
-The plugin splits your project into a structured build queue managed by eight main commands:
+The plugin splits your project into a structured build queue managed by nine main commands:
 
 - **`/setup`** — interviews you about your project, works out with you the smallest set of folders and documents your work actually uses before creating any of them, scaffolds text documents (`SPEC.md`, `QUEUE.md`, etc.), checks your machine for the command-line tools your project's work will need and records what it finds in `TOOLS.md`, and offers two styles for Claude's replies: Throughliner Brevity, which keeps them short, and Throughliner Code Notes, which adds a short note after each piece of work on why the code is the way it is.
 - **`/plan`** — an open planning session: it reports where the queue stands, then takes up whatever you raise, capturing new ideas and resolving design questions. Its opening also reads the signs that a project has outgrown one queue and names moving a part out where one holds.
@@ -52,6 +52,7 @@ The plugin splits your project into a structured build queue managed by eight ma
 - **`/close`** — records session outcomes, commits changes to Git, and tees up next steps. Always run this before `/clear`.
 - **`/catchup`** — summarizes feature statuses (shipped, ready, waiting) when returning after time away, and re-runs the return checks a fresh chat runs: a cycle due now, mail waiting, the plugin version changed under the chat, the date moved.
 - **`/tasks`** — works your own tasks one at a time, most urgent first: every step of yours that any project in your vault keeps as a task line, read through the Obsidian Tasks note your `Task list:` line names. Run it in the project that keeps that note; a task you finish goes back to its project as a capture.
+- **`/memory-setup`** — builds one memory about you that every project on your machine reads: small notes in a folder in your home `.claude` folder, filled from a prompt you run in Claude chat, loaded by every session through one index. Run it again whenever chat has learned more. The memory stays on your machine.
 
 A chat with no command is a normal way to work too: talk, think and make changes by hand, and the close command records it.
 

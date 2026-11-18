@@ -108,8 +108,8 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **What do the numbers after a queue edit mean?** — the change and the total, as a fact and not a threshold. [faq.md](faq.md)
 - **A note says a heading is wrong — how is it fixed?** — the retitle that
   keeps the slug and touches nothing else. [faq.md](faq.md)
-- **What does /catchup show me?** — goals first, one line per feature with
-  its stage, then what is next, what is yours and what is held, then the
+- **What does /catchup show me?** — goals first, then what has changed
+  for you in the last fortnight in your own words, then what is next, what is yours and what is held, then the
   return checks: a cycle due, a version change, the date moved.
   [faq.md](faq.md)
 - **A draft I'm asked to edit — where is it and how do I hand it back?** —
@@ -164,3 +164,4 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **Where does a task go that belongs to no project?** — the queue of the project that keeps your task-list note, sent there from any chat on your word or on Claude's one ask, and what setup says about that project. [faq.md](faq.md)
 - **Why is there a "Run /build in …" task in my list?** — the next-run line every close leaves, its counts and its date, how it is rewritten, and what ticking it does. [faq.md](faq.md)
 - **How do I work through my own tasks?** — the tasks command, run in the project that keeps your task-list note: your queries resolved over every project's queue, one task at a time, the order (dates, then what unblocks most, then your projects' priority from a `goals.md` note of your own, then queue order), and a done task sent back to its project as a capture. [faq.md](faq.md)
+- **How do I give Claude a memory about me that every project reads?** — the memory-setup command: a folder of small notes in your home .claude folder, filled from a prompt you run in Claude chat, loaded by every session through one index, and re-runnable. [faq.md](faq.md)
