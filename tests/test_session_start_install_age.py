@@ -121,6 +121,60 @@ check(
 
 shutil.rmtree(cache, ignore_errors=True)
 
+# --- installed copy versus loaded in place -----------------------------------
+# ([installed-plugin-reads-source-folder-directly]) Claude Code copies a plugin
+# from a GitHub-hosted marketplace into ~/.claude/plugins/cache/ and loads one
+# from a local-folder marketplace straight from that folder. The two opening
+# lines say which, by where the plugin root sits.
+
+home = tempfile.mkdtemp(prefix="install-place-test-")
+cached_root = os.path.join(home, ".claude", "plugins", "cache",
+                           "flintcraft", "throughliner", "1.25.0")
+os.makedirs(cached_root)
+stamp = datetime.datetime(2026, 11, 19, 12, 0, 0).timestamp()
+os.utime(cached_root, (stamp, stamp))
+source_root = os.path.join(home, "project", "plugin", "throughliner")
+os.makedirs(source_root)
+
+check("a root under the plugin cache is not loaded in place",
+      session_start.loaded_in_place(cached_root) is False)
+check("a root outside the plugin cache is loaded in place",
+      session_start.loaded_in_place(source_root) is True)
+check("an empty root is not loaded in place",
+      session_start.loaded_in_place("") is False)
+
+line = session_start.installed_version_line("1.25.0", cached_root)
+check(
+    "under a cache path the version line keeps the installed-copy wording",
+    "1.25.0, installed since 2026-11-19" in line
+    and "host-side deferred test has gone live" in line
+    and "loaded in place" not in line,
+    line,
+)
+line = session_start.installed_stamp_line("abc123", cached_root)
+check(
+    "under a cache path the stamp line keeps the compare instruction",
+    "abc123" in line and "stamps differ" in line,
+    line,
+)
+
+line = session_start.installed_version_line("1.25.0", source_root)
+check(
+    "outside the cache the version line says loaded in place, naming the folder",
+    "1.25.0" in line and "loaded in place from " + source_root in line
+    and "live at the next session start" in line
+    and "installed since" not in line,
+    line,
+)
+line = session_start.installed_stamp_line("abc123", source_root)
+check(
+    "outside the cache the stamp line is the stamp alone",
+    "abc123" in line and "compare" not in line and "stamps differ" not in line,
+    line,
+)
+
+shutil.rmtree(home, ignore_errors=True)
+
 print()
 if failures:
     print(f"{len(failures)} failure(s):")

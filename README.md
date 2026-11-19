@@ -15,7 +15,7 @@ Every project keeps a written record of *why* things are built a certain way (`S
 - **One task list across projects:** each step of yours that needs no walkthrough carries one checkbox line inside its own queue item, in the Obsidian Tasks plugin's marks, and the note your `Task list:` line names holds the queries that gather them across every project; tick the line and the next planning session closes the item. Any markdown editor shows the lines as plain checkboxes.
 - **Your own edits are noticed:** change a draft, a project file or a post by hand and the next session that reads it sorts the change — a plain fix is accepted and noted, while an edit that reverses a decision or contradicts something is asked about, with every place it now disagrees with named.
 - **Recurring work on a cycle:** ask for something you do repeatedly — a release, a posting rhythm, a review — to go on a cycle, and every session's opening says when a turn is due; a named step list runs when you say its name.
-- **Work tagged by how it runs:** an item is a build Claude does alone, an `[audit]` that reads and reports, a `[user]` step walked through with you, or `[co-write]` text finished together, so you know before a run what each item will ask of you.
+- **Work tagged by how it runs:** an item is a build Claude does alone, an `[audit]` that reads and reports, a `[user]` step walked through with you, `[co-write]` text finished together, or `[freeform]` work done by hand with Claude in a chat of its own, which a build run stops at, so you know before a run what each item will ask of you.
 - **A line that bounds the run:** the queue carries a cleared-to-run line and a build run builds only what sits above it, so what is agreed and ready is separate from what is agreed and waiting.
 - **Projects kept current:** once a week the session opening checks for a newer plugin and a planning session offers the update, and where a project's files need to change shape the session halts and points you at setup, which migrates them, instead of running on a stale layout.
 
@@ -27,7 +27,7 @@ Every project keeps a written record of *why* things are built a certain way (`S
 2. Paste this link: `https://github.com/FlintcraftTech/throughliner/raw/main/INSTALL.md`
 3. Ask Claude to **read the guide and walk you through it step by step**.
 
-The guide verifies Python, the `claude` tool, and GitHub's `gh` tool before running the installation commands.
+The guide verifies Python, Git, the `claude` tool, and GitHub's `gh` tool before running the installation commands.
 
 ### Already have Claude Code?
 
@@ -50,7 +50,7 @@ The plugin splits your project into a structured build queue managed by nine mai
 - **`/build`** — builds the cleared work from the top, several items in one run, walks you through any steps that are yours, and stays locked to the files that work names.
 - **`/rescan`** — reviews past conversation history to capture unrecorded decisions or notes into the queue.
 - **`/close`** — records session outcomes, commits changes to Git, and tees up next steps. Always run this before `/clear`.
-- **`/catchup`** — summarizes feature statuses (shipped, ready, waiting) when returning after time away, and re-runs the return checks a fresh chat runs: a cycle due now, mail waiting, the plugin version changed under the chat, the date moved.
+- **`/catchup`** — a brief for returning after time away: one line per goal with where you stand against it, then the few changes you will notice from the last fourteen days, then what a build would do next, what waits on you, and what is held on a date. It also re-runs the return checks a fresh chat runs: a cycle due now, the plugin version changed under the chat, the date moved.
 - **`/tasks`** — works your own tasks one at a time, most urgent first: every step of yours that any project in your vault keeps as a task line, read through the Obsidian Tasks note your `Task list:` line names. Run it in the project that keeps that note; a task you finish goes back to its project as a capture.
 - **`/memory-setup`** — builds one memory about you that every project on your machine reads: small notes in a folder in your home `.claude` folder, filled from a prompt you run in Claude chat, loaded by every session through one index. Run it again whenever chat has learned more. The memory stays on your machine.
 

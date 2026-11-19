@@ -8,14 +8,14 @@ Run:  py tests/test_hooks_project_root.py
 Why this exists ([scope-lock-root-follows-shell-cwd]): the hook payload's
 `cwd` follows Claude's last shell `cd`, so in a nested project a `cd` into
 the inner repository at the commit step made the next edits to the outer's
-LOG/ refuse. Each of the four hooks now carries `project_root(data)`: the
+LOG/ refuse. Each of the five hooks now carries `project_root(data)`: the
 `CLAUDE_PROJECT_DIR` variable where it is set and holds SPEC.md, otherwise
 the payload's cwd; and a cwd inside `.claude/worktrees/` is kept.
 
 Assertions: with the payload's cwd one folder below the root and the variable
 set to the root, an Edit to LOG/index.md is allowed; with the variable unset,
 the shipped behaviour (the edit refused, since the file is outside the cwd);
-the helper keeps a worktree cwd; and all four hooks carry the helper and no
+the helper keeps a worktree cwd; and all five hooks carry the helper and no
 raw `data.get("cwd"` read is left at their entry.
 """
 
@@ -108,9 +108,10 @@ def main():
     finally:
         os.environ.pop("CLAUDE_PROJECT_DIR", None)
 
-    # All four hooks carry the helper, and none reads the payload's cwd raw
+    # All five hooks carry the helper, and none reads the payload's cwd raw
     # at its entry.
-    for name in ("pre_tool_use.py", "post_tool_use.py", "session_start.py", "stop.py"):
+    for name in ("pre_tool_use.py", "post_tool_use.py", "session_start.py", "stop.py",
+                 "user_prompt_submit.py"):
         with open(os.path.join(HOOKS, name), encoding="utf-8") as f:
             src = f.read()
         check(f"{name} defines project_root", "def project_root(" in src)

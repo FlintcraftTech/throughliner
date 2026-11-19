@@ -1,13 +1,13 @@
 ---
 name: catchup
-description: A brief for coming back to the project after time away — one line per feature with where it stands, then what a build would do next, what waits on you, and what is held on a date. Files nothing, moves nothing.
+description: A brief for coming back to the project after time away — one line per goal with where you stand against it, then the few changes you will notice from the last fourteen days, then what a build would do next, what waits on you, and what is held on a date. Files only a due cycle's capture, moves nothing.
 disable-model-invocation: true
 user-invocable: true
 ---
 
 # /catchup
 
-The user is coming back to this project after time away and wants to know where its important features stand, in a few lines, and nothing else. It runs at any time, and runs best after a planning or build session has opened, since it reuses that opening's reads.
+The user is coming back to this project after time away and wants to know where its goals stand and what has changed for them, in a few lines, and nothing else. It runs at any time, and runs best after a planning or build session has opened, since it reuses that opening's reads.
 
 Rules that apply whatever is running are at `${CLAUDE_PLUGIN_ROOT}/docs/skill-nonspecific-rules.md`, and they govern this skill at a level above the procedure below.
 

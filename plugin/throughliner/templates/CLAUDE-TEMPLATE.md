@@ -7,17 +7,21 @@ This project uses the Throughliner method.
 ## Project docs
 
 - **SPEC.md** — product truth. What it is, who it's for, how it works.
-- **QUEUE.md** — your work, in two sections. **Processed** work is vetted and ready to build, worked top-to-bottom; a `--- Cleared to run above this line ---` line marks how far down is greenlit (below it is decided but not ready yet). **Unprocessed** work is captured ideas and tasks not yet fully processed. Each piece of work is one line: a `#### ` heading naming the work, with a `[slug]` at the end of that heading line and a short rationale beneath it, plus a `captured by you` credit on items you personally raised (anything else is unmarked — Claude is the default author). A work item can carry a leading flavor tag: none means a build (Claude edits files), `[audit]` a review pass (Claude reads and reports), `[user]` a step only you can run. A security or privacy risk Claude surfaces becomes a work item carrying a `Red flag · State: cleared/uncleared` marker — surfaced first each session while uncleared, until it's cleared (either designed out, or you're told the risk plainly and choose to accept it).
+- **QUEUE.md** — your work, in two sections. **Processed** work is vetted and ready to build, worked top-to-bottom; a `--- Cleared to run above this line ---` line marks how far down is greenlit (below it is decided but not ready yet). **Unprocessed** work is captured ideas and tasks not yet fully processed. Each piece of work is one line: a `#### ` heading naming the work, with a `[slug]` at the end of that heading line and a short rationale beneath it, plus a `captured by you` credit on items you personally raised (anything else is unmarked — Claude is the default author). A work item can carry a leading flavor tag: none means a build (Claude edits files), `[audit]` a review pass (Claude reads and reports), `[user]` a step only you can run, `[freeform]` work done by hand with Claude in a chat of its own, `[co-write]` a text you and Claude finish together. A security or privacy risk Claude surfaces becomes a work item carrying a `Red flag · State: cleared/uncleared` marker — surfaced first each session while uncleared, until it's cleared (either designed out, or you're told the risk plainly and choose to accept it).
 - **LOG/** — session records: what was built, tested, decided. One file per session entry, plus index.md one-line summaries naming each entry file.
 - **Other projects you run** send this one work as captures added to the bottom of its queue, and this one sends the same way. Anything going out is always shown to you for approval first, and a register of what was sent lives in the plugin's working folder, `.throughliner/`, out of git.
 
 ## Workflow
 
 - `/setup` — scaffold project docs (done if you're reading this).
-- `/plan` — queue management, captures, design questions.
+- `/plan` — an open planning session: where the queue stands, new ideas, design questions.
+- `/process` — work through the waiting captures one at a time, each kept as work or deleted.
 - `/build` — execute the top piece of ready work (a build or an audit, by its flavor tag). It can work several cleared pieces of work back-to-back, top-down, stopping at the readiness line or when something genuinely needs you.
 - `/rescan` — read back over the conversation and file anything decided or noticed but never written down. Run it whenever, as often as you like; it only looks back as far as the last time you ran it. It files things and leaves the deciding to /process.
 - `/close` — record, update docs, commit.
+- `/catchup` — a brief after time away.
+- `/tasks` — work your own task list.
+- `/memory-setup` — one memory about you that every project reads.
 
 ## Rules for Claude
 

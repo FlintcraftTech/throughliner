@@ -857,6 +857,72 @@ def install_date(root):
     return when.isoformat()
 
 
+_CACHE_MARK = os.sep + os.path.join(".claude", "plugins", "cache") + os.sep
+
+
+def loaded_in_place(plugin_root):
+    """True where the plugin runs from a folder outside the CLI's plugin cache.
+
+    Claude Code copies a plugin from a GitHub-hosted marketplace into
+    `~/.claude/plugins/cache/`, and loads one from a local-folder marketplace
+    straight from that folder, with no copy. The test is the one the state
+    server's `_installed_snapshot` makes. An empty root is not in place: there
+    is nothing to say about it.
+    """
+    if not plugin_root:
+        return False
+    root = os.path.abspath(plugin_root)
+    return _CACHE_MARK not in root + os.sep
+
+
+def installed_version_line(plugin_version, plugin_root):
+    """The session opening's installed-version line.
+
+    Under a cache path the plugin is an installed copy, and the line carries
+    its install date. Loaded in place there is no copy and no install date:
+    the folder is the source, so the line names it and says when an edit
+    there takes effect.
+    """
+    if loaded_in_place(plugin_root):
+        return (
+            f"  Installed plugin (host) version: {plugin_version} — the version "
+            "running this session, loaded in place from "
+            f"{os.path.abspath(plugin_root)} with no installed copy. Edits to "
+            "that folder are live at the next session start."
+        )
+    installed_on = install_date(plugin_root)
+    age_clause = f", installed since {installed_on}" if installed_on else ""
+    return (
+        f"  Installed plugin (host) version: {plugin_version}{age_clause} — "
+        "the version running this session. Use it to judge whether a "
+        "host-side deferred test has gone live, instead of asking the user "
+        "what's installed."
+    )
+
+
+def installed_stamp_line(host_stamp, plugin_root):
+    """The session opening's build-stamp line.
+
+    Loaded in place, the running files are the source, so there is no target
+    to compare against and the line is the stamp alone.
+    """
+    if loaded_in_place(plugin_root):
+        return (
+            f"  Installed host build stamp: {host_stamp} — a content hash of "
+            "the plugin's files as loaded."
+        )
+    return (
+        f"  Installed host build stamp: {host_stamp} — a content hash of "
+        "the installed plugin's files. To tell whether a host-side change "
+        "is actually live, compare this against the target's current stamp "
+        "(in the dev project, run this hook's content_stamp() over "
+        "plugin/throughliner/): stamps match means the installed host carries "
+        "the latest files; stamps differ means it hasn't been reinstalled "
+        "since the most recent host-side change, so host-side tests aren't "
+        "live yet. This catches edits that bump no version."
+    )
+
+
 def content_stamp(root):
     """Short content stamp over a plugin directory's own files.
 
@@ -3201,14 +3267,7 @@ def main() -> int:
         # it qualifies the version it sits beside, and a separate line would
         # read as a second fact to weigh. Absent when unreadable — see
         # install_date, which degrades to no claim rather than a guess.
-        installed_on = install_date(plugin_root)
-        age_clause = f", installed since {installed_on}" if installed_on else ""
-        context_parts.append(
-            f"  Installed plugin (host) version: {plugin_version}{age_clause} — "
-            "the version running this session. Use it to judge whether a "
-            "host-side deferred test has gone live, instead of asking the user "
-            "what's installed."
-        )
+        context_parts.append(installed_version_line(plugin_version, plugin_root))
         # Content stamp of the installed host's own files. The version number
         # alone can't tell whether host-side changes are live — a build batch
         # edits a hook or a doc without bumping any version, so the installed
@@ -3223,16 +3282,7 @@ def main() -> int:
             context_parts.append(update_line)
         host_stamp = content_stamp(plugin_root)
         if host_stamp:
-            context_parts.append(
-                f"  Installed host build stamp: {host_stamp} — a content hash of "
-                "the installed plugin's files. To tell whether a host-side change "
-                "is actually live, compare this against the target's current stamp "
-                "(in the dev project, run this hook's content_stamp() over "
-                "plugin/throughliner/): stamps match means the installed host carries "
-                "the latest files; stamps differ means it hasn't been reinstalled "
-                "since the most recent host-side change, so host-side tests aren't "
-                "live yet. This catches edits that bump no version."
-            )
+            context_parts.append(installed_stamp_line(host_stamp, plugin_root))
 
     style_notice = _brevity_style_notice(cwd)
     if style_notice:
