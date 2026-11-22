@@ -278,6 +278,73 @@ check("the suffixed hold line is carried byte for byte",
 
 shutil.rmtree(d, ignore_errors=True)
 
+# --- 7. [hold-until-goal-reached]: a slug that is a goal line in a SPEC is
+#        returned as a goal with its state, a hold accepts it, and the lint
+#        and the digest do not call it missing -------------------------------
+print("goals")
+d, alpha = vault()
+write(os.path.join(alpha, "SPEC.md"), "# SPEC\n\n## Goals\n\n"
+      "- [ ] Alpha ships, reached when a stranger installs it (alpha) "
+      "🆔 alpha-ships #goal\n"
+      "- [x] Alpha exists, reached when the folder exists (alpha) "
+      "🆔 alpha-exists #goal\n"
+      "- [ ] A step of mine (alpha) 🆔 alpha-not-a-goal #user\n")
+write(os.path.join(d, "beta", "SPEC.md"), "# SPEC\n\n## Goals\n\n"
+      "- [ ] Beta pays for itself, reached when a month's income covers it "
+      "(beta) 🆔 beta-pays #goal\n"
+      "- [ ] A goal sharing a queue slug (beta) 🆔 beta-cleared #goal\n")
+text = call(alpha, "blocker_lookup", {"slugs": [
+    "alpha-ships", "alpha-exists", "beta-pays", "alpha-not-a-goal",
+    "beta-cleared"]})
+lines = text.splitlines()
+check("an unticked goal in this project's SPEC is returned as a goal, not reached",
+      "alpha (this project): a goal, not reached" in line_for("alpha-ships")
+      and "Alpha ships, reached when a stranger installs it" in line_for("alpha-ships"),
+      text)
+check("a ticked goal is returned as a goal, reached",
+      "alpha (this project): a goal, reached" in line_for("alpha-exists"), text)
+check("a goal in another project under the vault is found with its project",
+      "beta: a goal, not reached" in line_for("beta-pays"), text)
+check("a checkbox line with no #goal tag is not a goal",
+      "not found" in line_for("alpha-not-a-goal"), text)
+check("a queue entry of the same slug wins over a goal",
+      "beta: Processed, cleared to run" in line_for("beta-cleared")
+      and "a goal" not in line_for("beta-cleared"), text)
+
+text = call(alpha, "hold_entry",
+            {"slug": "alpha-one", "blocked_by": ["alpha-ships"]})
+check("hold_entry accepts a goal's slug from this project's SPEC, written bare",
+      "Blocked by: [alpha-ships]\n" in queue_text(alpha), text + "\n" + queue_text(alpha))
+text = call(alpha, "hold_entry",
+            {"slug": "alpha-capture", "blocked_by": ["beta-pays"]})
+check("hold_entry accepts another project's goal, with the project suffix",
+      "Blocked by: [beta-pays] in beta\n" in queue_text(alpha),
+      text + "\n" + queue_text(alpha))
+
+queue_file = os.path.join(alpha, "QUEUE.md")
+post = load("post_tool_use", "hooks", "post_tool_use.py")
+goal_slugs = post._spec_goal_slugs(alpha)
+check("the lint reads this project's goal slugs from SPEC",
+      goal_slugs == {"alpha-ships", "alpha-exists"}, repr(goal_slugs))
+lint_out = post.lint(queue_text(alpha), in_flight=goal_slugs)
+check("the lint does not report a goal's slug as not in the queue",
+      not any("[alpha-ships], which is not in the queue" in w for w in lint_out),
+      "\n".join(lint_out))
+lint_bare = post.lint(queue_text(alpha))
+check("without the SPEC read the same slug is reported, so the read is what clears it",
+      any("[alpha-ships], which is not in the queue" in w for w in lint_bare),
+      "\n".join(lint_bare))
+proc = subprocess.run([sys.executable, os.path.join(PLUGIN, "scripts",
+                       "queue_digest.py"), queue_file],
+                      capture_output=True, encoding="utf-8", errors="replace")
+check("the digest prints the blocker as a goal in SPEC, never as ABSENT",
+      "[alpha-ships] -> a goal in SPEC, not reached" in proc.stdout
+      and "[alpha-ships] -> ABSENT" not in proc.stdout, proc.stdout + proc.stderr)
+facts = hook._queue_dependency_facts(queue_file)
+check("the opening's dependency facts do not call a goal a blocker in neither section",
+      not any(b == "alpha-ships" for _h, b in facts[4]), repr(facts[4]))
+shutil.rmtree(d, ignore_errors=True)
+
 print()
 if failures:
     print("%d failure(s):" % len(failures))

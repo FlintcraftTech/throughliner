@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>What is the difference between an item being kept and being cleared? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>What is the difference between an item being kept and being cleared?</h1>
+<p>You will meet both words in a planning session's messages, in the line after each decision: "Into Processed, cleared to run" or "Into Processed, held below the line". Kept is a decision; cleared is a position. Kept happens once, at planning, when you and Claude agree a capture is worth doing: it moves from Unprocessed into Processed and becomes a work item. Cleared means the item sits above the line in Processed, so a build run may take it. A kept item is usually cleared straight away, but not always: one that waits on another item or on a date is kept but held below the line, and only becomes cleared later, when the blocker ships or the date passes. That later move is a lift, and it happens at a planning opening, at a build run's close, or inside a build run the moment it confirms the last thing the item waited on, which then builds or walks the item in the same run, with no keep involved. Nothing to do: open QUEUE.md and look for the line reading "Cleared to run above this line" to see which is which.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

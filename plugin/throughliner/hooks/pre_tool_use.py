@@ -1683,7 +1683,7 @@ SETUP_SCAFFOLD_FILES = (
 # prefix. Adding a skill to the method means adding it here.
 METHOD_SKILLS = frozenset({
     "setup", "plan", "process", "build", "rescan", "close", "catchup", "tasks",
-    "memory-setup",
+    "memory-setup", "goals",
 })
 
 # The files the method's own CLOSE obligations name. A close is required to write

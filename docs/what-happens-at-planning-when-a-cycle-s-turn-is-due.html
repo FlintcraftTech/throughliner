@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>What happens at planning when a cycle's turn is due? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>What happens at planning when a cycle's turn is due?</h1>
+<p>Recurring work — a weekly release, a posting rhythm, a maintenance pass — can be put on a cycle: defined once in your cycles doc with its steps, its cadence and the observable that marks a completed turn. From then on the openings of <code>/plan</code> and <code>/build</code> compute whether a turn is due and file it into your queue as an ordinary item.</p>
+<p>At the planning opening, due cycle work is presented first, ahead of everything else — timing work loses its value waiting in the pack. Nothing is stored between sessions: each opening recomputes from the observable, so skipping a week drifts nothing. What tells you it worked is the opening's line naming the due cycle, and the item for its turn at the top of what Claude presents. A project with no cycles has no doc and pays nothing.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

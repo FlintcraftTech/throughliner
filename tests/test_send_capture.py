@@ -235,6 +235,49 @@ proc = run(sender, "--send-tracked", slug="second-capture")
 check("with --send-tracked the capture is added and the answer says so",
       proc.returncode == 0 and "say-so" in proc.stdout
       and "[second-capture]" in queue_text(recipient), proc.stderr)
+
+
+# 6. [address-book-repo-visibility]: the address book's Repository column.
+#    Recorded private passes with no flag; public or unrecorded refuses; a
+#    two-column book still reads.
+def write_book(rows):
+    with open(os.path.join(sender, ".throughliner", "address-book.md"), "w",
+              encoding="utf-8") as f:
+        f.write("# Address book\n\n" + rows)
+
+
+write_book("| Correspondent | Path | Repository |\n|---|---|---|\n"
+           "| Recipient | `%s` | private |\n" % recipient)
+proc = run(sender, slug="private-capture")
+check("a recipient recorded private is sent to with no --send-tracked",
+      proc.returncode == 0 and "records as private" in proc.stdout
+      and "[private-capture]" in queue_text(recipient),
+      proc.stdout + proc.stderr)
+write_book("| Correspondent | Path | Repository |\n|---|---|---|\n"
+           "| Recipient | `%s` | public |\n" % recipient)
+before = queue_text(recipient)
+proc = run(sender, slug="public-capture")
+check("a recipient recorded public is refused without --send-tracked",
+      proc.returncode != 0 and "--send-tracked" in proc.stderr
+      and queue_text(recipient) == before, proc.stderr)
+check("the refusal says the visibility can be recorded in the Repository column",
+      "Repository column" in proc.stderr, proc.stderr)
+write_book("| Correspondent | Path | Repository |\n|---|---|---|\n"
+           "| Recipient | `%s` |  |\n" % recipient)
+proc = run(sender, slug="unrecorded-capture")
+check("an empty Repository cell is unrecorded and refuses",
+      proc.returncode != 0 and "--send-tracked" in proc.stderr
+      and queue_text(recipient) == before, proc.stderr)
+write_book("| Correspondent | Path |\n|---|---|\n| Recipient | `%s` |\n" % recipient)
+proc = run(sender, slug="two-column-capture")
+check("a two-column book still reads, its visibility unrecorded",
+      proc.returncode != 0 and "--send-tracked" in proc.stderr
+      and "not a correspondent" not in proc.stderr
+      and queue_text(recipient) == before, proc.stderr)
+proc = run(sender, "--send-tracked", slug="two-column-capture")
+check("and sends with --send-tracked as before",
+      proc.returncode == 0 and "[two-column-capture]" in queue_text(recipient),
+      proc.stderr)
 shutil.rmtree(top, ignore_errors=True)
 
 print()

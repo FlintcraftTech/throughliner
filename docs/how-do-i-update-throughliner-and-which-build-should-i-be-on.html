@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>How do I update Throughliner, and which build should I be on? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>How do I update Throughliner, and which build should I be on?</h1>
+<p>Be on the newest release listed on the plugin's Releases page on GitHub. Each one has been used for real work before it was published, and its notes say what changed. They are all marked "pre-release" — that describes the stage the plugin is at, not a warning against installing it. The newest is the one to have.</p>
+<p>Updating is one ask away. In a chat in Claude Code, ask Claude to update the plugin — it runs the command for you. Then <strong>fully quit</strong> Claude Code and reopen it, because plugins load when the app launches; a new chat is not enough. On Windows, check the process has actually exited, since a normal close can leave it running.</p>
+<p>Once a week, where GitHub's <code>gh</code> tool is installed and signed in, a session's opening lines say when a newer version is on your channel, naming it beside the one installed. The next planning session opens by offering the update: say yes and Claude runs the two commands, then asks you to fully quit and reopen the app. What tells you it took is the opening's installed-version line in the next chat. Without <code>gh</code> the opening says nothing and the project falls behind, which setup tells you once.</p>
+<p>Beyond that, a new version existing will never nag you. Your project hears about the plugin only when something actually needs your attention: a document your project is missing, a newer setting it hasn't been offered, or a change to the document format that needs migrating. Each of those says so plainly at the start of a session and tells you what to run. Silence means there is nothing to do. A format change is the strongest of the three: the session opens by saying the documents are on an older format and points you at <code>/setup</code>, which migrates them in place rather than replacing them, and never overwrites anything you wrote. The format number is deliberately separate from the version number, so it cannot cry wolf at every release.</p>
+<p>If you want to know when a new version lands, the plugin's GitHub page has a <strong>Watch</strong> button: choose Custom, tick Releases, and you get an email each time.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

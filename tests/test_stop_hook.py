@@ -529,14 +529,22 @@ def test_post_close_tail_offer_is_fed_back_once():
         f.write("2099-01-01 00:00:00\tEdit\tallow\tplanning standing list\t"
                 + os.path.join(root, "SPEC.md") + "\ts1\n")
     code, out = run(root, "Reworded the sentence in SPEC.")
-    check("a post-close reply with no tail offer is fed back",
+    check("a post-close reply with no tail is fed back",
           "marked tail" in out, out)
+    # [post-commit-changes-noted]: the tail is written, not offered, and the
+    # report names what to run next in a fresh session.
+    check("the reason says to write the tail with append_tail, without asking",
+          "append_tail" in out and "without asking" in out, out)
+    check("the reason asks for the next command in a fresh session",
+          "fresh session" in out, out)
+    check("the reason no longer speaks of an offer or of two routes",
+          "offer" not in out and "both" not in out, out)
     code, out = run(root, "Reworded the sentence in SPEC.")
     check("the second reply passes", "marked tail" not in out, out)
     root2 = project()
     shutil.copytree(folder, os.path.join(root2, ".throughliner"))
-    code, out = run(root2, "Reworded it. Want that appended to this session's record as a tail, or run done again?")
-    check("a reply carrying the offer passes", "marked tail" not in out, out)
+    code, out = run(root2, "Reworded it, and appended that to this session's record as a tail. Next, in a fresh chat: the build command.")
+    check("a reply reporting the tail passes", "marked tail" not in out, out)
     shutil.rmtree(root, ignore_errors=True)
     shutil.rmtree(root2, ignore_errors=True)
 

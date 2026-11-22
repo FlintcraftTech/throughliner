@@ -101,7 +101,7 @@ def _safe_id(session_id) -> str:
 # The method's own commands, as pre_tool_use.py's METHOD_SKILLS lists them.
 METHOD_SKILLS = frozenset({
     "setup", "plan", "process", "build", "rescan", "close", "catchup", "tasks",
-    "memory-setup",
+    "memory-setup", "goals",
 })
 SKILL_STATE_NONE = "none"
 

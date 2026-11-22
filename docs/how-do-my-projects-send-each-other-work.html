@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>How do my projects send each other work? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>How do my projects send each other work?</h1>
+<p>You will meet this when a session in one project turns up something that belongs to another project of yours — work for it, a reply it is owed, some text it could use. Claude says so and offers to send it to that project as a capture.</p>
+<p>Claude shows you the exact text. Nothing goes anywhere until you say yes. The first time, it asks for the other project's folder and remembers it, so you never retype it.</p>
+<p>On your yes, the text is added to the bottom of the other project's queue, under Unprocessed, marked with the project it came from and the time. A file that travels with it is called an attachment and lands in that project's <code>temp/</code> folder.</p>
+<p>Where what you want from the other project is a fact — was the bill paid, did the reply come — Claude looks before it sends: it searches that project's queue and records, your ticked task lines included, and tells you what it found; only a question nothing there answers, or one that needs that project's own context, goes as a capture.</p>
+<p>What tells you it worked: Claude prints one line naming the project and the capture, and the next planning session in the other project offers that capture like any other. It is information for that session to weigh with you, never an instruction. Your own project keeps a line per send in a register inside the plugin's working folder, <code>.throughliner/sent.md</code>, which is how a later change can be checked against what was said; the folder the other project's path is remembered in sits beside it, out of git. A send puts the capture in the queue and nothing more: nothing confirms it was acted on.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

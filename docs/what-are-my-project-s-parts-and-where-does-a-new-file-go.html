@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>What are my project's parts, and where does a new file go? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>What are my project's parts, and where does a new file go?</h1>
+<p>Setup works the structure out with you before it creates anything. From what you said the project is, Claude looks up what documents a person doing that kind of work actually uses, in that field's own words, and shows you one numbered list: the smallest set of folders and documents that defines the project, each with who uses it and when, and which repository it sits in where there are two. You cut or add by number, and setup creates exactly what you approved — no placeholder folders, nothing the list does not name. That list becomes <code>MAP.md</code>, the file that says what each folder and document is for and who uses it, and a session reads the map when it creates a file: it picks the folder from the map's lines and says where it put the file. The root <code>SPEC.md</code> stays the one spec for the whole project. An existing project is offered the same conversation over its existing tree once when setup runs again, proposing what to add and never deleting anything. Two other folders arrive with this: <code>temp/</code>, ignored by git, for what the project does not keep — a draft you edit, a fetched transcript — and <code>workshop/</code>, for what it works with and keeps. Inside <code>workshop/resources/</code>, <code>supplied/</code> is the committed home for text you wrote or a file you attached: a planning session may write it there unchanged, with a line naming who supplied it and when, so your own material never has to be pasted into a queue entry to survive.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

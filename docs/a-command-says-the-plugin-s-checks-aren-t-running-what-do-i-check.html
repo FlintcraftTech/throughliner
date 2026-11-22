@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>A command says the plugin's checks aren't running — what do I check? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>A command says the plugin's checks aren't running — what do I check?</h1>
+<p>A chat in a set-up project normally opens with a few lines starting <code>[Throughliner]</code>: the project is set up, the date, the version installed, what the queue holds. Every command looks for those lines before doing anything else. Where they are missing, the plugin's small scripts never ran, and Claude says so, names the usual cause and carries on with the command — the procedure still governs, but the safety checks and the opening's facts are absent. The usual cause is Python: it is missing from the machine, or Windows has put a placeholder in its place. In a terminal, <code>py --version</code> or <code>python --version</code> must print a version number — the hooks use the py launcher where it exists and python otherwise, so either one printing a version is enough; the placeholder prints "Python was not found" instead. Install Python from python.org with "Add python.exe to PATH" ticked, close the terminal, then close and reopen the desktop app. A new chat then shows the <code>[Throughliner]</code> lines again. Without Python the plugin fails silently and reports success anyway, which is why the commands look for the lines rather than trusting that the checks ran.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

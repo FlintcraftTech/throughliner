@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>What is `/rescan` for? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>What is <code>/rescan</code> for?</h1>
+<p>It reads back over the conversation — what you said, what Claude thought while working — and files anything that never made it into a file. A shortened version runs inside <code>/close</code> as a safety net, but you can run <code>/rescan</code> yourself at any moment.</p>
+<p>The reason to run it mid-session is that <code>/close</code> is too late for some things. If you've been freewheeling in a <code>/plan</code> session, running <code>/rescan</code> sweeps what was said into captures right then — so they can be processed in that same session and be cleared to run in time for your very next <code>/build</code>.</p>
+<p>It also reads Claude's own working-out, not just your messages, so ideas that came up while Claude was actually working with your project get filed rather than lost.</p>
+<p>What it finds is routed by where it belongs: work still to do becomes a capture, while something that already <em>happened</em> is added to this session's record as a marked tail. That second half is what makes <code>/rescan</code> the one-word way to record work you did after /close. In a planning chat it also says, per item, whether that item is worth processing now and why — it bears on work already cleared, it settles in one turn, or it changes an entry already in the queue — and recommends filing the rest for later; your answer still decides.</p>
+<p>Two limits worth knowing. It reaches only as far back as Claude can still see in the conversation. And it stops at the last <code>/rescan</code> in that chat, so running it twice doesn't comb the same ground again.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

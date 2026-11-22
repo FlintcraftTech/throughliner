@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>How do I work through my own tasks? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>How do I work through my own tasks?</h1>
+<p>Type the tasks command in the project that keeps your task-list note — the one your <code>Task list:</code> line names, holding your Obsidian Tasks queries. Claude reads those queries and runs them itself over every project's queue in your vault, since a chat sees the query text and not the view Obsidian renders, so the list it works is the one your note defines: a line your queries leave out is left out of the session too. It opens by asking whether you have tasks to add, then asks about each task waiting on someone's reply, then says how many tasks are up and how many are held back — dated more than a week out, not yet started, waiting on another line, or held at an earlier session. Then one task at a time: the line, why it is up now, what Claude can do towards it from the machine, and one question on how you want to handle it. Discuss it, walk it step by step, split it, hold it, or skip it. A task you cannot do yet, because it waits on a date, a person or something else, is held: Claude sends its project a short capture saying what it waits on, on your yes to the text, and the task stays out of your sessions until that date or until that project's planning deals with it. The order is overdue first, then due within the week, then the task that unblocks the most others, then your projects' priority, then the order the tasks hold in their project's queue. The priority comes from a note called <code>goals.md</code> beside your task-list note, written by the goals command, which you run in the same project to settle which of your projects come first: a numbered list of project names under a <code>## Priority</code> heading, and a <code>## Held</code> section for projects you have set aside, whose tasks sink to the bottom with one clause in the opening saying so. No task session writes to that note, and where it is missing the order simply falls through to queue order, so nothing changes until the goals command has written it. A task you finish goes back to the project that owns it as a capture saying it is done and how it went, sent on your yes to the text; that project's next planning session ticks the line and closes the item, and you can tick it in Obsidian yourself any time before then. Nothing is written into another project's queue and your note is never edited. What tells you it worked: the capture sitting at the bottom of the owning project's Unprocessed section, and the task gone from your list once that project's planning has run. Run the close command at the end, as in any session.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

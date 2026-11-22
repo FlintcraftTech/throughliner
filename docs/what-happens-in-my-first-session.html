@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>What happens in my first session? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>What happens in my first session?</h1>
+<p>Open your project folder in Claude Code and run <code>/setup</code>. Claude interviews you about what you're building and creates your project's documents: your spec, your queue and your session log.</p>
+<p>Don't overthink the answers. Plain language is fine and nothing is locked in — your next step is a <code>/process</code> session where you and Claude sort the first captures into agreed work, so anything you miss gets sorted there.</p>
+<p>The interview asks what you're building and who for, where it's heading, and whether to keep Claude's replies short and decision-led. From your answers Claude then names the command-line tools your project's work will need, asks whether any are missing, checks each on your machine and writes what it found into <code>TOOLS.md</code>, so a later session never assumes a tool is absent that you already have.</p>
+<p><strong>If your project has several distinct parts</strong>, start with one project in the parent folder. When a part outgrows that queue, move its folder out of the project to stand by itself and run <code>/setup</code> there; it becomes a full project of its own. If you run <code>/setup</code> in a folder still inside another project, Claude says in one line that it works best moved out, and that otherwise the project above needs to ignore that folder. You don't need to decide any of this upfront.</p>
+<p><strong>After a plugin update</strong>, running <code>/setup</code> again on an older project migrates its documents to the current format rather than replacing them.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

@@ -212,6 +212,77 @@ check("the same placeholder, once committed, is reported when it cannot resolve"
       repr(report))
 shutil.rmtree(d, ignore_errors=True)
 
+# --- 8. [index-hash-backfill-still-flips-non-root-lines]: an index line whose
+#        record's first heading carries no hash slot is left alone, so the fill
+#        and the close's regeneration stop undoing each other ------------------
+BACKLINKS = os.path.join(ROOT, "plugin", "throughliner", "scripts",
+                         "log_backlinks.py")
+
+
+def regenerate(d):
+    return subprocess.run([sys.executable, BACKLINKS, d], capture_output=True,
+                          text=True, encoding="utf-8")
+
+
+d = repo()
+write(d, "LOG/index.md", "# LOG index\n")
+git(d, "add", "LOG")
+git(d, "commit", "-q", "-m", "baseline")
+write(d, "LOG/2026-01-06-step.md",
+      "---\nsummary: something\n---\n# user step — something\n\nBody.\n")
+write(d, "LOG/2026-01-06-slotted.md",
+      "---\nsummary: a slotted record\n---\n# [HASH] — a slotted record\n\nBody.\n")
+write(d, "LOG/index.md", "# LOG index\n\n"
+      "- [HASH] — something → 2026-01-06-step.md\n"
+      "- [HASH] — a slotted record → 2026-01-06-slotted.md\n")
+git(d, "add", "LOG")
+git(d, "commit", "-q", "-m", "close")
+report = hook.backfill_log_hashes(d)
+index_after_fill = read(d, "LOG/index.md")
+check("an index line whose record heading has no hash slot keeps its placeholder",
+      "- [HASH] — something → 2026-01-06-step.md" in index_after_fill,
+      repr(index_after_fill))
+check("it is not reported as a backfill that should have resolved",
+      "should have resolved" not in report, repr(report))
+check("an index line whose record heading carries [HASH] still fills",
+      "- [HASH] — a slotted record" not in index_after_fill
+      and "a slotted record → 2026-01-06-slotted.md" in index_after_fill,
+      repr(index_after_fill))
+# Regenerate as a close does, then fill again: the slotless line must be
+# byte-identical through fill, regeneration and fill.
+def step_lines(d):
+    """The slotless record's line, wherever the month split puts it."""
+    found = []
+    for n in sorted(os.listdir(os.path.join(d, "LOG"))):
+        if n.startswith("index") and n.endswith(".md"):
+            found += [l for l in read(d, "LOG/" + n).splitlines()
+                      if "06-step.md" in l]
+    return found
+
+
+step_line = step_lines(d)
+regen = regenerate(d)
+step_regen = step_lines(d)
+report2 = hook.backfill_log_hashes(d)
+step_final = step_lines(d)
+check("the generator runs on the fixture", regen.returncode == 0,
+      regen.stdout + regen.stderr)
+check("the slotless record's index line is identical after regeneration and a second fill",
+      step_line == step_regen == step_final and len(step_line) == 1,
+      repr((step_line, step_regen, step_final)))
+check("the second fill names no slotless line as unresolved",
+      "should have resolved" not in report2, repr(report2))
+# A line naming a record that cannot be read keeps the existing behaviour.
+write(d, "LOG/index.md", read(d, "LOG/index.md")
+      + "- [HASH] — a line with no record behind it → 2026-01-06-gone.md\n")
+git(d, "add", "LOG")
+git(d, "commit", "-q", "-m", "close 2")
+report3 = hook.backfill_log_hashes(d)
+check("an index line whose record cannot be read keeps the existing behaviour",
+      "- [HASH] — a line with no record behind it" not in read(d, "LOG/index.md")
+      or "should have resolved" in report3, repr(report3))
+shutil.rmtree(d, ignore_errors=True)
+
 # --- the committed-file test asks git once per backfill, not once per record
 # ([session-start-hash-backfill-one-git-call-per-record]): the per-record
 # `git log -1 -- <path>` cost three minutes an opening on a project with

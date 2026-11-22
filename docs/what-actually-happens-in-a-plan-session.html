@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>What actually happens in a `/plan` session? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>What actually happens in a <code>/plan</code> session?</h1>
+<p>You talk. Describe what you want, raise ideas, answer Claude's questions. Claude does the organising — checking your queue for contradictions, asking the design questions a build would otherwise have to guess at, and filing everything. You can interrupt at any point to raise something new. There's no wrong order.</p>
+<p>Your queue has two sections. <strong>Unprocessed</strong> is where new ideas land, as <strong>captures</strong> — rough is fine, just enough to remember what you meant. A capture can come from you at any moment in any chat, from Claude noticing something mid-build, or from <code>/rescan</code> sweeping up what was said but never filed.</p>
+<p><strong>Processed</strong> is work you and Claude have agreed on, and inside it a readiness line separates work that's ready to build from work that's still waiting on something. The part above that line is cleared to run, and it's what <code>/build</code> builds from. Work sits below the line for one of two reasons, written on the item itself: another named piece of work has to ship first, or a date hasn't passed yet.</p>
+<p>A <code>/plan</code> run opens by checking the queue for problems — work marked ready that contradicts its own notes, items that name no files to change, work waiting on itself in a loop — and reports what it finds. Then it asks one question: is there anything you want to raise? From there the session is yours. Whatever you or Claude raise is talked through, and written once you agree what would be written, as agreed work or as a capture for later. Claude offers no capture from the queue unasked; name one and it is taken up.</p>
+<p>The session ends when you say so. <code>/plan</code>, <code>/close</code>, fresh chat, <code>/plan</code> again is a normal rhythm.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

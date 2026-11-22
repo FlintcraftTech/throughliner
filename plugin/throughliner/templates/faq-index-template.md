@@ -86,6 +86,9 @@ Quick answers about how this project's workflow works. Each question links to a 
   [faq.md](faq.md)
 - **Which command do I run now?** — the loop every piece of work travels, and
   the two ways work comes back to the start. [faq.md](faq.md)
+- **Which Obsidian commands do I need?** — the command palette, and the few
+  Obsidian commands Throughliner sends you to, each with what it is for.
+  [faq.md](faq.md)
 - **Do I have to run a command every time?** — a chat with no command as an
   ordinary way to work, and how the close command records it. [faq.md](faq.md)
 - **Why did an old queue item come up before a newer one?** — the fixed order
@@ -97,7 +100,7 @@ Quick answers about how this project's workflow works. Each question links to a 
   repository goes public, and how setup converts an existing flat project.
   [faq.md](faq.md)
 - **I typed /close twice — what did the second one do?** — one commit per
-  session, the marked tail, and the once-only offer after a post-close
+  session, the marked tail, and the tail Claude adds after a post-close
   change. [faq.md](faq.md)
 - **A step of mine says other items are waiting on it — what does that
   mean?** — the count read off `Blocked by:` lines, and where a hand-over to
@@ -163,5 +166,5 @@ Quick answers about how this project's workflow works. Each question links to a 
 - **Can I see every project's goals in one place?** — the checkbox line each goal in a spec carries, in the Tasks plugin's marks tagged `#goal`, the one query that gathers them, and the check that names a line missing a part. [faq.md](faq.md)
 - **Where does a task go that belongs to no project?** — the queue of the project that keeps your task-list note, sent there from any chat on your word or on Claude's one ask, and what setup says about that project. [faq.md](faq.md)
 - **Why is there a "Run /build in …" task in my list?** — the next-run line every close leaves, its counts and its date, how it is rewritten, and what ticking it does. [faq.md](faq.md)
-- **How do I work through my own tasks?** — the tasks command, run in the project that keeps your task-list note: your queries resolved over every project's queue, one task at a time, the order (dates, then what unblocks most, then your projects' priority from a `goals.md` note of your own, then queue order), and a done task sent back to its project as a capture. [faq.md](faq.md)
+- **How do I work through my own tasks?** — the tasks command, run in the project that keeps your task-list note: your queries resolved over every project's queue, one task at a time, the order (dates, then what unblocks most, then your projects' priority from the `goals.md` note the goals command writes, then queue order), and a done task sent back to its project as a capture. [faq.md](faq.md)
 - **How do I give Claude a memory about me that every project reads?** — the memory-setup command: a folder of small notes in your home .claude folder, filled from a prompt you run in Claude chat, loaded by every session through one index, and re-runnable. [faq.md](faq.md)

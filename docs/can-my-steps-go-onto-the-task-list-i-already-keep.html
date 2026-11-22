@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>Can my steps go onto the task list I already keep? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>Can my steps go onto the task list I already keep?</h1>
+<p>Your steps are already tasks, and they stay where they are: a step of yours that needs no walkthrough is kept as one checkbox line inside its own queue item, written in the Obsidian Tasks plugin's marks — <code>- [ ] &lt;the task&gt; (&lt;project name&gt;) 📅 &lt;date where there is one&gt; 🆔 &lt;the item's slug&gt; ⛔ &lt;the slug of what it waits on&gt; #user</code>. The <code>#user</code> tag goes on your own task lines and on nothing else, so a query of <code>not done</code> with <code>tags include #user</code> lists your steps alone. No copy is made anywhere. Your <code>Task list:</code> line, which setup asks for once, names the note holding your own Tasks queries — the one place you read every project's tasks — and those queries read every project's queue inside your vault, so a dependency between two projects shows in one query; no session ever writes to that note. The line carries what you need in order to act on it — a phone number, an email address, a place, a reference — taken from the source or looked up, and never your own home address; a looked-up detail can be wrong, so check it before you act. Tick the line in Obsidian, or tell a session it is done: the next planning session reads this project's queue, says which lines you ticked, and closes each item at its close, the ticked line going into the item's record. A text you and Claude finish together is kept as a co-write and run inside a build, never written as a task line, which is for what you do outside a session. A build run reaching such an item asks whether to do it now, walks it with you on yes, and leaves the line where it is on no. Any markdown editor shows the lines as plain checkboxes; Obsidian with the Tasks plugin makes the dates, dependencies and recurrence live.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

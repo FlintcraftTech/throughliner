@@ -108,6 +108,33 @@ _HASH_SLOT = re.compile(r"^(?P<prefix>#{1,6}\s+|-\s+)(?P<token>\S+)(?P<sep>\s+[�
 _HEX_HASH = re.compile(r"^[0-9a-f]{7,40}$")
 
 
+def _index_record_heading_has_no_slot(log_dir, index_line):
+    """True where the record an index line points at (the filename after its
+    last "→") can be read and its first heading carries no hash slot. False
+    where the line names no record, the record cannot be read, it has no
+    heading, or its heading carries a slot — a placeholder or a hash."""
+    if "→" not in index_line:
+        return False
+    record = index_line.rsplit("→", 1)[1].strip()
+    if not record or os.path.basename(record) != record:
+        return False
+    try:
+        with open(os.path.join(log_dir, record), "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    start = 0
+    if lines and lines[0].strip() == "---":
+        for j in range(1, len(lines)):
+            if lines[j].strip() == "---":
+                start = j + 1
+                break
+    for line in lines[start:]:
+        if line.startswith("#"):
+            return _HASH_SLOT.match(line) is None
+    return False
+
+
 def _placeholder_in_slot(line, is_index_file, is_legacy_log=False):
     """The slot match where `line` carries a placeholder in hash position,
     else None. A record's title heading counts in any LOG file; a "- " line
@@ -539,6 +566,13 @@ def backfill_log_hashes(cwd):
                 continue
             entry_title = line[match.end():].strip()
             if not entry_title:
+                continue
+            # An index line is generated from its record's first heading. A
+            # record whose heading carries no hash slot ("# user step — …")
+            # always generates a placeholder, so a hash written here is put
+            # back by the next regeneration: no fill, no count, no anomaly
+            # ([index-hash-backfill-still-flips-non-root-lines]).
+            if is_index_file and _index_record_heading_has_no_slot(log_dir, line):
                 continue
             # A record file's placeholder: the index line written by the same
             # close is the answer where it carries a real hash. Index files keep
@@ -1690,6 +1724,20 @@ def _queue_dependency_facts(queue_path):
 
     blockers_in_unprocessed = len(held_blockers & unprocessed_slugs)
     known = unprocessed_slugs | processed_slugs
+    # A hold may name a goal, which lives in SPEC's Goals and never in the
+    # queue ([hold-until-goal-reached]); the lookup tool says whether it is
+    # reached, so it is no blocker in neither section.
+    goal_re = re.compile(
+        r"^\s*- \[[ xX]\]\s+.*?🆔\s*([a-z0-9][a-z0-9-]*)(?=\s|$).*#goal\b")
+    try:
+        with open(os.path.join(os.path.dirname(queue_path) or ".", "SPEC.md"),
+                  "r", encoding="utf-8") as f:
+            for spec_line in f:
+                goal = goal_re.match(spec_line)
+                if goal:
+                    known.add(goal.group(1))
+    except (OSError, UnicodeDecodeError):
+        pass
     waiting = [(h, b) for h, b in held_pairs if b in unprocessed_slugs]
     dead = [(h, b) for h, b in held_pairs if b not in known]
     return (cleared, held, blockers_in_unprocessed, waiting, dead,

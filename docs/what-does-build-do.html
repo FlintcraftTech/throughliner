@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>What does `/build` do? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>What does <code>/build</code> do?</h1>
+<p>It builds the ready work. Claude takes the top item, reads what it's meant to change and which files it touches, and builds it — locked to those files, and never adding one without asking you first.</p>
+<p>If several items are ready, <code>/build</code> builds them back to back without asking you to confirm each one. It's not a run that finishes on its own, though: it pauses to walk you through anything that's yours to do and then carries on, it halts on work marked as needing a session of its own and never builds that, and it never closes itself.</p>
+<p>Work can carry a tag saying how it runs:</p>
+<ul>
+<li><strong><code>[audit]</code></strong> — Claude reads and reports without editing anything. What it finds becomes captures in your queue for a later <code>/process</code>.</li>
+<li><strong><code>[user]</code></strong> — work Claude genuinely can't do, like a check that needs your eyes. Claude walks you through it live, one step at a time, after all the building is finished.</li>
+<li><strong><code>[freeform]</code></strong> — work <code>/build</code> must not run, because it's large or because it can't safely run inside a build. <code>/build</code> halts on one rather than skipping past it, and never builds it.</li>
+<li><strong><code>[co-write]</code></strong> — a text you and Claude finish together, in one named file. Claude drafts it or takes the file as it stands, hands it to you as a link that opens it, and waits; you edit and save; Claude reads it back when you say to and asks whether there's anything else, until you say you're finished. Ask for one by saying you want to co-write something.</li>
+</ul>
+<p><strong>If you ask for something mid-build that isn't part of the current job</strong>, Claude files it as a capture and says why in one clause, rather than quietly widening the job. Ask a second time and a small change goes straight through.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

@@ -51,13 +51,20 @@ for _stream in (sys.stderr, sys.stdout):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ADDRESS_BOOK = os.path.join(".throughliner", "address-book.md")
-ROW_RE = re.compile(r'^\|\s*(?P<name>[^|]+?)\s*\|\s*`?(?P<path>[^|`]+?)`?\s*\|\s*$')
+# A table row of two cells, name and path, or of three, the third being the
+# Repository column: `private`, `public` or empty
+# ([address-book-repo-visibility]).
+ROW_RE = re.compile(r'^\|\s*(?P<name>[^|]+?)\s*\|\s*`?(?P<path>[^|`]+?)`?\s*\|'
+                    r'(?:\s*(?P<repo>[^|]*?)\s*\|)?\s*$')
+VISIBILITIES = ("private", "public")
 # The second shape the book may be written in ([address-book-format-unstated]):
 # a bullet — a hyphen, the name, an em dash (or an en dash, or a spaced
 # hyphen), the path, with or without backticks.
 BULLET_RE = re.compile(r'^-\s+(?P<name>.+?)\s+(?:—|–|-)\s+`?(?P<path>[^`]+?)`?\s*$')
 SLUG_SHAPE = re.compile(r'^[a-z0-9][a-z0-9-]*$')
 SHAPES = ("a table row:  | <name> | <path> |\n"
+          "  or, with the repository's visibility:  | <name> | <path> | "
+          "private |\n"
           "  or a bullet:  - <name> — <path>")
 USAGE = ("usage: send_capture.py <project root> --to <correspondent name> "
          "--heading <text> --slug <slug> --body <body file> "
@@ -110,6 +117,28 @@ def read_address_book(root):
                       + SHAPES + "\nRewrite the entries in one of those "
                       "shapes; nothing here rewrites the file.")
     return book
+
+
+def read_address_book_visibility(root):
+    """Correspondent name (lower-cased) to `private` or `public`, for each
+    row whose third cell, the Repository column, records one. A two-cell
+    row, a bullet, an empty cell or any other word is unrecorded and absent
+    from the result; an unreadable or missing book records nothing."""
+    path = os.path.join(root, ADDRESS_BOOK)
+    try:
+        with open(path, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return {}
+    recorded = {}
+    for line in lines:
+        m = ROW_RE.match(line.strip())
+        if not m:
+            continue
+        repo = (m.group("repo") or "").strip().strip("`*").lower()
+        if repo in VISIBILITIES:
+            recorded[m.group("name").strip().lower()] = repo
+    return recorded
 
 
 def _mover():
@@ -219,14 +248,25 @@ def send(root, to, heading, slug, body, attachments=(), send_tracked=False):
 
     note = ""
     if queue_tracked_with_remote(folder):
-        if not send_tracked:
+        # A recipient whose address-book line records its repository as
+        # private is sent to without the ask; public or unrecorded refuses
+        # ([address-book-repo-visibility]).
+        recorded = read_address_book_visibility(root).get(name.lower(), "")
+        if recorded == "private":
+            note = ("sent into a tracked queue whose repository the address "
+                    "book records as private")
+        elif not send_tracked:
             raise Refused("%s: that project's QUEUE.md is tracked in a "
                           "repository that has a remote, so the capture "
                           "would be published with it. Say so plainly and do "
                           "not send until the user says go. Re-run with "
-                          "--send-tracked on their say-so. Nothing was sent."
+                          "--send-tracked on their say-so. The repository's "
+                          "visibility can be recorded in the address book's "
+                          "Repository column, after which a private one is "
+                          "not asked about. Nothing was sent."
                           % name)
-        note = "sent into a tracked queue with a remote on the user's say-so"
+        else:
+            note = "sent into a tracked queue with a remote on the user's say-so"
 
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     sender = os.path.basename(os.path.normpath(os.path.abspath(root)))

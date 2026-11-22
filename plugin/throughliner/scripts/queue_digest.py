@@ -1088,7 +1088,29 @@ def median_first_seen(items, ages):
     return dates[(len(dates) - 1) // 2]
 
 
-def locate(slug, items, kinds=None):
+# A goal line in SPEC's Goals: `- [ ] <goal>, reached when <the test>
+# (<project>) 🆔 <slug> #goal`. A hold may name a goal's slug
+# ([hold-until-goal-reached]), so a blocker absent from the queue is checked
+# against these before it is called absent.
+_GOAL_LINE_RE = re.compile(
+    r"^\s*- \[([ xX])\]\s+.*?🆔\s*([a-z0-9][a-z0-9-]*)(?=\s|$).*#goal\b")
+
+
+def spec_goals(root):
+    """{slug: reached} for every goal line in the SPEC.md at `root`."""
+    goals = {}
+    try:
+        with open(os.path.join(root, "SPEC.md"), "r", encoding="utf-8") as f:
+            for line in f:
+                match = _GOAL_LINE_RE.match(line)
+                if match:
+                    goals[match.group(2)] = match.group(1) in "xX"
+    except (OSError, UnicodeDecodeError):
+        pass
+    return goals
+
+
+def locate(slug, items, kinds=None, goals=None):
     """Where a slug sits, for resolving a Blocked by: reference.
 
     A blocker that has left the queue is reported with the KIND of record it
@@ -1109,6 +1131,9 @@ def locate(slug, items, kinds=None):
         return "ABSENT, only processed — not built"
     if kind == "unknown":
         return "ABSENT, has a record of unknown kind"
+    if goals and slug in goals:
+        return ("a goal in SPEC, reached" if goals[slug]
+                else "a goal in SPEC, not reached")
     return "ABSENT"
 
 
@@ -1221,6 +1246,7 @@ def render(items, root="", queue_path="QUEUE.md"):
         wanted.update(citations(item))
         wanted.update(item["blocked_by"])
     shipped = shipped_slugs(root, wanted)
+    goals = spec_goals(root)
     held_dates = {}
     # Which sightings fall at the history horizon — the file's first commit —
     # so the print says "by <date>" rather than claiming the entry, or its
@@ -1273,7 +1299,7 @@ def render(items, root="", queue_path="QUEUE.md"):
                     (f"[{ref}] -> in {elsewhere[ref]}, another project's "
                      "queue (blocker_lookup says where it sits)")
                     if ref in elsewhere
-                    else f"[{ref}] -> {locate(ref, items, shipped)}"
+                    else f"[{ref}] -> {locate(ref, items, shipped, goals)}"
                     for ref in item["blocked_by"]
                 )
                 line += f"  | Blocked by: {shown}"

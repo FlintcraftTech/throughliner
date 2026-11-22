@@ -22,6 +22,7 @@ This project uses the Throughliner method.
 - `/catchup` — a brief after time away.
 - `/tasks` — work your own task list.
 - `/memory-setup` — one memory about you that every project reads.
+- `/goals` — decide which of your projects come first.
 
 ## Rules for Claude
 

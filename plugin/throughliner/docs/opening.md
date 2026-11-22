@@ -36,6 +36,8 @@ Blocked by: in neither queue nor LOG          a fault; fix it now
 Blocked by: [slug] in <project>              resolve it with `blocker_lookup`; where it returns the
                                              item ticked or gone into that project's LOG as built,
                                              propose the lift; otherwise say where it sits
+Blocked by: a goal's slug                    resolve it with `blocker_lookup`; where it returns the
+                                             goal reached, propose the lift; otherwise pass over silently
 ```
 
   Where the line names several slugs, lift when all clear. The check item an unconfirmed tick filed is offered like any `[user]` capture. Lift with `queue_move`, or the mover:

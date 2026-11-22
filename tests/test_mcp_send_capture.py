@@ -228,6 +228,26 @@ check("with send_tracked the capture is added and the answer says so",
       "added" in answer and "say-so" in answer
       and "[sent-capture]" in (queue_text(recipient) or ""),
       f"tool answered: {answer!r}")
+# [address-book-repo-visibility]: recorded private passes with no flag, and
+# recorded public still refuses.
+book_path = os.path.join(sender, ".throughliner", "address-book.md")
+with open(book_path, "w", encoding="utf-8") as f:
+    f.write("| Correspondent | Path | Repository |\n|---|---|---|\n"
+            "| Recipient | `%s` | public |\n" % recipient)
+answer = call(sender, dict(GOOD, slug="public-capture"))
+check("a recipient recorded public is refused without send_tracked",
+      answer.startswith("Refused") and "send_tracked" in answer
+      and "Repository column" in answer
+      and "[public-capture]" not in (queue_text(recipient) or ""),
+      f"tool answered: {answer!r}")
+with open(book_path, "w", encoding="utf-8") as f:
+    f.write("| Correspondent | Path | Repository |\n|---|---|---|\n"
+            "| Recipient | `%s` | private |\n" % recipient)
+answer = call(sender, dict(GOOD, slug="private-capture"))
+check("a recipient recorded private is sent to with no send_tracked",
+      "added" in answer and "private" in answer
+      and "[private-capture]" in (queue_text(recipient) or ""),
+      f"tool answered: {answer!r}")
 shutil.rmtree(top, ignore_errors=True)
 
 # 6. tools/list advertises it, and not the retired mail tool.

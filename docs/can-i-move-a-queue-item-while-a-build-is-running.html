@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>Can I move a queue item while a build is running? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>Can I move a queue item while a build is running?</h1>
+<p>Yes, by saying so. A build run never rearranges your queue on its own initiative, but an instruction from you goes through: tell it to skip an item, hold one until something else lands, or move one to the bottom, and Claude makes the move with the queue tool, says so in one line, and carries on building. Nothing pauses and nothing is re-confirmed, because the instruction was yours. You can check by opening QUEUE.md and finding the item where you sent it, and the move is written into the session's record at /close. Two limits: Claude never guesses a move you did not ask for and never offers one mid-run — that waits for planning — and deleting an item is a separate decision a run will not make on the fly, so ask for a delete at planning instead.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

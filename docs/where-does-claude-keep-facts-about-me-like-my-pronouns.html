@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>Where does Claude keep facts about me, like my pronouns? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>Where does Claude keep facts about me, like my pronouns?</h1>
+<p>In the instructions file every session on your machine reads: CLAUDE.md inside the .claude folder in your home directory. You will meet this when you tell Claude something about yourself that no one project owns — your name, your pronouns, your timezone, a tool you like — and Claude offers to write it there as one line, showing you the line first and writing it on your yes. Every session in every project then reads it, which is what memory could not do: a fact saved to one project's memory folder reached no other project. Before any edit to that file goes through, in any session, planning or build, the safety check asks you too: a permission prompt appears naming the file and saying every session on your machine loads it — approve it only for the line you said yes to. It refuses replacing the file whole, since it sits outside every project where git cannot restore it. What tells you it worked: the line is in that file, and a fresh chat in another project already knows the fact. Where no such file exists on a machine, the fact stays in memory as before. Where you have built the memory the memory-setup command makes, the fact is written there instead, as a small note with its line in the memory's index, on your yes, and the global file gains no line.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

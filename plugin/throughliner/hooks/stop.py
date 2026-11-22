@@ -571,7 +571,7 @@ def _project_write_since(cwd, session_id, since):
 
 
 def _post_close_tail_owed(cwd, session_id, message):
-    """The feedback reason where the tail offer is owed and absent, else ""."""
+    """The feedback reason where the tail is owed and unreported, else ""."""
     marker = _session_closed_marker(cwd, session_id)
     if marker is None or TAIL_MENTION.search(message):
         return ""
@@ -587,10 +587,11 @@ def _post_close_tail_owed(cwd, session_id, message):
         return ""
     return (
         "This chat has already closed — its record is written and committed "
-        "— and a project file changed since. The offer to append that work "
-        "to this session's record as a marked tail is owed once: name both "
-        "routes, a yes here or running the close command again, which appends "
-        "the same tail. This is fed back once and passes on the next reply."
+        "— and a project file changed since. A marked tail is owed: append "
+        "that work to this session's record now with append_tail, what "
+        "changed and why, without asking, and report it in one line naming "
+        "the command to run next in a fresh session. This is fed back once "
+        "and passes on the next reply."
     )
 
 

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>Why did Claude start a helper without asking me first? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>Why did Claude start a helper without asking me first?</h1>
+<p>Because the helper runs on Haiku or Sonnet, the two smaller models the method lets through without a prompt. You meet this when Claude hands a bounded piece of reading to a helper in any session: a read of named files, a summary of one record, a check of a claim against the installed plugin, a draft of text you will see. The rules carry a fixed table of task kinds, each naming one of the two models, so Claude matches the task to a row and weighs nothing; a helper on any other model still asks you first, with its cost named, and a task on neither list is Claude's own. What tells you it worked: a Haiku helper's report carries facts and no recommendation, and a Sonnet helper's marks any recommendation as its own. Where a helper's report is unhelpful, the brief is the usual cause, and the rules say what a brief carries.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

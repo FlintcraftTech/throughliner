@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>Why does my project have two repositories? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>Why does my project have two repositories?</h1>
+<p>A new project is set up nested: the product sits in a subfolder with a clean repository of its own — the one that goes public when you ask — and the folder around it holds your planning documents in a private repository that never gets a remote. Someone landing on the published repository sees the product, not your reasoning. <code>/close</code> commits both.</p>
+<p>An existing flat project is converted when setup runs on it. Setup shows the plan file by file and runs it on your yes, telling the two shapes apart by whether your repository already has a remote: where it has none, the product's files move into a new inner repository; where it has one, the wrap keeps that repository whole as the inner one and creates the outer around it, moving the planning documents up and changing nothing that points at the published repository. Declining stops setup with the project unadopted. What tells you it worked is the Visibility line in your project's CLAUDE.md naming both repositories.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

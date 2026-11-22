@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>Why does every session end with `/close`, and why start a fresh chat? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>Why does every session end with <code>/close</code>, and why start a fresh chat?</h1>
+<p><code>/close</code> records what happened in your session log — what was decided, what was built, what's still open — and commits. Until it runs, the work may exist in your files but the reasoning behind it isn't on the record anywhere. So finish every session with it.</p>
+<p>Then start a fresh chat, either with <code>/clear</code> or a new conversation. <code>/clear</code> wipes the conversation on screen and touches none of your project's files — which is exactly why it is safe once <code>/close</code> has run. This isn't tidiness. Every message in a conversation takes up room in Claude's context window, and a long session fills it; once it's full, earlier details start slipping — instructions get fuzzy, scope drifts, mistakes creep in. A fresh chat gives the next session the whole window. It doesn't lose anything, because the next session learns what happened from your log and what's planned from your queue.</p>
+<p>The order matters: <strong><code>/close</code> before <code>/clear</code>, always.</strong> Clear first and the session's thinking is gone before it was written down.</p>
+<p>Typing <code>/close</code> is the yes: the commit message appears on screen as the record of what is being committed, and the commit follows with no question in between. Where your repository has a remote, one plain question follows about pushing; where it has none, push is never mentioned. What tells you it committed is the commit hash written into the session record's heading.</p>
+<p><code>/close</code> also tells you what the next work is and then stops, naming the command that starts it in words, mid-sentence — the plan command for more planning, the build command for building — so nothing runs by accident. It won't invite you into another build in the same chat. Where a build run ended at work still held, the closing message says in plain terms what part of your change is not in the product yet.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

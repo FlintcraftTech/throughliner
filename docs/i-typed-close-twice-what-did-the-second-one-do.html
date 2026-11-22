@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>I typed /close twice — what did the second one do? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>I typed /close twice — what did the second one do?</h1>
+<p>A session makes one commit, at its close. Work you do after that rides the next session's commit. So a second <code>/close</code> in the same chat files anything it finds, appends what happened to the session's record under an <code>## After /close</code> heading, commits nothing, and says so in one line. Where you want a real second commit now, open a fresh chat and run <code>/close</code> there.</p>
+<p>The same idea covers a change you make after closing: change a file after <code>/close</code> and Claude adds what happened to the session's record as that marked tail, with no question, and tells you in one line, with what to run next in a fresh chat. Nothing is committed, and the tail rides the next close.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

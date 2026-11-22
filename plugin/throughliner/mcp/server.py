@@ -1057,6 +1057,29 @@ def _other_projects(root):
     return sorted(found.values(), key=lambda pair: pair[0].lower())
 
 
+# A goal line in a SPEC: `- [ ] <goal>, reached when <the test> (<project>)
+# 🆔 <slug> #goal`. The tick is the goal's state.
+_GOAL_LINE_RE = re.compile(
+    r"^\s*- \[([ xX])\]\s+(.*?)\s*🆔\s*([a-z0-9][a-z0-9-]*)(?=\s|$).*#goal\b")
+
+
+def _goal_state(folder, slug):
+    """The goal `slug` names in the SPEC.md at `folder`, as a state phrase
+    and the goal's text, or None where the SPEC carries no such goal line."""
+    try:
+        with open(os.path.join(folder, "SPEC.md"), "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return None
+    for line in lines:
+        match = _GOAL_LINE_RE.match(line)
+        if match and match.group(3) == slug:
+            reached = match.group(1) in "xX"
+            return ("a goal, reached" if reached else "a goal, not reached",
+                    match.group(2).strip())
+    return None
+
+
 def _slug_state(digest, folder, slug):
     """Where `slug` sits in the project at `folder`, as one phrase and its
     heading, or None where neither its queue nor its records hold it."""
@@ -1091,7 +1114,9 @@ def _slug_state(digest, folder, slug):
         return state, item["heading"]
     kinds = digest.shipped_slugs(folder, {slug})
     if slug not in kinds:
-        return None
+        # Neither the queue nor the records hold it: a hold may name a goal,
+        # which lives in SPEC's Goals as a checkbox line ([hold-until-goal-reached]).
+        return _goal_state(folder, slug)
     dates = []
     record_re = re.compile(_RECORD_FOR_SLUG_RE % re.escape(slug))
     try:
@@ -1145,9 +1170,9 @@ def tool_blocker_lookup(arguments):
     for slug in slugs:
         hits = _lookup_slug(digest, root, slug, others)
         if not hits:
-            out.append("[%s] — not found: no queue or record holds it, in "
-                       "this project, under the vault, or in an address-book "
-                       "project." % slug)
+            out.append("[%s] — not found: no queue or record holds it, and "
+                       "no spec carries it as a goal, in this project, under "
+                       "the vault, or in an address-book project." % slug)
             continue
         for name, state, heading in hits:
             out.append("[%s] — %s: %s%s" % (
@@ -1244,6 +1269,10 @@ def tool_hold_entry(arguments):
         if b == slug:
             problems.append("blocked_by names the entry itself.")
         elif b not in by_slug:
+            if _goal_state(root, b):
+                # A goal in this project's own SPEC: written bare, like an
+                # entry of this queue ([hold-until-goal-reached]).
+                continue
             if others is None:
                 others = _other_projects(root)
             hits = _lookup_slug(digest, root, b, others, include_here=False)
@@ -1253,8 +1282,9 @@ def tool_hold_entry(arguments):
                 problems.append("blocked_by names [%s], which is not an entry "
                                 "in this queue, nor in any queue or record "
                                 "under the vault or in an address-book "
-                                "project — a blocker must resolve to a real "
-                                "entry." % b)
+                                "project, nor a goal in any of their specs — "
+                                "a blocker must resolve to a real entry or "
+                                "goal." % b)
     if not_before:
         try:
             date = datetime.date.fromisoformat(not_before)
@@ -3169,7 +3199,9 @@ TOOLS = [
             "Unprocessed section, the slug is free there, each attachment "
             "sits inside this project and no same-named file is in that "
             "temp/, and the recipient's queue is not tracked in a repository "
-            "with a remote unless send_tracked is given. Refuses at the "
+            "with a remote unless send_tracked is given or the address "
+            "book's Repository column records that correspondent as "
+            "private. Refuses at the "
             "door, echoing the reason, and on a refusal nothing is written "
             "on either side. The answer names the correspondent and the "
             "slug, never the path. The capture being in the queue is all a "
@@ -3322,7 +3354,9 @@ TOOLS = [
             "for each, the project holding it, its section and state "
             "(captured, held with its hold line, cleared, its task line "
             "ticked, or gone from the queue with the kind and date of its "
-            "LOG record) and its heading. Reads this project's queue and "
+            "LOG record) and its heading; a slug that is a goal in a "
+            "project's SPEC is returned as a goal, reached or not reached, "
+            "with the goal's text. Reads this project's queue and "
             "records, every `QUEUE.md` under the vault (the folder holding "
             "`.obsidian/`, found from the note the project's `Task list:` "
             "line names) and each address-book project outside it, for the "

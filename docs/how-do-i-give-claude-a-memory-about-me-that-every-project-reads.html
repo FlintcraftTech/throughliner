@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="throughliner build_faq_site">
+<title>How do I give Claude a memory about me that every project reads? — Throughliner FAQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← All questions</a>
+<h1>How do I give Claude a memory about me that every project reads?</h1>
+<p>Claude Code's own memory is kept per project, so a fact you told Claude in one project is unknown in the next. You meet this when a fresh chat in another project asks you something you have already said elsewhere. Type the memory-setup command in any project. Claude says where the memory will live, a folder named <code>memory</code> inside the <code>.claude</code> folder in your home directory, outside every project, and hands you a prompt in a box. Paste that prompt into Claude chat, which lists what it remembers about you, then paste its reply back, or save it to a file in the project's <code>temp/</code> folder and say done. Claude groups the facts into small notes, shows you the list, and writes them on your yes; anything shaped like a password, a key, a card or bank number or a government identifier is left out, and you are told which lines. It then adds one line to your global instructions file, which the safety check asks you to approve, so every session loads the memory's index and opens a note when it bears on the conversation. Run the command again whenever chat has learned more: only what is new is added, and each fact that contradicts a note is shown to you to choose. The memory stays on this machine and Claude chat cannot read it. What tells you it worked: in a fresh chat in a different project, Claude gives a fact that only the memory holds, with no file pointed at.</p>
+</main>
+<footer>Throughliner is free. If it helps you: <a href="https://ko-fi.com/itscoughfee">Ko-fi</a> · <a href="https://github.com/sponsors/its-coughfee">GitHub Sponsors</a>. Generated from Throughliner 1.25.0.</footer>
+</body>
+</html>

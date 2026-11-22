@@ -1828,6 +1828,28 @@ def _emit(message: str) -> int:
     return 0
 
 
+# A goal line in SPEC's Goals: `- [ ] <goal>, reached when <the test>
+# (<project>) 🆔 <slug> #goal`. A hold may name a goal's slug
+# ([hold-until-goal-reached]), so a blocker absent from the queue is checked
+# against these before it is called missing.
+_GOAL_SLUG_RE = re.compile(
+    r"^\s*- \[[ xX]\]\s+.*?🆔\s*([a-z0-9][a-z0-9-]*)(?=\s|$).*#goal\b")
+
+
+def _spec_goal_slugs(cwd):
+    """The slug of every goal line in the project's SPEC.md."""
+    slugs = set()
+    try:
+        with open(os.path.join(cwd, "SPEC.md"), "r", encoding="utf-8") as f:
+            for line in f:
+                match = _GOAL_SLUG_RE.match(line)
+                if match:
+                    slugs.add(match.group(1))
+    except (OSError, UnicodeDecodeError):
+        pass
+    return slugs
+
+
 def _lint_queue(queue_path: str, with_growth: bool = True,
                 session_id: str = "") -> int:
     """Lint QUEUE.md at `queue_path` and emit any warnings as advisory context.
@@ -1863,7 +1885,10 @@ def _lint_queue(queue_path: str, with_growth: bool = True,
     sections = []
     warnings = lint(content, gate_check=gate_check,
                     unassigned_default=_read_unassigned_default(cwd),
-                    in_flight=_slugs_ticked_in_working_file(cwd, session_id),
+                    # A goal's slug resolves in SPEC, not the queue: read
+                    # with the run's own ticked slugs as not missing.
+                    in_flight=(set(_slugs_ticked_in_working_file(cwd, session_id))
+                               | _spec_goal_slugs(cwd)),
                     shared=_project_is_shared(cwd))
     # Both directions read the previous lint RUN beside the commit; read it
     # before this run's bodies overwrite it.
