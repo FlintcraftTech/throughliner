@@ -1568,6 +1568,64 @@ def _no_skill_session(cwd: str, session_id: str) -> bool:
         return False
 
 
+_TASK_LIST_LINE_RE = re.compile(
+    r"^\s*(?:\*\*)?Task list:(?:\*\*)?\s*`?([^`\r\n]+?)`?\s*$", re.MULTILINE)
+GOALS_NOTE_NAMES = ("goals.md", "strategy.md")
+
+
+def _task_list_note_folder(cwd: str) -> str:
+    """The folder holding the note the project's `Task list:` line names, as
+    docs/goals.md finds it, or '' where the project's CLAUDE.md carries no
+    such line or the line reads `none`. The line is matched as the state
+    server's `_TASK_LIST_RE` matches it; a relative note is read against the
+    project root."""
+    try:
+        with open(os.path.join(cwd, "CLAUDE.md"), "r", encoding="utf-8") as f:
+            text = f.read()
+    except (OSError, UnicodeDecodeError):
+        return ""
+    match = _TASK_LIST_LINE_RE.search(text)
+    if not match:
+        return ""
+    note = match.group(1).strip()
+    if not note or note.lower() == "none":
+        return ""
+    if not os.path.isabs(note):
+        note = os.path.join(cwd, note)
+    return os.path.dirname(os.path.normpath(note))
+
+
+def _is_goals_session_note(filepath: str, cwd: str, session_id: str) -> bool:
+    """True for `goals.md` or `strategy.md` in the task-list note's folder, in
+    a session whose typed command is the goals skill
+    ([goals-skill-writes-blocked]).
+
+    The goals command writes exactly these two notes, on the user's one yes to
+    the order shown. The match is exact: those two names, in that one folder,
+    which may sit outside the project root. A session of any other command, a
+    project with no `Task list:` line, and a `goals.md` anywhere else all fall
+    through to the ordinary refusal. The session's command is read from the
+    prompt hook's record, `.throughliner/session-skill-<id>.txt`; where that
+    record is absent nothing is admitted here.
+    """
+    if not cwd:
+        return False
+    state = os.path.join(cwd, ".throughliner",
+                         "session-skill-%s.txt" % safe_session_id(session_id))
+    try:
+        with open(state, "r", encoding="utf-8") as f:
+            if f.read().strip() != "goals":
+                return False
+    except OSError:
+        return False
+    folder = _task_list_note_folder(cwd)
+    if not folder:
+        return False
+    norm = _normalise(filepath)
+    return any(norm == _normalise(os.path.join(folder, name))
+               for name in GOALS_NOTE_NAMES)
+
+
 SETUP_MARKER_NAME = ".throughliner-setup-active"
 CLOSE_MARKER_NAME = ".throughliner-close-active"
 # The /close marker's home since [scratchpad-refused-after-resume-close-marker]:
@@ -3082,6 +3140,8 @@ def main() -> int:
              lambda: _is_checklist_declared_path(filepath, cwd)),
             ("own close marker",
              lambda: _is_own_close_marker(filepath, cwd, sid)),
+            ("goals session: its two notes",
+             lambda: _is_goals_session_note(filepath, cwd, sid)),
         ):
             if hit():
                 return _allow(branch)
