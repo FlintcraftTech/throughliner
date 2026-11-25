@@ -27,14 +27,14 @@ Where the server is registered, `queue_checkpoint_counts` gives the counts. Wher
 
 ```
 Not before: passed                           lift it
-Blocked by: built and verified, per LOG       propose the lift; in the same turn grep SPEC.md for the
-                                             blocker's distinctive words and correct any sentence resting on it
+Blocked by: built and verified, per LOG,      propose the lift; in the same turn grep SPEC.md for the
+  or a step of the user's recorded done      blocker's distinctive words and correct any sentence resting on it
 Blocked by: built but unverified              name the check item that verifies it and how many wait on it
 Blocked by: open                              pass over silently
 Blocked by: deleted                           surface the item for the user's re-examination
 Blocked by: in neither queue nor LOG          a fault; fix it now
 Blocked by: [slug] in <project>              resolve it with `blocker_lookup`; where it returns the
-                                             item ticked or gone into that project's LOG as built,
+                                             item ticked or gone into that project's LOG as built or done,
                                              propose the lift; otherwise say where it sits
 Blocked by: a goal's slug                    resolve it with `blocker_lookup`; where it returns the
                                              goal reached, propose the lift; otherwise pass over silently
@@ -61,5 +61,7 @@ A finding gets a sentence; every check that found nothing shares one clause. Whe
            Where an uncleared red flag tops the order, the ask is "Start with the flag?". A subset the
            user names sets the order; the pass's length is the whole queue. Anything the user raises is
            discussed first, then the queue.
-/plan      "Anything you want to raise?" No capture is offered unasked.
+/plan      "Anything you want to raise?" No capture is offered unasked. Where the opening
+           raises nothing itself, first say in one line which command has work and what for,
+           from the state server's `next_command` tool.
 ```

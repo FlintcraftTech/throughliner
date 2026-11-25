@@ -83,7 +83,7 @@ The heading opens with its distinguishing words, and with a word other than A, A
 We're doing the freeform work item [<slug>] by hand in this chat — it's work done by hand in this chat. Its entry is in QUEUE.md (in this project's root folder), at the end of the cleared-to-run region of the Processed section; read that entry first — it says what the work is and where its recipe lives. When we're finished, the close command records and commits it.
 ```
 
-**A session opened with no skill is a freeform session.** It files captures through the capture tool, records a decision it reaches in its close record, and where it changes a shipped doc its record carries the `Rule gate:` line. It reads the queue where something raised may already be in it. A thing built there that a capture describes is kept and then ticked, both on the user's word, so the close removes it with its record.
+**A session opened with no skill is a freeform session.** It files captures through the capture tool, and records a decision it reaches in its close record. It reads the queue where something raised may already be in it. A thing built there that a capture describes is kept and then ticked, both on the user's word, so the close removes it with its record.
 
 ## Subagents
 

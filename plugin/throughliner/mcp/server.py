@@ -1127,6 +1127,7 @@ def _slug_state(digest, folder, slug):
     except OSError:
         pass
     kind = {"built": "a record of the work being built",
+            "done": "a record of the step being done",
             "processed": "a record of it being processed only, not built",
             }.get(kinds[slug], "a record of unknown kind")
     return ("no longer in the queue; LOG holds %s%s"
@@ -1497,8 +1498,10 @@ def _write_line_on_entry(mover, queue, item, line_re, new_line):
 # The next-run line ([next-run-line-at-close]). Every close leaves one
 # standing [user] item, slug `next-run`, whose task line says what the project
 # wants run and why, with the digest's standing cleared-to-run counts by
-# kind, dated from the nearest due thing in the queue, so the user's task
-# list says which project to open. Composed here from the digest and never
+# kind, dated from the nearest due thing the named command can do now, so the
+# user's task list says which project to open. Which command, what for and
+# what done looks like is `_next_command`'s answer, which the `next_command`
+# tool returns and the close's recommendation quotes. Composed here from the digest and never
 # by hand; rewritten at every close; removed when nothing is queued.
 # --------------------------------------------------------------------------
 
@@ -1523,34 +1526,6 @@ def _next_run_counts(items):
         flavor = i["flavor"] if i["flavor"] in kinds else "build"
         kinds[flavor] += 1
     return cleared, held, captures, kinds
-
-
-def _next_run_date(items, today):
-    """(date, what): the nearest due thing in the queue, or (None, '').
-
-    Read: a `Due:` line on any entry; the 📅 on a [user] item's own task
-    line in Processed; a held item's `Not before:` already passed, which is
-    due today; an uncleared red flag, due today. A cycle's due-ness is the
-    opening's to compute and is not read here.
-    """
-    found = []
-    for i in items:
-        if i["slug"] == NEXT_RUN_SLUG:
-            continue
-        name = "[%s]" % (i["slug"] or "?")
-        if i["due"]:
-            found.append((i["due"], "%s due" % name))
-        if i["section"] == "Processed" and i["flavor"] == "user" and i["task_date"]:
-            found.append((i["task_date"], "the step %s" % name))
-        if (i["section"] == "Processed" and not i["cleared"] and i["not_before"]
-                and i["not_before"] <= today):
-            found.append((today, "%s past its Not before: date" % name))
-        if i["flag"] == "uncleared":
-            found.append((today, "the uncleared red flag on %s" % name))
-    if not found:
-        return None, ""
-    found.sort()
-    return found[0]
 
 
 def _next_run_hold(items, today):
@@ -1587,36 +1562,236 @@ def _next_run_hold(items, today):
     return when, skill, thing, slug
 
 
-def _next_run_text(project, cleared, held, captures, kinds, date):
-    """(skill, reason, quiet), or (None, None, False) where nothing is queued."""
-    claude_work = sum(kinds[k] for k in ("build", "audit", "co-write", "freeform"))
-    parts = []
-    if kinds["build"]:
-        parts.append(_plural(kinds["build"], "build"))
-    if kinds["audit"]:
-        parts.append(_plural(kinds["audit"], "audit"))
-    if kinds["co-write"]:
-        parts.append(_plural(kinds["co-write"], "co-write"))
-    if kinds["freeform"]:
-        parts.append(_plural(kinds["freeform"], "freeform item"))
-    if kinds["user"]:
-        parts.append(_plural(kinds["user"], "step of yours", "steps of yours"))
+# The definition's own words for the user's part of a step: `**Your part:**
+# Run the plan command and say yes when …`, read to the next blank line.
+_YOUR_PART_RE = re.compile(r"^\s*\*{0,2}Your part:\*{0,2}\s*(.*)$",
+                           re.IGNORECASE)
+_DEFINITION_HEADING_RE = re.compile(r"^##\s+.*\[([a-z0-9][a-z0-9-]*)\]\s*$")
+_COMMAND_WORD_RE = re.compile(
+    r"\b(plan|process|build|close|setup|tasks|goals|catchup|rescan)\s+command",
+    re.IGNORECASE)
+
+
+def _your_parts(root):
+    """{definition slug: its `Your part:` text} from the project's cycles
+    doc, empty where there is none."""
+    path = os.path.join(root, "CYCLES.md")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return {}
+    parts = {}
+    slug = None
+    open_slug = None
+    for line in lines:
+        heading = _DEFINITION_HEADING_RE.match(line)
+        if heading:
+            slug, open_slug = heading.group(1), None
+            continue
+        if open_slug is not None:
+            if not line.strip() or line.lstrip().startswith(("**", "#")):
+                open_slug = None
+            else:
+                parts[open_slug] += " " + line.strip()
+                continue
+        match = _YOUR_PART_RE.match(line)
+        if match and slug and slug not in parts:
+            parts[slug] = match.group(1).strip()
+            open_slug = slug
+    return parts
+
+
+def _due_step_with_part(root):
+    """(slug, command, the field's words) for the first due chain step whose
+    definition carries a `Your part:` field naming a command, or None.
+
+    Due-ness is the session opening's own computation: a sequential chain's
+    due step, read from the record, and a dated chain's checklist whose date
+    is today. A cycle due by its cadence alone is not read here, since its
+    due-ness is computed from its observable by the skills.
+    """
+    hook = _session_start()
+    if hook is None:
+        return None
+    try:
+        due = hook.checklists_due_on(root) or []
+    except Exception:
+        return None
+    if not due:
+        return None
+    parts = _your_parts(root)
+    for _cycle, slug in due:
+        words = parts.get(slug)
+        if not words:
+            continue
+        command = _COMMAND_WORD_RE.search(words)
+        if command:
+            return slug, command.group(1).lower(), words.rstrip(".")
+    return None
+
+
+def _join_counts(parts):
     if len(parts) > 1:
-        joined = ", ".join(parts[:-1]) + " and " + parts[-1]
-    else:
-        joined = parts[0] if parts else ""
-    if claude_work or kinds["user"]:
-        reason = "%s cleared, [%s] first" % (joined, cleared[0]["slug"])
-        if captures:
-            reason += "; %s waiting" % _plural(len(captures), "capture")
-        return "build", reason, False
-    if captures:
-        reason = "%s waiting to be processed" % _plural(len(captures), "capture")
+        return ", ".join(parts[:-1]) + " and " + parts[-1]
+    return parts[0] if parts else ""
+
+
+def _next_command(root, digest, items, today):
+    """Which command the project wants run next and what for: a dict with
+    command, purpose, done, others, date, what and quiet, or None where no
+    command has work it can do now ([next-session-advice-plan-mismatch]).
+
+    The one place this is worked out. The close's recommendation, the
+    advisory and the next-run line all quote it. The order, the first that
+    holds:
+
+      (a) a due chain step whose definition names the user's part: that
+          field's command, in its words
+      (b) work of Claude's cleared: build
+      (c) captures a processing pass would be offered now: process
+      (d) only steps of the user's cleared: build, to walk them
+
+    The date comes only from work the named command can do now: a `Due:`
+    line or task-line 📅 on a cleared item for build, on an offerable capture
+    for process, an uncleared red flag on either, today. A held item dates
+    nothing.
+    """
+    cleared, held, _captures, kinds = _next_run_counts(items)
+    offered = [i for i in digest.offerable(items, root, today=today)
+               if i["slug"] not in (NEXT_RUN_SLUG, "forward-advisory")]
+    claude = [i for i in cleared if i["flavor"] != "user"]
+    steps = _plural(kinds["user"], "step of yours", "steps of yours")
+
+    def nearest(pool):
+        found = []
+        for i in pool:
+            name = "[%s]" % (i["slug"] or "?")
+            if i["due"]:
+                found.append((i["due"], "%s due" % name))
+            if i["flavor"] == "user" and i["task_date"]:
+                found.append((i["task_date"], "the step %s" % name))
+            if i["flag"] == "uncleared":
+                found.append((today, "the uncleared red flag on %s" % name))
+        if not found:
+            return None, ""
+        found.sort()
+        return found[0]
+
+    step = _due_step_with_part(root)
+    if step is not None:
+        slug, command, words = step
+        return {"command": command,
+                "purpose": "[%s] is due: %s" % (slug, words),
+                "done": "when that step has its record",
+                "others": [], "date": today,
+                "what": "the due step [%s]" % slug, "quiet": False}
+
+    if claude:
+        parts = []
+        if kinds["build"]:
+            parts.append(_plural(kinds["build"], "build"))
+        if kinds["audit"]:
+            parts.append(_plural(kinds["audit"], "audit"))
+        if kinds["co-write"]:
+            parts.append(_plural(kinds["co-write"], "co-write"))
+        if kinds["freeform"]:
+            parts.append(_plural(kinds["freeform"], "freeform item"))
+        others = []
+        if kinds["user"]:
+            others.append("%s also cleared" % steps)
+        if offered:
+            others.append("%s waiting" % _plural(len(offered), "capture"))
+        date, what = nearest(cleared)
+        return {"command": "build",
+                "purpose": "%s cleared, [%s] first"
+                           % (_join_counts(parts), claude[0]["slug"]),
+                "done": "when the run reaches the line",
+                "others": others, "date": date, "what": what, "quiet": False}
+
+    if offered:
+        others = []
+        if kinds["user"]:
+            others.append("%s also cleared" % steps)
         if held:
-            reason += ", %s held below the line" % _plural(len(held), "item")
-        quiet = date is None and len(captures) < 3
-        return "process", reason, quiet
-    return None, None, False
+            others.append("%s held below the line" % _plural(len(held), "item"))
+        date, what = nearest(offered)
+        return {"command": "process",
+                "purpose": "%s waiting to be sorted"
+                           % _plural(len(offered), "capture"),
+                "done": "when none are left to sort",
+                "others": others, "date": date, "what": what,
+                "quiet": (date is None and len(offered) < 3
+                          and not kinds["user"])}
+
+    if kinds["user"]:
+        date, what = nearest(cleared)
+        return {"command": "build",
+                "purpose": "to walk %s" % steps,
+                "done": "when each is done or put off",
+                "others": [], "date": date, "what": what, "quiet": False}
+    return None
+
+
+def _next_answer(root, digest, items, today, hold_reason=""):
+    """(command, text, date, what), or None where no command has work: the
+    answer `next_command` returns and `next_run_line` writes, the hold-date
+    form included, so the two cannot name different commands.
+
+    The text reads `Run /<command> in <project>: <purpose>, done <done
+    clause>`, the other counts following as clauses.
+    """
+    project = os.path.basename(root.rstrip(os.sep)) or "this project"
+    answer = _next_command(root, digest, items, today)
+    hold = _next_run_hold(items, today)
+    if answer is None and hold is None:
+        return None
+    if hold is not None and (answer is None or answer["quiet"]):
+        when, hold_skill, thing, hold_slug = hold
+        tail = ("due %s for %s" % (when, hold_reason) if hold_reason
+                else "held until %s" % when)
+        text = "Run /%s in %s to %s, %s" % (hold_skill, project, thing, tail)
+        return hold_skill, text, when, "the hold date on [%s]" % hold_slug
+    text = "Run /%s in %s%s: %s, done %s" % (
+        answer["command"], project,
+        " when you like" if answer["quiet"] else "",
+        answer["purpose"], answer["done"])
+    for other in answer["others"]:
+        text += "; " + other
+    date = answer["date"]
+    if hold is not None and (date is None or hold[0] < date):
+        text += "; [%s] held until %s" % (hold[3], hold[0])
+    return answer["command"], text, date, answer["what"]
+
+
+def _hold_reason(arguments):
+    reason = " ".join(str((arguments or {}).get("hold_reason") or "").split())
+    return reason.rstrip(".")
+
+
+def tool_next_command(arguments):
+    """Which command this project wants run next, what for and what done
+    looks like, in one line. Reads the queue, the records and the cycles doc;
+    writes nothing."""
+    root = project_root()
+    queue = _queue_path(root)
+    digest = _digest()
+    if digest is None:
+        return "Cannot read: queue_digest.py is not where this server " \
+               "expects it (%s)." % PLUGIN_ROOT
+    if not os.path.isfile(queue):
+        return "Cannot read: no QUEUE.md at %s." % queue
+    items = digest.parse(queue)
+    today = datetime.date.today().isoformat()
+    answer = _next_answer(root, digest, items, today, _hold_reason(arguments))
+    if answer is None:
+        return ("No command has work it can do now: nothing is cleared, no "
+                "capture can be offered and no hold date is ahead.")
+    command, text, date, what = answer
+    return "Next command: %s — %s. %s" % (
+        command, text,
+        "Dated %s, from %s." % (date, what) if date
+        else "No date: nothing that command can do now is dated.")
 
 
 def _insert_cleared_bottom(mover, queue, slug, block_lines):
@@ -1673,10 +1848,7 @@ def tool_next_run_line(arguments):
     items = digest.parse(queue)
     today = datetime.date.today().isoformat()
     project = os.path.basename(root.rstrip(os.sep)) or "this project"
-    cleared, held, captures, kinds = _next_run_counts(items)
-    date, what = _next_run_date(items, today)
-    skill, reason, quiet = _next_run_text(project, cleared, held, captures,
-                                          kinds, date)
+    answer = _next_answer(root, digest, items, today, _hold_reason(arguments))
 
     existing = [i for i in items if i["slug"] == NEXT_RUN_SLUG]
     for old in existing:
@@ -1686,36 +1858,21 @@ def tool_next_run_line(arguments):
             return "Refused by the queue tool — the standing line was not " \
                    "rewritten:\n" + text
 
-    hold = _next_run_hold(items, today)
-    hold_reason = " ".join(str((arguments or {}).get("hold_reason") or "").split())
-    hold_reason = hold_reason.rstrip(".")
-
-    if skill is None and hold is None:
+    if answer is None:
         return ("Nothing is queued, so no next-run line: the standing item "
                 "was removed." if existing else
                 "Nothing is queued, so no next-run line was written.")
-
-    if hold is not None and (skill is None or quiet):
-        when, hold_skill, thing, hold_slug = hold
-        tail = ("due %s for %s" % (when, hold_reason) if hold_reason
-                else "held until %s" % when)
-        text = "Run /%s in %s to %s, %s" % (hold_skill, project, thing, tail)
-        date, what = when, "the hold date on [%s]" % hold_slug
-    else:
-        text = "Run /%s in %s%s: %s" % (skill, project,
-                                         " when you like" if quiet else "",
-                                         reason)
-        if hold is not None and (date is None or hold[0] < date):
-            text += "; [%s] held until %s" % (hold[3], hold[0])
+    _command, text, date, what = answer
     task = "- [ ] %s (%s)%s 🆔 %s #user" % (
         text, project, " 📅 %s" % date if date else "", NEXT_RUN_SLUG)
     body = ("Standing line written at the close of %s, composed by the state "
             "server from the queue digest's standing counts; rewritten at "
             "every close and removed when nothing is queued. Ticking it is "
             "read as done, write the next one. %s"
-            % (today, ("Dated from the nearest due thing in the queue: %s."
-                       % what) if date else
-               "Nothing in the queue is dated, so the line carries no date."))
+            % (today, ("Dated from the nearest due thing that command can "
+                       "do now: %s." % what) if date else
+               "Nothing that command can do now is dated, so the line "
+               "carries no date."))
     block = ["#### [user] %s [%s]" % (text, NEXT_RUN_SLUG), task, body]
     ok, report = _insert_cleared_bottom(mover, queue, NEXT_RUN_SLUG, block)
     if not ok:
@@ -2868,19 +3025,50 @@ TOOLS = [
         "handler": tool_queue_checkpoint_counts,
     },
     {
+        "name": "next_command",
+        "description":
+            "Which command this project wants run next, what for and what "
+            "done looks like, in one line; writes nothing. The one place "
+            "this is worked out: the close's recommendation, the advisory "
+            "and the next-run line all quote it. The first that holds: a due "
+            "chain step whose definition in the cycles doc carries a `Your "
+            "part:` field, in that field's command and words; work of "
+            "Claude's cleared, build; captures a processing pass would be "
+            "offered now, process; only steps of the user's cleared, build "
+            "to walk them. Other counts follow as clauses. The date comes "
+            "only from work the named command can do now, never from a held "
+            "item. Where no command has work it says so. A cycle due by its "
+            "cadence alone is not read; the opening computes it.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "hold_reason": {
+                    "type": "string",
+                    "description":
+                        "One clause saying what the nearest hold date still "
+                        "ahead waits for, used only where the answer is the "
+                        "hold's own line.",
+                },
+            },
+        },
+        "handler": tool_next_command,
+    },
+    {
         "name": "next_run_line",
         "description":
             "Rewrite the standing next-run [user] item (slug `next-run`) as "
-            "the last cleared item in Processed, or remove it where nothing "
-            "is queued. Its task line says what the project wants run and "
-            "why — `Run /build in <project>: 3 builds, 1 audit and 2 steps "
-            "of yours cleared, [slug] first; 5 captures waiting` — composed "
+            "the last cleared item in Processed, or remove it where no "
+            "command has work. Its task line is `next_command`'s answer — "
+            "`Run /build in <project>: 3 builds and 1 audit cleared, [slug] "
+            "first, done when the run reaches the line; 2 steps of yours "
+            "also cleared; 5 captures waiting` — composed "
             "from the queue digest's standing counts by kind, never by hand, "
             "with the `#user` tag so the task-list note's queries show it, "
-            "and a 📅 date where anything in the queue is dated: a `Due:` "
-            "line on any entry, the 📅 on a [user] item's own task line, a "
-            "held item's `Not before:` already passed, or an uncleared red "
-            "flag. With nothing cleared and fewer than three captures and no "
+            "and a 📅 date only from work the named command can do now: a "
+            "`Due:` line or a task line's 📅 on a cleared item for build, on "
+            "an offerable capture for process, or an uncleared red flag on "
+            "either; a held item dates nothing. With nothing cleared, fewer "
+            "than three captures and no "
             "date, the line reads `Run /process in <project> when you like` and "
             "carries no date. A `Not before:` date still ahead, on a held "
             "item or a capture, reaches the line too: where nothing else "

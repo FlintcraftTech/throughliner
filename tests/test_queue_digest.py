@@ -1148,6 +1148,55 @@ def test_capture_held_until_built_waits_for_the_build_record():
     shutil.rmtree(root, ignore_errors=True)
 
 
+def test_done_step_releases_what_was_held_on_it():
+    """A step of the user's walked to done leaves a record carrying
+    `Outcome: done` and no `Files touched:`. It releases a capture held on it,
+    `until built` included, and a work item held on it reads "ABSENT, done";
+    a deferred step releases nothing ([user-done-not-built])."""
+    waiting = ("#### Waiting for the step [waits-step]\nProse.\n"
+               "Blocked by: [step] until built\n\n"
+               "#### Waiting, bare [waits-bare]\nProse.\n"
+               "Blocked by: [step]\n")
+    for label, body in (("plain", "# abc1234 — user step\n\nOutcome: done\n"),
+                        ("bold", "# abc1234 — user step\n\n**Outcome: done**\n"),
+                        ("bold label", "# abc1234 — user step\n\n**Outcome:** done\n")):
+        root = project(unprocessed=waiting,
+                       log_entries=(("2026-09-12-step.md", body),))
+        queue = os.path.join(root, "QUEUE.md")
+        pool = [i["slug"] for i in digest.offerable(digest.parse(queue), root)]
+        check("a done step (%s) releases both captures held on it" % label,
+              pool == ["waits-step", "waits-bare"], str(pool))
+        shutil.rmtree(root, ignore_errors=True)
+
+    check("a done record is classified done",
+          digest.record_kind("Outcome: done\n") == "done")
+    check("a build record carrying an outcome line is still built",
+          digest.record_kind("**Files touched:** `a.md`\nOutcome: done\n") == "built")
+    check("a deferred record is not done",
+          digest.record_kind("Outcome: deferred\n") == "unknown")
+
+    root = project(unprocessed=waiting,
+                   log_entries=(("2026-09-12-step.md",
+                                 "# abc1234 — user step\n\nOutcome: deferred\n"),))
+    queue = os.path.join(root, "QUEUE.md")
+    pool = [i["slug"] for i in digest.offerable(digest.parse(queue), root)]
+    check("a deferred step releases nothing", pool == [], str(pool))
+    shutil.rmtree(root, ignore_errors=True)
+
+    # A planning record beside the done record: done outranks processed.
+    root = project(
+        processed=("#### Do the thing [alpha]\nWaits on the step.\n"
+                   "Blocked by: [step]\n"),
+        log_entries=(("2026-09-10-step.md", PROCESSED_BODY),
+                     ("2026-09-12-step-build.md",
+                      "# abc1234 — user step\n\nOutcome: done\n")),
+    )
+    _, out = run(root)
+    check("a work item held on a done step is reported ABSENT, done",
+          "[step] -> ABSENT, done" in out, out)
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_until_built_holds_while_a_reused_slug_is_back_in_the_queue():
     """A slug built before and in the queue again — a recurring cycle step —
     holds an `until built` capture while its entry stands, whatever its older
@@ -1668,6 +1717,7 @@ if __name__ == "__main__":
     test_capture_held_on_a_processed_item_is_offerable()
     test_capture_held_on_an_unprocessed_item_still_bows_out()
     test_capture_held_until_built_waits_for_the_build_record()
+    test_done_step_releases_what_was_held_on_it()
     test_until_built_holds_while_a_reused_slug_is_back_in_the_queue()
     test_full_print_names_how_many_cite_a_capture()
     test_incoming_citations_are_computed_not_guessed()

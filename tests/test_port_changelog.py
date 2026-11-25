@@ -121,6 +121,124 @@ def build_fixture(repo):
             "host_only": host_only, "version_only": version_only}
 
 
+def dated_commit(repo, message, when):
+    """Commit everything with the author and committer clock set to `when`."""
+    env = dict(os.environ, GIT_AUTHOR_DATE=when, GIT_COMMITTER_DATE=when)
+    for args in (("add", "-A"), ("commit", "-q", "-m", message)):
+        result = subprocess.run(["git", "-C", repo] + list(args), env=env,
+                                capture_output=True, encoding="utf-8",
+                                errors="replace")
+        if result.returncode != 0:
+            raise SystemExit("git %s failed: %s" % (args[0], result.stderr))
+    return run(repo, "rev-parse", "HEAD")
+
+
+def nested_cases():
+    """A nested project: the product in one repository, `LOG/` in another,
+    every record stamped with the OTHER repository's hash, so no hash matches
+    and a record reaches its commit by the files it touched and its own date
+    ([port-changelog-matches-no-record-for-most-commits])."""
+    print("nested project: records matched by files and date")
+    with tempfile.TemporaryDirectory(prefix="port-changelog-nested-") as top:
+        inner = os.path.join(top, "inner")
+        outer = os.path.join(top, "outer")
+        os.makedirs(inner)
+        os.makedirs(outer)
+        run(inner, "init", "-q")
+        run(inner, "config", "user.email", "fixture@example.invalid")
+        run(inner, "config", "user.name", "Fixture")
+
+        write(inner, "plugin/throughliner/docs/build.md", "one\n")
+        write(inner, "plugin/throughliner/docs/close.md", "one\n")
+        dated_commit(inner, "base", "2026-03-01T09:00:00")
+        run(inner, "tag", "v1")
+
+        write(inner, "plugin/throughliner/docs/build.md", "two\n")
+        first = dated_commit(inner, "Build run one", "2026-03-05T12:00:00")
+        write(inner, "plugin/throughliner/docs/close.md", "two\n")
+        write(inner, "plugin/throughliner/docs/build.md", "three\n")
+        second = dated_commit(inner, "Build run two", "2026-03-10T12:00:00")
+
+        def record(name, date_line, files, summary):
+            write(outer, "LOG/" + name,
+                  "---\nsummary: x\n---\n# 0ffface — build — %s\n\n%s\n\n"
+                  "%s\n\n**Files touched:** %s\n"
+                  % (summary, date_line, summary, files))
+
+        record("2026-03-05-first-change.md",
+               "Date: 2026-03-05 11:30, read from the clock.",
+               "`throughliner/plugin/throughliner/docs/build.md`",
+               "The first change reworded the tick paragraph.")
+        record("2026-03-10-second-change.md",
+               "Recorded 2026-03-10 11:00, read from the clock.",
+               "`close.md`",
+               "The second change pinned the outcome line.")
+        record("2026-03-10-also-second.md",
+               "**Date:** 2026-03-09 16:00",
+               "`build.md`",
+               "A further change to the build doc rode the second commit.")
+        record("2026-02-20-too-early.md",
+               "Date: 2026-02-20 10:00, read from the clock.",
+               "`build.md`",
+               "An older change from before the range opened.")
+        record("2026-03-20-too-late.md",
+               "Date: 2026-03-20 10:00, read from the clock.",
+               "`close.md`",
+               "A later change made after the range closed.")
+        record("2026-03-05-no-date.md", "No date line here.", "`build.md`",
+               "An undated record that names a shipped file.")
+        record("2026-03-10-host-only.md",
+               "Date: 2026-03-10 11:10, read from the clock.",
+               "`CYCLES.md`",
+               "A change to the project's own checklist.")
+
+        lines = changelog.build(inner, "v1", "HEAD", log_root=outer)
+        text = "\n".join(lines)
+        sections = text.split("### ")
+        of_first = next((s for s in sections if s.startswith(first[:7])), "")
+        seconds = [s for s in sections if s.startswith(second[:7])]
+        check("the first commit's entry carries its record's summary",
+              "reworded the tick paragraph" in of_first, text)
+        check("the second commit takes both of its records",
+              len(seconds) == 2
+              and any("pinned the outcome line" in s for s in seconds)
+              and any("rode the second commit" in s for s in seconds), text)
+        check("a record goes to one commit only",
+              text.count("reworded the tick paragraph") == 1
+              and text.count("rode the second commit") == 1, text)
+        check("no commit is left without a record",
+              "No session record could be matched" not in text, text)
+        check("a record dated before the range is not matched",
+              "before the range opened" not in text, text)
+        check("a record dated after the range's last commit is not matched",
+              "after the range closed" not in text, text)
+        check("a record with no readable date is not matched",
+              "undated record" not in text, text)
+        check("a record naming no shipped file is not matched",
+              "own checklist" not in text, text)
+
+        # Without --log-root the flat behaviour is untouched: no LOG beside
+        # the product, so every commit reports no record.
+        flat = "\n".join(changelog.build(inner, "v1", "HEAD"))
+        check("with no log root nothing is matched by files and date",
+              flat.count("No session record could be matched") == 2, flat)
+
+        # A record dated hours after a commit is work built after it, and is
+        # not matched to it: on the v1.25.0 range a day's grace matched only
+        # records of work the release did not carry.
+        write(inner, "plugin/throughliner/docs/close.md", "three\n")
+        third = dated_commit(inner, "Build run three", "2026-03-12T12:00:00")
+        record("2026-03-12-next-day.md",
+               "Date: 2026-03-12 18:00, read from the clock.", "`close.md`",
+               "Work built after the third commit was made.")
+        text = "\n".join(changelog.build(inner, "v1", "HEAD", log_root=outer))
+        of_third = next((s for s in text.split("### ")
+                         if s.startswith(third[:7])), "")
+        check("a record dated after a commit is not matched to it",
+              "built after the third commit" not in text
+              and "No session record could be matched" in of_third, text)
+
+
 def main():
     print("port_changelog")
     with tempfile.TemporaryDirectory() as repo:
@@ -211,6 +329,8 @@ def main():
               headed[:120])
         check("the range under --as is still the commit's",
               "The pre-flight said the run was unattended" in headed, headed[:300])
+
+    nested_cases()
 
     print()
     if _failures:

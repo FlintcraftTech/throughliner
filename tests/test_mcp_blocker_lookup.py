@@ -116,6 +116,8 @@ def vault():
     write(os.path.join(beta, "QUEUE.md"), BETA_QUEUE)
     write(os.path.join(beta, "SPEC.md"), "# SPEC\n")
     write(os.path.join(beta, "LOG", "2026-01-01-beta-built.md"), BETA_BUILD_RECORD)
+    write(os.path.join(beta, "LOG", "2026-01-02-beta-walked.md"),
+          "# abc1234 — user step\n\nOutcome: done\n")
     return d, alpha
 
 
@@ -154,7 +156,7 @@ print("blocker_lookup")
 d, alpha = vault()
 text = call(alpha, "blocker_lookup", {"slugs": [
     "beta-cleared", "beta-held", "beta-idea", "beta-step", "beta-built",
-    "alpha-one", "no-such-slug"]})
+    "beta-walked", "alpha-one", "no-such-slug"]})
 lines = text.splitlines()
 
 
@@ -175,6 +177,10 @@ check("an item closed into LOG is returned with the record's kind and date",
       "no longer in the queue" in line_for("beta-built")
       and "being built" in line_for("beta-built")
       and "2026-01-01" in line_for("beta-built"), text)
+check("a step of the user's recorded done is returned as done, with its date",
+      "no longer in the queue" in line_for("beta-walked")
+      and "the step being done" in line_for("beta-walked")
+      and "2026-01-02" in line_for("beta-walked"), text)
 check("an item in this project is returned as this project's",
       "alpha (this project): Processed, cleared to run" in line_for("alpha-one"), text)
 check("a slug found nowhere is returned as not found, not refused",

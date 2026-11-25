@@ -9,6 +9,8 @@ You are building something whose output is instructions: a method, a plugin, a p
 
 **A document with two or more lines against it gets one piece of work naming them.** A rule enters your own rule text only through that work. A bug in a script or hook is ordinary work.
 
+**The piece of work that changes your own rule text carries one `Rule gate:` line**, plain and not bold, in one of two forms: `Rule gate: slips <n> — amends <the rule it changes, or "freestanding — <why>">; out: <what leaves the document, or "nothing — <why>">`, or `Rule gate: not needed — <why>`. A build copies it into its record.
+
 ### Wording
 
 **State each rule bare, as the action required.** Main clause first, conditions after; short connectives (but, except that, unless, so long as); one idea per provision; every exception at the same level as the rule it qualifies. A prohibition is a signal that the action required was never specified. Reasons go to the record that decided the rule, not into the rule; a rule that has slipped twice may carry one purpose clause welded into its sentence, stating the outcome the rule secures and never what happened before it, and a sweep leaves a purpose clause alone.

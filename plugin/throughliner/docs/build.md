@@ -77,7 +77,7 @@ Bears on: <slug> — <SPEC and queue hits for the item's distinctive words, foun
 SPEC check: <slug> — <agrees | contradicts: which sentence | owes: the sentence filed>
 ```
 
-plus the item's index-entry candidate (artifact touched and nature of change) and its `Changes:` lines, one file each. Where the item carries a `Rule gate:` line, copy it across unchanged as `Rule gate: <slug> — …`. Where it is about to author a standing rule and carries none, halt. Then remove the item:
+plus the item's index-entry candidate (artifact touched and nature of change) and its `Changes:` lines, one file each. Where the item carries a `Rule gate:` line, copy it across unchanged as `Rule gate: <slug> — …`. Then remove the item:
 
 ```
 python <plugin-root>/scripts/reorder_queue.py <QUEUE.md path> --delete <slug> Processed

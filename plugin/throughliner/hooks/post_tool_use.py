@@ -895,6 +895,39 @@ def _check_bolded_gate_label(annotated, warnings):
             )
 
 
+# The three openings the state server's tick tool accepts after the label —
+# its own test in `mcp/server.py`'s `tool_build_tick`, repeated here because
+# the hook runs standalone.
+RULE_GATE_SHAPE = re.compile(r"^(slips|run|not needed)\b", re.IGNORECASE)
+RULE_GATE_LABEL = re.compile(r"^\*{0,2}_?Rule gate:?\*{0,2}:?\s*", re.IGNORECASE)
+
+
+def _check_gate_line_shape(blocks, warnings):
+    """A `Rule gate:` line whose text does not open as the tick tool expects.
+
+    The line is written by an edit at the keep and copied across by the tick
+    tool at the build, which refuses one that does not open with `slips`,
+    `run` or `not needed`; a loosely worded line therefore stops a build long
+    after it was written ([rule-gate-shape-at-keep]). Flagged where it is
+    written, in either section, on a line somebody wrote: a project that
+    writes no such line never sees this.
+    """
+    for b in blocks:
+        for offset, line in enumerate(b["lines"][1:], start=1):
+            if not RULE_GATE_LINE.match(line):
+                continue
+            rest = RULE_GATE_LABEL.sub("", line.strip(), count=1)
+            if RULE_GATE_SHAPE.match(rest):
+                continue
+            warnings.append(
+                f"line {b['idx'] + 1 + offset}: [{_block_slug(b)}] — its "
+                "'Rule gate:' line does not open as the tick tool expects, so "
+                "the build's tick would refuse to copy it. After the label it "
+                "opens with one of `slips <n> — amends <rule>; out: <what>`, "
+                "`run — <what>` or `not needed — <why>`."
+            )
+
+
 # The words the rule gate's heading carries in a project that HAS one — this
 # project's hand-written CLAUDE.md and the shipped self-hosting block alike. A
 # plain consumer's CLAUDE.md carries no gate, and the gate-line check below is
@@ -1342,6 +1375,7 @@ def lint(content: str, gate_check: bool = True,
     _check_quote_claim_without_quote(blocks, warnings)
     _check_duplicate_gate_lines(blocks, warnings)
     _check_bolded_gate_label(annotated, warnings)
+    _check_gate_line_shape(blocks, warnings)
     if gate_check:
         _check_cleared_gate_disposition(annotated, blocks, warnings)
     _check_cleared_names_queue(annotated, blocks, warnings)

@@ -226,13 +226,32 @@ def record_kind(body):
     "built" where it carries `Files touched:`, "processed" where it carries
     `Work processed:` and not `Files touched:`, "unknown" otherwise. The one
     classifier — the state server's planning-anchor tool imports it rather
-    than copying it ([mcp-planning-anchor-tool])."""
+    than copying it ([mcp-planning-anchor-tool]).
+
+    "done" is the record of a step of the user's walked to its end: no
+    `Files touched:`, and a line opening `Outcome: done`, plain or bold. It
+    releases a hold as a build record does ([user-done-not-built]); "built"
+    wins where a body carries both."""
     body = strip_front_matter(body)
     if "Files touched:" in body:
         return "built"
+    if OUTCOME_DONE_RE.search(body):
+        return "done"
     if "Work processed:" in body:
         return "processed"
     return "unknown"
+
+
+# A finished step of the user's: `Outcome: done` opening a line, plain or in
+# bold (`**Outcome: done**`, `**Outcome:** done`).
+OUTCOME_DONE_RE = re.compile(r"^\s*\*{0,2}Outcome:\*{0,2}\s*done\b",
+                             re.IGNORECASE | re.MULTILINE)
+
+# Which kind wins where a slug has several records: a build over a done step,
+# either over a record of processing, anything over an unread one.
+KIND_RANK = {"built": 3, "done": 2, "processed": 1, "unknown": 0}
+# The kinds that release a hold or allow a lift.
+RESOLVED_KINDS = ("built", "done")
 # A bare date on its own line in the git log pass below: the commit's date,
 # emitted by --format=%as ahead of that commit's patch.
 GIT_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -595,8 +614,9 @@ def shipped_slugs(root, wanted=None):
         kind = record_kind(body)
         # A slug with several entries is built if any one of them built it —
         # an item processed in planning and built later has both records, and
-        # the built one is the answer.
-        if kinds.get(slug) != "built":
+        # the built one is the answer. A done step outranks a record of its
+        # being processed, by the same reasoning.
+        if slug not in kinds or KIND_RANK[kind] > KIND_RANK[kinds[slug]]:
             kinds[slug] = kind
     return kinds
 
@@ -1127,6 +1147,8 @@ def locate(slug, items, kinds=None, goals=None):
     kind = (kinds or {}).get(slug)
     if kind == "built":
         return "ABSENT, built"
+    if kind == "done":
+        return "ABSENT, done"
     if kind == "processed":
         return "ABSENT, only processed — not built"
     if kind == "unknown":
@@ -1656,15 +1678,18 @@ def _entry_holds(items, slug, shipped, until_built=False):
     Where the line ends `until built`, the capture waits for the build: only a
     build record for the named entry releases it — the same LOG read the lift
     uses — and an entry still in the queue, in either section, holds it.
+
+    A step of the user's recorded `Outcome: done` releases in both branches,
+    as a build record does: a done step leaves no build record to wait for.
     """
     if until_built:
         if any(i["slug"] == slug for i in items):
             return True
-        return shipped.get(slug) != "built"
+        return shipped.get(slug) not in RESOLVED_KINDS
     for i in items:
         if i["slug"] == slug:
             return i["section"] == "Unprocessed"
-    return shipped.get(slug) != "built"
+    return shipped.get(slug) not in RESOLVED_KINDS
 
 
 def _cycle_definition_slugs(root):

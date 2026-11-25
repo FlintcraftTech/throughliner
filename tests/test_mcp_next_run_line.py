@@ -126,14 +126,25 @@ check("the standing item sits as the last cleared item, above the marker",
 check("the heading carries the [user] tag",
       "#### [user] Run /build in Demo:" in after, repr(after))
 check("the task line carries the counts by kind and the first cleared item",
-      "1 build, 1 audit and 1 step of yours cleared, [alpha] first" in block
+      "1 build and 1 audit cleared, [alpha] first" in block
+      and "1 step of yours also cleared" in block
       and "2 captures waiting" in block, repr(block))
+check("the task line says what done looks like",
+      "done when the run reaches the line" in block, repr(block))
 check("the task line carries #user, the slug and the project",
       "(Demo)" in block and "🆔 next-run #user" in block, repr(block))
-check("the date is the nearest due thing: the passed Not before, today",
-      "📅 %s" % today in block, repr(block))
+check("the date is a cleared step's, never the held item's passed Not before",
+      "📅 2026-12-01 🆔 next-run" in block and "📅 %s" % today not in block,
+      repr(block))
 check("the body says where the date came from",
-      "past its Not before: date" in block, repr(block))
+      "the step [phone-office]" in block, repr(block))
+answer = call(d, "next_command")
+check("next_command names the same command and words as the line written",
+      answer.startswith("Next command: build — Run /build in Demo: 1 build "
+                        "and 1 audit cleared, [alpha] first, done when the "
+                        "run reaches the line")
+      and "Dated 2026-12-01" in answer, repr(answer))
+check("next_command writes nothing", queue_text(d) == after, "queue changed")
 
 # --- the standing counts leave the line itself out --------------------------
 counts = call(d, "queue_checkpoint_counts")
@@ -155,14 +166,129 @@ after3 = queue_text(d)
 check("a dated step of the user's dates the line",
       "📅 2026-12-01 🆔 next-run" in after3, repr(after3))
 
-# --- a Due: line on a capture is read too -----------------------------------
+# --- a Due: line dates the line only where the named command can do it ------
 with open(os.path.join(d, "QUEUE.md"), "w", encoding="utf-8", newline="") as f:
     f.write(QUEUE.replace("Not before: 2020-01-01", "Not before: 2099-01-01")
             .replace("Delta's rationale.", "Delta's rationale.\nDue: 2026-11-20"))
 call(d, "next_run_line")
 after4 = queue_text(d)
-check("a Due: line on any entry dates the line where it is nearest",
+check("a capture's Due: does not date a build line, which cannot sort it",
+      "📅 2026-12-01 🆔 next-run" in after4, repr(after4))
+with open(os.path.join(d, "QUEUE.md"), "w", encoding="utf-8", newline="") as f:
+    f.write(QUEUE.replace("Not before: 2020-01-01", "Not before: 2099-01-01")
+            .replace("Alpha's rationale.", "Alpha's rationale.\nDue: 2026-11-20"))
+call(d, "next_run_line")
+after4 = queue_text(d)
+check("a Due: line on a cleared item dates a build line where it is nearest",
       "📅 2026-11-20 🆔 next-run" in after4, repr(after4))
+shutil.rmtree(os.path.dirname(d), ignore_errors=True)
+
+# --- only steps of the user's cleared, captures waiting: process ------------
+STEPS_AND_CAPTURES = """# QUEUE
+
+## Processed
+
+#### [user] Phone the office [phone-office]
+A step of yours.
+- [ ] Phone the office (Demo) 📅 2026-12-01 🆔 phone-office #user
+
+--- Cleared to run above this line ---
+
+#### [user] Sign the form [sign-form]
+A held step of yours.
+- [ ] Sign the form (Demo) 📅 2026-11-01 🆔 sign-form #user
+Blocked by: [phone-office]
+
+## Unprocessed
+
+#### Delta — a capture [delta]
+Delta's rationale.
+
+#### Epsilon — a capture [epsilon]
+Epsilon's rationale.
+Not before: 2099-01-01
+"""
+d = project(STEPS_AND_CAPTURES)
+answer = call(d, "next_command")
+call(d, "next_run_line")
+after = queue_text(d)
+line = next(l for l in after.splitlines() if "🆔 next-run" in l)
+check("steps of the user's cleared with captures waiting answers process",
+      answer.startswith("Next command: process — Run /process in Demo: "
+                        "1 capture waiting to be sorted, done when none are "
+                        "left to sort; 1 step of yours also cleared"),
+      repr(answer))
+check("a capture held by a date still ahead is not counted as waiting",
+      "2 captures" not in answer, repr(answer))
+check("the line written names the same command as next_command",
+      "Run /process in Demo: 1 capture waiting to be sorted" in line, repr(line))
+check("neither a held step's 📅 nor a cleared step's dates a process line",
+      "📅" not in line, repr(line))
+shutil.rmtree(os.path.dirname(d), ignore_errors=True)
+
+# --- only steps of the user's cleared, nothing to sort: build, to walk ------
+d = project(STEPS_AND_CAPTURES.split("## Unprocessed")[0] + "## Unprocessed\n")
+answer = call(d, "next_command")
+call(d, "next_run_line")
+line = next(l for l in queue_text(d).splitlines() if "🆔 next-run" in l)
+check("only steps of the user's cleared answers build, to walk them",
+      answer.startswith("Next command: build — Run /build in Demo: to walk "
+                        "1 step of yours, done when each is done or put off"),
+      repr(answer))
+check("the cleared step's 📅 dates that line, the held step's does not",
+      "📅 2026-12-01 🆔 next-run" in line, repr(line))
+shutil.rmtree(os.path.dirname(d), ignore_errors=True)
+
+# --- a due chain step whose definition names the user's part comes first ----
+CYCLES = """# CYCLES
+
+## Release cycle [release-cycle]
+
+**Cadence:** none; a sequential chain with no date on any step.
+
+**Chain:** one turn, in order.
+0. **Beta pick [beta-pick]** — on the user's word.
+1. **Release [release]** — after [beta-pick].
+
+**Observable:** the latest release.
+
+# Checklists
+
+## Beta pick [beta-pick]
+
+**Trigger:** the user naming a build as the beta.
+
+**Your part:** Run the plan command and say yes when it names the build
+
+## Release [release]
+
+**Trigger:** after [beta-pick] in [release-cycle].
+
+**Your part:** Run the plan command and say yes when it asks whether to
+release the build you have been running.
+"""
+d = project(QUEUE)
+with open(os.path.join(d, "CYCLES.md"), "w", encoding="utf-8") as f:
+    f.write(CYCLES)
+answer = call(d, "next_command")
+check("with the chain waiting on the user's word the cycles doc changes nothing",
+      answer.startswith("Next command: build —"), repr(answer))
+os.makedirs(os.path.join(d, "LOG"))
+with open(os.path.join(d, "LOG", "2026-01-05-beta-pick.md"), "w",
+          encoding="utf-8") as f:
+    f.write("# abc1234 — beta pick\n\nRecorded 2026-01-05 10:00, read from "
+            "the clock.\n")
+answer = call(d, "next_command")
+call(d, "next_run_line")
+line = next(l for l in queue_text(d).splitlines() if "🆔 next-run" in l)
+check("a due chain step answers its own command, in its definition's words",
+      answer.startswith("Next command: plan — Run /plan in Demo: [release] is "
+                        "due: Run the plan command and say yes when it asks "
+                        "whether to release the build you have been running, "
+                        "done when that step has its record"), repr(answer))
+check("the line written for a due step names the same command, dated today",
+      "Run /plan in Demo: [release] is due" in line
+      and "📅 %s 🆔 next-run" % today in line, repr(line))
 shutil.rmtree(os.path.dirname(d), ignore_errors=True)
 
 # --- nothing cleared, little waiting, nothing dated: quiet and undated -------
@@ -181,7 +307,8 @@ d = project(QUIET)
 text = call(d, "next_run_line")
 after = queue_text(d)
 check("with nothing cleared the line says to run process",
-      "Run /process in Demo when you like: 1 capture waiting to be processed" in after,
+      "Run /process in Demo when you like: 1 capture waiting to be sorted, "
+      "done when none are left to sort" in after,
       repr(after))
 check("the quiet line carries no date", "📅" not in after.split("[next-run]")[1],
       repr(after))
@@ -257,14 +384,18 @@ check("a capture's future date writes a process line, dated on the hold date",
       and "📅 %s 🆔 next-run" % ahead in after, repr(after))
 shutil.rmtree(os.path.dirname(d), ignore_errors=True)
 
-# A hold date already passed is due today, as before.
+# A held item whose date has passed dates nothing: no command can do it until
+# an opening lifts it, and the line keeps the counts form.
 d = project(HELD_ONLY.replace("Not before: %s" % ahead, "Not before: 2020-01-01")
             .replace("## Unprocessed\n", "## Unprocessed\n\n#### Delta — a capture [delta]\nDelta's rationale.\n"))
 call(d, "next_run_line", {"hold_reason": "unused"})
 after = queue_text(d)
-check("a passed hold date dates the line today and keeps the counts form",
-      "📅 %s 🆔 next-run" % today in after and "Run /process in Demo:" in after
-      and "held until" not in after, repr(after))
+line = next(l for l in after.splitlines() if "🆔 next-run" in l)
+check("a held item's passed date does not date the line, which keeps the "
+      "counts form",
+      "📅" not in line and "Run /process in Demo when you like:" in line
+      and "1 item held below the line" in line and "held until" not in line,
+      repr(line))
 shutil.rmtree(os.path.dirname(d), ignore_errors=True)
 
 # A hold date later than a nearer Due: the Due dates the line.
@@ -287,7 +418,7 @@ after = queue_text(d)
 block = after.split("[next-run]")[1].split(MARKER)[0]
 check("with work cleared now the line keeps its counts and stays undated, "
       "so a list of what is due does not hide it",
-      "1 build, 1 audit and 1 step of yours cleared, [alpha] first" in block
+      "1 build and 1 audit cleared, [alpha] first" in block
       and "📅" not in block.split("\n")[1], repr(block))
 check("and names the hold in a closing clause",
       "; [gamma] held until %s" % ahead in block, repr(block))

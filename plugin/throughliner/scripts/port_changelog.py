@@ -31,6 +31,16 @@ entry is included when its own `Files touched:` line names a path under the
 plugin package — per entry rather than per commit, because one commit routinely
 carries both shipped and host-only work.
 
+Where the records live apart from the product (`--log-root`, a nested project),
+their headings carry the other repository's hashes and no hash can match. A
+commit the hash match leaves empty then takes the records whose `Files touched:`
+names a path it changed and whose own `Date:` or `Recorded` line falls after
+the previous shipped commit and no later than this one. A record goes to one
+commit only, the earliest that fits, and a record with no readable date is not
+matched this way. A record dated after its commit is not matched: a day's grace
+was tried, and on the v1.25.0 range its only matches were two records of work
+built the day after the release.
+
 Where a commit touches the package but no entry can be matched to it, the commit
 is reported on its own subject line and marked as carrying no session record.
 Silence there would be the one failure mode that matters: a shipped change the
@@ -128,44 +138,146 @@ def epoch_move(project_root, commit):
     return added[-1] if added else None
 
 
-def log_entries_for(project_root, commit, log_root=None):
-    """Session records whose heading carries this commit's hash.
-
-    Git abbreviates a hash to whatever length is unambiguous, and the records
-    are stamped with the abbreviated form, so the match is on a prefix.
-
-    `log_root` is where `LOG/` lives when it is not beside the git history —
-    a nested project keeps the records in its outer repository and the product
-    in the inner. Defaults to `project_root`, which is the flat case.
-    """
-    log_path = os.path.join(log_root or project_root, LOG_DIR)
-    if not os.path.isdir(log_path):
+def read_records(log_path):
+    """Every session record under `log_path`, oldest filename first, each with
+    the hash its heading is stamped with (or None), its title, its files and
+    its own date."""
+    try:
+        names = sorted(os.listdir(log_path))
+    except OSError:
         return []
-
-    found = []
-    for name in sorted(os.listdir(log_path)):
+    records = []
+    for name in names:
         if not name.endswith(".md") or name.startswith("index"):
             continue
-        path = os.path.join(log_path, name)
         try:
-            with open(path, encoding="utf-8") as handle:
+            with open(os.path.join(log_path, name), encoding="utf-8") as handle:
                 text = strip_front_matter(handle.read())
         except OSError:
             continue
         first = text.split("\n", 1)[0]
         match = HEADING_PATTERN.match(first)
-        if not match:
-            continue
-        stamped = match.group(1)
-        if not (commit.startswith(stamped) or stamped.startswith(commit)):
-            continue
-        found.append({
+        if match:
+            stamped, title = match.group(1), match.group(2).strip()
+        else:
+            stamped = None
+            title = LOOSE_HEADING.sub("", first).strip()
+        records.append({
             "file": name,
-            "title": match.group(2).strip(),
+            "stamped": stamped,
+            "title": title,
             "text": text,
             "files": files_touched(text),
+            "date": record_date(text),
         })
-    return found
+    return records
+
+
+# A heading with no hash in its slot: `# <placeholder> — title`, or a bare
+# `# title`. Only the leading mark and one slot are dropped.
+LOOSE_HEADING = re.compile(r"^#\s+(?:\S+\s+[—-]\s+)?")
+# The record's own date line: `Date: 2026-11-19 10:10, read from the clock…`
+# or `Recorded 2026-11-19 10:10, read from the clock…`, plain or bold.
+RECORD_DATE = re.compile(
+    r"^\**(?:Date:|Recorded)\**\s*(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?",
+    re.MULTILINE)
+
+
+def record_date(text):
+    """The record's own date as `YYYY-MM-DD HH:MM`, or None where it carries
+    no `Date:` or `Recorded` line. A date with no time reads as the day's end,
+    so a record dated on a commit's day is not placed after it by default."""
+    match = RECORD_DATE.search(text)
+    if not match:
+        return None
+    return "%s %s" % (match.group(1), match.group(2) or "23:59")
+
+
+def hash_matches(stamped, commit):
+    """Git abbreviates a hash to whatever length is unambiguous, and the
+    records are stamped with the abbreviated form, so the match is a prefix."""
+    return bool(stamped) and (commit.startswith(stamped)
+                              or stamped.startswith(commit))
+
+
+def log_entries_for(project_root, commit, log_root=None, fallback=None):
+    """Session records for this commit: those whose heading carries its hash,
+    and where none does, the records `fallback` gives it.
+
+    `log_root` is where `LOG/` lives when it is not beside the git history —
+    a nested project keeps the records in its outer repository and the product
+    in the inner. Defaults to `project_root`, which is the flat case.
+
+    `fallback` is `match_by_files_and_date()`'s answer for the whole range, a
+    mapping from commit to records. In a nested project the records carry the
+    OUTER repository's hash and this script walks the inner one's commits, so
+    the hash match finds nothing and the fallback is the only route.
+    """
+    log_path = os.path.join(log_root or project_root, LOG_DIR)
+    found = [record for record in read_records(log_path)
+             if hash_matches(record["stamped"], commit)]
+    if found or not fallback:
+        return found
+    return list(fallback.get(commit, []))
+
+
+def commit_times(project_root, commits, since):
+    """`YYYY-MM-DD HH:MM` for each commit, in the committer's own clock, and
+    for the `since` ref the range opens after (None where it cannot be read).
+    Records are dated from the same machine's clock, so the two compare as
+    written."""
+    times = {}
+    for commit in commits:
+        times[commit] = git(project_root, "show", "-s", "--format=%ci",
+                            commit).strip()[:16]
+    opening = None
+    if since:
+        probe = subprocess.run(
+            ["git", "-C", project_root, "show", "-s", "--format=%ci",
+             since + "^{commit}"],
+            capture_output=True, encoding="utf-8", errors="replace")
+        if probe.returncode == 0:
+            opening = probe.stdout.strip()[:16]
+    return times, opening
+
+
+def match_by_files_and_date(project_root, candidates, since, log_root):
+    """Records matched to commits where no hash can match: {commit: [record]}.
+
+    `candidates` is [(commit, paths, basenames)] oldest first, every shipped
+    commit in the range; one whose paths are None takes no record (a
+    version-only bump, or a commit its own hash already matched) and still
+    bounds its neighbours' windows. A record belongs to a commit where its
+    `Files touched:` names at least one path the commit changed and its own
+    date falls after the previous shipped commit's time and no later than
+    this commit's. A record is given to one commit only, the earliest whose
+    window it falls in; a record with no readable date, or one whose heading
+    carries a hash of this range, is left out.
+    """
+    log_path = os.path.join(log_root, LOG_DIR)
+    commits = [commit for commit, _paths, _names in candidates]
+    times, opening = commit_times(project_root, commits, since)
+    records = [record for record in read_records(log_path)
+               if record["date"] and record["files"]
+               and not any(hash_matches(record["stamped"], commit)
+                           for commit in commits)]
+    assigned = {}
+    for record in records:
+        previous = opening
+        for commit, paths, basenames in candidates:
+            start, end = previous, times[commit]
+            previous = end
+            if paths is None:
+                continue
+            if start and record["date"] <= start:
+                continue
+            if record["date"] > end:
+                continue
+            if not entry_is_shipped(record, paths, basenames):
+                continue
+            assigned.setdefault(commit, []).append(record)
+            break
+    return assigned
 
 
 FILES_LABEL = re.compile(r"^\**Files touched:\**\s*", re.IGNORECASE)
@@ -323,12 +435,34 @@ def build(project_root, since, until, log_root=None):
     `log_root` where one is given, else `project_root`.
     """
     lines = []
-    for commit, subject in shipped_commits(project_root, since, until):
+    commits = shipped_commits(project_root, since, until)
+    shipped = {}
+    for commit, _subject in commits:
         paths, basenames = shipped_names(project_root, commit)
-        if version_bump_only(project_root, commit, paths):
+        shipped[commit] = (paths, basenames,
+                           version_bump_only(project_root, commit, paths))
+
+    # Where the records live apart from the product, their headings carry the
+    # other repository's hashes: every commit the hash match leaves empty is
+    # offered to the files-and-date match, worked out once for the range.
+    fallback = None
+    if log_root:
+        candidates = []
+        for commit, _subject in commits:
+            paths, basenames, bump_only = shipped[commit]
+            if bump_only or log_entries_for(project_root, commit, log_root):
+                candidates.append((commit, None, None))
+            else:
+                candidates.append((commit, paths, basenames))
+        fallback = match_by_files_and_date(project_root, candidates, since,
+                                           log_root)
+
+    for commit, subject in commits:
+        paths, basenames, bump_only = shipped[commit]
+        if bump_only:
             continue
         entries = [entry for entry in log_entries_for(project_root, commit,
-                                                      log_root)
+                                                      log_root, fallback)
                    if entry_is_shipped(entry, paths, basenames)]
         epoch = epoch_move(project_root, commit)
 
